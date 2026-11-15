@@ -69,6 +69,7 @@
 	"garbage_margin": 22,
 	"foul_trouble_early": 4,
 	"foul_out": 6,
+	"injury_per_minute": 0.00025,
 	"minutes_soft_cap_seconds": 2340,
 	"position_balance_bonus": 8.0,
 

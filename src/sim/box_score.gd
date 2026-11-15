@@ -14,6 +14,8 @@ var players: Array[FcPlayerGameStats] = []
 ## Possessions estimated the standard way, per side.
 var possessions: Array[float] = [0.0, 0.0]
 var overtimes: int = 0
+## Injuries suffered in this game: [[player id, games out, injury name], ...].
+var injuries: Array = []
 
 
 func winner_side() -> int:
@@ -98,6 +100,7 @@ func to_dict() -> Dictionary:
 		"team_ids": team_ids.duplicate(), "team_names": team_names.duplicate(),
 		"abbreviations": abbreviations.duplicate(), "period_scores": period_scores.duplicate(true),
 		"scores": scores.duplicate(), "players": player_dicts, "overtimes": overtimes,
+		"injuries": injuries.duplicate(true),
 	}
 
 
@@ -112,6 +115,8 @@ static func from_dict(d: Dictionary) -> FcBoxScore:
 		for v in d["period_scores"][i]:
 			b.period_scores[i].append(int(v))
 	b.overtimes = int(d.get("overtimes", 0))
+	for row in d.get("injuries", []):
+		b.injuries.append([int(row[0]), int(row[1]), str(row[2])])
 	for pd in d.get("players", []):
 		b.players.append(FcPlayerGameStats.from_dict(pd))
 	return b

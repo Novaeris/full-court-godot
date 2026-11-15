@@ -29,10 +29,19 @@ static func from_world(world: FcWorld, team_id: int, ratings: FcPlayerRatings) -
 	var city: FcCity = world.cities.get_by_id(team.city_id)
 	g.name = team.identity.display_name(city.name if city != null else "")
 	g.abbreviation = team.identity.abbreviation
+	var injured: Array[FcPlayer] = []
 	for pid in team.roster.player_ids:
 		var p: FcPlayer = world.players.get_by_id(pid)
-		if p != null:
+		if p == null:
+			continue
+		if p.games_out > 0:
+			injured.append(p)
+		else:
 			g.players.append(FcSimPlayer.new(p, ratings, team_id))
+	# a team always has at least 8 players: the least hurt return early if needed
+	injured.sort_custom(func(a: FcPlayer, b: FcPlayer): return a.games_out < b.games_out)
+	while g.players.size() < 8 and not injured.is_empty():
+		g.players.append(FcSimPlayer.new(injured.pop_front(), ratings, team_id))
 	g.sort_by_overall()
 	var coach := world.staff_in_role(team_id, FcStaffRole.Id.HEAD_COACH)
 	if coach != null:

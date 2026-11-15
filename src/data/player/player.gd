@@ -23,6 +23,9 @@ var status: int = Status.ACTIVE
 var retired_season: int = 0
 var primary_position: int = FcPosition.Id.SF
 var secondary_position: int = FcPosition.Id.NONE
+## Games the player will still miss because of injury (0 = healthy) and what it is.
+var games_out: int = 0
+var injury: String = ""
 
 var identity := FcPersonIdentity.new()
 var physical := FcPlayerPhysical.new()
@@ -60,6 +63,10 @@ func validate() -> Array[String]:
 		errors.append("secondary position is invalid")
 	elif secondary_position == primary_position:
 		errors.append("secondary position must differ from primary")
+	if games_out < 0:
+		errors.append("games out cannot be negative")
+	if (games_out == 0) != (injury == ""):
+		errors.append("an injury needs games out and a name, and a healthy player has neither")
 	if status < Status.PROSPECT or status > Status.RETIRED:
 		errors.append("invalid status %d" % status)
 	elif status == Status.RETIRED and retired_season <= 0:
@@ -77,6 +84,7 @@ func to_dict() -> Dictionary:
 		"retired_season": retired_season,
 		"primary_position": primary_position,
 		"secondary_position": secondary_position,
+		"games_out": games_out, "injury": injury,
 		"identity": identity.to_dict(),
 		"physical": physical.to_dict(),
 		"development": development.to_dict(),
@@ -92,6 +100,8 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet) -> FcPlayer:
 	p.retired_season = int(data.get("retired_season", 0))
 	p.primary_position = int(data.get("primary_position", FcPosition.Id.SF))
 	p.secondary_position = int(data.get("secondary_position", FcPosition.Id.NONE))
+	p.games_out = int(data.get("games_out", 0))
+	p.injury = str(data.get("injury", ""))
 	p.identity = FcPersonIdentity.from_dict(data.get("identity", {}))
 	p.physical = FcPlayerPhysical.from_dict(data.get("physical", {}))
 	p.development = FcPlayerDevelopment.from_dict(data.get("development", {}))

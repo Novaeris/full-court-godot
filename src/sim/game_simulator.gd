@@ -42,6 +42,7 @@ var _period: int = 1
 var _game_pace_shift: float = 0.0
 ## Points each side has scored above (+) or below (-) what its shot odds expected so far.
 var _luck: Array[float] = [0.0, 0.0]
+var _injuries: Array = []
 
 
 ## `tuning` overrides the shipped values (used by tests and tools). `era`
@@ -95,12 +96,16 @@ func simulate(home: FcGameTeam, away: FcGameTeam, rng: FcRng) -> FcBoxScore:
 	_period_points = [[], []]
 	_team_fouls = [0, 0]
 	_luck = [0.0, 0.0]
+	_injuries = []
 	for side in 2:
 		_court[side] = []
 		for p in _teams[side].players:
 			p.energy = 100.0
 			p.fouls = 0
 			p.on_court = false
+			p.injured = false
+			p.injury_games = 0
+			p.injury_name = ""
 			p.seconds_f = 0.0
 			p.stats = FcPlayerGameStats.new()
 			p.stats.player_id = p.id
@@ -402,13 +407,56 @@ func _sample_duration() -> float:
 
 func _use_time(seconds: float) -> void:
 	_clock -= seconds
+	var hurt: Array = []   # injuries are handled after the loop so lineups are not changed mid-count
 	for side in 2:
 		for p in _teams[side].players:
 			if p.on_court:
 				p.seconds_f += seconds
 				p.energy = maxf(0.0, p.energy - seconds * float(_t["energy_drain_per_second"]) * (1.3 - 0.6 * p.stamina / 100.0))
+				if float(_t["injury_per_minute"]) > 0.0 and not p.injured:
+					var chance := float(_t["injury_per_minute"]) * seconds / 60.0 * (1.4 - 0.8 * p.durability / 100.0)
+					if _rng.chance(chance):
+						hurt.append([side, p])
 			else:
 				p.energy = minf(100.0, p.energy + seconds * float(_t["energy_recover_per_second"]) * (0.7 + p.stamina / 100.0 * 0.6))
+	for entry in hurt:
+		_injure(entry[0], entry[1])
+
+
+## A player is hurt: he leaves the game (if someone can replace him) and misses games.
+func _injure(side: int, p: FcSimPlayer) -> void:
+	var bench: Array[FcSimPlayer] = []
+	for q in _teams[side].players:
+		if not q.on_court and not q.injured and q.fouls < int(_t["foul_out"]):
+			bench.append(q)
+	if bench.is_empty():
+		return   # nobody to replace him: he plays through it
+	var roll := _rng.next_float()
+	var severity := 0
+	if roll < 0.60:
+		severity = _rng.range_int(1, 5)
+	elif roll < 0.88:
+		severity = _rng.range_int(6, 20)
+	elif roll < 0.97:
+		severity = _rng.range_int(21, 60)
+	else:
+		severity = _rng.range_int(61, 82)
+	p.injured = true
+	p.injury_games = severity
+	p.injury_name = _injury_name(severity)
+	_injuries.append([p.id, severity, p.injury_name])
+	_force_substitution(side, p)
+
+
+func _injury_name(severity: int) -> String:
+	var names: Array = ["sprained ankle", "bruised knee", "sore back", "strained hamstring", "bruised hip"]
+	if severity > 60:
+		names = ["torn ACL", "ruptured Achilles", "fractured leg"]
+	elif severity > 20:
+		names = ["stress reaction in the foot", "torn meniscus", "broken hand", "fractured wrist"]
+	elif severity > 5:
+		names = ["sprained knee", "strained groin", "sprained ankle", "calf strain"]
+	return names[_rng.range_int(0, names.size() - 1)]
 
 
 func _recover_between_periods() -> void:
@@ -482,7 +530,7 @@ func _substitutions(side: int) -> void:
 		out_threshold = float(_t["late_game_sub_out_energy"]) + management_shift
 	var bench: Array[FcSimPlayer] = []
 	for p in team.players:
-		if not p.on_court and p.fouls < int(_t["foul_out"]):
+		if not p.on_court and not p.injured and p.fouls < int(_t["foul_out"]):
 			bench.append(p)
 	if bench.is_empty():
 		return
@@ -534,7 +582,7 @@ func _garbage_time_substitution(side: int, bench: Array[FcSimPlayer]) -> void:
 func _force_substitution(side: int, leaving: FcSimPlayer) -> void:
 	var bench: Array[FcSimPlayer] = []
 	for p in _teams[side].players:
-		if not p.on_court and p.fouls < int(_t["foul_out"]):
+		if not p.on_court and not p.injured and p.fouls < int(_t["foul_out"]):
 			bench.append(p)
 	var replacement := _best_replacement(side, leaving, bench, 0.0)
 	if replacement != null:
@@ -575,6 +623,7 @@ func _add_points(side: int, points: int) -> void:
 func _finish() -> FcBoxScore:
 	var box := FcBoxScore.new()
 	box.overtimes = maxi(0, _period_points[0].size() - int(_t["quarters"]))
+	box.injuries = _injuries.duplicate(true)
 	for side in 2:
 		box.team_ids[side] = _teams[side].team_id
 		box.team_names[side] = _teams[side].name

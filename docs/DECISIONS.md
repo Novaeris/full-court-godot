@@ -138,6 +138,11 @@ Built on the founder's instruction to continue; the following product choices we
 - Per-game prices scale with season length so short seasons are not unprofitable by construction.
 - To be built on top: owner decisions UI, sponsorship and loan negotiations, the owner's own targets and evaluation (profit, wins, valuation), GM/coach hiring and firing, arena renovation projects.
 
+## D-026 Injuries (2026-11-15, autonomous)
+- Injury rate and severity mix are single numbers in tuning.json (`injury_per_minute`); setting it to 0 turns injuries off. Rates were chosen so a player misses about 8-9% of games, typical of a professional league, and durability matters but never makes a player immune.
+- Injuries are stored on the player (`games_out`, `injury`) and drive lineups for both AI and human teams. The owner currently cannot rest players or rush returns; medical staff skills (injury prevention, rehabilitation) exist in the data but are not yet used by the injury model (planned).
+- Severe injuries cost athletic attributes permanently so careers can be altered by luck.
+
 ## D-013 Floats in saved data; runner robustness (2026-11-15)
 - Found by a test: JSON float round trips lose last bits, so a saved-and-reloaded world differed from the original. Rule: saved floats are quantized to 3 decimals via `FcChecks.quantize` in property setters; prefer integers. Documented in ARCHITECTURE rule 7.
 - Found while testing: a test file with a syntax error made the test runner hang forever. The runner now reports such files as failures.

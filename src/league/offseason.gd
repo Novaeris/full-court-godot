@@ -116,6 +116,11 @@ func progress_and_retire(league_id: int, finished_year: int, new_year: int, rng:
 	for p in world.players.all():
 		if p.status != FcPlayer.Status.ACTIVE:
 			continue
+		# the summer heals most injuries; very long ones carry over
+		if p.games_out > 0:
+			p.games_out = maxi(0, p.games_out - 60)
+			if p.games_out == 0:
+				p.injury = ""
 		var age := _age(p, new_year)
 		var team_id: int = team_of.get(p.id, 0)
 		if team_id > 0 and not coach_cache.has(team_id):

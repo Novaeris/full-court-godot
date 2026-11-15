@@ -199,6 +199,41 @@ func compute_awards(season: FcSeason, standings: FcStandings) -> Dictionary:
 	return awards
 
 
+# --- injuries -----------------------------------------------------------------------
+
+## Newly hurt players start missing games; every injured player of the two teams that
+## just played is one game closer to returning. Severe injuries cost athleticism for good.
+func _apply_injuries(box: FcBoxScore) -> void:
+	var fresh := {}
+	for row in box.injuries:
+		var p: FcPlayer = _world.players.get_by_id(row[0])
+		if p == null:
+			continue
+		p.games_out = row[1]
+		p.injury = row[2]
+		fresh[p.id] = true
+		if row[1] >= 60:
+			for key in ["speed", "agility", "vertical", "stamina"]:
+				p.attributes.set_clamped(key, p.attributes.get_value(key) - severe_loss(p.id, key))
+		var owner := _world.team_of_player(p.id)
+		if owner != null:
+			_teams.erase(owner.id)
+	for side in 2:
+		var team: FcTeam = _world.teams.get_by_id(box.team_ids[side])
+		for pid in team.roster.player_ids:
+			var q: FcPlayer = _world.players.get_by_id(pid)
+			if q.games_out > 0 and not fresh.has(pid):
+				q.games_out -= 1
+				if q.games_out == 0:
+					q.injury = ""
+					_teams.erase(team.id)
+
+
+## A small, deterministic permanent loss (1-3 points) for a severe injury.
+static func severe_loss(player_id: int, key: String) -> int:
+	return 1 + absi(hash("%d:%s" % [player_id, key])) % 3
+
+
 # --- one game -----------------------------------------------------------------------
 
 func _team(team_id: int) -> FcGameTeam:
@@ -213,6 +248,7 @@ func _play_game(season: FcSeason, g: FcScheduledGame, rng: FcRng, playoff: bool)
 	g.home_score = box.scores[0]
 	g.away_score = box.scores[1]
 	g.overtimes = box.overtimes
+	_apply_injuries(box)
 	if playoff:
 		season.playoff_stats.add_box_score(box)
 	else:

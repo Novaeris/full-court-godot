@@ -19,6 +19,7 @@ var tend_foul: float
 var tend_oreb: float
 var consistency: float
 var stamina: float
+var durability: float
 
 var energy: float = 100.0
 var fouls: int = 0
@@ -28,6 +29,10 @@ var form: float = 0.0
 var stats := FcPlayerGameStats.new()
 ## Court time as a precise float; copied into stats.seconds when the game ends.
 var seconds_f: float = 0.0
+## Set when he is hurt during this game: he leaves and cannot return.
+var injured: bool = false
+var injury_games: int = 0
+var injury_name: String = ""
 
 
 func _init(player: FcPlayer, rating_calculator: FcPlayerRatings, team_id: int) -> void:
@@ -45,6 +50,7 @@ func _init(player: FcPlayer, rating_calculator: FcPlayerRatings, team_id: int) -
 	tend_oreb = player.tendencies.get_value("offensive_rebound_tendency")
 	consistency = player.attributes.get_value("consistency")
 	stamina = float(player.attributes.get_value("stamina"))
+	durability = float(player.attributes.get_value("durability"))
 	stats.player_id = id
 	stats.team_id = team_id
 	stats.name = name
