@@ -28,6 +28,9 @@ Original cities, teams, branding, arenas, conferences, rules, players, coaches, 
 - Contracts are standalone agreements with per-season salary, guaranteed money, player/team options and bonuses; this is what Owner Mode finance and later cap rules will build on.
 - A team's market comes from its city (population, economy); its building is a separate arena; its roster is a list of players it has active contracts with.
 
+- Staff roles: General Manager, Head Coach, Assistant Coach, Scout, Medical Staff, Business Executive. Each person has 17 possible skills (coaching: offensive/defensive strategy, development, game management, motivation, discipline; front office: talent evaluation, negotiation, trade acumen, long-term planning; scouting: accuracy, regional knowledge; business: financial acumen, marketing, community relations; medical: injury prevention, rehabilitation), the same personality traits as players, and a philosophy (pace, three-point emphasis, defensive aggression, ball movement, youth focus, star reliance, risk tolerance). In Owner Mode the owner hires and fires these people; a team may have only one GM and one head coach.
+- Staff have a reputation (0-100) that will drive salary demands and who accepts which job.
+
 ## Simulation principles
 - Attributes (offense, defense, physical, mental) must change outcomes; no decorative stats.
 - Possession-based engine accounting for tendencies, roles, tactics, matchups, fatigue, injuries, home court, pace, variance.

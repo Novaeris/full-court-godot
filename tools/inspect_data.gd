@@ -7,7 +7,7 @@ extends SceneTree
 func _initialize() -> void:
 	var defs := FcDefinitionSet.load_default()
 	print("=== Definitions loaded from data/definitions/ ===")
-	for catalog in [defs.attributes, defs.personality, defs.tendencies]:
+	for catalog in defs.all():
 		print("%s: %d entries, categories: %s" % [catalog.kind, catalog.size(), ", ".join(catalog.categories())])
 
 	var w := FcTestData.world()
@@ -42,6 +42,14 @@ func _initialize() -> void:
 	print("=== Sample contract ===")
 	print("Player %d with team %d, seasons %d-%d, total value $%d, 2026 cap hit $%d" % [
 		c.player_id, c.team_id, c.start_season(), c.end_season(), c.total_value(), c.cap_hit_for(2026)])
+
+	print("")
+	print("=== Sample staff (current jobs of the team) ===")
+	for sc in w.staff_contracts_of_team(t.id):
+		var member: FcStaffMember = w.staff.get_by_id(sc.staff_id)
+		print("%s: %s, reputation %d, $%d in 2026" % [
+			FcStaffRole.display_name(sc.role), member.identity.full_name(),
+			member.reputation, sc.salary_for(2026)])
 
 	print("")
 	var problems := w.validate()

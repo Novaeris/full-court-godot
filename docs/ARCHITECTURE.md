@@ -38,7 +38,7 @@ attributes/  FcAttributeDef      one rating's definition (key, range, default...
              FcAttributeSet      one entity's values, validated against a catalog
              FcDefinitionSet     the 3 catalogs: attributes, personality, tendencies
 player/      FcPlayer            composed of:
-               FcPlayerIdentity  names, birth date, birthplace, country
+               FcPersonIdentity  names, birth date, birthplace, country
                FcPlayerPhysical  height, weight, wingspan, handedness
                FcPlayerDevelopment potential, peak age, development rate, volatility
                3 x FcAttributeSet  attributes, personality, tendencies
@@ -52,17 +52,25 @@ team/        FcTeam              composed of:
 contract/    FcContract          player_id, team_id, status, signing date, composed of:
                FcContractYear    season, salary, guaranteed, option (type/status)
                FcContractBonus   kind, season, amount, guaranteed, counts vs cap
+staff/       FcStaffMember       coach / GM / scout / medical / business exec, composed of:
+               FcPersonIdentity  (shared with players; lives in common/)
+               3 x FcAttributeSet  skills, personality, philosophy
+             FcStaffRole         the six jobs (GM, head coach, assistant, scout, medical, business exec)
+             FcStaffContract     staff_id, team_id, role, signing date, status, years (FcContractYear)
 world/       FcRepository        persistence interface (abstract)
              FcMemoryRepository  in-memory implementation
              FcWorld             definitions + id generator + repositories +
                                  cross-entity validation + snapshot to/from dict
 ```
 
-Attribute definitions live in `data/definitions/*.json` (28 basketball attributes, 7 personality traits, 8 tendencies). Add, rename or rebalance by editing JSON; `FcAttributeSet` fills any attribute added later with its default when old data loads.
+Attribute definitions live in `data/definitions/*.json`: 28 basketball attributes, 7 personality traits, 8 tendencies (players); 17 staff skills in 5 categories and 7 philosophy dials (staff). `FcDefinitionSet.all()` lists every catalog. Add, rename or rebalance by editing JSON; `FcAttributeSet` fills any attribute added later with its default when old data loads.
 
 ## Relationships
 - Player ↔ Team: via `FcRoster` (the team's roster is the single source of truth for membership). A player does not store his team.
 - Player ↔ Contract ↔ Team: a contract holds `player_id` and `team_id`. A player may have many contracts over time but at most one `ACTIVE`; every rostered player must have an ACTIVE contract with that team (checked by `FcWorld.validate()`).
+- Staff ↔ Team: via `FcStaffContract` (staff_id, team_id, role). A team's staff = its ACTIVE staff contracts (no separate staff list, single source of truth). Rules checked by `FcWorld.validate()`: one active job per person, at most one active General Manager and one Head Coach per team, retired staff cannot hold an active job. Scouts, assistants, medical and business roles are not limited.
+- Staff contracts are separate from player `FcContract`: staff pay comes from the operating budget (Owner Mode), not the salary cap, and has no guarantees/bonuses/cap hits. Query helpers on `FcWorld`: `staff_contracts_of_team`, `staff_in_role`, `active_staff_contract_of`.
+- Save compatibility: the `staff` / `staff_contracts` snapshot sections are additive; snapshots without them load as empty, so `DATA_VERSION` stays 1.
 - Team → City / Arena: by id. Arena → City: by id. Relocation = change `city_id`; the team id is unchanged.
 - Not on the player/team by design (separate records keyed by id, to be built with their systems): career and season statistics, historical records and awards (keyed by `player_id` / `team_id` + season), team finances, staff, owner (`owner_id` reserved, unchecked until that entity exists).
 

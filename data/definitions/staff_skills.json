@@ -1,0 +1,27 @@
+{
+	"schema": 1,
+	"kind": "staff_skills",
+	"definitions": [
+		{"key": "offensive_strategy", "name": "Offensive Strategy", "category": "coaching", "description": "Designing and teaching effective offensive systems.", "min": 0, "max": 100, "default": 50},
+		{"key": "defensive_strategy", "name": "Defensive Strategy", "category": "coaching", "description": "Designing and teaching effective defensive schemes.", "min": 0, "max": 100, "default": 50},
+		{"key": "player_development", "name": "Player Development", "category": "coaching", "description": "Helping players improve toward their potential.", "min": 0, "max": 100, "default": 50},
+		{"key": "game_management", "name": "Game Management", "category": "coaching", "description": "Substitutions, timeouts and in-game adjustments.", "min": 0, "max": 100, "default": 50},
+		{"key": "motivation", "name": "Motivation", "category": "coaching", "description": "Getting the best effort from players and handling morale.", "min": 0, "max": 100, "default": 50},
+		{"key": "discipline", "name": "Discipline", "category": "coaching", "description": "Maintaining standards, focus and a professional locker room.", "min": 0, "max": 100, "default": 50},
+
+		{"key": "talent_evaluation", "name": "Talent Evaluation", "category": "front_office", "description": "Judging a player's current and future ability.", "min": 0, "max": 100, "default": 50},
+		{"key": "negotiation", "name": "Negotiation", "category": "front_office", "description": "Getting favorable contract terms.", "min": 0, "max": 100, "default": 50},
+		{"key": "trade_acumen", "name": "Trade Acumen", "category": "front_office", "description": "Finding and closing valuable trades.", "min": 0, "max": 100, "default": 50},
+		{"key": "long_term_planning", "name": "Long-Term Planning", "category": "front_office", "description": "Building a roster and cap sheet that stays strong for years.", "min": 0, "max": 100, "default": 50},
+
+		{"key": "scouting_accuracy", "name": "Scouting Accuracy", "category": "scouting", "description": "How closely scouting reports match the truth.", "min": 0, "max": 100, "default": 50},
+		{"key": "regional_knowledge", "name": "Regional Knowledge", "category": "scouting", "description": "Breadth of contacts and coverage of prospects.", "min": 0, "max": 100, "default": 50},
+
+		{"key": "financial_acumen", "name": "Financial Acumen", "category": "business", "description": "Budgeting, forecasting and controlling costs.", "min": 0, "max": 100, "default": 50},
+		{"key": "marketing", "name": "Marketing", "category": "business", "description": "Growing the brand, merchandise and sponsorship value.", "min": 0, "max": 100, "default": 50},
+		{"key": "community_relations", "name": "Community Relations", "category": "business", "description": "Fan engagement and the franchise's standing in the city.", "min": 0, "max": 100, "default": 50},
+
+		{"key": "injury_prevention", "name": "Injury Prevention", "category": "medical", "description": "Conditioning and load management that reduce injuries.", "min": 0, "max": 100, "default": 50},
+		{"key": "rehabilitation", "name": "Rehabilitation", "category": "medical", "description": "Speed and quality of recovery from injury.", "min": 0, "max": 100, "default": 50}
+	]
+}

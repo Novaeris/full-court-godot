@@ -15,6 +15,8 @@ const KIND_TEAM := "team"
 const KIND_CONTRACT := "contract"
 const KIND_CITY := "city"
 const KIND_ARENA := "arena"
+const KIND_STAFF := "staff"
+const KIND_STAFF_CONTRACT := "staff_contract"
 
 var definitions: FcDefinitionSet
 var ids := FcIdGenerator.new()
@@ -23,6 +25,8 @@ var teams: FcRepository = FcMemoryRepository.new()
 var contracts: FcRepository = FcMemoryRepository.new()
 var cities: FcRepository = FcMemoryRepository.new()
 var arenas: FcRepository = FcMemoryRepository.new()
+var staff: FcRepository = FcMemoryRepository.new()
+var staff_contracts: FcRepository = FcMemoryRepository.new()
 
 
 func _init(defs: FcDefinitionSet) -> void:
@@ -43,6 +47,30 @@ func active_contract_of(player_id: int) -> FcContract:
 		if c.player_id == player_id and c.status == FcContract.Status.ACTIVE:
 			return c
 	return null
+
+
+## The staff member's ACTIVE staff contract (their current job), or null.
+func active_staff_contract_of(staff_id: int) -> FcStaffContract:
+	for c in staff_contracts.all():
+		if c.staff_id == staff_id and c.status == FcContract.Status.ACTIVE:
+			return c
+	return null
+
+
+## ACTIVE staff contracts of a team (its current staff), optionally only one role.
+func staff_contracts_of_team(team_id: int, role: int = FcStaffRole.Id.NONE) -> Array[FcStaffContract]:
+	var out: Array[FcStaffContract] = []
+	for c in staff_contracts.all():
+		if c.team_id == team_id and c.status == FcContract.Status.ACTIVE \
+				and (role == FcStaffRole.Id.NONE or c.role == role):
+			out.append(c)
+	return out
+
+
+## The staff member currently holding a unique role (GM, head coach) with the team, or null.
+func staff_in_role(team_id: int, role: int) -> FcStaffMember:
+	var held := staff_contracts_of_team(team_id, role)
+	return staff.get_by_id(held[0].staff_id) if not held.is_empty() else null
 
 
 ## Full integrity check. Returns problems as readable text; empty = healthy.
@@ -81,6 +109,32 @@ func validate() -> Array[String]:
 				errors.append("player %d has more than one active contract" % c.player_id)
 			active_by_player[c.player_id] = c
 
+	for s in staff.all():
+		for e in s.validate():
+			errors.append("staff %d: %s" % [s.id, e])
+	var active_job_by_staff := {}
+	var unique_roles := {}  # "team:role" -> staff contract id
+	for c in staff_contracts.all():
+		for e in c.validate():
+			errors.append("staff contract %d: %s" % [c.id, e])
+		var member: FcStaffMember = staff.get_by_id(c.staff_id)
+		if c.staff_id > 0 and member == null:
+			errors.append("staff contract %d: staff %d does not exist" % [c.id, c.staff_id])
+		if c.team_id > 0 and not teams.has_id(c.team_id):
+			errors.append("staff contract %d: team %d does not exist" % [c.id, c.team_id])
+		if c.status != FcContract.Status.ACTIVE:
+			continue
+		if member != null and member.status == FcStaffMember.Status.RETIRED:
+			errors.append("staff contract %d: staff %d is retired but has an active contract" % [c.id, c.staff_id])
+		if active_job_by_staff.has(c.staff_id):
+			errors.append("staff %d has more than one active contract" % c.staff_id)
+		active_job_by_staff[c.staff_id] = c.id
+		if FcStaffRole.is_unique_per_team(c.role):
+			var key := "%d:%d" % [c.team_id, c.role]
+			if unique_roles.has(key):
+				errors.append("team %d has more than one active %s" % [c.team_id, FcStaffRole.display_name(c.role)])
+			unique_roles[key] = c.id
+
 	var rostered := {}
 	for t in teams.all():
 		for pid in t.roster.player_ids:
@@ -108,6 +162,8 @@ func to_dict() -> Dictionary:
 		"teams": _dicts_of(teams),
 		"players": _dicts_of(players),
 		"contracts": _dicts_of(contracts),
+		"staff": _dicts_of(staff),
+		"staff_contracts": _dicts_of(staff_contracts),
 	}
 
 
@@ -126,6 +182,11 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 		_report(w.players.add(FcPlayer.from_dict(d, defs)), "player", errors)
 	for d in data.get("contracts", []):
 		_report(w.contracts.add(FcContract.from_dict(d)), "contract", errors)
+	# Staff sections were added after the first saves existed; missing = empty.
+	for d in data.get("staff", []):
+		_report(w.staff.add(FcStaffMember.from_dict(d, defs)), "staff member", errors)
+	for d in data.get("staff_contracts", []):
+		_report(w.staff_contracts.add(FcStaffContract.from_dict(d)), "staff contract", errors)
 	return w
 
 

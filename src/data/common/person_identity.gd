@@ -1,6 +1,6 @@
-class_name FcPlayerIdentity
+class_name FcPersonIdentity
 extends RefCounted
-## Who the player is as a person: name and biography. Does not change during
+## Who a person is: name and biography. Shared by players and staff. Does not change during
 ## a career (except nickname).
 
 var first_name: String = ""
@@ -37,8 +37,8 @@ func to_dict() -> Dictionary:
 	}
 
 
-static func from_dict(data: Dictionary) -> FcPlayerIdentity:
-	var i := FcPlayerIdentity.new()
+static func from_dict(data: Dictionary) -> FcPersonIdentity:
+	var i := FcPersonIdentity.new()
 	i.first_name = str(data.get("first_name", ""))
 	i.last_name = str(data.get("last_name", ""))
 	i.nickname = str(data.get("nickname", ""))

@@ -63,6 +63,17 @@ func test_round_trip_preserves_everything() -> void:
 	assert_eq(loaded.metadata.game_version, FcVersion.GAME_VERSION)
 
 
+func test_staff_survive_save_and_load() -> void:
+	var s := _state()
+	s.world.staff.get_by_id(2).skills.set_value("game_management", 97)
+	manager.save("slot_1", s)
+	var loaded := manager.load_slot("slot_1", defs)
+	assert_true(loaded.is_ok(), loaded.message)
+	assert_eq(loaded.warnings, [] as Array[String])
+	assert_eq(loaded.state.world.staff.get_by_id(2).skills.get_value("game_management"), 97)
+	assert_eq(loaded.state.world.staff_in_role(1, FcStaffRole.Id.HEAD_COACH).id, 2)
+
+
 func test_invalid_slot_names_rejected_and_nothing_written() -> void:
 	for bad in ["", "../evil", "UPPER", "has space", "dot.name", "a".repeat(33), "sub/dir"]:
 		assert_eq(manager.save(bad, _state()).code, Code.INVALID_SLOT, "'%s'" % bad)

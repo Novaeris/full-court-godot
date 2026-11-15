@@ -1,0 +1,13 @@
+{
+	"schema": 1,
+	"kind": "philosophy",
+	"definitions": [
+		{"key": "pace_preference", "name": "Pace Preference", "category": "style", "description": "Slow, grinding games (low) versus fast, high-possession games (high).", "min": 0, "max": 100, "default": 50},
+		{"key": "three_point_emphasis", "name": "Three-Point Emphasis", "category": "style", "description": "How much the system is built around three-point shooting.", "min": 0, "max": 100, "default": 50},
+		{"key": "defensive_aggression", "name": "Defensive Aggression", "category": "style", "description": "Conservative containment (low) versus pressure and gambling (high).", "min": 0, "max": 100, "default": 50},
+		{"key": "ball_movement", "name": "Ball Movement", "category": "style", "description": "Isolation play (low) versus constant passing (high).", "min": 0, "max": 100, "default": 50},
+		{"key": "youth_focus", "name": "Youth Focus", "category": "roster", "description": "Preference for proven veterans (low) versus young prospects (high).", "min": 0, "max": 100, "default": 50},
+		{"key": "star_reliance", "name": "Star Reliance", "category": "roster", "description": "Balanced depth (low) versus building around superstars (high).", "min": 0, "max": 100, "default": 50},
+		{"key": "risk_tolerance", "name": "Risk Tolerance", "category": "roster", "description": "Cautious decisions (low) versus bold gambles (high).", "min": 0, "max": 100, "default": 50}
+	]
+}

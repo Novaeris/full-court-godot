@@ -41,6 +41,15 @@ Deferred. Condition from founder: keep a clean persistence abstraction. Implemen
 - `user://` is the per-user game data folder (on Windows: `%APPDATA%\Godot\app_userdata\Full Court\`). Works on all target platforms.
 - Bug found and fixed while designing: JSON numbers are doubles, so 64-bit RNG state/seed are saved as text.
 
+## D-011 Staff model (2026-11-15)
+- Staff mirror players: identity + data-driven attribute sets (skills, personality, philosophy). `FcPlayerIdentity` was renamed `FcPersonIdentity` and shared; the saved format did not change.
+- Roles are a closed enum (rules refer to them: one GM, one head coach per team); skills are data.
+- Staff have their own contract entity rather than reusing `FcContract`. Rejected alternative: one contract type with a subject kind. It would force salary-cap/guarantee semantics onto staff pay, and changing the player contract format would need a save migration. Cost: a little duplication of year/season queries.
+- A staff member's `primary_role` (profession, for browsing the hiring pool) is separate from the role on their contract (the job held).
+- Team staff = ACTIVE staff contracts; there is no separate staff list to keep in sync.
+- Staff sections in snapshots are additive (missing = empty), so DATA_VERSION stays 1. If a future change removes or reinterprets saved fields, bump it and add a migration.
+- What staff skills DO (coach quality affecting development, GM evaluation affecting trades, scouting accuracy) is deliberately not implemented; each hooks in when its system is built.
+
 ## D-009 Data model shape (2026-11-15)
 - Entities reference each other by integer ID only (no object references): no circular dependencies, trivial serialization.
 - Player is split into identity, physical, development and three attribute sets. Contracts, team membership and statistics are NOT on the player.

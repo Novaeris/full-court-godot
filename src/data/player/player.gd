@@ -1,7 +1,7 @@
 class_name FcPlayer
 extends RefCounted
 ## A player as a stable entity. Composed of small parts, each with one job:
-##   identity     (FcPlayerIdentity)    who he is
+##   identity     (FcPersonIdentity)    who he is
 ##   physical     (FcPlayerPhysical)    body measurements
 ##   attributes   (FcAttributeSet)      basketball ratings
 ##   personality  (FcAttributeSet)      off-court traits
@@ -24,7 +24,7 @@ var retired_season: int = 0
 var primary_position: int = FcPosition.Id.SF
 var secondary_position: int = FcPosition.Id.NONE
 
-var identity := FcPlayerIdentity.new()
+var identity := FcPersonIdentity.new()
 var physical := FcPlayerPhysical.new()
 var development := FcPlayerDevelopment.new()
 var attributes: FcAttributeSet
@@ -92,7 +92,7 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet) -> FcPlayer:
 	p.retired_season = int(data.get("retired_season", 0))
 	p.primary_position = int(data.get("primary_position", FcPosition.Id.SF))
 	p.secondary_position = int(data.get("secondary_position", FcPosition.Id.NONE))
-	p.identity = FcPlayerIdentity.from_dict(data.get("identity", {}))
+	p.identity = FcPersonIdentity.from_dict(data.get("identity", {}))
 	p.physical = FcPlayerPhysical.from_dict(data.get("physical", {}))
 	p.development = FcPlayerDevelopment.from_dict(data.get("development", {}))
 	p.attributes = FcAttributeSet.from_dict(defs.attributes, data.get("attributes", {}))

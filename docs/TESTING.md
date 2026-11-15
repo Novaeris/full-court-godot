@@ -38,7 +38,8 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 |---|---|
 | FcRng (determinism, forking, state restore, huge-seed JSON regression, distributions) | 8 |
 | FcGameState (validation, round trip incl. RNG position) | 4 |
-| Save system (round trip, slot-name safety, backups, checksum/truncation/garbage detection, interrupted-save and crash recovery, version rejection, migrations, listing, delete, autosave, integrity warnings) | 18 |
+| Staff (definitions, roles, validation, retirement, round trip, contracts, world rules for unique roles / two jobs / dangling refs, old snapshots without staff) | 18 |
+| Save system (round trip, slot-name safety, backups, checksum/truncation/garbage detection, interrupted-save and crash recovery, version rejection, migrations, listing, delete, autosave, integrity warnings, staff persistence) | 19 |
 | FcIdGenerator (sequence, independence, save round-trip) | 3 |
 | FcDate (validity, leap years, ISO round trip, age math) | 4 |
 | Attribute system (shipped JSON valid, catalog errors, set validation, clamping, save compatibility, adding attributes) | 7 |
@@ -51,7 +52,7 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 
 Shared sample builders for tests live in `tests/support/test_data.gd` (`FcTestData`).
 
-Last verified: 81 passed, 0 failed (Godot 4.7.2).
+Last verified: 100 passed, 0 failed (Godot 4.7.2).
 
 Tests that touch disk use `user://test_saves` and clean up in `after_each()`. Inspection demos: `./tools/inspect_data.ps1`, `./tools/inspect_saves.ps1`. The runner was also verified to report failures (exit code 1).
 

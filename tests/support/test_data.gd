@@ -18,6 +18,27 @@ static func player(id: int, definitions: FcDefinitionSet) -> FcPlayer:
 	return p
 
 
+static func staff(id: int, definitions: FcDefinitionSet, role: int = FcStaffRole.Id.HEAD_COACH) -> FcStaffMember:
+	var s := FcStaffMember.new(id, definitions)
+	s.identity.first_name = "Staff"
+	s.identity.last_name = "Member%d" % id
+	s.identity.country = "Testland"
+	s.identity.birth_date = FcDate.new(1975, 3, 9)
+	s.primary_role = role
+	s.experience_years = 12
+	return s
+
+
+static func staff_contract(id: int, staff_id: int, team_id: int, role: int = FcStaffRole.Id.HEAD_COACH) -> FcStaffContract:
+	var c := FcStaffContract.new(id)
+	c.staff_id = staff_id
+	c.team_id = team_id
+	c.role = role
+	c.years.append(FcContractYear.new(2026, 800000))
+	c.years.append(FcContractYear.new(2027, 850000))
+	return c
+
+
 static func city(id: int) -> FcCity:
 	var c := FcCity.new(id)
 	c.name = "Testville"
@@ -70,4 +91,9 @@ static func world() -> FcWorld:
 		w.players.add(p)
 		t.roster.add(p.id)
 		w.contracts.add(contract(w.ids.next_id(FcWorld.KIND_CONTRACT), p.id, t.id))
+	# A general manager and a head coach employed by the team.
+	for role in [FcStaffRole.Id.GENERAL_MANAGER, FcStaffRole.Id.HEAD_COACH]:
+		var s := staff(w.ids.next_id(FcWorld.KIND_STAFF), d, role)
+		w.staff.add(s)
+		w.staff_contracts.add(staff_contract(w.ids.next_id(FcWorld.KIND_STAFF_CONTRACT), s.id, t.id, role))
 	return w
