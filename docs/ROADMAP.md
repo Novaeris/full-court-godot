@@ -20,12 +20,14 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 - League rules: equal-division structure limits (4-64 teams), season schedule rules with fair home/away matchup planner, playoff formats, soft cap with hard limit (plus hard cap and no cap presets), team naming options, sensitive places (198 tests total)
 - 80-game standard season (even season lengths for every size) and extra salary rules: tax sharing, repeater tax, restriction line, rookie scale, cornerstone extension, cap holds, sign-and-trade limits, no-trade clauses (218 tests total)
 
+- Basketball simulation v1: possession engine, rotations, fatigue, coach effects, box scores and advanced stats, calibrated stress tool (245 tests total)
+
 ## Current
 - Awaiting founder direction on the next system.
 
 ## Next (proposed order, driven by dependencies)
 1. (done) Staff entities. 2. (done) Save system. 3. (done) Procedural generation of the league.
-   League structure and league rules are done. Next candidates: the basketball simulation engine (recommended), then the calendar/standings/playoff engine, then free agency / trades / draft using the cap rules.
+   League structure, league rules and simulation v1 are done. Next: the calendar / standings / playoff engine (uses the matchup planner, playoff rules and the simulator), then season progression (aging, development, retirement), then free agency / trades / draft using the cap rules, then injuries and deeper simulation (matchups, timeouts, end-game fouling).
 4. **Basketball engine v1**: possession simulation, box scores, stress-test tool for plausibility.
 5. **League operations**: schedule, standings, playoffs, season progression.
 6. **Basic UI shell**: main menu, save selection, standings, box score viewer (manual testing begins).

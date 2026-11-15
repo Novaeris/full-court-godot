@@ -42,6 +42,8 @@ Original cities, teams, branding, arenas, conferences, rules, players, coaches, 
 - A typical generated team: 15 players (stars rated in the high 70s, bench in the 40s), average age about 26-27, payroll roughly $65M-$195M, and 10 staff.
 
 ## Simulation principles
+Implemented in v1: possession-based games where attributes (via composite ratings) decide every shot, turnover, foul and rebound; tendencies and coach style shape shot selection and pace; fatigue, foul trouble, close games and blowouts drive substitutions; box scores with advanced stats. A league plays like a modern professional league (about 114 points and 98 possessions per team, 35% threes, home court worth 2-3 points, best teams winning about 70%). Not yet: injuries, timeouts, end-game fouling, individual matchups.
+
 - Attributes (offense, defense, physical, mental) must change outcomes; no decorative stats.
 - Possession-based engine accounting for tendencies, roles, tactics, matchups, fatigue, injuries, home court, pace, variance.
 - Outputs: scores, box scores, advanced stats, standings, leaders, careers, records.

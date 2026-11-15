@@ -100,6 +100,18 @@ Deferred. Condition from founder: keep a clean persistence abstraction. Implemen
 - IP check on "supermax" (research done 2026-11-15): "supermax" is a media/fan nickname; the official term in the NBA's agreement is "Designated Veteran Player" and no trademark registration for "supermax" was found in the search. Game rules and mechanics are not protected by copyright (only creative expression such as names, art and text), and a salary cap is a labor/contract system, not IP. We nonetheless use our own name, "cornerstone extension", and avoid league-branded terms ("Bird rights", "Designated Veteran/Rookie", "apron", league names, trophy names). "Mid-level exception", "luxury tax", "rookie scale" and "sign-and-trade" are generic terms used across sports and contexts, so they stay. This is research, not legal advice: have a lawyer review names, terms and trademarks before a commercial release.
 - Not built (need systems that do not exist yet): applying these rules in free agency, trades and the draft; accolade tracking for the cornerstone criterion; tenure tracking; tax payments in the finance system.
 
+## D-021 Basketball simulation v1 (2026-11-15)
+Built on the founder's instruction to continue; the following product choices were made on the founder's behalf and are listed for review. All are data in `data/simulation/*.json` or small code switches.
+1. **Possession-by-possession simulation** (not play-by-play animation, not a score-from-rating formula). Gives real box scores, minutes, fouls, rotations and an interpretable "why". Cost: ~17 ms per game. Alternative rejected: a single-formula score generator (fast but no box scores or tactics).
+2. **Ratings drive everything.** Attributes -> composite ratings -> probabilities, so rebalancing is a JSON edit. Individual matchups are NOT modeled (defense = lineup averages) to keep the first version tractable.
+3. **Coach philosophy matters** (pace, threes, aggression, ball movement, game management). Coaches are therefore worth hiring in Owner Mode.
+4. **Realism targets**: league averages in the ranges of a modern professional league (about 114 points, 98 possessions, 35% of shots from three, 22 free throw attempts), home court worth about +2 to +3 points, stronger teams winning about 70% and weaker about 25-30%.
+5. **Game length**: 4 x 12 minutes, 5-minute overtimes (tuning values; will move to league rules).
+6. **Variance**: tuned to the real spread of results (see ARCHITECTURE "Variance control"). More randomness (upsets) or less (predictable) is one number (`luck_regression`, `form_sd`).
+7. **Stars**: usage grows with the cube of scoring ability, so a great scorer takes a large share (individual 60+ point nights occur about once per 1,500 games). Change `usage_exponent` to flatten or sharpen this.
+- Known tuning items: the best-vs-worst gap and blowout rate (16% of games decided by 25+) are slightly higher than real leagues; deep bench minutes and garbage time are simple; free-throw rate and fouls sit near the top of the realistic range.
+- A bug found and fixed while building the stress tool: an "equal teams" test that reused one team object for both sides silently corrupted shared state. Teams must be separate `FcGameTeam` objects (tests now guard this by building two).
+
 ## D-013 Floats in saved data; runner robustness (2026-11-15)
 - Found by a test: JSON float round trips lose last bits, so a saved-and-reloaded world differed from the original. Rule: saved floats are quantized to 3 decimals via `FcChecks.quantize` in property setters; prefer integers. Documented in ARCHITECTURE rule 7.
 - Found while testing: a test file with a syntax error made the test runner hang forever. The runner now reports such files as failures.

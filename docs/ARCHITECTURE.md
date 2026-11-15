@@ -12,7 +12,7 @@ UI (scenes, screens, widgets)                      (planned)
 Game Modes (Owner, Dynasty: permissions, flows)    (planned)
 League & Business Systems (schedule, standings,    (planned)
   draft, free agency, trades, finances, cap rules)
-Basketball Simulation (possessions, box scores)    (planned)
+Basketball Simulation (src/sim)                    IMPLEMENTED (v1)
 Data Model (src/data): players, teams, contracts,  IMPLEMENTED
   attributes, world container, repositories
 Procedural generation (src/gen, data/generation)    IMPLEMENTED
@@ -131,8 +131,22 @@ FcWorldGenerator     seed -> complete FcWorld; new_game_state(seed, mode, team i
 Game systems use `FcRepository` (get, has, add, update, remove, ids, all, count) and never a specific storage engine. `FcMemoryRepository` is the only implementation today. SQLite or another store can later be added as another `FcRepository` implementation. The save system (planned) will wrap `FcWorld.to_dict()` with slots, metadata, versioning, atomic writes and migrations.
 Known limit: `team_of_player()` and `active_contract_of()` scan linearly; indexes will be added when profiling justifies them.
 
-## Simulation architecture (planned)
-Pure functions of (state, tactics, rng) → events/stats, no scene tree access. Possession-based, attribute-driven. Stress tools simulate thousands of games with fixed seeds.
+## Simulation (`src/sim/`, balance in `data/simulation/`)
+```
+FcPlayerRatings    28 attributes -> composite ratings (three, mid, finishing, playmaking, perimeter_d, ...) + overall; recipes in ratings.json
+FcGameTeam         players (FcSimPlayer, best first) + coach style/skills; built from the world with from_world()
+FcSimPlayer        per-game working state: composites, tendencies, energy, fouls, hot/cold form, stats line
+FcGameSimulator    simulate(home, away, rng) -> FcBoxScore, possession by possession; all numbers from tuning.json
+FcBoxScore         scores by period, player lines, team totals, advanced stats (pace, ORtg/DRtg, eFG, TS, rates); to/from dict
+FcPlayerGameStats  one player's box score line
+```
+- **Headless and pure**: no scene tree, no UI, never changes the world (tested). Same teams + same `FcRng` = identical game.
+- **A possession**: (1) non-shooting foul, with free throws in the bonus; (2) turnover vs steal pressure; (3) shooter chosen by scoring ability and usage, shot type (three / mid / rim) from his tendencies and the coach's three-point emphasis; (4) block, shooting foul (and-one), make probability from shooter skill, lineup defense, assisted or not, fatigue, home court, coach skills, personal hot/cold form and a mean-reversion term (below); (5) miss -> rebound contest, offensive rebound keeps the ball.
+- **Rotations**: starters = best five with a guard and a big man; subs one per dead ball for fatigue, foul trouble (4 early / 5 late / 6 out), close finishes (stars stay in, better with a high game-management coach) and blowouts (starters rest). Energy drains with court time and stamina, recovers on the bench and between periods.
+- **Coach effects**: pace preference (shared game speed), three-point emphasis (shot mix), defensive aggression (turnovers and fouls), ball movement (assists), offensive/defensive strategy skills (small efficiency edge), game management (substitution timing).
+- **Variance control**: independent shot luck alone gave a 16-point spread in final margins (real basketball: 12-14). `luck_regression` makes a team that is shooting above its odds cool off slightly, which brings the spread to about 13 and reduced blowouts from 28% to 16% of games. Also a shared per-game pace shift (fast or slow game for both teams).
+- **Calibration**: `tools/simulate_games.ps1` plays N games and compares 16 league averages with realistic ranges (points, pace, FG%, 3P%, FT%, FTA, rebounds, assists, turnovers, steals, blocks, fouls, eFG, overtime rate), measures home-court edge with identical teams (`mirror`), and shows how well stronger teams win. Current result: 16 of 16 in range; about 17 ms per game (a 1,230-game season in about 21 s).
+- **Not modeled yet**: injuries, intentional fouling and timeouts, technical fouls, shot clock violations, individual defensive matchups (defense uses lineup averages), player-vs-player chemistry, clutch ratings, the player progression that follows a game.
 
 ## Game mode architecture (planned)
 A mode defines a permission set (which actions the player does directly vs. delegates to AI staff) and which UI screens are available. Both modes call the same core services.

@@ -46,6 +46,7 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 | FcPlayer (validation, positions, retirement, round trip, exact float round trip, sparse/corrupt data) | 11 |
 | FcLeague / conferences / divisions / world integrity with leagues / old snapshots | 8 |
 | League customization (real city data, areas, exact cities, nicknames, sizes 4-64, equal divisions for every valid size, geographic conferences and divisions, nationality mix, validation messages, save round trip) | 22 |
+| Simulation (ratings recipes, box-score arithmetic and plus-minus, determinism, plausibility of 16 league averages, overtime, ratings/shooting/defense/rebounding effects, home court, coach pace and three-point style, rotations and minutes, fatigue, blowouts, tuning overrides, no world mutation) | 27 |
 | Extra salary rules and 80-game seasons (tax sharing, repeater tax, restriction line, rookie scale, cornerstone extension, cap holds, sign-and-trade, no-trade, validation, old-save behavior, even seasons for every size) | 20 |
 | League rules (valid sizes and layouts, season arithmetic and suggestions for every size, matchup planner fairness, playoff formats and validation, soft/hard/no-cap signing and trade rules, contract rules, rules in generated leagues, payroll vs hard limit, team naming, nationality share, sensitive places) | 39 |
 | Generation (data validity, names, player realism by position/level/age, tendencies, staff specialization, full league validity, reproducibility, uniqueness, contracts/payroll, free agents, custom configs, save round trip) | 27 |
@@ -57,11 +58,13 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 
 Shared sample builders for tests live in `tests/support/test_data.gd` (`FcTestData`).
 
-Last verified: 218 passed, 0 failed (Godot 4.7.2).
+Last verified: 245 passed, 0 failed (Godot 4.7.2).
 
-Tests that touch disk use `user://test_saves` and clean up in `after_each()`. Inspection tools: `./tools/inspect_data.ps1`, `./tools/inspect_saves.ps1`, `./tools/generate_league.ps1 [option=value ...]` (e.g. `areas=europe teams=16 conferences=2 divisions=2`). The runner was also verified to report failures (exit code 1).
+Tests that touch disk use `user://test_saves` and clean up in `after_each()`. Inspection tools: `./tools/inspect_data.ps1`, `./tools/inspect_saves.ps1`, `./tools/simulate_games.ps1 [games=1000] [seed=2026] [box] [mirror]` (stress test: league averages vs realistic ranges, one full box score, home-court check), `./tools/generate_league.ps1 [option=value ...]` (e.g. `areas=europe teams=16 conferences=2 divisions=2`). The runner was also verified to report failures (exit code 1).
 
 ## Known issues / limits
+- Runtime script errors in a TOOL script (not the test runner) can leave Godot running forever; use `timeout` when running tools from a shell.
+- Simulation tests run hundreds of games (about 25 s of the suite).
 - Runner discovers methods by name only. A test file with a syntax error is reported as a FAIL (an earlier version hung forever instead; fixed).
 - GDScript gotcha: `var x := <untyped value>` is a parse error in this project (warnings are errors). Annotate the type: `var x: String = ...`.
 - No stress-test tooling yet (planned with the simulation engine).

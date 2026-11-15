@@ -1,0 +1,25 @@
+{
+	"schema": 1,
+	"note": "How the 28 player attributes combine into the ratings the game simulation uses. Weights in each group are normalized, so only their ratios matter. Edit to rebalance; no code changes needed.",
+	"composites": {
+		"three": {"three_point": 0.8, "shot_selection": 0.1, "consistency": 0.1},
+		"mid": {"mid_range": 0.8, "shot_selection": 0.1, "consistency": 0.1},
+		"finishing": {"close_finishing": 0.45, "layups": 0.3, "dunking": 0.1, "strength": 0.05, "vertical": 0.1},
+		"free_throw": {"free_throw": 0.9, "consistency": 0.1},
+		"ball_security": {"ball_handling": 0.5, "decision_making": 0.25, "basketball_iq": 0.15, "passing": 0.1},
+		"playmaking": {"passing": 0.5, "ball_handling": 0.2, "basketball_iq": 0.15, "decision_making": 0.15},
+		"creation": {"ball_handling": 0.3, "speed": 0.1, "agility": 0.15, "close_finishing": 0.1, "mid_range": 0.15, "three_point": 0.1, "offensive_awareness": 0.1},
+		"perimeter_d": {"perimeter_defense": 0.6, "agility": 0.15, "speed": 0.1, "defensive_awareness": 0.15},
+		"interior_d": {"interior_defense": 0.55, "strength": 0.15, "vertical": 0.1, "defensive_awareness": 0.2},
+		"steal": {"steals": 0.6, "speed": 0.15, "defensive_awareness": 0.15, "agility": 0.1},
+		"block": {"blocks": 0.65, "vertical": 0.2, "interior_defense": 0.15},
+		"rebound": {"rebounding": 0.7, "strength": 0.1, "vertical": 0.1, "basketball_iq": 0.1}
+	},
+	"overall": {
+		"three_point": 6, "mid_range": 4, "free_throw": 3, "close_finishing": 6, "layups": 5, "dunking": 3,
+		"ball_handling": 6, "passing": 6, "offensive_awareness": 4, "shot_selection": 3,
+		"perimeter_defense": 7, "interior_defense": 7, "steals": 3, "blocks": 3, "defensive_awareness": 5, "rebounding": 5,
+		"speed": 4, "strength": 3, "agility": 3, "vertical": 3, "stamina": 3, "durability": 1,
+		"basketball_iq": 5, "decision_making": 3, "consistency": 3, "leadership": 1, "work_ethic": 1, "competitive_mentality": 2
+	}
+}
