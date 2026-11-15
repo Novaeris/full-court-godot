@@ -45,7 +45,8 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 | Attribute system (shipped JSON valid, catalog errors, set validation, clamping, save compatibility, adding attributes) | 7 |
 | FcPlayer (validation, positions, retirement, round trip, exact float round trip, sparse/corrupt data) | 11 |
 | FcLeague / conferences / divisions / world integrity with leagues / old snapshots | 8 |
-| League customization (real city data, areas, exact cities, nicknames, sizes 2-100, even structure, geographic conferences and divisions, nationality mix, validation messages, save round trip) | 22 |
+| League customization (real city data, areas, exact cities, nicknames, sizes 4-64, equal divisions for every valid size, geographic conferences and divisions, nationality mix, validation messages, save round trip) | 22 |
+| League rules (valid sizes and layouts, season arithmetic and suggestions for every size, matchup planner fairness, playoff formats and validation, soft/hard/no-cap signing and trade rules, contract rules, rules in generated leagues, payroll vs hard limit, team naming, nationality share, sensitive places) | 39 |
 | Generation (data validity, names, player realism by position/level/age, tendencies, staff specialization, full league validity, reproducibility, uniqueness, contracts/payroll, free agents, custom configs, save round trip) | 27 |
 | FcTeam, FcRoster, FcCity, FcArena | 8 |
 | FcContract (cap hit, guarantees, options, validation, round trip) | 7 |
@@ -55,7 +56,7 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 
 Shared sample builders for tests live in `tests/support/test_data.gd` (`FcTestData`).
 
-Last verified: 159 passed, 0 failed (Godot 4.7.2).
+Last verified: 198 passed, 0 failed (Godot 4.7.2).
 
 Tests that touch disk use `user://test_saves` and clean up in `after_each()`. Inspection tools: `./tools/inspect_data.ps1`, `./tools/inspect_saves.ps1`, `./tools/generate_league.ps1 [option=value ...]` (e.g. `areas=europe teams=16 conferences=2 divisions=2`). The runner was also verified to report failures (exit code 1).
 

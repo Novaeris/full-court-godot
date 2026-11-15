@@ -51,7 +51,15 @@ team/        FcTeam              composed of:
                FcRoster          list of player ids (the changing part)
              FcCity              market: population, economy
              FcArena             capacity, year built, city
-league/      FcLeague            name + conferences; team membership queries; add_team / remove_team
+league/      FcLeague            name + conferences; team membership queries; add_team / remove_team; make_even()
+             FcLeagueStructure   which team counts / layouts are valid at creation (4-64 teams, equal divisions of 3-8)
+             FcLeagueRules       saved rules of one league (by league_id): season, playoffs, cap, roster limits
+               FcSeasonRules     games per division / conference / other-conference opponent; suggest(); advice()
+               FcPlayoffRules    qualification, bracket, team count, series lengths; round math; describe()
+               FcCapRules        soft / hard / none; tax; hard limit; exceptions; check_signing, check_trade, validate_contract
+               FcRuleCheck       allowed? + reason
+src/league/  FcMatchupPlanner    who plays whom how often, with a fair home/away split (computed, not saved)
+             FcMatchupPlan       result: pairs, games and home/away per team
                FcConference      name + divisions
                FcDivision        name + team ids
 contract/    FcContract          player_id, team_id, status, signing date, composed of:
@@ -82,6 +90,14 @@ Attribute definitions live in `data/definitions/*.json`: 28 basketball attribute
 
 Permanent vs changing team information: id + founded year are permanent; identity/branding/city/arena/owner change rarely (rebrand, relocation); roster changes constantly; per-season data (records, finances) will be season-keyed records.
 
+## League rules (`FcLeagueRules`, `data/rules/cap_presets.json`)
+- Rules are saved data keyed by `league_id` (`FcWorld.rules`), separate from structure, so leagues can differ. `FcWorld.validate(season)` checks every active contract against the cap rules (min/max salary, length, raises), roster size against the roster limit, and (when a season is given) every team payroll against the hard limit.
+- Schedule rules: games per opponent by distance. `FcMatchupPlanner` turns structure + rules into pair counts and gives each odd-length series a host by walking closed trails through the graph of odd pairs (Euler-style orientation), so every team's home and away games differ by at most 1. This is the proof that rules like 3/2/1 work; it is not a calendar. Building dated schedules is a later system (back-to-backs, travel, rest days).
+- Season rules are validated against the league: 10-120 games per team; recommended games-per-opponent ranges 2-3 / 1-2 / 1-2, allowed 1-4 / 1-3 / 1-3 (a one-conference league has 0 other-conference games). `FcSeasonRules.suggest(league, target)` picks values near a target season length, preferring the recommended ranges.
+- Playoffs: `qualification` (division_leaders | seeding), `bracket` (conference | league), `team_count`, `series_lengths` (1/3/5/7 per round). Round count = ceil(log2(bracket size)) (+ rounds among conference champions for conference brackets). Validated: even split across conferences, enough spots for every division leader, series count equals round count.
+- Salary: `FcCapRules` is pure rule logic. Tiers: minimum payroll < soft cap < luxury tax line < hard limit. The free-agency and trade systems (not built) will call `check_signing` / `check_trade`; they return an allowed flag plus a reason to show the player. Presets: `soft_cap_with_hard_limit` (default), `hard_cap`, `no_cap`.
+- Creation limits (`FcLeagueStructure`): 4-64 teams at creation; saves may grow to 100 (expansion adds teams and must rebalance divisions; uneven structures are legal inside a save, creation requires equal divisions).
+
 ## Procedural generation (`src/gen/`, content in `data/generation/*.json`)
 ```
 FcGenerationData     loads names.json, world.json, position_profiles.json, staff_profiles.json, config.json; validate()
@@ -94,8 +110,8 @@ FcWorldGenerator     seed -> complete FcWorld; new_game_state(seed, mode, team i
 ```
 - Reproducible: same seed + config = identical world. Each stage (cities, every team, free agents) uses its own forked `FcRng` stream, so changing one stage does not reshuffle the rest.
 - Player realism: attribute = overall level + position offset + a shared latent per category (skill / athleticism / IQ) + individual noise; height and weight follow the position profile; tendencies blend skill with position habits; potential grows with years left before the player's peak age. Young players have lower current level, old players decline (`age_adjusted_level`).
-- Places: 124 real cities in 54 countries and 6 areas (`data/generation/world.json`); teams are original franchises (100 generated nicknames, 16 color schemes, generated arenas). Cities are chosen by area + size/weighted-random, or from an exact list. Conferences/divisions are built geographically (west-east, then south-north) with sizes differing by at most 1.
-- Contents per team: 15 players with mid-life contracts, a GM, head coach, 3 assistants, 3 scouts, medical and business staff with contracts; plus a free-agent pool. Players come from the team's own country 55% of the time, otherwise by country talent weight; staff 80% local.
+- Places: 154 real cities in 83 countries and 7 areas (`data/generation/world.json`); teams are original franchises (100 generated nicknames, 16 color schemes, generated arenas). Cities are chosen by area + size/weighted-random, or from an exact list. Conferences/divisions are built geographically (west-east, then south-north) and are always equal in size at creation (`FcLeagueStructure`).
+- Contents per team: 15 players with mid-life contracts, a GM, head coach, 3 assistants, 3 scouts, medical and business staff with contracts; plus a free-agent pool. Players come from the team's own country 65% of the time, otherwise by country talent weight; staff 80% local. Payrolls are scaled to fit the league's salary rules (around the cap, never above the hard limit).
 - NOT generated yet (belongs to later systems): conferences/divisions/schedule, draft prospects, historical careers and league history, owners.
 - All numbers (level ranges, salary curve, profile offsets) are first drafts to be tuned against the simulation.
 

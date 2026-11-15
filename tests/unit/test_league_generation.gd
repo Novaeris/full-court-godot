@@ -16,6 +16,14 @@ func _config() -> FcGenerationConfig:
 	return FcGenerationConfig.load_default(data)
 
 
+## Sets conferences/divisions to the most natural valid layout for the team count.
+func _fit(cfg: FcGenerationConfig) -> FcGenerationConfig:
+	var s := FcLeagueStructure.suggest(cfg.effective_team_count())
+	cfg.conference_count = s["conferences"]
+	cfg.divisions_per_conference = s["divisions_per_conference"]
+	return cfg
+
+
 func _generate(cfg: FcGenerationConfig, seed_value: int = SEED) -> FcWorld:
 	return FcWorldGenerator.new(data, defs, cfg).generate(seed_value)
 
@@ -81,6 +89,7 @@ func test_mixed_areas_and_any_area() -> void:
 	var cfg := _config()
 	cfg.areas = ["north_america", "europe"] as Array[String]
 	cfg.team_count = 40
+	_fit(cfg)
 	var w := _generate(cfg)
 	assert_eq(w.validate(), [] as Array[String])
 	assert_eq(_areas_of(w).size(), 2)
@@ -88,6 +97,7 @@ func test_mixed_areas_and_any_area() -> void:
 	anywhere.areas = [] as Array[String]
 	anywhere.team_count = 60
 	anywhere.selection_mode = "largest"
+	_fit(anywhere)
 	var w2 := _generate(anywhere)
 	assert_eq(w2.validate(), [] as Array[String])
 	assert_true(_areas_of(w2).size() >= 4, "the 60 biggest cities span many areas")
@@ -97,6 +107,7 @@ func test_largest_mode_picks_biggest_cities_and_is_seed_independent() -> void:
 	var cfg := _config()
 	cfg.selection_mode = "largest"
 	cfg.team_count = 12
+	_fit(cfg)
 	var a := _generate(cfg, 1)
 	var b := _generate(cfg, 2)
 	var names_a: Array = a.cities.all().map(func(c): return c.name)
@@ -111,7 +122,7 @@ func test_largest_mode_picks_biggest_cities_and_is_seed_independent() -> void:
 func test_exact_city_list_in_order() -> void:
 	var cfg := _config()
 	cfg.city_keys = ["london", "paris", "madrid", "tokyo", "sydney", "lagos", "sao_paulo", "new_york"] as Array[String]
-	cfg.conference_count = 2
+	cfg.conference_count = 1
 	cfg.divisions_per_conference = 2
 	var w := _generate(cfg)
 	assert_eq(w.validate(), [] as Array[String])
@@ -155,7 +166,7 @@ func test_accented_and_multiword_city_abbreviations_are_valid() -> void:
 	var cfg := _config()
 	cfg.city_keys = ["sao_paulo", "bogota", "medellin", "cordoba", "brasilia", "new_york", "new_orleans", "los_angeles", "las_vegas", "san_diego", "san_antonio", "san_francisco"] as Array[String]
 	cfg.conference_count = 2
-	cfg.divisions_per_conference = 3
+	cfg.divisions_per_conference = 2
 	var w := _generate(cfg)
 	assert_eq(w.validate(), [] as Array[String])
 	var seen := {}
@@ -168,18 +179,12 @@ func test_accented_and_multiword_city_abbreviations_are_valid() -> void:
 # --- sizes -----------------------------------------------------------------
 
 func test_many_league_sizes_are_valid() -> void:
-	for n in [2, 3, 4, 8, 12, 16, 24, 30, 36, 48]:
+	for n in [4, 5, 8, 12, 16, 24, 30, 36, 48, 60, 64]:
 		var cfg := _config()
 		cfg.areas = [] as Array[String]
 		cfg.team_count = n
 		cfg.free_agent_count = 10
-		var structure := [1, 1]
-		if n >= 24:
-			structure = [2, 3]
-		elif n >= 8:
-			structure = [2, 2]
-		cfg.conference_count = structure[0]
-		cfg.divisions_per_conference = structure[1]
+		_fit(cfg)
 		assert_eq(cfg.validate(data), [] as Array[String], "config for %d teams" % n)
 		var w := _generate(cfg)
 		assert_eq(w.validate(), [] as Array[String], "world for %d teams" % n)
@@ -190,14 +195,14 @@ func test_many_league_sizes_are_valid() -> void:
 func test_largest_possible_league() -> void:
 	var cfg := _config()
 	cfg.areas = [] as Array[String]
-	cfg.team_count = 100
+	cfg.team_count = 64
 	cfg.conference_count = 4
-	cfg.divisions_per_conference = 5
+	cfg.divisions_per_conference = 4
 	cfg.free_agent_count = 0
 	assert_eq(cfg.validate(data), [] as Array[String])
 	var w := _generate(cfg)
 	assert_eq(w.validate(), [] as Array[String])
-	assert_eq(w.teams.count(), 100)
+	assert_eq(w.teams.count(), 64)
 
 
 # --- structure -------------------------------------------------------------
@@ -222,18 +227,21 @@ func test_structure_is_even_and_complete() -> void:
 		assert_true(league.contains_team(t.id))
 
 
-func test_uneven_sizes_differ_by_at_most_one() -> void:
-	var cfg := _config()
-	cfg.team_count = 31
-	cfg.conference_count = 3
-	cfg.divisions_per_conference = 2
-	var w := _generate(cfg)
-	assert_eq(w.validate(), [] as Array[String])
-	var sizes: Array = []
-	for d in w.leagues.get_by_id(1).all_divisions():
-		sizes.append(d.team_ids.size())
-	assert_true(sizes.max() - sizes.min() <= 1, "division sizes %s" % str(sizes))
-	assert_eq(sizes.reduce(func(a, b): return a + b), 31)
+func test_all_divisions_are_equal_for_every_valid_size() -> void:
+	for n in FcLeagueStructure.valid_team_counts():
+		var cfg := _config()
+		cfg.areas = [] as Array[String]
+		cfg.team_count = n
+		cfg.free_agent_count = 0
+		cfg.roster_size = 13
+		cfg.assistant_coaches = 0
+		cfg.scouts = 0
+		_fit(cfg)
+		var w := _generate(cfg)
+		var sizes := {}
+		for d in w.leagues.get_by_id(1).all_divisions():
+			sizes[d.team_ids.size()] = true
+		assert_eq(sizes.size(), 1, "%d teams: equal divisions" % n)
 
 
 func test_conferences_are_geographic() -> void:
@@ -241,7 +249,7 @@ func test_conferences_are_geographic() -> void:
 	cfg.areas = ["north_america", "europe"] as Array[String]
 	cfg.city_keys = ["new_york", "los_angeles", "chicago", "toronto", "london", "paris", "madrid", "berlin"] as Array[String]
 	cfg.conference_count = 2
-	cfg.divisions_per_conference = 2
+	cfg.divisions_per_conference = 1
 	var w := _generate(cfg)
 	var league: FcLeague = w.leagues.get_by_id(1)
 	var western: Array = []
@@ -277,6 +285,7 @@ func test_league_name_is_configurable() -> void:
 	var cfg := _config()
 	cfg.league_name = "Atlantic Basketball Association"
 	cfg.team_count = 12
+	_fit(cfg)
 	assert_eq(_generate(cfg).leagues.get_by_id(1).name, "Atlantic Basketball Association")
 
 
@@ -304,6 +313,7 @@ func test_home_share_zero_gives_global_mix() -> void:
 	var cfg := _config()
 	cfg.home_country_share = 0.0
 	cfg.team_count = 12
+	_fit(cfg)
 	var w := _generate(cfg)
 	var countries := {}
 	for p in w.players.all():
@@ -332,11 +342,11 @@ func test_config_validation_messages() -> void:
 
 	cfg = _config()
 	cfg.team_count = 10
-	assert_true(_errors_contain(cfg.validate(data), "cannot fill"), "10 teams cannot fill 2x3 divisions of 2+")
+	assert_true(_errors_contain(cfg.validate(data), "cannot be split into 2 conferences x 3 divisions"), "10 teams cannot form 2x3 even divisions")
 
 	cfg = _config()
 	cfg.team_count = 1
-	assert_true(_errors_contain(cfg.validate(data), "at least 2 teams"))
+	assert_true(_errors_contain(cfg.validate(data), "at least 4 teams"))
 
 	cfg = _config()
 	cfg.conference_count = 0
@@ -351,8 +361,8 @@ func test_config_validation_messages() -> void:
 
 	cfg = _config()
 	cfg.areas = [] as Array[String]
-	cfg.team_count = 101
-	assert_true(_errors_contain(cfg.validate(data), "nicknames"))
+	cfg.team_count = 65
+	assert_true(_errors_contain(cfg.validate(data), "at most 64 teams"))
 
 
 func test_effective_team_count() -> void:

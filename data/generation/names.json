@@ -275,7 +275,7 @@
    }
   },
   "turkey": {
-   "name": "Turkey",
+   "name": "Türkiye",
    "area": "europe",
    "talent_weight": 4,
    "pools": {
@@ -368,7 +368,7 @@
   },
   "uae": {
    "name": "United Arab Emirates",
-   "area": "asia",
+   "area": "middle_east",
    "talent_weight": 0.5,
    "pools": {
     "middle_eastern": 1,
@@ -456,6 +456,241 @@
    "talent_weight": 1,
    "pools": {
     "south_european": 1,
+    "west_african": 1
+   }
+  },
+  "russia": {
+   "name": "Russia",
+   "area": "europe",
+   "talent_weight": 3,
+   "pools": {
+    "east_european": 1
+   }
+  },
+  "ukraine": {
+   "name": "Ukraine",
+   "area": "europe",
+   "talent_weight": 2.5,
+   "pools": {
+    "east_european": 1
+   }
+  },
+  "belarus": {
+   "name": "Belarus",
+   "area": "europe",
+   "talent_weight": 1,
+   "pools": {
+    "east_european": 1
+   }
+  },
+  "georgia": {
+   "name": "Georgia",
+   "area": "europe",
+   "talent_weight": 1.5,
+   "pools": {
+    "caucasus": 1
+   }
+  },
+  "bosnia": {
+   "name": "Bosnia and Herzegovina",
+   "area": "europe",
+   "talent_weight": 1.5,
+   "pools": {
+    "east_european": 1
+   }
+  },
+  "montenegro": {
+   "name": "Montenegro",
+   "area": "europe",
+   "talent_weight": 2,
+   "pools": {
+    "east_european": 1
+   }
+  },
+  "north_macedonia": {
+   "name": "North Macedonia",
+   "area": "europe",
+   "talent_weight": 1,
+   "pools": {
+    "east_european": 1
+   }
+  },
+  "kosovo": {
+   "name": "Kosovo",
+   "area": "europe",
+   "talent_weight": 0.5,
+   "pools": {
+    "east_european": 1
+   }
+  },
+  "slovenia": {
+   "name": "Slovenia",
+   "area": "europe",
+   "talent_weight": 2,
+   "pools": {
+    "east_european": 1
+   }
+  },
+  "romania": {
+   "name": "Romania",
+   "area": "europe",
+   "talent_weight": 1,
+   "pools": {
+    "east_european": 1
+   }
+  },
+  "bulgaria": {
+   "name": "Bulgaria",
+   "area": "europe",
+   "talent_weight": 1,
+   "pools": {
+    "east_european": 1
+   }
+  },
+  "slovakia": {
+   "name": "Slovakia",
+   "area": "europe",
+   "talent_weight": 0.5,
+   "pools": {
+    "east_european": 1
+   }
+  },
+  "estonia": {
+   "name": "Estonia",
+   "area": "europe",
+   "talent_weight": 0.5,
+   "pools": {
+    "nordic": 1,
+    "east_european": 1
+   }
+  },
+  "israel": {
+   "name": "Israel",
+   "area": "middle_east",
+   "talent_weight": 2,
+   "pools": {
+    "hebrew": 3,
+    "east_european": 1
+   }
+  },
+  "iran": {
+   "name": "Iran",
+   "area": "middle_east",
+   "talent_weight": 1.5,
+   "pools": {
+    "persian": 1
+   }
+  },
+  "saudi_arabia": {
+   "name": "Saudi Arabia",
+   "area": "middle_east",
+   "talent_weight": 0.5,
+   "pools": {
+    "middle_eastern": 1
+   }
+  },
+  "qatar": {
+   "name": "Qatar",
+   "area": "middle_east",
+   "talent_weight": 0.5,
+   "pools": {
+    "middle_eastern": 1
+   }
+  },
+  "hong_kong": {
+   "name": "Hong Kong",
+   "area": "asia",
+   "talent_weight": 0.5,
+   "pools": {
+    "east_asian": 1
+   }
+  },
+  "taiwan": {
+   "name": "Taiwan",
+   "area": "asia",
+   "talent_weight": 1,
+   "pools": {
+    "east_asian": 1
+   }
+  },
+  "puerto_rico": {
+   "name": "Puerto Rico",
+   "area": "north_america",
+   "talent_weight": 1.5,
+   "pools": {
+    "hispanic": 1
+   }
+  },
+  "dominican_republic": {
+   "name": "Dominican Republic",
+   "area": "north_america",
+   "talent_weight": 1.5,
+   "pools": {
+    "hispanic": 1
+   }
+  },
+  "cuba": {
+   "name": "Cuba",
+   "area": "north_america",
+   "talent_weight": 1,
+   "pools": {
+    "hispanic": 1
+   }
+  },
+  "panama": {
+   "name": "Panama",
+   "area": "north_america",
+   "talent_weight": 1,
+   "pools": {
+    "hispanic": 1
+   }
+  },
+  "ivory_coast": {
+   "name": "Côte d'Ivoire",
+   "area": "africa",
+   "talent_weight": 1,
+   "pools": {
+    "west_african": 1
+   }
+  },
+  "ethiopia": {
+   "name": "Ethiopia",
+   "area": "africa",
+   "talent_weight": 0.3,
+   "pools": {
+    "east_african": 1
+   }
+  },
+  "tunisia": {
+   "name": "Tunisia",
+   "area": "africa",
+   "talent_weight": 1.5,
+   "pools": {
+    "middle_eastern": 1
+   }
+  },
+  "algeria": {
+   "name": "Algeria",
+   "area": "africa",
+   "talent_weight": 0.5,
+   "pools": {
+    "middle_eastern": 1
+   }
+  },
+  "dr_congo": {
+   "name": "Democratic Republic of the Congo",
+   "area": "africa",
+   "talent_weight": 1.5,
+   "pools": {
+    "west_african": 1,
+    "east_african": 0.5
+   }
+  },
+  "cameroon": {
+   "name": "Cameroon",
+   "area": "africa",
+   "talent_weight": 1.5,
+   "pools": {
     "west_african": 1
    }
   }
@@ -1163,6 +1398,168 @@
     "Sithole",
     "Mahlangu",
     "Tshabalala"
+   ]
+  },
+  "hebrew": {
+   "first": [
+    "Noam",
+    "Itay",
+    "Omer",
+    "Yuval",
+    "Tal",
+    "Eitan",
+    "Ori",
+    "Amit",
+    "Guy",
+    "Roi",
+    "Shai",
+    "Nadav",
+    "Lior",
+    "Eyal",
+    "Gal",
+    "Ido",
+    "Idan",
+    "Yonatan",
+    "Avi",
+    "Doron",
+    "Barak",
+    "Elad",
+    "Nir",
+    "Asaf"
+   ],
+   "last": [
+    "Cohen",
+    "Levi",
+    "Mizrahi",
+    "Peretz",
+    "Biton",
+    "Dahan",
+    "Avraham",
+    "Friedman",
+    "Katz",
+    "Shapiro",
+    "Goldberg",
+    "Azulay",
+    "Malka",
+    "Amar",
+    "Segal",
+    "Hadad",
+    "Ben-David",
+    "Klein",
+    "Weiss",
+    "Stein",
+    "Ohana",
+    "Shalom",
+    "Gabay",
+    "Mizrachi"
+   ]
+  },
+  "persian": {
+   "first": [
+    "Ali",
+    "Reza",
+    "Hossein",
+    "Amir",
+    "Mehdi",
+    "Saeed",
+    "Kaveh",
+    "Arash",
+    "Babak",
+    "Farhad",
+    "Navid",
+    "Omid",
+    "Pouya",
+    "Shahin",
+    "Soroush",
+    "Behnam",
+    "Dariush",
+    "Kourosh",
+    "Majid",
+    "Nima",
+    "Payam",
+    "Ramin",
+    "Sina",
+    "Yasin"
+   ],
+   "last": [
+    "Hosseini",
+    "Karimi",
+    "Ahmadi",
+    "Rahimi",
+    "Mohammadi",
+    "Jafari",
+    "Rezaei",
+    "Moradi",
+    "Hashemi",
+    "Sadeghi",
+    "Kazemi",
+    "Ghorbani",
+    "Mousavi",
+    "Abbasi",
+    "Nazari",
+    "Shirazi",
+    "Tehrani",
+    "Esfahani",
+    "Farahani",
+    "Zand",
+    "Daneshvar",
+    "Mirzaei",
+    "Naderi",
+    "Bagheri"
+   ]
+  },
+  "caucasus": {
+   "first": [
+    "Giorgi",
+    "Nika",
+    "Levan",
+    "Davit",
+    "Irakli",
+    "Zurab",
+    "Tornike",
+    "Luka",
+    "Sandro",
+    "Vakhtang",
+    "Lasha",
+    "Gela",
+    "Mikheil",
+    "Archil",
+    "Beka",
+    "Tamaz",
+    "Otar",
+    "Shota",
+    "Revaz",
+    "Goga",
+    "Temur",
+    "Kakha",
+    "Dato",
+    "Nodar"
+   ],
+   "last": [
+    "Beridze",
+    "Gelashvili",
+    "Kapanadze",
+    "Maisuradze",
+    "Lomidze",
+    "Chkheidze",
+    "Japaridze",
+    "Meladze",
+    "Tsiklauri",
+    "Abashidze",
+    "Gogoladze",
+    "Sharashidze",
+    "Jorbenadze",
+    "Khutsishvili",
+    "Mgeladze",
+    "Papava",
+    "Dolidze",
+    "Tabatadze",
+    "Kiknadze",
+    "Zhvania",
+    "Chikovani",
+    "Barbakadze",
+    "Gvasalia",
+    "Kobakhidze"
    ]
   }
  },

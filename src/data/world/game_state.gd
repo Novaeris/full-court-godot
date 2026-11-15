@@ -43,7 +43,7 @@ func validate() -> Array[String]:
 		errors.append("user team %d does not exist" % user_team_id)
 	if not current_date.is_valid():
 		errors.append("current date is not valid")
-	errors.append_array(world.validate())
+	errors.append_array(world.validate(current_season))
 	return errors
 
 

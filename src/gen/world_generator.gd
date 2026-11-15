@@ -13,8 +13,12 @@ extends RefCounted
 ## Each stage (city choice, each team, free agents) uses its own forked random
 ## stream, so changing one stage does not reshuffle the others.
 ##
-## Call validate() first: generate() assumes a valid config. It does NOT create
-## league rules (season length, playoffs, salary cap) or history.
+## Also creates the league's RULES (schedule, playoffs, salary cap, roster
+## limits) from the config and builds every payroll to fit them: salaries sit
+## inside the minimum/maximum, no team starts above the hard limit.
+##
+## Call validate() first: generate() assumes a valid config. It does NOT
+## create history or a calendar.
 
 const CONFERENCE_NAMES := {
 	1: ["League"],
@@ -125,7 +129,10 @@ func generate(seed_value: int) -> FcWorld:
 		if not custom_names.has(nick):
 			nickname_pool.append(nick)
 	var schemes: Array = _shuffled(root.fork("colors"), _data.world["color_schemes"])
+	var cap := FcCapRules.from_preset(config.cap_preset, config.salary_cap, FcCapRules.load_presets())
 	var used_abbreviations := {}
+	for abbr in config.team_abbreviations.values():
+		used_abbreviations[str(abbr)] = true
 	var used_arena_names := {}
 	var teams: Array[FcTeam] = []
 	var nick_cursor := 0
@@ -145,20 +152,28 @@ func generate(seed_value: int) -> FcWorld:
 			nick_cursor += 1
 		else:
 			team.identity.nickname = "Team %d" % (i + 1)
-		team.identity.abbreviation = _make_abbreviation(city.name, used_abbreviations)
+		if config.team_abbreviations.has(entry["key"]):
+			team.identity.abbreviation = str(config.team_abbreviations[entry["key"]])
+		else:
+			team.identity.abbreviation = _make_abbreviation(city.name, used_abbreviations)
 		team.identity.founded_year = team_rng.range_int(1950, 2015)
 		var scheme: Array = schemes[i % schemes.size()]
 		team.branding.primary_color = scheme[0]
 		team.branding.secondary_color = scheme[1]
 		team.branding.accent_color = scheme[2]
-		team.roster.max_size = maxi(FcRoster.DEFAULT_MAX_SIZE, config.roster_size)
+		team.roster.max_size = config.roster_max
 		world.teams.add(team)
 		teams.append(team)
 		var country: String = entry["country"]
-		_fill_roster(world, team, team_rng.fork("players"), used_names, reference, country)
+		_fill_roster(world, team, team_rng.fork("players"), used_names, reference, country, cap)
 		_hire_staff(world, team, team_rng.fork("staff"), used_names, reference, country)
 
-	world.leagues.add(_build_league(world, teams, entries))
+	var league := _build_league(world, teams, entries)
+	world.leagues.add(league)
+	var league_rules := config.build_rules(league)
+	league_rules.id = world.ids.next_id(FcWorld.KIND_RULES)
+	league_rules.league_id = league.id
+	world.rules.add(league_rules)
 	_add_free_agents(world, root.fork("free_agents"), used_names, reference)
 	return world
 
@@ -292,8 +307,9 @@ func _make_abbreviation(city_name: String, used: Dictionary) -> String:
 
 # --- players ---------------------------------------------------------------
 
-func _fill_roster(world: FcWorld, team: FcTeam, rng: FcRng, used_names: Dictionary, reference: FcDate, team_country: String) -> void:
+func _fill_roster(world: FcWorld, team: FcTeam, rng: FcRng, used_names: Dictionary, reference: FcDate, team_country: String, cap: FcCapRules) -> void:
 	var strength := rng.gaussian(0.0, config.team_strength_sd)
+	var team_contracts: Array[FcContract] = []
 	var positions := _roster_positions(rng, config.roster_size)
 	for slot in config.roster_size:
 		var t := float(slot) / float(maxi(1, config.roster_size - 1))
@@ -311,7 +327,10 @@ func _fill_roster(world: FcWorld, team: FcTeam, rng: FcRng, used_names: Dictiona
 		var player := _players.generate(rng, world.ids.next_id(FcWorld.KIND_PLAYER), spec)
 		world.players.add(player)
 		team.roster.add(player.id)
-		world.contracts.add(_player_contract(world, rng, player.id, team.id, level))
+		var contract := _player_contract(world, rng, player.id, team.id, level, cap)
+		world.contracts.add(contract)
+		team_contracts.append(contract)
+	_normalize_payroll(team_contracts, rng, strength, cap)
 
 
 func _add_free_agents(world: FcWorld, rng: FcRng, used_names: Dictionary, reference: FcDate) -> void:
@@ -337,9 +356,9 @@ func _roster_positions(rng: FcRng, count: int) -> Array[int]:
 
 
 ## Contract already partly served: it started up to (length - 1) seasons ago.
-func _player_contract(world: FcWorld, rng: FcRng, player_id: int, team_id: int, level: float) -> FcContract:
+func _player_contract(world: FcWorld, rng: FcRng, player_id: int, team_id: int, level: float, cap: FcCapRules) -> FcContract:
 	var t := pow(clampf((level - 35.0) / 55.0, 0.0, 1.0), 2.2)
-	var base := lerpf(float(config.min_salary), float(config.max_salary), t)
+	var base := lerpf(float(cap.min_player_salary), float(cap.max_player_salary), t)
 	var total_years := rng.range_int(config.min_contract_years, config.max_contract_years)
 	var elapsed := rng.range_int(0, total_years - 1)
 	var first_season := config.start_season - elapsed
@@ -348,9 +367,41 @@ func _player_contract(world: FcWorld, rng: FcRng, player_id: int, team_id: int, 
 	c.team_id = team_id
 	c.signed_on = FcDate.new(first_season, 7, 1)
 	for i in total_years:
-		var salary := clampi(roundi(base * pow(1.05, i) / 10000.0) * 10000, config.min_salary, config.max_salary)
+		var salary := clampi(roundi(base * pow(1.05, i) / 10000.0) * 10000, cap.min_player_salary, cap.max_player_salary)
 		c.years.append(FcContractYear.new(first_season + i, salary))
 	return c
+
+
+## Scales a team's contracts so its payroll in the start season lands in a
+## believable band around the cap (strong teams spend a bit more) and never
+## above the league's hard limit. Every salary stays inside the league's
+## minimum and maximum. Raises inside a contract are unchanged (all years are
+## scaled by the same factor).
+func _normalize_payroll(contracts: Array[FcContract], rng: FcRng, strength: float, cap: FcCapRules) -> void:
+	var low := maxf(0.86, float(cap.minimum_payroll) / cap.salary_cap + 0.02)
+	var high := 1.28
+	var limit := cap.effective_limit()
+	if limit > 0:
+		high = minf(high, 0.985 * limit / cap.salary_cap)
+	low = minf(low, high - 0.02)
+	# Under a hard cap teams sit a little below the line; otherwise around it.
+	var center := 0.92 if limit == cap.salary_cap else 1.0
+	var ratio := clampf(center + strength * 0.025 + rng.gaussian(0.0, 0.05), low, high)
+	var target := ratio * cap.salary_cap
+	for pass_number in 4:
+		var payroll := 0
+		for c in contracts:
+			payroll += c.salary_for(config.start_season)
+		if payroll <= 0:
+			return
+		var factor := target / payroll
+		if absf(factor - 1.0) < 0.002:
+			break
+		for c in contracts:
+			for y in c.years:
+				var scaled := clampi(roundi(y.salary * factor / 10000.0) * 10000, cap.min_player_salary, cap.max_player_salary)
+				y.salary = scaled
+				y.guaranteed = scaled
 
 
 # --- staff -----------------------------------------------------------------

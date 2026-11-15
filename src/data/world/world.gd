@@ -20,6 +20,7 @@ const KIND_STAFF_CONTRACT := "staff_contract"
 const KIND_LEAGUE := "league"
 const KIND_CONFERENCE := "conference"
 const KIND_DIVISION := "division"
+const KIND_RULES := "league_rules"
 
 var definitions: FcDefinitionSet
 var ids := FcIdGenerator.new()
@@ -31,6 +32,7 @@ var arenas: FcRepository = FcMemoryRepository.new()
 var staff: FcRepository = FcMemoryRepository.new()
 var staff_contracts: FcRepository = FcMemoryRepository.new()
 var leagues: FcRepository = FcMemoryRepository.new()
+var rules: FcRepository = FcMemoryRepository.new()
 
 
 func _init(defs: FcDefinitionSet) -> void:
@@ -61,6 +63,29 @@ func league_of_team(team_id: int) -> FcLeague:
 	return null
 
 
+## The rules of a league, or null.
+func rules_of_league(league_id: int) -> FcLeagueRules:
+	for r in rules.all():
+		if r.league_id == league_id:
+			return r
+	return null
+
+
+## The rules of the league this team plays in, or null.
+func rules_of_team(team_id: int) -> FcLeagueRules:
+	var league := league_of_team(team_id)
+	return rules_of_league(league.id) if league != null else null
+
+
+## Sum of the cap hits of a team's ACTIVE player contracts in a season.
+func payroll_of_team(team_id: int, season: int) -> int:
+	var total := 0
+	for c in contracts.all():
+		if c.team_id == team_id and c.status == FcContract.Status.ACTIVE:
+			total += c.cap_hit_for(season)
+	return total
+
+
 ## The staff member's ACTIVE staff contract (their current job), or null.
 func active_staff_contract_of(staff_id: int) -> FcStaffContract:
 	for c in staff_contracts.all():
@@ -86,7 +111,9 @@ func staff_in_role(team_id: int, role: int) -> FcStaffMember:
 
 
 ## Full integrity check. Returns problems as readable text; empty = healthy.
-func validate() -> Array[String]:
+## Pass `season` (e.g. the current season) to also check team payrolls against
+## the league's hard limit; without it only season-independent rules are checked.
+func validate(season: int = 0) -> Array[String]:
 	var errors: Array[String] = []
 
 	for c in cities.all():
@@ -135,6 +162,34 @@ func validate() -> Array[String]:
 		for t in teams.all():
 			if not team_league.has(t.id):
 				errors.append("team %d is not in any league" % t.id)
+
+	var rules_per_league := {}
+	for r in rules.all():
+		var league: FcLeague = leagues.get_by_id(r.league_id)
+		if league == null:
+			errors.append("rules %d: league %d does not exist" % [r.id, r.league_id])
+			continue
+		for e in r.validate(league):
+			errors.append("rules %d: %s" % [r.id, e])
+		if rules_per_league.has(r.league_id):
+			errors.append("league %d has more than one set of rules" % r.league_id)
+		rules_per_league[r.league_id] = r
+	for c in contracts.all():
+		var team_rules := rules_of_team(c.team_id)
+		if team_rules != null and c.status == FcContract.Status.ACTIVE:
+			for e in team_rules.cap.validate_contract(c):
+				errors.append("contract %d breaks league rules: %s" % [c.id, e])
+	for t in teams.all():
+		var team_rules := rules_of_team(t.id)
+		if team_rules == null:
+			continue
+		if t.roster.size() > team_rules.roster_max:
+			errors.append("team %d has %d players but the league maximum is %d" % [t.id, t.roster.size(), team_rules.roster_max])
+		if season > 0:
+			var payroll := payroll_of_team(t.id, season)
+			var limit := team_rules.cap.effective_limit()
+			if limit > 0 and payroll > limit:
+				errors.append("team %d payroll %d exceeds the league limit %d" % [t.id, payroll, limit])
 
 	for s in staff.all():
 		for e in s.validate():
@@ -192,6 +247,7 @@ func to_dict() -> Dictionary:
 		"staff": _dicts_of(staff),
 		"staff_contracts": _dicts_of(staff_contracts),
 		"leagues": _dicts_of(leagues),
+		"rules": _dicts_of(rules),
 	}
 
 
@@ -217,6 +273,8 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 		_report(w.staff_contracts.add(FcStaffContract.from_dict(d)), "staff contract", errors)
 	for d in data.get("leagues", []):
 		_report(w.leagues.add(FcLeague.from_dict(d)), "league", errors)
+	for d in data.get("rules", []):
+		_report(w.rules.add(FcLeagueRules.from_dict(d)), "league rules", errors)
 	return w
 
 

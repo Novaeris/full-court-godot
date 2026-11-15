@@ -1,0 +1,36 @@
+{
+	"schema": 1,
+	"note": "Ready-made salary rule sets. Ratios are multiples of the salary cap (or of the cap for min/max/mid-level salary), so the same preset works at any cap size.",
+	"presets": {
+		"soft_cap_with_hard_limit": {
+			"label": "Soft cap with hard limit (recommended)",
+			"description": "Free agents can only be signed with cap space, but teams may go over the cap by re-signing their own players, using one mid-level exception, and signing minimum contracts. Payroll above the tax line is taxed, and no team can ever exceed the hard limit.",
+			"cap_type": "soft",
+			"tax_ratio": 1.2, "hard_ratio": 1.35, "floor_ratio": 0.85,
+			"tax_rate_percent": 150,
+			"min_salary_ratio": 0.008, "max_salary_ratio": 0.30, "mid_level_ratio": 0.09,
+			"own_player_exception": true, "minimum_contract_exception": true,
+			"trade_matching_percent": 125
+		},
+		"hard_cap": {
+			"label": "Hard cap",
+			"description": "No team may ever exceed the cap, and there are no exceptions. Rosters must be built within the limit; keeps spending equal but forces stars to leave.",
+			"cap_type": "hard",
+			"tax_ratio": 0, "hard_ratio": 0, "floor_ratio": 0.80,
+			"tax_rate_percent": 0,
+			"min_salary_ratio": 0.008, "max_salary_ratio": 0.30, "mid_level_ratio": 0,
+			"own_player_exception": false, "minimum_contract_exception": false,
+			"trade_matching_percent": 100
+		},
+		"no_cap": {
+			"label": "No cap (luxury tax only)",
+			"description": "Teams may spend anything; payroll above the tax line is taxed. Rich markets will dominate unless the tax is steep.",
+			"cap_type": "none",
+			"tax_ratio": 1.15, "hard_ratio": 0, "floor_ratio": 0.70,
+			"tax_rate_percent": 200,
+			"min_salary_ratio": 0.008, "max_salary_ratio": 0.35, "mid_level_ratio": 0,
+			"own_player_exception": true, "minimum_contract_exception": true,
+			"trade_matching_percent": 200
+		}
+	}
+}

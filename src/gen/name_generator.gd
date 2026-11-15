@@ -29,6 +29,22 @@ func pick_origin(rng: FcRng, team_country: String, home_share: float) -> String:
 	return keys[rng.weighted_index(weights)]
 
 
+## A random team nickname (e.g. "Harriers") that is not in `taken` (keys are
+## lowercase nicknames). Records the choice in `taken`. This is the "generate a
+## name for me" button; users can type their own name instead. Returns "" only
+## if every nickname in the data is already taken.
+func random_team_nickname(rng: FcRng, taken: Dictionary) -> String:
+	var pool: Array = []
+	for nick in _data.world.get("nicknames", []):
+		if not taken.has(str(nick).to_lower()):
+			pool.append(str(nick))
+	if pool.is_empty():
+		return ""
+	var pick: String = pool[rng.range_int(0, pool.size() - 1)]
+	taken[pick.to_lower()] = true
+	return pick
+
+
 func country_keys() -> Array[String]:
 	var out: Array[String] = []
 	for k in _data.names.get("countries", {}):

@@ -20,6 +20,32 @@ func _init(league_id: int = 0, league_name: String = "") -> void:
 	name = league_name
 
 
+## A league with `conferences` x `divisions_per_conference` equal divisions
+## holding the team ids 1..team_count in order. Used for previews and
+## validation before a real league exists. Remainder teams go to the first
+## divisions, so an uneven count still produces a structure.
+static func make_even(league_id: int, league_name: String, conference_count: int,
+		divisions_per_conference: int, team_count: int) -> FcLeague:
+	var league := FcLeague.new(league_id, league_name)
+	var cells := maxi(1, conference_count * divisions_per_conference)
+	var base := floori(float(team_count) / cells)
+	var extra := team_count % cells
+	var next_team := 1
+	var next_division := 1
+	for c in conference_count:
+		var conference := FcConference.new(c + 1, "Conference %d" % (c + 1))
+		for d in divisions_per_conference:
+			var division := FcDivision.new(next_division, "Division %d" % next_division)
+			next_division += 1
+			var size := base + (1 if (c * divisions_per_conference + d) < extra else 0)
+			for i in size:
+				division.team_ids.append(next_team)
+				next_team += 1
+			conference.divisions.append(division)
+		league.conferences.append(conference)
+	return league
+
+
 func all_divisions() -> Array[FcDivision]:
 	var out: Array[FcDivision] = []
 	for c in conferences:

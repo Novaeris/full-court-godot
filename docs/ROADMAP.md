@@ -16,14 +16,15 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 - Staff: FcStaffMember (GM, coaches, scouts, medical, business), roles, staff contracts, data-driven skills and philosophy, world rules (100 tests total)
 
 - Procedural generation: names, players, staff, cities, arenas, teams, rosters, contracts, free agents from a seed (129 tests total)
-- Real-world city database (124 cities, 6 areas) and customizable leagues: size, areas/exact cities, conferences/divisions (159 tests total)
+- Real-world city database (154 cities, 7 areas) and customizable leagues: size, areas/exact cities, conferences/divisions (159 tests total)
+- League rules: equal-division structure limits (4-64 teams), season schedule rules with fair home/away matchup planner, playoff formats, soft cap with hard limit (plus hard cap and no cap presets), team naming options, sensitive places (198 tests total)
 
 ## Current
 - Awaiting founder direction on the next system.
 
 ## Next (proposed order, driven by dependencies)
 1. (done) Staff entities. 2. (done) Save system. 3. (done) Procedural generation of the league.
-   League structure is done (customizable conferences/divisions). Next candidates: the basketball simulation engine, then schedule + standings + playoffs (needs league rules: season length, playoff format).
+   League structure and league rules are done. Next candidates: the basketball simulation engine (recommended), then the calendar/standings/playoff engine, then free agency / trades / draft using the cap rules.
 4. **Basketball engine v1**: possession simulation, box scores, stress-test tool for plausibility.
 5. **League operations**: schedule, standings, playoffs, season progression.
 6. **Basic UI shell**: main menu, save selection, standings, box score viewer (manual testing begins).

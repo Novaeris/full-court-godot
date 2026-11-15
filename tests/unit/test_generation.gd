@@ -58,7 +58,7 @@ func test_config_validation() -> void:
 	cfg.team_count = 500
 	cfg.roster_size = 2
 	cfg.home_country_share = 2.0
-	cfg.max_salary = 10
+	cfg.cap_preset = "nope"
 	assert_true(cfg.validate(data).size() >= 4, str(cfg.validate(data)))
 
 
@@ -315,6 +315,7 @@ func test_league_talent_distribution_is_plausible() -> void:
 func test_contract_terms_are_sane() -> void:
 	var cfg := FcGenerationConfig.load_default(data)
 	var w := _generator().generate(SEED)
+	var cap: FcCapRules = w.rules_of_league(1).cap
 	var payrolls: Array = []
 	for t in w.teams.all():
 		var payroll := 0
@@ -322,11 +323,11 @@ func test_contract_terms_are_sane() -> void:
 			var c := w.active_contract_of(pid)
 			assert_true(c.is_in_force_in(cfg.start_season), "contract covers the start season")
 			var salary := c.salary_for(cfg.start_season)
-			assert_true(salary >= cfg.min_salary and salary <= cfg.max_salary, "salary %d" % salary)
+			assert_true(salary >= cap.min_player_salary and salary <= cap.max_player_salary, "salary %d" % salary)
 			assert_true(c.length() >= 1 and c.length() <= 4)
 			payroll += salary
 		payrolls.append(payroll)
-	assert_between(_mean(payrolls), 60000000.0, 200000000.0, "average payroll")
+	assert_between(_mean(payrolls), 110000000.0, 160000000.0, "average payroll sits around the cap")
 
 
 func test_better_players_earn_more() -> void:
@@ -355,6 +356,7 @@ func test_small_league_and_custom_config() -> void:
 	cfg.conference_count = 1
 	cfg.divisions_per_conference = 1
 	cfg.roster_size = 12
+	cfg.roster_min = 12
 	cfg.free_agent_count = 5
 	cfg.scouts = 0
 	var w := FcWorldGenerator.new(data, defs, cfg).generate(9)
@@ -366,7 +368,7 @@ func test_small_league_and_custom_config() -> void:
 
 func test_generated_world_survives_json_and_save() -> void:
 	var gen := _generator(8)
-	gen.config.conference_count = 2
+	gen.config.conference_count = 1
 	gen.config.divisions_per_conference = 2
 	var state := gen.new_game_state(SEED, FcGameState.MODE_DYNASTY, 2)
 	assert_eq(state.validate(), [] as Array[String])
