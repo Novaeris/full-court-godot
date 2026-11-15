@@ -5,7 +5,7 @@ Nothing has been pushed anywhere: the repository is local only (no remote).
 
 ## 2026-11-15, autonomous stretch (founder away)
 
-State at the end of this stretch: **325 automated tests pass**, everything committed locally.
+State at the end of this stretch: **337 automated tests pass**, everything committed locally.
 Run the tests with `./tools/run_tests.ps1`.
 
 ### Built since the founder left
@@ -15,11 +15,13 @@ Run the tests with `./tools/run_tests.ps1`.
 4. **Owner Mode business engine**: demand and ticket pricing, revenue and expense lines, fan interest, brand, cash, debt, valuation; owner levers (ticket price, marketing, facilities); AI teams run themselves. See the books: `./tools/finances.ps1`.
 5. **Game controller** (`src/game/game_controller.gd`): the API a screen uses (advance days, playoffs, next season, owner decisions, hiring/firing, owner report, autosave). Saves continue identically after loading.
 
+6. **A first UI** (main menu, new league wizard, team choice, dashboard with Overview / Standings / Schedule / Roster / Finances / Staff / League tabs). **How to play**: open `project.godot` in Godot 4.7 and press F5 (see README.md). The automated tests prove the screens build and the game can be played through them; they cannot judge how it looks or feels, so please look at it and tell me what to change.
+
 ### Decisions made for you (all recorded in docs/DECISIONS.md, D-021 to D-025)
 Era presets and star usage; league balance (team spread tightened); no draft lottery; simple AI (best affordable player); finance constants (about 11% average margin, a third of teams lose money); price scaling with season length. Every number is in a JSON file under `data/` and can be changed.
 
 ### Known gaps and things to watch
-- **No screens yet**: there is no UI. Everything is driven by scripts and tools. A UI shell on the game controller is the next big step (main menu, new league wizard, owner dashboard, standings, schedule, box scores, roster, finances).
+- **UI is a first plain version**: no box score viewer, no draft / free agency / trade screens, no theme polish, no mobile layout.
 - Dynasties: in a 6-season test one team won 4 titles with a 71-9 record. The AI never trades and keeps stars via the own-player exception; watch league parity. Candidates: trades, player moves for money/role, aging curves.
 - League average age drifts young (about 24.6 after six seasons; real is about 26). Retirement and the draft supply are the levers.
 - Overtime games are about 2% (real about 5-6%): end-of-game fouling and timeouts are not modeled.

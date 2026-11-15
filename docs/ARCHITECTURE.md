@@ -148,6 +148,11 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 - A whole 30-team, 80-game season plus playoffs takes about 13 seconds; a 1,230-game season is stored in about 100 KB.
 - Rosters are read when an engine is created; change rosters between seasons.
 
+## User interface (`src/ui/`, `scenes/main.tscn`)
+- `FcApp` (the main scene's script) builds the screens in code: main menu (new / continue / load / delete), new league form (areas, valid team counts and layouts, cap style, era, mode, seed), team choice, and the dashboard with tabs Overview, Standings, Schedule, Roster, Finances, Staff, League. `FcUiTables` makes tables and formats money.
+- Screens only call `FcGameController`; no rules live in the UI. Public methods (`show_*`, `on_*`, `build_tab`) let tests click through the same paths a player does.
+- Status: first, plain version (tables and buttons) intended for testing the rules. Smoke tests prove every screen builds with real data, a whole season and the next one can be played, and saving/loading works; they cannot judge appearance, layout or usability, which needs a human. Not yet: box score viewer, box score detail per game, draft and free agency screens, trade screens, responsive/mobile layouts, a theme with real typography, icons and team logos.
+
 ## Game controller (`src/game/game_controller.gd`)
 The single object a screen talks to. It owns the `FcGameState` and drives everything; it has no UI code.
 - Create: `FcGameController.new_game(generator, seed, mode, user_team_index)` or `resume(loaded_state)`.
