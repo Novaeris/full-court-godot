@@ -5,7 +5,7 @@ Nothing has been pushed anywhere: the repository is local only (no remote).
 
 ## 2026-11-15, autonomous stretch (founder away)
 
-State at the end of this stretch: **370 automated tests pass**, everything committed locally.
+State at the end of this stretch: **371 automated tests pass**, everything committed locally.
 Run the tests with `./tools/run_tests.ps1`.
 
 ### Built since the founder left
@@ -23,6 +23,7 @@ Run the tests with `./tools/run_tests.ps1`.
 
 9. **AI trades** (offseason, contenders swap youth for veterans with rebuilding teams under the salary rules).
 
+11. **Player profile** popup (Roster tab): bio, all ratings, personality, tendencies, contract, career line.
 10. **Career statistics** (kept forever) and **archiving** of seasons older than two years so saves stay small.
 
 ### Decisions made for you (all recorded in docs/DECISIONS.md, D-021 to D-025)

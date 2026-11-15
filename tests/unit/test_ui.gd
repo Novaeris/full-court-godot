@@ -185,3 +185,20 @@ func test_money_formatting() -> void:
 	assert_eq(FcUiTables.money(-250000), "-$250K")
 	assert_eq(FcUiTables.money(2500000000), "$2.50B")
 	assert_eq(FcUiTables.money(500), "$500")
+
+
+func test_player_profile_text() -> void:
+	_start_small_game()
+	app.on_advance(20)
+	var w := app.controller.state.world
+	var team: FcTeam = w.teams.get_by_id(app.controller.state.user_team_id)
+	var pid: int = team.roster.player_ids[0]
+	var text := app.player_profile_text(pid)
+	assert_true(w.players.get_by_id(pid).identity.full_name() in text)
+	for needle in ["Basketball ratings", "Personality", "Tendencies", "Contract:", "Career", "Overall"]:
+		assert_true(needle in text, needle)
+	assert_true("Three-Point Shooting" in text and "Loyalty" in text)
+	assert_eq(app.player_profile_text(999999), "")
+	var roster_tab := app.build_tab("Roster")
+	assert_true(roster_tab.get_child_count() == 2, "the roster has its table and the profile button")
+	roster_tab.free()

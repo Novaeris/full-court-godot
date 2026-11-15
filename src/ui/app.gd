@@ -465,6 +465,51 @@ func box_score_text(day: int, series: int) -> String:
 	return ""
 
 
+## A full profile of one player as text: bio, body, ratings, personality, tendencies,
+## contract and career statistics.
+func player_profile_text(player_id: int) -> String:
+	var w := controller.state.world
+	var p: FcPlayer = w.players.get_by_id(player_id)
+	if p == null:
+		return ""
+	var year := controller.state.current_season
+	var lines: Array[String] = []
+	lines.append("%s    %s    age %d    %d cm, %d kg    %s" % [p.identity.full_name(), FcPosition.abbreviation(p.primary_position), p.age_on(FcDate.new(year, 7, 1)), p.physical.height_cm, p.physical.weight_kg, p.identity.country])
+	var team := w.team_of_player(player_id)
+	lines.append("Team: %s    Overall %d    Potential %d    Peak age %d" % [w.team_display_name(team.id) if team != null else "free agent", roundi(FcPlayerRatings.load_default().overall(p)), p.development.potential, p.development.peak_age])
+	if p.games_out > 0:
+		lines.append("OUT %d games: %s" % [p.games_out, p.injury])
+	var c := w.active_contract_of(player_id)
+	if c != null:
+		lines.append("Contract: %s a year through %d (%d years left)" % [FcUiTables.money(c.salary_for(year)), c.end_season(), maxi(0, c.end_season() - year + 1)])
+	for catalog_pair in [["Basketball ratings", w.definitions.attributes, p.attributes], ["Personality", w.definitions.personality, p.personality], ["Tendencies", w.definitions.tendencies, p.tendencies]]:
+		lines.append("")
+		lines.append(catalog_pair[0])
+		var catalog: FcAttributeCatalog = catalog_pair[1]
+		var values: FcAttributeSet = catalog_pair[2]
+		var line := ""
+		var count := 0
+		for key in catalog.keys():
+			line += "%-24s %3d    " % [catalog.get_def(key).display_name, values.get_value(key)]
+			count += 1
+			if count % 3 == 0:
+				lines.append("  " + line)
+				line = ""
+		if line != "":
+			lines.append("  " + line)
+	lines.append("")
+	lines.append("Career")
+	lines.append("  %-8s %-6s %4s %5s %5s %5s %5s" % ["Season", "Team", "GP", "MPG", "PPG", "RPG", "APG"])
+	for row in w.careers.get(player_id, []):
+		var t: FcTeam = w.teams.get_by_id(row[1])
+		var gp: int = maxi(1, row[2])
+		lines.append("  %-8s %-6s %4d %5.1f %5.1f %5.1f %5.1f" % ["%d-%02d" % [row[0], (row[0] + 1) % 100], t.identity.abbreviation if t != null else "?", row[2], row[3] / 60.0 / gp, float(row[4]) / gp, float(row[11] + row[12]) / gp, float(row[13]) / gp])
+	var totals := w.career_totals(player_id)
+	if totals["seasons"] > 0:
+		lines.append("  Career: %d games, %d points, %d rebounds, %d assists" % [totals["gp"], totals["points"], totals["rebounds"], totals["ast"]])
+	return "\n".join(lines)
+
+
 func _show_text_popup(title: String, text: String) -> void:
 	var dialog := AcceptDialog.new()
 	dialog.title = title
@@ -499,7 +544,21 @@ func _tab_roster() -> Control:
 			FcUiTables.money(c.salary_for(season_year)) if c != null else "-", c.end_season() if c != null else "-",
 			"%.1f" % stats.per_game(p.id, "points"), "%.1f" % stats.per_game(p.id, "rebounds"), "%.1f" % stats.per_game(p.id, "ast"), "%.1f" % stats.per_game(p.id, "minutes"),
 			"" if p.games_out == 0 else "OUT %d games: %s" % [p.games_out, p.injury]])
-	return FcUiTables.table(["Player", "Pos", "Age", "Height", "Ovr", "Pot", "Salary", "Thru", "PPG", "RPG", "APG", "MPG", "Health"], rows, [0, 50, 50, 70, 50, 50, 90, 60, 55, 55, 55, 55, 220])
+	var table := FcUiTables.table(["Player", "Pos", "Age", "Height", "Ovr", "Pot", "Salary", "Thru", "PPG", "RPG", "APG", "MPG", "Health"], rows, [0, 50, 50, 70, 50, 50, 90, 60, 55, 55, 55, 55, 220])
+	var ids: Array[int] = []
+	for p in players:
+		ids.append(p.id)
+	var box := VBoxContainer.new()
+	box.add_child(table)
+	var row := HBoxContainer.new()
+	row.add_child(FcUiTables.button("Player profile of selected player", func():
+		var item := table.get_selected()
+		if item == null:
+			_say("Select a player first.")
+			return
+		_show_text_popup("Player profile", player_profile_text(ids[item.get_index()]))))
+	box.add_child(row)
+	return box
 
 
 func _tab_finances() -> Control:
