@@ -60,6 +60,40 @@ func years_until(other: FcDate) -> int:
 	return years
 
 
+## Days since 1970-01-01 (negative before). Works for any valid date.
+func to_day_number() -> int:
+	var y := year - (1 if month <= 2 else 0)
+	var era := floori(y / 400.0)
+	var yoe := y - era * 400
+	var m_shift := month - 3 if month > 2 else month + 9
+	var doy := floori((153 * m_shift + 2) / 5.0) + day - 1
+	var doe := yoe * 365 + floori(yoe / 4.0) - floori(yoe / 100.0) + doy
+	return era * 146097 + doe - 719468
+
+
+static func from_day_number(day_number: int) -> FcDate:
+	var z := day_number + 719468
+	var era := floori(z / 146097.0)
+	var doe := z - era * 146097
+	var yoe := floori((doe - floori(doe / 1460.0) + floori(doe / 36524.0) - floori(doe / 146096.0)) / 365.0)
+	var y := yoe + era * 400
+	var doy := doe - (365 * yoe + floori(yoe / 4.0) - floori(yoe / 100.0))
+	var mp := floori((5 * doy + 2) / 153.0)
+	var d := doy - floori((153 * mp + 2) / 5.0) + 1
+	var m := mp + 3 if mp < 10 else mp - 9
+	return FcDate.new(y + (1 if m <= 2 else 0), m, d)
+
+
+## A new date `days` later (or earlier if negative).
+func add_days(days: int) -> FcDate:
+	return FcDate.from_day_number(to_day_number() + days)
+
+
+## Whole days from this date to `other` (negative if other is earlier).
+func days_until_date(other: FcDate) -> int:
+	return other.to_day_number() - to_day_number()
+
+
 func to_iso() -> String:
 	return "%04d-%02d-%02d" % [year, month, day]
 
