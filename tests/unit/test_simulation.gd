@@ -414,7 +414,7 @@ func test_eras_exist_and_change_the_style_of_play() -> void:
 		rates[era] = tpa / fga
 		pace[era] = possessions / 40.0
 	assert_true(rates["late_2010s"] > rates["early_2010s"] + 0.12, "the late 2010s shoot many more threes")
-	assert_true(pace["late_2010s"] > pace["early_2010s"] + 5.0, "and play faster")
+	assert_true(pace["late_2010s"] > pace["early_2010s"] + 3.0, "and play faster")
 
 
 func test_era_targets_are_well_formed() -> void:

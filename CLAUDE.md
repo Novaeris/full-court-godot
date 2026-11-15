@@ -20,6 +20,7 @@ The developer is a solo, beginner programmer. Explain decisions in plain languag
 - `src/gen/`    Procedural generation (names, players, staff, whole league). Content lives in `data/generation/*.json`. Always generate through seeded `FcRng`.
 - `src/league/` Pure league computations (matchup planner). League STRUCTURE and RULES data classes are in `src/data/league/`; salary presets in `data/rules/`.
 - `src/sim/`    Game simulation (headless, pure). Balance numbers live in `data/simulation/*.json`; recalibrate with `tools/simulate_games.ps1` after any change and keep all 16 league-average checks in range.
+- `src/data/season/` + `src/league/season_engine.gd`: seasons (calendar, results, playoffs, awards). `tools/play_season.ps1` plays one.
 - `data/definitions/`  JSON definitions of attributes, personality traits, tendencies. Edit these to rebalance, not code.
 - `src/...`     Further modules are added only when they hold real code (see docs/ARCHITECTURE.md).
 - `tests/`      Automated tests. `tests/unit/test_*.gd`; base class `FcTestCase`.

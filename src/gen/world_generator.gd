@@ -315,7 +315,7 @@ func _fill_roster(world: FcWorld, team: FcTeam, rng: FcRng, used_names: Dictiona
 		var t := float(slot) / float(maxi(1, config.roster_size - 1))
 		var base := lerpf(config.top_player_level, config.bottom_player_level, pow(t, 0.7))
 		var age := clampi(roundi(rng.gaussian(26.5, 3.8)), 19, 38)
-		var prime_level := base + strength + rng.gaussian(0.0, 5.0)
+		var prime_level := base + strength + rng.gaussian(0.0, config.player_level_sd)
 		var level := clampf(FcPlayerGenerator.age_adjusted_level(prime_level, age), 20.0, 92.0)
 		var spec := FcPlayerSpec.new()
 		spec.age = age

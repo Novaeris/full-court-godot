@@ -262,6 +262,15 @@ func _season_leaders(sim: FcGameSimulator, rng: FcRng, world: FcWorld, teams: Ar
 	var win_list: Array = wins.values()
 	win_list.sort()
 	print("Wins: best team %d, worst team %d of %d games (real: best ~65, worst ~17-20 of 82)" % [win_list[-1], win_list[0], int(rules.season.games_per_team(league))])
+	var mean_wins := 0.0
+	for w in win_list:
+		mean_wins += w
+	mean_wins /= win_list.size()
+	var spread := 0.0
+	for w in win_list:
+		spread += pow(w - mean_wins, 2.0)
+	var per_team_games := float(rules.season.games_per_team(league))
+	print("Spread of team winning percentage (standard deviation): %.3f (real NBA about 0.14-0.16)" % (sqrt(spread / win_list.size()) / per_team_games))
 
 
 ## Plays one team against an identical copy of itself, so the only differences

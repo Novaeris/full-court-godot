@@ -21,13 +21,14 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 - 80-game standard season (even season lengths for every size) and extra salary rules: tax sharing, repeater tax, restriction line, rookie scale, cornerstone extension, cap holds, sign-and-trade limits, no-trade clauses (218 tests total)
 
 - Basketball simulation v1: possession engine, rotations, fatigue, coach effects, box scores and advanced stats, calibrated stress tool; recalibrated to the 2010-2020 NBA with three era presets and realistic scoring leaders (248 tests)
+- Season engine: dated calendar, standings with tiebreakers, playoffs (division leaders or seeding, conference or league brackets, byes, home court), champion, awards, player season statistics, league balance tuning (280 tests)
 
 ## Current
 - Awaiting founder direction on the next system.
 
 ## Next (proposed order, driven by dependencies)
 1. (done) Staff entities. 2. (done) Save system. 3. (done) Procedural generation of the league.
-   League structure, league rules and simulation v1 are done. Next: the calendar / standings / playoff engine (uses the matchup planner, playoff rules and the simulator), then season progression (aging, development, retirement), then free agency / trades / draft using the cap rules, then injuries and deeper simulation (matchups, timeouts, end-game fouling).
+   League structure, league rules, simulation v1 and the season engine are done. Next (autonomous work order): season rollover and player progression (aging, development, retirement), draft with prospects and rookie contracts, contract expiry and free agency with AI teams, trades, Owner Mode finances (revenue, expenses, valuation), a game controller and autosave, a basic UI shell, then injuries and deeper simulation.
 4. **Basketball engine v1**: possession simulation, box scores, stress-test tool for plausibility.
 5. **League operations**: schedule, standings, playoffs, season progression.
 6. **Basic UI shell**: main menu, save selection, standings, box score viewer (manual testing begins).

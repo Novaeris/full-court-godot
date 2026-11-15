@@ -131,6 +131,23 @@ FcWorldGenerator     seed -> complete FcWorld; new_game_state(seed, mode, team i
 Game systems use `FcRepository` (get, has, add, update, remove, ids, all, count) and never a specific storage engine. `FcMemoryRepository` is the only implementation today. SQLite or another store can later be added as another `FcRepository` implementation. The save system (planned) will wrap `FcWorld.to_dict()` with slots, metadata, versioning, atomic writes and migrations.
 Known limit: `team_of_player()` and `active_contract_of()` scan linearly; indexes will be added when profiling justifies them.
 
+## Season engine (`src/league/`, `src/data/season/`)
+```
+FcDate.add_days / to_day_number     calendar arithmetic
+FcScheduleBuilder                   matchup plan -> dated calendar (<=1 game a day, even pacing, few back-to-backs, travel streaks limited, ~2 days per game)
+FcSeason                            saved: calendar + results + player stats + playoffs + awards + champion; status PENDING/REGULAR/PLAYOFFS/COMPLETE
+FcScheduledGame                     day, home, away, score, overtimes, series (compact; box scores are NOT stored)
+FcSeasonStats                       accumulated player totals (regular season and playoffs separately), leaders, per-game averages
+FcStandings                         records, home/away, division/conference, streaks, last 10, ranking with tiebreakers
+FcPlayoffBuilder                    bracket from standings + FcPlayoffRules (division leaders or pure seeding; conference or league bracket; byes; finals stage)
+FcPlayoffs / FcPlayoffSeries        qualifiers, series (best of 1/3/5/7, 2-2-1-1-1 home court), winners propagate
+FcSeasonEngine                      start_season, play_day(s), play_regular_season, start_playoffs, play_playoff_day, play_full_season, finish_season, awards
+```
+- Tiebreakers: win%, head-to-head among the tied, division record (if all in one division), conference record, point differential, team id.
+- Awards (v1): MVP (value score x team success), scoring/rebounding/assists/steals/blocks leaders, All-League first/second/third teams (15 best by value, positions ignored), Finals MVP. Rookie of the Year and defensive awards wait for the draft and a defensive metric.
+- A whole 30-team, 80-game season plus playoffs takes about 13 seconds; a 1,230-game season is stored in about 100 KB.
+- Rosters are read when an engine is created; change rosters between seasons.
+
 ## Simulation (`src/sim/`, balance in `data/simulation/`)
 ```
 FcPlayerRatings    28 attributes -> composite ratings (three, mid, finishing, playmaking, perimeter_d, ...) + overall; recipes in ratings.json
