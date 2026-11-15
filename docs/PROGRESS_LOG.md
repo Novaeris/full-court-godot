@@ -5,7 +5,7 @@ Nothing has been pushed anywhere: the repository is local only (no remote).
 
 ## 2026-11-15, autonomous stretch (founder away)
 
-State at the end of this stretch: **372 automated tests pass**, everything committed locally.
+State at the end of this stretch: **373 automated tests pass**, everything committed locally.
 Run the tests with `./tools/run_tests.ps1`.
 
 ### Built since the founder left
@@ -34,6 +34,7 @@ Era presets and star usage; league balance (team spread tightened); no draft lot
 - Dynasties: in one 6-season test (30 teams, seed 2026) a team won 4 titles with a 71-9 record, but eight-season runs of 20-team leagues with two other seeds spread the titles across 4-5 champions, so it looks seed-specific. The AI now makes simple one-for-one offseason trades; keep watching parity.
 - League average age drifts young (about 24.6 after six seasons; real is about 26). Retirement and the draft supply are the levers.
 - Overtime games are about 2% (real about 5-6%): end-of-game fouling and timeouts are not modeled.
+- Market tab (free agents + latest draft) is read-only; no signing or draft interaction yet.
 - Not built: human trades and trade UI, draft pick trading, scouting uncertainty, draft lottery, awards beyond MVP/leaders/All-League/Finals MVP, Hall of Fame, records book, sponsorship contracts, loans, arena renovation projects, staff chemistry, Dynasty-mode roster control, mobile layouts, exports.
 
 ### How to continue

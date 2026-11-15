@@ -13,7 +13,7 @@ const AREA_CHOICES := [
 ]
 const CAP_CHOICES := [["Soft cap with hard limit (recommended)", "soft_cap_with_hard_limit"], ["Hard cap", "hard_cap"], ["No cap (luxury tax only)", "no_cap"]]
 const ERA_CHOICES := [["Mid 2010s (default)", "mid_2010s"], ["Early 2010s: slower, mid-range", "early_2010s"], ["Late 2010s: fast, three-point heavy", "late_2010s"]]
-const TAB_NAMES := ["Overview", "Standings", "Schedule", "Roster", "Finances", "Staff", "News", "League"]
+const TAB_NAMES := ["Overview", "Standings", "Schedule", "Roster", "Finances", "Staff", "Market", "News", "League"]
 
 var controller: FcGameController
 var saves := FcSaveManager.new()
@@ -361,11 +361,53 @@ func build_tab(tab_name: String) -> Control:
 		"Roster": return _tab_roster()
 		"Finances": return _tab_finances()
 		"Staff": return _tab_staff()
+		"Market": return _tab_market()
 		"News": return _tab_news()
 	return _tab_league()
 
 
 # --- tabs ----------------------------------------------------------------------------------
+
+## Free agents (best first) and the most recent draft. Read-only for now.
+func _tab_market() -> Control:
+	var w := controller.state.world
+	var box := HBoxContainer.new()
+	var ratings := FcPlayerRatings.load_default()
+	var year := controller.state.current_season
+	var left := VBoxContainer.new()
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left.add_child(FcUiTables.label("Best free agents", 18, true))
+	var agents: Array = []
+	for p in w.players.all():
+		if p.status == FcPlayer.Status.ACTIVE and w.team_of_player(p.id) == null:
+			agents.append([roundi(ratings.overall(p)), p])
+	agents.sort_custom(func(a, b): return a[0] > b[0] if a[0] != b[0] else a[1].id < b[1].id)
+	var rows: Array = []
+	for entry in agents.slice(0, 20):
+		var p: FcPlayer = entry[1]
+		rows.append([p.identity.full_name(), FcPosition.abbreviation(p.primary_position), p.age_on(FcDate.new(year, 7, 1)), entry[0], p.development.potential])
+	left.add_child(FcUiTables.table(["Player", "Pos", "Age", "Ovr", "Pot"], rows, [0, 50, 50, 50, 50]))
+	box.add_child(left)
+	var right := VBoxContainer.new()
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right.add_child(FcUiTables.label("Latest draft (first round)", 18, true))
+	var latest: FcSeason = null
+	for s in w.seasons.all():
+		if s.league_id == controller.league_id and s.draft.size() > 0 and (latest == null or s.year > latest.year):
+			latest = s
+	var draft_rows: Array = []
+	if latest != null:
+		for pick in latest.draft:
+			if pick[0] != 1:
+				continue
+			var p: FcPlayer = w.players.get_by_id(pick[3])
+			if p != null:
+				draft_rows.append([pick[1], _team_name(pick[2]), p.identity.full_name(), FcPosition.abbreviation(p.primary_position), roundi(ratings.overall(p)), p.development.potential])
+		right.add_child(FcUiTables.label("After the %d season" % latest.year))
+	right.add_child(FcUiTables.table(["Pick", "Team", "Player", "Pos", "Ovr", "Pot"], draft_rows, [50, 0, 0, 50, 50, 50]))
+	box.add_child(right)
+	return box
+
 
 func _tab_overview() -> Control:
 	var box := VBoxContainer.new()

@@ -202,3 +202,11 @@ func test_player_profile_text() -> void:
 	var roster_tab := app.build_tab("Roster")
 	assert_true(roster_tab.get_child_count() == 2, "the roster has its table and the profile button")
 	roster_tab.free()
+
+
+func test_market_tab_lists_free_agents_and_draft() -> void:
+	_start_small_game()
+	app.controller.start_next_season()
+	var tab := app.build_tab("Market")
+	assert_true(tab is HBoxContainer and tab.get_child_count() == 2)
+	tab.free()
