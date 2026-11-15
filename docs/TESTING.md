@@ -46,6 +46,8 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 | FcPlayer (validation, positions, retirement, round trip, exact float round trip, sparse/corrupt data) | 11 |
 | FcLeague / conferences / divisions / world integrity with leagues / old snapshots | 8 |
 | League customization (real city data, areas, exact cities, nicknames, sizes 4-64, equal divisions for every valid size, geographic conferences and divisions, nationality mix, validation messages, save round trip) | 22 |
+| Player progression (growth, decline, physical vs mental, development rate / work ethic / coach, ranges, reproducibility, retirement odds, career arc) | 9 |
+| Offseason (3 seasons in a row stay valid, legal rosters, retirements, talent stability, draft order and rookie scale, market values, reproducibility, hard cap) | 10 |
 | Calendar (date arithmetic, every game placed once, pair counts match the rules, nobody twice a day, season length, back-to-backs, streaks, reproducibility) | 9 |
 | Standings and tiebreakers | 10 |
 | Season engine (calendar, playing days, consistency of records and statistics, playoff bracket and byes, home court pattern, awards, reproducibility, save/load, validation) | 12 |
@@ -61,7 +63,7 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 
 Shared sample builders for tests live in `tests/support/test_data.gd` (`FcTestData`).
 
-Last verified: 280 passed, 0 failed (Godot 4.7.2).
+Last verified: 299 passed, 0 failed (Godot 4.7.2).
 
 Tests that touch disk use `user://test_saves` and clean up in `after_each()`. Inspection tools: `./tools/inspect_data.ps1`, `./tools/inspect_saves.ps1`, `./tools/simulate_games.ps1 [games=1000] [seed=2026] [era=mid_2010s] [tune=key:value,...] [box] [mirror] [leaders]` (stress test: 16 league averages vs the era's realistic ranges, one full box score, home-court check, full-season individual leaders), `./tools/play_season.ps1 [option=value ...]` (plays a whole season and prints standings, playoffs, champion, awards), `./tools/generate_league.ps1 [option=value ...]` (e.g. `areas=europe teams=16 conferences=2 divisions=2`). The runner was also verified to report failures (exit code 1).
 

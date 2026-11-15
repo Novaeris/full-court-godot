@@ -31,6 +31,8 @@ var final_standings: Array = []
 var awards: Dictionary = {}
 ## The playoff bracket and series (see FcPlayoffs); null until the playoffs start.
 var playoffs: FcPlayoffs = null
+## The draft held after this season: [[round, pick, team id, player id], ...].
+var draft: Array = []
 
 
 func _init(season_id: int = 0) -> void:
@@ -125,6 +127,7 @@ func to_dict() -> Dictionary:
 		"champion_id": champion_id, "runner_up_id": runner_up_id,
 		"final_standings": final_standings.duplicate(true), "awards": awards.duplicate(true),
 		"playoffs": playoffs.to_dict() if playoffs != null else {},
+		"draft": draft.duplicate(true),
 	}
 
 
@@ -155,6 +158,8 @@ static func from_dict(d: Dictionary) -> FcSeason:
 			s.awards[str(key)] = ids
 		else:
 			s.awards[str(key)] = int(value)
+	for row in d.get("draft", []):
+		s.draft.append([int(row[0]), int(row[1]), int(row[2]), int(row[3])])
 	var po: Dictionary = d.get("playoffs", {})
 	if not po.is_empty():
 		s.playoffs = FcPlayoffs.from_dict(po)

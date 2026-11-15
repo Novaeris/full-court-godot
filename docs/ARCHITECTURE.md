@@ -148,6 +148,18 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 - A whole 30-team, 80-game season plus playoffs takes about 13 seconds; a 1,230-game season is stored in about 100 KB.
 - Rosters are read when an engine is created; change rosters between seasons.
 
+## Offseason (`src/league/offseason.gd`, `player_progression.gd`, `player_market.gd`)
+```
+FcPlayerProgression  yearly development/decline per attribute (potential, peak age, development rate, work ethic, coach player-development skill, volatility); retirement odds by age and ability. Data: data/simulation/progression.json
+FcPlayerMarket       value (ability + room to grow for the young - age penalty), asking salary on the generated-contract curve, desired length, contract builder
+FcOffseason.run      1 progress_and_retire -> 2 expire_contracts -> 3 re_sign -> 4 run_draft -> 5 free_agency -> 6 fill_rosters
+```
+- Every signing is checked with `FcCapRules.check_signing` (cap space, own-player exception, mid-level exception once per team, minimum contract, hard limit / hard cap), so the AI cannot break the salary rules.
+- Draft: 2 rounds, a new prospect class (age 19-22, upside from years to peak) larger than the picks, order = non-playoff teams by worst record then playoff teams (no lottery yet), picks by value with noise that shrinks with the GM's talent-evaluation skill, rookie scale salaries with team-option years, undrafted prospects become free agents. Results saved on the finished season (`FcSeason.draft`).
+- Free agency: up to 14 rounds; teams with the most cap space act first; each round a team signs the best affordable free agent. Rosters end between the league minimum and maximum (minimum contracts fill gaps; excess is waived). 12 fresh free agents enter each year so the pool never dries up.
+- Verified over 3 consecutive seasons: world integrity (including contract rules and payroll limits) holds every year, talent stays level, average age stays 24-30.
+- Not yet: staff aging/contract renewals, trades, cap holds applied to the market, restricted/qualifying offers, player preferences beyond loyalty, the draft lottery, two-way/G-League players.
+
 ## Simulation (`src/sim/`, balance in `data/simulation/`)
 ```
 FcPlayerRatings    28 attributes -> composite ratings (three, mid, finishing, playmaking, perimeter_d, ...) + overall; recipes in ratings.json

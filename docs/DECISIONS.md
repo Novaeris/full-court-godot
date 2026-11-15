@@ -124,6 +124,13 @@ Built on the founder's instruction to continue; the following product choices we
 - Competitive balance was measured with a full-season check and tightened: the first generated leagues had a best team at 71-9 and several below 15 wins. Generation now uses `team_strength_sd` 0.8 and `player_level_sd` 3.0 (were 2.0 and 5.0), giving a spread of team winning percentage of about 0.147 (real NBA 0.14-0.16), best teams about 63-65 wins and worst 12-20 of 80, while scoring leaders still average about 32 points (6-8 players above 25). Both values are in `data/generation/config.json`.
 - Known simplifications: tiebreakers omit multi-team subtleties; no play-in tournament; no all-star break or trade deadline; the calendar has no holidays or neutral sites.
 
+## D-024 Offseason model (2026-11-15, autonomous)
+- Progression targets potential by peak age with noise; decline is steeper for physical attributes. Players retire from 33 with a rising yearly chance (9% per year over 32, +18% if weak), forced at 42.
+- Teams re-sign expiring players with a probability that rises with value (and slightly with loyalty); contract length shortens with age.
+- Draft order has no lottery (simpler and transparent); a lottery can be added as a rules option.
+- The AI is intentionally simple (best available affordable player). It never trades. Owner Mode will let the human replace the AI's decisions for one team.
+- Staff are not aged or renewed yet (their contracts will need a rollover step).
+
 ## D-013 Floats in saved data; runner robustness (2026-11-15)
 - Found by a test: JSON float round trips lose last bits, so a saved-and-reloaded world differed from the original. Rule: saved floats are quantized to 3 decimals via `FcChecks.quantize` in property setters; prefer integers. Documented in ARCHITECTURE rule 7.
 - Found while testing: a test file with a syntax error made the test runner hang forever. The runner now reports such files as failures.
