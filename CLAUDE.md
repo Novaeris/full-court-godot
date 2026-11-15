@@ -1,6 +1,6 @@
 # Full Court — Project Rules for Claude
 
-Full Court is a long-term, commercial-quality basketball management simulation (fictional universe).
+Full Court is a long-term, commercial-quality basketball management simulation (real-world cities, original franchises and players).
 It is NOT an MVP or prototype: build the real architecture, expand it incrementally, keep it playable and tested.
 The developer is a solo, beginner programmer. Explain decisions in plain language, give exact steps, and ask before major product/architecture decisions.
 
@@ -9,7 +9,8 @@ The developer is a solo, beginner programmer. Explain decisions in plain languag
 - Platforms: Windows first; architecture must not block Mac/Android/iOS.
 - Modes: Owner Mode first, Dynasty Mode later. Both share one simulation/league core.
 - Free-to-play, no pay-to-win. No monetization code until there is a clear reason.
-- Fully fictional universe: no real teams, players, logos or league IP.
+- Real-world places are fine (real cities and countries, user-selectable by area). Teams, players, staff and branding are ORIGINAL and generated: no real franchises, player names, logos or league IP (those need licenses). Changed from "fully fictional" by the founder on 2026-11-15.
+- Leagues are user-customizable: size, which areas/cities, number of conferences and divisions.
 - Version control: Git, private GitHub repo. Never publish or push without being asked.
 
 ## Layout

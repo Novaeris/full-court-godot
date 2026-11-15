@@ -17,6 +17,9 @@ const KIND_CITY := "city"
 const KIND_ARENA := "arena"
 const KIND_STAFF := "staff"
 const KIND_STAFF_CONTRACT := "staff_contract"
+const KIND_LEAGUE := "league"
+const KIND_CONFERENCE := "conference"
+const KIND_DIVISION := "division"
 
 var definitions: FcDefinitionSet
 var ids := FcIdGenerator.new()
@@ -27,6 +30,7 @@ var cities: FcRepository = FcMemoryRepository.new()
 var arenas: FcRepository = FcMemoryRepository.new()
 var staff: FcRepository = FcMemoryRepository.new()
 var staff_contracts: FcRepository = FcMemoryRepository.new()
+var leagues: FcRepository = FcMemoryRepository.new()
 
 
 func _init(defs: FcDefinitionSet) -> void:
@@ -46,6 +50,14 @@ func active_contract_of(player_id: int) -> FcContract:
 	for c in contracts.all():
 		if c.player_id == player_id and c.status == FcContract.Status.ACTIVE:
 			return c
+	return null
+
+
+## The league that contains this team, or null.
+func league_of_team(team_id: int) -> FcLeague:
+	for l in leagues.all():
+		if l.contains_team(team_id):
+			return l
 	return null
 
 
@@ -109,6 +121,21 @@ func validate() -> Array[String]:
 				errors.append("player %d has more than one active contract" % c.player_id)
 			active_by_player[c.player_id] = c
 
+	var team_league := {}  # team id -> league id
+	for l in leagues.all():
+		for e in l.validate():
+			errors.append("league %d: %s" % [l.id, e])
+		for tid in l.all_team_ids():
+			if not teams.has_id(tid):
+				errors.append("league %d: team %d does not exist" % [l.id, tid])
+			elif team_league.has(tid) and team_league[tid] != l.id:
+				errors.append("team %d is in leagues %d and %d" % [tid, team_league[tid], l.id])
+			team_league[tid] = l.id
+	if leagues.count() > 0:
+		for t in teams.all():
+			if not team_league.has(t.id):
+				errors.append("team %d is not in any league" % t.id)
+
 	for s in staff.all():
 		for e in s.validate():
 			errors.append("staff %d: %s" % [s.id, e])
@@ -164,6 +191,7 @@ func to_dict() -> Dictionary:
 		"contracts": _dicts_of(contracts),
 		"staff": _dicts_of(staff),
 		"staff_contracts": _dicts_of(staff_contracts),
+		"leagues": _dicts_of(leagues),
 	}
 
 
@@ -187,6 +215,8 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 		_report(w.staff.add(FcStaffMember.from_dict(d, defs)), "staff member", errors)
 	for d in data.get("staff_contracts", []):
 		_report(w.staff_contracts.add(FcStaffContract.from_dict(d)), "staff contract", errors)
+	for d in data.get("leagues", []):
+		_report(w.leagues.add(FcLeague.from_dict(d)), "league", errors)
 	return w
 
 

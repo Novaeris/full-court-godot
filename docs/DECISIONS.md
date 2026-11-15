@@ -58,6 +58,19 @@ Deferred. Condition from founder: keep a clean persistence abstraction. Implemen
 - Contracts are generated partly served (started up to N-1 seasons ago) so expirations are staggered from day one.
 - All generation numbers are first drafts; they will be tuned with the simulation and stress tests.
 
+## D-014 Real-world places, original franchises (2026-11-15, founder decision)
+- The founder dropped the "fully fictional world" requirement: cities and countries are now real and selectable by area (North America, South America, Europe, Asia, Oceania, Africa). Supersedes the fictional-geography parts of D-012 (Aldoria and the other invented countries were removed).
+- Kept: teams, players, staff and branding are original and generated. Real franchises, real player names and logos would require licensing and were excluded by the founder's original brief. Team nicknames avoid real pro team names (but a generated "Paris Barons" could coincide with a real club; that is accepted, names are generic).
+- City data: 124 cities with approximate metro populations and a 0-100 "economy" game-balance index (not an official statistic) in `data/generation/world.json`. Coordinates there are used only to group teams geographically and are not saved on FcCity yet (add them when travel/time zones are built).
+- Politically sensitive entries (e.g. disputed territories, Russia) were left out for now; the list is easy to extend by editing the JSON.
+- Name styles: 12 pools (anglo, hispanic, west_african, south_european, east_european, nordic, east_asian, western_european, middle_eastern, south_asian, southeast_asian, east_african) mixed per country. They are approximations; expect to refine them.
+
+## D-015 Customizable league structure (2026-11-15, founder request)
+- `FcLeague` > `FcConference` > `FcDivision` > team ids, a saved entity with stable ids. Membership lives in the division (single source of truth). Several leagues per world are possible (additional leagues are a monetization idea).
+- Customization lives in `FcGenerationConfig` (the future "new league" screen edits it); `validate()` returns plain-language messages. Auto-grouping is geographic. Names are generated (Western/Eastern, South/North...) and are meant to be user-editable later. Explicit per-team division assignment is supported by the data model (`add_team`/`remove_team`) but has no generation option yet.
+- Rules (season length, playoffs, salary cap, schedule format) are NOT part of the league structure; they will be separate rules data keyed by league_id so leagues can differ.
+- Saving: `leagues` and `FcCity.area` are additive snapshot fields, so DATA_VERSION stays 1 and older snapshots load (no league / empty area).
+
 ## D-013 Floats in saved data; runner robustness (2026-11-15)
 - Found by a test: JSON float round trips lose last bits, so a saved-and-reloaded world differed from the original. Rule: saved floats are quantized to 3 decimals via `FcChecks.quantize` in property setters; prefer integers. Documented in ARCHITECTURE rule 7.
 - Found while testing: a test file with a syntax error made the test runner hang forever. The runner now reports such files as failures.

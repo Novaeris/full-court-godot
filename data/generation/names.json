@@ -1,43 +1,1170 @@
 {
-	"schema": 1,
-	"home_country": "aldoria",
-	"countries": {
-		"aldoria": {"name": "Aldoria", "pools": {"anglo": 4, "hispanic": 2, "west_african": 3, "south_european": 1, "east_asian": 1}},
-		"brenmark": {"name": "Brenmark", "pools": {"nordic": 1}},
-		"castellia": {"name": "Castellia", "pools": {"hispanic": 3, "south_european": 2}},
-		"tarsany": {"name": "Tarsany", "pools": {"east_european": 1}},
-		"kalunda": {"name": "Kalunda", "pools": {"west_african": 1}},
-		"shirane": {"name": "Shirane", "pools": {"east_asian": 1}},
-		"highcourt": {"name": "Highcourt", "pools": {"anglo": 1}}
-	},
-	"pools": {
-		"anglo": {
-			"first": ["James", "Michael", "Ryan", "Tyler", "Connor", "Jack", "Ethan", "Logan", "Cole", "Dylan", "Mason", "Caleb", "Owen", "Luke", "Hunter", "Blake", "Trevor", "Wesley", "Grant", "Julian", "Brandon", "Austin", "Nolan", "Garrett", "Chase", "Preston", "Colin", "Reid"],
-			"last": ["Whitfield", "Calloway", "Hargrove", "Prescott", "Langley", "Dunmore", "Thornton", "Ashby", "Kingsley", "Merrick", "Holloway", "Sutton", "Barlow", "Ellison", "Fairbanks", "Garrity", "Hadley", "Kendrick", "Lockhart", "Mercer", "Norwood", "Pemberton", "Radcliffe", "Sheridan", "Tennant", "Underhill", "Wexler", "Yardley"]
-		},
-		"hispanic": {
-			"first": ["Mateo", "Santiago", "Diego", "Javier", "Rafael", "Alejandro", "Andres", "Emilio", "Joaquin", "Lucas", "Nicolas", "Pablo", "Sergio", "Tomas", "Victor", "Gabriel", "Hector", "Ignacio", "Leandro", "Marcos", "Oscar", "Ramon", "Esteban", "Fabian", "Gonzalo", "Ivan", "Julio", "Cristian"],
-			"last": ["Alvarado", "Benitez", "Castellanos", "Delgado", "Escobar", "Fuentes", "Guerrero", "Herrera", "Ibarra", "Jimenez", "Lozano", "Maldonado", "Navarro", "Ortega", "Paredes", "Quintero", "Rivas", "Salazar", "Trujillo", "Urbina", "Valdez", "Zamora", "Bautista", "Cardenas", "Duarte", "Espinoza", "Figueroa", "Gallegos"]
-		},
-		"west_african": {
-			"first": ["Kofi", "Kwame", "Emeka", "Chidi", "Tunde", "Olu", "Seun", "Femi", "Ade", "Yaw", "Kwabena", "Ibrahim", "Mamadou", "Sekou", "Amadou", "Ousmane", "Chike", "Obinna", "Segun", "Kojo", "Nnamdi", "Babatunde", "Idris", "Lamine", "Moussa", "Tidiane", "Kelechi", "Uche"],
-			"last": ["Mensah", "Boateng", "Okafor", "Adeyemi", "Diallo", "Traore", "Konate", "Osei", "Nwosu", "Balogun", "Camara", "Sow", "Ndiaye", "Owusu", "Abubakar", "Eze", "Okonkwo", "Adebayo", "Bangura", "Keita", "Sesay", "Toure", "Appiah", "Danso", "Ogunleye", "Cisse", "Fofana", "Bello"]
-		},
-		"south_european": {
-			"first": ["Luca", "Marco", "Matteo", "Giorgio", "Stefano", "Dario", "Nikos", "Dimitri", "Alessio", "Fabrizio", "Tommaso", "Andrea", "Paolo", "Enzo", "Nuno", "Rui", "Tiago", "Joao", "Bruno", "Ricardo", "Vasco", "Filipe", "Costas", "Yannis", "Pavlos", "Leonidas", "Rocco", "Gianluca"],
-			"last": ["Moretti", "Ricci", "Conti", "Barone", "Marino", "Greco", "Fontana", "Caruso", "Ferreira", "Pereira", "Carvalho", "Teixeira", "Almeida", "Sampaio", "Papadakis", "Karras", "Vlachos", "Nikolaidis", "Georgiou", "Lombardi", "Serrano", "Bellini", "Costa", "Rinaldi", "Santoro", "Moreira", "Faria", "Sousa"]
-		},
-		"east_european": {
-			"first": ["Dmitri", "Nikola", "Marko", "Luka", "Stefan", "Milan", "Andrei", "Viktor", "Tomasz", "Piotr", "Jakub", "Mateusz", "Bogdan", "Radu", "Zoran", "Goran", "Dragan", "Vlad", "Anton", "Pavel", "Jan", "Ondrej", "Lukas", "Matej", "Aleksandar", "Darko", "Filip", "Emil"],
-			"last": ["Petrovic", "Jovanovic", "Kovacs", "Novak", "Horvat", "Kowalski", "Wisniewski", "Popescu", "Ionescu", "Dimitrov", "Ivanov", "Marinkovic", "Stojanovic", "Zelenka", "Svoboda", "Kral", "Vukovic", "Pavlovic", "Kozlov", "Sokolov", "Volkov", "Morozov", "Lebedev", "Orlov", "Pavlenko", "Kravets", "Mihailov", "Tkachenko"]
-		},
-		"nordic": {
-			"first": ["Erik", "Lars", "Anders", "Magnus", "Henrik", "Olav", "Sven", "Emil", "Axel", "Nils", "Gustav", "Mikael", "Jonas", "Rasmus", "Soren", "Bjorn", "Leif", "Torsten", "Kasper", "Viggo", "Oskar", "Elias", "Mattias", "Joakim", "Fredrik", "Haakon", "Eirik", "Anton"],
-			"last": ["Lindqvist", "Johansen", "Eriksson", "Andersen", "Nilsson", "Bergstrom", "Hansen", "Larsen", "Holm", "Sandberg", "Nyberg", "Dahl", "Strand", "Lund", "Berg", "Haugen", "Solberg", "Kristiansen", "Jorgensen", "Pedersen", "Ekstrom", "Forsberg", "Hedlund", "Ostberg", "Wallin", "Backman", "Thorsen", "Aaberg"]
-		},
-		"east_asian": {
-			"first": ["Hiroshi", "Kenji", "Takumi", "Daichi", "Ren", "Haruto", "Sota", "Yuto", "Min-jun", "Joon-ho", "Seung", "Hyun-woo", "Jae-won", "Dong-hyun", "Wei", "Jun", "Hao", "Ming", "Lei", "Jian", "Bo", "Tao", "Yong", "Kai", "Sung-min", "Riku", "Shun", "Akira"],
-			"last": ["Tanaka", "Watanabe", "Nakamura", "Kobayashi", "Yamada", "Sato", "Kim", "Park", "Choi", "Jung", "Kang", "Cho", "Wang", "Li", "Zhang", "Liu", "Chen", "Yang", "Huang", "Zhao", "Wu", "Zhou", "Xu", "Lin", "Han", "Sun", "Ma", "Guo"]
-		}
-	}
+ "schema": 1,
+ "countries": {
+  "usa": {
+   "name": "United States",
+   "area": "north_america",
+   "talent_weight": 40,
+   "pools": {
+    "anglo": 5,
+    "west_african": 3,
+    "hispanic": 1.5
+   }
+  },
+  "canada": {
+   "name": "Canada",
+   "area": "north_america",
+   "talent_weight": 5,
+   "pools": {
+    "anglo": 5,
+    "western_european": 2,
+    "east_asian": 1,
+    "west_african": 1
+   }
+  },
+  "mexico": {
+   "name": "Mexico",
+   "area": "north_america",
+   "talent_weight": 2,
+   "pools": {
+    "hispanic": 1
+   }
+  },
+  "brazil": {
+   "name": "Brazil",
+   "area": "south_america",
+   "talent_weight": 4,
+   "pools": {
+    "south_european": 3,
+    "hispanic": 1,
+    "west_african": 1
+   }
+  },
+  "argentina": {
+   "name": "Argentina",
+   "area": "south_america",
+   "talent_weight": 3,
+   "pools": {
+    "hispanic": 3,
+    "south_european": 1
+   }
+  },
+  "colombia": {
+   "name": "Colombia",
+   "area": "south_america",
+   "talent_weight": 1.5,
+   "pools": {
+    "hispanic": 1
+   }
+  },
+  "peru": {
+   "name": "Peru",
+   "area": "south_america",
+   "talent_weight": 1,
+   "pools": {
+    "hispanic": 1
+   }
+  },
+  "chile": {
+   "name": "Chile",
+   "area": "south_america",
+   "talent_weight": 1,
+   "pools": {
+    "hispanic": 1
+   }
+  },
+  "uruguay": {
+   "name": "Uruguay",
+   "area": "south_america",
+   "talent_weight": 1.5,
+   "pools": {
+    "hispanic": 2,
+    "south_european": 1
+   }
+  },
+  "uk": {
+   "name": "United Kingdom",
+   "area": "europe",
+   "talent_weight": 3,
+   "pools": {
+    "anglo": 4,
+    "west_african": 1,
+    "south_asian": 1
+   }
+  },
+  "ireland": {
+   "name": "Ireland",
+   "area": "europe",
+   "talent_weight": 1,
+   "pools": {
+    "anglo": 1
+   }
+  },
+  "france": {
+   "name": "France",
+   "area": "europe",
+   "talent_weight": 6,
+   "pools": {
+    "western_european": 3,
+    "west_african": 2,
+    "south_european": 0.5
+   }
+  },
+  "spain": {
+   "name": "Spain",
+   "area": "europe",
+   "talent_weight": 5,
+   "pools": {
+    "hispanic": 3,
+    "south_european": 1
+   }
+  },
+  "portugal": {
+   "name": "Portugal",
+   "area": "europe",
+   "talent_weight": 1.5,
+   "pools": {
+    "south_european": 1
+   }
+  },
+  "italy": {
+   "name": "Italy",
+   "area": "europe",
+   "talent_weight": 3,
+   "pools": {
+    "south_european": 1
+   }
+  },
+  "germany": {
+   "name": "Germany",
+   "area": "europe",
+   "talent_weight": 4,
+   "pools": {
+    "western_european": 3,
+    "middle_eastern": 0.5,
+    "east_european": 0.5
+   }
+  },
+  "netherlands": {
+   "name": "Netherlands",
+   "area": "europe",
+   "talent_weight": 2,
+   "pools": {
+    "western_european": 1
+   }
+  },
+  "belgium": {
+   "name": "Belgium",
+   "area": "europe",
+   "talent_weight": 1.5,
+   "pools": {
+    "western_european": 1,
+    "west_african": 0.5
+   }
+  },
+  "switzerland": {
+   "name": "Switzerland",
+   "area": "europe",
+   "talent_weight": 1,
+   "pools": {
+    "western_european": 1
+   }
+  },
+  "austria": {
+   "name": "Austria",
+   "area": "europe",
+   "talent_weight": 1,
+   "pools": {
+    "western_european": 1
+   }
+  },
+  "sweden": {
+   "name": "Sweden",
+   "area": "europe",
+   "talent_weight": 2,
+   "pools": {
+    "nordic": 1
+   }
+  },
+  "denmark": {
+   "name": "Denmark",
+   "area": "europe",
+   "talent_weight": 1.5,
+   "pools": {
+    "nordic": 1
+   }
+  },
+  "norway": {
+   "name": "Norway",
+   "area": "europe",
+   "talent_weight": 1,
+   "pools": {
+    "nordic": 1
+   }
+  },
+  "finland": {
+   "name": "Finland",
+   "area": "europe",
+   "talent_weight": 1.5,
+   "pools": {
+    "nordic": 1
+   }
+  },
+  "poland": {
+   "name": "Poland",
+   "area": "europe",
+   "talent_weight": 2,
+   "pools": {
+    "east_european": 1
+   }
+  },
+  "czechia": {
+   "name": "Czechia",
+   "area": "europe",
+   "talent_weight": 1.5,
+   "pools": {
+    "east_european": 1
+   }
+  },
+  "hungary": {
+   "name": "Hungary",
+   "area": "europe",
+   "talent_weight": 1,
+   "pools": {
+    "east_european": 1
+   }
+  },
+  "serbia": {
+   "name": "Serbia",
+   "area": "europe",
+   "talent_weight": 5,
+   "pools": {
+    "east_european": 1
+   }
+  },
+  "croatia": {
+   "name": "Croatia",
+   "area": "europe",
+   "talent_weight": 2.5,
+   "pools": {
+    "east_european": 1
+   }
+  },
+  "lithuania": {
+   "name": "Lithuania",
+   "area": "europe",
+   "talent_weight": 3,
+   "pools": {
+    "east_european": 1
+   }
+  },
+  "latvia": {
+   "name": "Latvia",
+   "area": "europe",
+   "talent_weight": 1.5,
+   "pools": {
+    "east_european": 1
+   }
+  },
+  "greece": {
+   "name": "Greece",
+   "area": "europe",
+   "talent_weight": 3,
+   "pools": {
+    "south_european": 1
+   }
+  },
+  "turkey": {
+   "name": "Turkey",
+   "area": "europe",
+   "talent_weight": 4,
+   "pools": {
+    "middle_eastern": 1
+   }
+  },
+  "japan": {
+   "name": "Japan",
+   "area": "asia",
+   "talent_weight": 2,
+   "pools": {
+    "east_asian": 1
+   }
+  },
+  "south_korea": {
+   "name": "South Korea",
+   "area": "asia",
+   "talent_weight": 1.5,
+   "pools": {
+    "east_asian": 1
+   }
+  },
+  "china": {
+   "name": "China",
+   "area": "asia",
+   "talent_weight": 3,
+   "pools": {
+    "east_asian": 1
+   }
+  },
+  "philippines": {
+   "name": "Philippines",
+   "area": "asia",
+   "talent_weight": 1.5,
+   "pools": {
+    "southeast_asian": 1,
+    "hispanic": 0.3
+   }
+  },
+  "singapore": {
+   "name": "Singapore",
+   "area": "asia",
+   "talent_weight": 0.5,
+   "pools": {
+    "east_asian": 2,
+    "southeast_asian": 1,
+    "south_asian": 1
+   }
+  },
+  "thailand": {
+   "name": "Thailand",
+   "area": "asia",
+   "talent_weight": 0.5,
+   "pools": {
+    "southeast_asian": 1
+   }
+  },
+  "indonesia": {
+   "name": "Indonesia",
+   "area": "asia",
+   "talent_weight": 0.5,
+   "pools": {
+    "southeast_asian": 1
+   }
+  },
+  "malaysia": {
+   "name": "Malaysia",
+   "area": "asia",
+   "talent_weight": 0.5,
+   "pools": {
+    "southeast_asian": 1,
+    "east_asian": 1
+   }
+  },
+  "vietnam": {
+   "name": "Vietnam",
+   "area": "asia",
+   "talent_weight": 0.5,
+   "pools": {
+    "southeast_asian": 1
+   }
+  },
+  "india": {
+   "name": "India",
+   "area": "asia",
+   "talent_weight": 0.5,
+   "pools": {
+    "south_asian": 1
+   }
+  },
+  "uae": {
+   "name": "United Arab Emirates",
+   "area": "asia",
+   "talent_weight": 0.5,
+   "pools": {
+    "middle_eastern": 1,
+    "south_asian": 1
+   }
+  },
+  "australia": {
+   "name": "Australia",
+   "area": "oceania",
+   "talent_weight": 4,
+   "pools": {
+    "anglo": 4,
+    "east_asian": 0.5,
+    "south_european": 0.5
+   }
+  },
+  "new_zealand": {
+   "name": "New Zealand",
+   "area": "oceania",
+   "talent_weight": 1,
+   "pools": {
+    "anglo": 1
+   }
+  },
+  "nigeria": {
+   "name": "Nigeria",
+   "area": "africa",
+   "talent_weight": 5,
+   "pools": {
+    "west_african": 1
+   }
+  },
+  "ghana": {
+   "name": "Ghana",
+   "area": "africa",
+   "talent_weight": 1.5,
+   "pools": {
+    "west_african": 1
+   }
+  },
+  "senegal": {
+   "name": "Senegal",
+   "area": "africa",
+   "talent_weight": 2,
+   "pools": {
+    "west_african": 1
+   }
+  },
+  "morocco": {
+   "name": "Morocco",
+   "area": "africa",
+   "talent_weight": 0.5,
+   "pools": {
+    "middle_eastern": 1
+   }
+  },
+  "egypt": {
+   "name": "Egypt",
+   "area": "africa",
+   "talent_weight": 0.5,
+   "pools": {
+    "middle_eastern": 1
+   }
+  },
+  "south_africa": {
+   "name": "South Africa",
+   "area": "africa",
+   "talent_weight": 1,
+   "pools": {
+    "anglo": 1,
+    "east_african": 1
+   }
+  },
+  "kenya": {
+   "name": "Kenya",
+   "area": "africa",
+   "talent_weight": 0.5,
+   "pools": {
+    "east_african": 1
+   }
+  },
+  "angola": {
+   "name": "Angola",
+   "area": "africa",
+   "talent_weight": 1,
+   "pools": {
+    "south_european": 1,
+    "west_african": 1
+   }
+  }
+ },
+ "pools": {
+  "anglo": {
+   "first": [
+    "James",
+    "Michael",
+    "Ryan",
+    "Tyler",
+    "Connor",
+    "Jack",
+    "Ethan",
+    "Logan",
+    "Cole",
+    "Dylan",
+    "Mason",
+    "Caleb",
+    "Owen",
+    "Luke",
+    "Hunter",
+    "Blake",
+    "Trevor",
+    "Wesley",
+    "Grant",
+    "Julian",
+    "Brandon",
+    "Austin",
+    "Nolan",
+    "Garrett",
+    "Chase",
+    "Preston",
+    "Colin",
+    "Reid"
+   ],
+   "last": [
+    "Whitfield",
+    "Calloway",
+    "Hargrove",
+    "Prescott",
+    "Langley",
+    "Dunmore",
+    "Thornton",
+    "Ashby",
+    "Kingsley",
+    "Merrick",
+    "Holloway",
+    "Sutton",
+    "Barlow",
+    "Ellison",
+    "Fairbanks",
+    "Garrity",
+    "Hadley",
+    "Kendrick",
+    "Lockhart",
+    "Mercer",
+    "Norwood",
+    "Pemberton",
+    "Radcliffe",
+    "Sheridan",
+    "Tennant",
+    "Underhill",
+    "Wexler",
+    "Yardley"
+   ]
+  },
+  "hispanic": {
+   "first": [
+    "Mateo",
+    "Santiago",
+    "Diego",
+    "Javier",
+    "Rafael",
+    "Alejandro",
+    "Andres",
+    "Emilio",
+    "Joaquin",
+    "Lucas",
+    "Nicolas",
+    "Pablo",
+    "Sergio",
+    "Tomas",
+    "Victor",
+    "Gabriel",
+    "Hector",
+    "Ignacio",
+    "Leandro",
+    "Marcos",
+    "Oscar",
+    "Ramon",
+    "Esteban",
+    "Fabian",
+    "Gonzalo",
+    "Ivan",
+    "Julio",
+    "Cristian"
+   ],
+   "last": [
+    "Alvarado",
+    "Benitez",
+    "Castellanos",
+    "Delgado",
+    "Escobar",
+    "Fuentes",
+    "Guerrero",
+    "Herrera",
+    "Ibarra",
+    "Jimenez",
+    "Lozano",
+    "Maldonado",
+    "Navarro",
+    "Ortega",
+    "Paredes",
+    "Quintero",
+    "Rivas",
+    "Salazar",
+    "Trujillo",
+    "Urbina",
+    "Valdez",
+    "Zamora",
+    "Bautista",
+    "Cardenas",
+    "Duarte",
+    "Espinoza",
+    "Figueroa",
+    "Gallegos"
+   ]
+  },
+  "west_african": {
+   "first": [
+    "Kofi",
+    "Kwame",
+    "Emeka",
+    "Chidi",
+    "Tunde",
+    "Olu",
+    "Seun",
+    "Femi",
+    "Ade",
+    "Yaw",
+    "Kwabena",
+    "Ibrahim",
+    "Mamadou",
+    "Sekou",
+    "Amadou",
+    "Ousmane",
+    "Chike",
+    "Obinna",
+    "Segun",
+    "Kojo",
+    "Nnamdi",
+    "Babatunde",
+    "Idris",
+    "Lamine",
+    "Moussa",
+    "Tidiane",
+    "Kelechi",
+    "Uche"
+   ],
+   "last": [
+    "Mensah",
+    "Boateng",
+    "Okafor",
+    "Adeyemi",
+    "Diallo",
+    "Traore",
+    "Konate",
+    "Osei",
+    "Nwosu",
+    "Balogun",
+    "Camara",
+    "Sow",
+    "Ndiaye",
+    "Owusu",
+    "Abubakar",
+    "Eze",
+    "Okonkwo",
+    "Adebayo",
+    "Bangura",
+    "Keita",
+    "Sesay",
+    "Toure",
+    "Appiah",
+    "Danso",
+    "Ogunleye",
+    "Cisse",
+    "Fofana",
+    "Bello"
+   ]
+  },
+  "south_european": {
+   "first": [
+    "Luca",
+    "Marco",
+    "Matteo",
+    "Giorgio",
+    "Stefano",
+    "Dario",
+    "Nikos",
+    "Dimitri",
+    "Alessio",
+    "Fabrizio",
+    "Tommaso",
+    "Andrea",
+    "Paolo",
+    "Enzo",
+    "Nuno",
+    "Rui",
+    "Tiago",
+    "Joao",
+    "Bruno",
+    "Ricardo",
+    "Vasco",
+    "Filipe",
+    "Costas",
+    "Yannis",
+    "Pavlos",
+    "Leonidas",
+    "Rocco",
+    "Gianluca"
+   ],
+   "last": [
+    "Moretti",
+    "Ricci",
+    "Conti",
+    "Barone",
+    "Marino",
+    "Greco",
+    "Fontana",
+    "Caruso",
+    "Ferreira",
+    "Pereira",
+    "Carvalho",
+    "Teixeira",
+    "Almeida",
+    "Sampaio",
+    "Papadakis",
+    "Karras",
+    "Vlachos",
+    "Nikolaidis",
+    "Georgiou",
+    "Lombardi",
+    "Serrano",
+    "Bellini",
+    "Costa",
+    "Rinaldi",
+    "Santoro",
+    "Moreira",
+    "Faria",
+    "Sousa"
+   ]
+  },
+  "east_european": {
+   "first": [
+    "Dmitri",
+    "Nikola",
+    "Marko",
+    "Luka",
+    "Stefan",
+    "Milan",
+    "Andrei",
+    "Viktor",
+    "Tomasz",
+    "Piotr",
+    "Jakub",
+    "Mateusz",
+    "Bogdan",
+    "Radu",
+    "Zoran",
+    "Goran",
+    "Dragan",
+    "Vlad",
+    "Anton",
+    "Pavel",
+    "Jan",
+    "Ondrej",
+    "Lukas",
+    "Matej",
+    "Aleksandar",
+    "Darko",
+    "Filip",
+    "Emil"
+   ],
+   "last": [
+    "Petrovic",
+    "Jovanovic",
+    "Kovacs",
+    "Novak",
+    "Horvat",
+    "Kowalski",
+    "Wisniewski",
+    "Popescu",
+    "Ionescu",
+    "Dimitrov",
+    "Ivanov",
+    "Marinkovic",
+    "Stojanovic",
+    "Zelenka",
+    "Svoboda",
+    "Kral",
+    "Vukovic",
+    "Pavlovic",
+    "Kozlov",
+    "Sokolov",
+    "Volkov",
+    "Morozov",
+    "Lebedev",
+    "Orlov",
+    "Pavlenko",
+    "Kravets",
+    "Mihailov",
+    "Tkachenko"
+   ]
+  },
+  "nordic": {
+   "first": [
+    "Erik",
+    "Lars",
+    "Anders",
+    "Magnus",
+    "Henrik",
+    "Olav",
+    "Sven",
+    "Emil",
+    "Axel",
+    "Nils",
+    "Gustav",
+    "Mikael",
+    "Jonas",
+    "Rasmus",
+    "Soren",
+    "Bjorn",
+    "Leif",
+    "Torsten",
+    "Kasper",
+    "Viggo",
+    "Oskar",
+    "Elias",
+    "Mattias",
+    "Joakim",
+    "Fredrik",
+    "Haakon",
+    "Eirik",
+    "Anton"
+   ],
+   "last": [
+    "Lindqvist",
+    "Johansen",
+    "Eriksson",
+    "Andersen",
+    "Nilsson",
+    "Bergstrom",
+    "Hansen",
+    "Larsen",
+    "Holm",
+    "Sandberg",
+    "Nyberg",
+    "Dahl",
+    "Strand",
+    "Lund",
+    "Berg",
+    "Haugen",
+    "Solberg",
+    "Kristiansen",
+    "Jorgensen",
+    "Pedersen",
+    "Ekstrom",
+    "Forsberg",
+    "Hedlund",
+    "Ostberg",
+    "Wallin",
+    "Backman",
+    "Thorsen",
+    "Aaberg"
+   ]
+  },
+  "east_asian": {
+   "first": [
+    "Hiroshi",
+    "Kenji",
+    "Takumi",
+    "Daichi",
+    "Ren",
+    "Haruto",
+    "Sota",
+    "Yuto",
+    "Min-jun",
+    "Joon-ho",
+    "Seung",
+    "Hyun-woo",
+    "Jae-won",
+    "Dong-hyun",
+    "Wei",
+    "Jun",
+    "Hao",
+    "Ming",
+    "Lei",
+    "Jian",
+    "Bo",
+    "Tao",
+    "Yong",
+    "Kai",
+    "Sung-min",
+    "Riku",
+    "Shun",
+    "Akira"
+   ],
+   "last": [
+    "Tanaka",
+    "Watanabe",
+    "Nakamura",
+    "Kobayashi",
+    "Yamada",
+    "Sato",
+    "Kim",
+    "Park",
+    "Choi",
+    "Jung",
+    "Kang",
+    "Cho",
+    "Wang",
+    "Li",
+    "Zhang",
+    "Liu",
+    "Chen",
+    "Yang",
+    "Huang",
+    "Zhao",
+    "Wu",
+    "Zhou",
+    "Xu",
+    "Lin",
+    "Han",
+    "Sun",
+    "Ma",
+    "Guo"
+   ]
+  },
+  "western_european": {
+   "first": [
+    "Lukas",
+    "Felix",
+    "Jonas",
+    "Maximilian",
+    "Leon",
+    "Florian",
+    "Hugo",
+    "Louis",
+    "Theo",
+    "Antoine",
+    "Julien",
+    "Mathieu",
+    "Baptiste",
+    "Thibault",
+    "Pieter",
+    "Daan",
+    "Joris",
+    "Bram",
+    "Matthias",
+    "Tobias",
+    "Emile",
+    "Lucien",
+    "Simon",
+    "Henri"
+   ],
+   "last": [
+    "Schneider",
+    "Fischer",
+    "Weber",
+    "Wagner",
+    "Becker",
+    "Hoffmann",
+    "Keller",
+    "Braun",
+    "Dubois",
+    "Laurent",
+    "Moreau",
+    "Fournier",
+    "Girard",
+    "Lambert",
+    "Mercier",
+    "Bonnet",
+    "De Vries",
+    "Jansen",
+    "Bakker",
+    "Visser",
+    "Peeters",
+    "Maes",
+    "Janssens",
+    "Brunner"
+   ]
+  },
+  "middle_eastern": {
+   "first": [
+    "Emre",
+    "Burak",
+    "Mert",
+    "Kerem",
+    "Ahmet",
+    "Mehmet",
+    "Omar",
+    "Karim",
+    "Youssef",
+    "Hassan",
+    "Tariq",
+    "Samir",
+    "Khalid",
+    "Ali",
+    "Hamza",
+    "Bilal",
+    "Yasin",
+    "Cem",
+    "Deniz",
+    "Murat",
+    "Nabil",
+    "Rami",
+    "Zaid",
+    "Selim"
+   ],
+   "last": [
+    "Yilmaz",
+    "Kaya",
+    "Demir",
+    "Celik",
+    "Sahin",
+    "Aydin",
+    "Ozturk",
+    "Arslan",
+    "Haddad",
+    "Nasser",
+    "Khalil",
+    "Mansour",
+    "Saleh",
+    "Farouk",
+    "Hakim",
+    "Rahman",
+    "Qureshi",
+    "Aziz",
+    "Darwish",
+    "Habib",
+    "Bakr",
+    "Suleiman",
+    "Taha",
+    "Yasin"
+   ]
+  },
+  "south_asian": {
+   "first": [
+    "Arjun",
+    "Rohan",
+    "Vikram",
+    "Rahul",
+    "Aditya",
+    "Karan",
+    "Nikhil",
+    "Sanjay",
+    "Amit",
+    "Rajesh",
+    "Dev",
+    "Ishaan",
+    "Kabir",
+    "Manish",
+    "Pranav",
+    "Siddharth",
+    "Varun",
+    "Anil",
+    "Harish",
+    "Imran",
+    "Farhan",
+    "Zubair",
+    "Naveen",
+    "Tarun"
+   ],
+   "last": [
+    "Sharma",
+    "Patel",
+    "Singh",
+    "Kumar",
+    "Gupta",
+    "Reddy",
+    "Nair",
+    "Iyer",
+    "Mehta",
+    "Joshi",
+    "Kapoor",
+    "Malhotra",
+    "Chopra",
+    "Bose",
+    "Das",
+    "Rao",
+    "Verma",
+    "Khan",
+    "Ahmed",
+    "Siddiqui",
+    "Pillai",
+    "Menon",
+    "Chatterjee",
+    "Bhatt"
+   ]
+  },
+  "southeast_asian": {
+   "first": [
+    "Jericho",
+    "Marc",
+    "Kiefer",
+    "Carlo",
+    "Rey",
+    "Joshua",
+    "Matthew",
+    "Bayu",
+    "Putra",
+    "Dimas",
+    "Arif",
+    "Rizky",
+    "Somchai",
+    "Anan",
+    "Kittipong",
+    "Nattapong",
+    "Minh",
+    "Tuan",
+    "Hung",
+    "Quang",
+    "Wira",
+    "Hafiz",
+    "Aiman",
+    "Faiz"
+   ],
+   "last": [
+    "Santos",
+    "Reyes",
+    "Cruz",
+    "Garcia",
+    "Mendoza",
+    "Villanueva",
+    "Aquino",
+    "Pratama",
+    "Wijaya",
+    "Santoso",
+    "Setiawan",
+    "Nguyen",
+    "Tran",
+    "Pham",
+    "Le",
+    "Chaiyasit",
+    "Suwannarat",
+    "Rattanakul",
+    "Tan",
+    "Lim",
+    "Wong",
+    "Abdullah",
+    "Ismail",
+    "Rahman"
+   ]
+  },
+  "east_african": {
+   "first": [
+    "Juma",
+    "Baraka",
+    "Kamau",
+    "Otieno",
+    "Mwangi",
+    "Omondi",
+    "Njoroge",
+    "Kiprop",
+    "Kibet",
+    "Wekesa",
+    "Mutua",
+    "Odhiambo",
+    "Kariuki",
+    "Ochieng",
+    "Barasa",
+    "Wafula",
+    "Amani",
+    "Jabari",
+    "Zuberi",
+    "Tendai",
+    "Themba",
+    "Sipho",
+    "Bongani",
+    "Mandla"
+   ],
+   "last": [
+    "Kamau",
+    "Otieno",
+    "Mwangi",
+    "Omondi",
+    "Njoroge",
+    "Kiprono",
+    "Kibet",
+    "Wekesa",
+    "Mutua",
+    "Odhiambo",
+    "Kariuki",
+    "Ochieng",
+    "Barasa",
+    "Wafula",
+    "Dlamini",
+    "Nkosi",
+    "Zulu",
+    "Khumalo",
+    "Ndlovu",
+    "Mokoena",
+    "Molefe",
+    "Sithole",
+    "Mahlangu",
+    "Tshabalala"
+   ]
+  }
+ },
+ "fallback_country": "usa"
 }

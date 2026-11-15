@@ -11,8 +11,22 @@ func _init(data: FcGenerationData) -> void:
 	_data = data
 
 
+## Country used when none (or an unknown one) is requested.
 func home_country() -> String:
-	return str(_data.names.get("home_country", ""))
+	return str(_data.names.get("fallback_country", ""))
+
+
+## Nationality for a new person at a team in `team_country`: that country with
+## probability `home_share`, otherwise any country by basketball talent weight.
+func pick_origin(rng: FcRng, team_country: String, home_share: float) -> String:
+	var countries: Dictionary = _data.names.get("countries", {})
+	if countries.has(team_country) and rng.chance(home_share):
+		return team_country
+	var keys := country_keys()
+	var weights: Array = []
+	for k in keys:
+		weights.append(float(countries[k].get("talent_weight", 1.0)))
+	return keys[rng.weighted_index(weights)]
 
 
 func country_keys() -> Array[String]:

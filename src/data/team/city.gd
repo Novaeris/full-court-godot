@@ -8,8 +8,12 @@ const SCHEMA_VERSION := 1
 
 var id: int
 var name: String = ""
+## State / province / subdivision (e.g. "Texas").
 var region: String = ""
 var country: String = ""
+## World area key: "north_america", "south_america", "europe", "asia",
+## "oceania" or "africa". Empty in saves made before areas existed.
+var area: String = ""
 ## Metro population. Drives market size.
 var population: int = 1000000
 ## Local wealth, 0-100. Drives ticket/sponsor spending power.
@@ -38,7 +42,7 @@ func validate() -> Array[String]:
 func to_dict() -> Dictionary:
 	return {
 		"schema": SCHEMA_VERSION, "id": id, "name": name, "region": region,
-		"country": country, "population": population, "economy_index": economy_index,
+		"country": country, "area": area, "population": population, "economy_index": economy_index,
 	}
 
 
@@ -47,6 +51,7 @@ static func from_dict(data: Dictionary) -> FcCity:
 	c.name = str(data.get("name", ""))
 	c.region = str(data.get("region", ""))
 	c.country = str(data.get("country", ""))
+	c.area = str(data.get("area", ""))
 	c.population = int(data.get("population", c.population))
 	c.economy_index = int(data.get("economy_index", c.economy_index))
 	return c

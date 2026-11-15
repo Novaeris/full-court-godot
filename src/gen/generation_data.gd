@@ -69,24 +69,53 @@ func _check_names(errors: Array[String]) -> void:
 				errors.append("names: country '%s' uses unknown pool '%s'" % [ckey, pkey])
 			if float(weights[pkey]) <= 0.0:
 				errors.append("names: country '%s' pool '%s' needs a positive weight" % [ckey, pkey])
-	if not countries.has(str(names.get("home_country", ""))):
-		errors.append("names: home_country is not a listed country")
+	var areas: Dictionary = world.get("areas", {})
+	for ckey in countries:
+		if not areas.has(str(countries[ckey].get("area", ""))):
+			errors.append("names: country '%s' has an unknown area" % ckey)
+		if float(countries[ckey].get("talent_weight", 0.0)) <= 0.0:
+			errors.append("names: country '%s' needs a positive talent_weight" % ckey)
+		if FcChecks.is_blank(str(countries[ckey].get("name", ""))):
+			errors.append("names: country '%s' needs a name" % ckey)
+	if not countries.has(str(names.get("fallback_country", ""))):
+		errors.append("names: fallback_country is not a listed country")
 
 
 func _check_world(errors: Array[String]) -> void:
 	var cities: Array = world.get("cities", [])
 	if cities.is_empty():
 		errors.append("world: no cities")
+	var areas: Dictionary = world.get("areas", {})
+	if areas.is_empty():
+		errors.append("world: no areas")
+	var countries: Dictionary = names.get("countries", {})
 	var seen := {}
+	var seen_keys := {}
 	for c in cities:
 		var n := str(c.get("name", ""))
+		var key := str(c.get("key", ""))
 		if FcChecks.is_blank(n):
 			errors.append("world: a city has no name")
+		if not FcChecks.is_snake_key(key):
+			errors.append("world: city '%s' needs a snake_case key" % n)
+		if seen_keys.has(key):
+			errors.append("world: duplicate city key '%s'" % key)
+		seen_keys[key] = true
 		if seen.has(n):
 			errors.append("world: duplicate city '%s'" % n)
 		seen[n] = true
 		if FcChecks.is_blank(str(c.get("region", ""))):
 			errors.append("world: city '%s' has no region" % n)
+		if not areas.has(str(c.get("area", ""))):
+			errors.append("world: city '%s' has an unknown area" % n)
+		if not countries.has(str(c.get("country", ""))):
+			errors.append("world: city '%s' has an unknown country" % n)
+		elif areas.has(str(c.get("area", ""))) and countries[str(c["country"])].get("area", "") != c.get("area", ""):
+			errors.append("world: city '%s' area differs from its country's area" % n)
+		var lat := float(c.get("lat", 999.0))
+		var lon := float(c.get("lon", 999.0))
+		if lat < -90.0 or lat > 90.0 or lon < -180.0 or lon > 180.0:
+			errors.append("world: city '%s' has bad coordinates" % n)
 		if int(c.get("population", 0)) < 1000:
 			errors.append("world: city '%s' population too small" % n)
 		var econ := int(c.get("economy", -1))

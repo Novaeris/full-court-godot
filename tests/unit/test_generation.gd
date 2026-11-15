@@ -29,6 +29,9 @@ func _mean(values: Array) -> float:
 func _generator(team_count: int = 30) -> FcWorldGenerator:
 	var cfg := FcGenerationConfig.load_default(data)
 	cfg.team_count = team_count
+	if team_count < 12:
+		cfg.conference_count = 1
+		cfg.divisions_per_conference = 1
 	return FcWorldGenerator.new(data, defs, cfg)
 
 
@@ -42,7 +45,7 @@ func test_shipped_generation_data_is_valid() -> void:
 func test_validation_catches_bad_data() -> void:
 	var bad := FcGenerationData.load_default()
 	bad.names["pools"]["anglo"]["first"] = ["Only"]
-	bad.names["countries"]["aldoria"]["pools"]["ghost_pool"] = 1
+	bad.names["countries"]["usa"]["pools"]["ghost_pool"] = 1
 	bad.world["cities"].append({"name": "Port Calder", "region": "X", "population": 5000, "economy": 50})
 	bad.world["color_schemes"].append(["red", "#FFFFFF", "#000000"])
 	bad.positions["positions"].erase("C")
@@ -54,7 +57,7 @@ func test_config_validation() -> void:
 	var cfg := FcGenerationConfig.load_default(data)
 	cfg.team_count = 500
 	cfg.roster_size = 2
-	cfg.international_share = 2.0
+	cfg.home_country_share = 2.0
 	cfg.max_salary = 10
 	assert_true(cfg.validate(data).size() >= 4, str(cfg.validate(data)))
 
@@ -63,8 +66,8 @@ func test_config_validation() -> void:
 
 func test_names_are_deterministic_and_from_pools() -> void:
 	var g := FcNameGenerator.new(data)
-	var a := g.generate(FcRng.new(5), "kalunda")
-	var b := g.generate(FcRng.new(5), "kalunda")
+	var a := g.generate(FcRng.new(5), "nigeria")
+	var b := g.generate(FcRng.new(5), "nigeria")
 	assert_eq(a, b)
 	assert_true(data.names["pools"]["west_african"]["first"].has(a["first"]))
 	assert_true(data.names["pools"]["west_african"]["last"].has(a["last"]))
@@ -77,7 +80,7 @@ func test_unique_names_are_unique() -> void:
 	var used := {}
 	var seen := {}
 	for i in 300:
-		var n := g.generate_unique(rng, "aldoria", used)
+		var n := g.generate_unique(rng, "usa", used)
 		var full: String = "%s %s" % [n["first"], n["last"]]
 		assert_true(not seen.has(full), "duplicate %s" % full)
 		seen[full] = true
@@ -298,14 +301,15 @@ func test_league_talent_distribution_is_plausible() -> void:
 	var ages: Array = []
 	var home := 0
 	for t in w.teams.all():
+		var team_country: String = w.cities.get_by_id(t.city_id).country
 		for pid in t.roster.player_ids:
 			var p: FcPlayer = w.players.get_by_id(pid)
 			ages.append(p.age_on(FcDate.new(2026, 7, 1)))
-			if p.identity.country == "Aldoria":
+			if p.identity.country == team_country:
 				home += 1
 	assert_between(_mean(ages), 24.0, 29.0, "average roster age")
 	var share := float(home) / (30 * 15)
-	assert_between(share, 0.7, 0.9, "home-country share")
+	assert_between(share, 0.5, 0.9, "share of players from the team's own country")
 
 
 func test_contract_terms_are_sane() -> void:
@@ -348,6 +352,8 @@ func test_free_agents_have_no_team_or_contract() -> void:
 func test_small_league_and_custom_config() -> void:
 	var cfg := FcGenerationConfig.load_default(data)
 	cfg.team_count = 4
+	cfg.conference_count = 1
+	cfg.divisions_per_conference = 1
 	cfg.roster_size = 12
 	cfg.free_agent_count = 5
 	cfg.scouts = 0
@@ -360,6 +366,8 @@ func test_small_league_and_custom_config() -> void:
 
 func test_generated_world_survives_json_and_save() -> void:
 	var gen := _generator(8)
+	gen.config.conference_count = 2
+	gen.config.divisions_per_conference = 2
 	var state := gen.new_game_state(SEED, FcGameState.MODE_DYNASTY, 2)
 	assert_eq(state.validate(), [] as Array[String])
 	assert_eq(state.user_team_id, 3)

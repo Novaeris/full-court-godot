@@ -1,15 +1,35 @@
 class_name FcWorldGenerator
 extends RefCounted
-## Builds a complete, internally consistent fictional league from one seed:
-## cities, arenas, teams, full rosters with contracts, coaching/front-office
-## staff with contracts, and a pool of free agents.
+## Builds a complete, internally consistent league from one seed and a
+## customizable FcGenerationConfig: teams placed in real cities (chosen by
+## area, by size, or an exact list), a league structure of conferences and
+## divisions grouped geographically, full rosters with contracts, coaching and
+## front-office staff with contracts, and a pool of free agents.
+##
+## Teams, players and staff are ORIGINAL (generated); only places and country
+## names are real. No real franchises, logos or player names are used.
 ##
 ## Reproducible: the same seed and config always produce the identical world.
-## Each stage (cities, each team, free agents) uses its own forked random
+## Each stage (city choice, each team, free agents) uses its own forked random
 ## stream, so changing one stage does not reshuffle the others.
 ##
-## It does NOT create league structure (conferences, schedule) or history;
-## those belong to the league-operations systems.
+## Call validate() first: generate() assumes a valid config. It does NOT create
+## league rules (season length, playoffs, salary cap) or history.
+
+const CONFERENCE_NAMES := {
+	1: ["League"],
+	2: ["Western", "Eastern"],
+	3: ["Western", "Central", "Eastern"],
+	4: ["Far West", "West", "East", "Far East"],
+}
+const DIVISION_NAMES := {2: ["South", "North"], 3: ["South", "Central", "North"]}
+
+## Accented letters are reduced to plain A-Z when building team abbreviations.
+const LETTER_FOLDING := {
+	"Á": "A", "À": "A", "Â": "A", "Ã": "A", "Ä": "A",
+	"É": "E", "È": "E", "Ê": "E", "Í": "I", "Ó": "O",
+	"Ô": "O", "Ö": "O", "Ú": "U", "Ü": "U", "Ç": "C", "Ñ": "N",
+}
 
 var _data: FcGenerationData
 var _defs: FcDefinitionSet
@@ -54,26 +74,77 @@ func new_game_state(seed_value: int, mode: String = FcGameState.MODE_OWNER, user
 	return state
 
 
+## The cities this config would use (data dictionaries from world.json), in
+## team order. A UI can use this to preview a league before generating it.
+func select_cities(rng: FcRng) -> Array:
+	var cities: Array = _data.world["cities"]
+	if not config.city_keys.is_empty():
+		var index := {}
+		for c in cities:
+			index[c["key"]] = c
+		var exact: Array = []
+		for key in config.city_keys:
+			exact.append(index[key])
+		return exact
+
+	var candidates: Array = []
+	for c in cities:
+		if config.areas.is_empty() or config.areas.has(c["area"]):
+			candidates.append(c)
+	var n := config.team_count
+	if config.selection_mode == "largest":
+		candidates.sort_custom(func(a, b):
+			if int(a["population"]) != int(b["population"]):
+				return int(a["population"]) > int(b["population"])
+			return str(a["name"]) < str(b["name"]))
+		return candidates.slice(0, n)
+
+	var chosen: Array = []
+	var pool := candidates.duplicate()
+	for i in n:
+		var weights: Array = []
+		for c in pool:
+			weights.append(float(c["population"]))
+		var pick := rng.weighted_index(weights)
+		chosen.append(pool[pick])
+		pool.remove_at(pick)
+	return chosen
+
+
 func generate(seed_value: int) -> FcWorld:
 	var root := FcRng.new(seed_value)
 	var world := FcWorld.new(_defs)
 	var used_names := {}
 	var reference := FcDate.new(config.start_season, 7, 1)
+	var entries := select_cities(root.fork("cities"))
+	var team_count := entries.size()
 
-	var cities: Array = _shuffled(root.fork("cities"), _data.world["cities"])
-	var nicknames: Array = _shuffled(root.fork("nicknames"), _data.world["nicknames"])
+	var custom_names: Array = config.team_nicknames.values()
+	var nickname_pool: Array = []
+	for nick in _shuffled(root.fork("nicknames"), _data.world["nicknames"]):
+		if not custom_names.has(nick):
+			nickname_pool.append(nick)
 	var schemes: Array = _shuffled(root.fork("colors"), _data.world["color_schemes"])
 	var used_abbreviations := {}
 	var used_arena_names := {}
+	var teams: Array[FcTeam] = []
+	var nick_cursor := 0
 
-	for i in config.team_count:
+	for i in team_count:
+		var entry: Dictionary = entries[i]
 		var team_rng := root.fork("team:%d" % i)
-		var city := _make_city(world, cities[i])
+		var city := _make_city(world, entry)
 		var arena := _make_arena(world, team_rng, city, used_arena_names)
 		var team := FcTeam.new(world.ids.next_id(FcWorld.KIND_TEAM))
 		team.city_id = city.id
 		team.arena_id = arena.id
-		team.identity.nickname = nicknames[i]
+		if config.team_nicknames.has(entry["key"]):
+			team.identity.nickname = str(config.team_nicknames[entry["key"]])
+		elif nick_cursor < nickname_pool.size():
+			team.identity.nickname = str(nickname_pool[nick_cursor])
+			nick_cursor += 1
+		else:
+			team.identity.nickname = "Team %d" % (i + 1)
 		team.identity.abbreviation = _make_abbreviation(city.name, used_abbreviations)
 		team.identity.founded_year = team_rng.range_int(1950, 2015)
 		var scheme: Array = schemes[i % schemes.size()]
@@ -82,11 +153,75 @@ func generate(seed_value: int) -> FcWorld:
 		team.branding.accent_color = scheme[2]
 		team.roster.max_size = maxi(FcRoster.DEFAULT_MAX_SIZE, config.roster_size)
 		world.teams.add(team)
-		_fill_roster(world, team, team_rng.fork("players"), used_names, reference)
-		_hire_staff(world, team, team_rng.fork("staff"), used_names, reference)
+		teams.append(team)
+		var country: String = entry["country"]
+		_fill_roster(world, team, team_rng.fork("players"), used_names, reference, country)
+		_hire_staff(world, team, team_rng.fork("staff"), used_names, reference, country)
 
+	world.leagues.add(_build_league(world, teams, entries))
 	_add_free_agents(world, root.fork("free_agents"), used_names, reference)
 	return world
+
+
+# --- league structure ------------------------------------------------------
+
+## Groups teams geographically: conferences split west to east (by longitude),
+## then each conference splits south to north (by latitude) into divisions.
+## Sizes are as even as possible. A league mixing North America and Europe
+## naturally gets Americas/Europe-style conferences.
+func _build_league(world: FcWorld, teams: Array[FcTeam], entries: Array) -> FcLeague:
+	var league := FcLeague.new(world.ids.next_id(FcWorld.KIND_LEAGUE), config.league_name)
+	var order: Array = range(teams.size())
+	order.sort_custom(func(a, b):
+		var lon_a := float(entries[a]["lon"])
+		var lon_b := float(entries[b]["lon"])
+		return lon_a < lon_b if lon_a != lon_b else a < b)
+
+	var conf_count := config.conference_count
+	var div_count := config.divisions_per_conference
+	var conf_sizes := _even_split(teams.size(), conf_count)
+	var cursor := 0
+	for c in conf_count:
+		var members: Array = order.slice(cursor, cursor + conf_sizes[c])
+		cursor += conf_sizes[c]
+		members.sort_custom(func(a, b):
+			var lat_a := float(entries[a]["lat"])
+			var lat_b := float(entries[b]["lat"])
+			return lat_a < lat_b if lat_a != lat_b else a < b)
+		var conference := FcConference.new(world.ids.next_id(FcWorld.KIND_CONFERENCE), _conference_name(c, conf_count))
+		var div_sizes := _even_split(members.size(), div_count)
+		var d_cursor := 0
+		for d in div_count:
+			var division := FcDivision.new(world.ids.next_id(FcWorld.KIND_DIVISION), _division_name(d, div_count, conference.name))
+			for idx in members.slice(d_cursor, d_cursor + div_sizes[d]):
+				division.team_ids.append(teams[idx].id)
+			d_cursor += div_sizes[d]
+			conference.divisions.append(division)
+		league.conferences.append(conference)
+	return league
+
+
+static func _even_split(total: int, parts: int) -> Array[int]:
+	var out: Array[int] = []
+	var base := floori(float(total) / parts)
+	var extra := total % parts
+	for i in parts:
+		out.append(base + (1 if i < extra else 0))
+	return out
+
+
+static func _conference_name(index: int, count: int) -> String:
+	if CONFERENCE_NAMES.has(count):
+		return CONFERENCE_NAMES[count][index]
+	return "Conference %s" % char(65 + index)
+
+
+static func _division_name(index: int, count: int, conference_name: String) -> String:
+	if count == 1:
+		return conference_name
+	if DIVISION_NAMES.has(count):
+		return DIVISION_NAMES[count][index]
+	return "Division %s" % char(65 + index)
 
 
 # --- cities, arenas, teams -------------------------------------------------
@@ -95,7 +230,8 @@ func _make_city(world: FcWorld, entry: Dictionary) -> FcCity:
 	var c := FcCity.new(world.ids.next_id(FcWorld.KIND_CITY))
 	c.name = str(entry["name"])
 	c.region = str(entry["region"])
-	c.country = str(_data.world.get("country", "Aldoria"))
+	c.country = _names.country_name(str(entry["country"]))
+	c.area = str(entry["area"])
 	c.population = int(entry["population"])
 	c.economy_index = int(entry["economy"])
 	world.cities.add(c)
@@ -125,14 +261,18 @@ func _make_arena(world: FcWorld, rng: FcRng, city: FcCity, used: Dictionary) -> 
 ## 2-4 letter code from the city name, unique among teams.
 func _make_abbreviation(city_name: String, used: Dictionary) -> String:
 	var letters := ""
-	for ch in city_name.to_upper():
-		if ch >= "A" and ch <= "Z":
-			letters += ch
-	var candidates: Array[String] = [letters.substr(0, 3)]
 	var initials := ""
-	for word in city_name.to_upper().split(" "):
-		if not word.is_empty():
-			initials += word[0]
+	var new_word := true
+	for ch in city_name.to_upper():
+		var plain: String = LETTER_FOLDING.get(ch, ch)
+		if plain >= "A" and plain <= "Z":
+			letters += plain
+			if new_word:
+				initials += plain
+			new_word = false
+		else:
+			new_word = true
+	var candidates: Array[String] = [letters.substr(0, 3)]
 	if initials.length() >= 2:
 		candidates.append(initials.substr(0, 4))
 	for i in range(2, letters.length()):
@@ -152,7 +292,7 @@ func _make_abbreviation(city_name: String, used: Dictionary) -> String:
 
 # --- players ---------------------------------------------------------------
 
-func _fill_roster(world: FcWorld, team: FcTeam, rng: FcRng, used_names: Dictionary, reference: FcDate) -> void:
+func _fill_roster(world: FcWorld, team: FcTeam, rng: FcRng, used_names: Dictionary, reference: FcDate, team_country: String) -> void:
 	var strength := rng.gaussian(0.0, config.team_strength_sd)
 	var positions := _roster_positions(rng, config.roster_size)
 	for slot in config.roster_size:
@@ -165,7 +305,7 @@ func _fill_roster(world: FcWorld, team: FcTeam, rng: FcRng, used_names: Dictiona
 		spec.age = age
 		spec.position = positions[slot]
 		spec.level = level
-		spec.country_key = _pick_country(rng)
+		spec.country_key = _names.pick_origin(rng, team_country, config.home_country_share)
 		spec.reference_date = reference
 		spec.used_names = used_names
 		var player := _players.generate(rng, world.ids.next_id(FcWorld.KIND_PLAYER), spec)
@@ -182,7 +322,7 @@ func _add_free_agents(world: FcWorld, rng: FcRng, used_names: Dictionary, refere
 		spec.age = age
 		spec.position = positions[i]
 		spec.level = clampf(FcPlayerGenerator.age_adjusted_level(rng.gaussian(42.0, 7.0), age), 20.0, 62.0)
-		spec.country_key = _pick_country(rng)
+		spec.country_key = _names.pick_origin(rng, "", 0.0)
 		spec.reference_date = reference
 		spec.used_names = used_names
 		world.players.add(_players.generate(rng, world.ids.next_id(FcWorld.KIND_PLAYER), spec))
@@ -194,17 +334,6 @@ func _roster_positions(rng: FcRng, count: int) -> Array[int]:
 	for i in count:
 		list.append(FcPosition.Id.PG + (i % 5))
 	return _shuffled(rng, list)
-
-
-func _pick_country(rng: FcRng) -> String:
-	var home := _names.home_country()
-	if not rng.chance(config.international_share):
-		return home
-	var others: Array[String] = []
-	for k in _names.country_keys():
-		if k != home:
-			others.append(k)
-	return home if others.is_empty() else others[rng.range_int(0, others.size() - 1)]
 
 
 ## Contract already partly served: it started up to (length - 1) seasons ago.
@@ -226,7 +355,7 @@ func _player_contract(world: FcWorld, rng: FcRng, player_id: int, team_id: int, 
 
 # --- staff -----------------------------------------------------------------
 
-func _hire_staff(world: FcWorld, team: FcTeam, rng: FcRng, used_names: Dictionary, reference: FcDate) -> void:
+func _hire_staff(world: FcWorld, team: FcTeam, rng: FcRng, used_names: Dictionary, reference: FcDate, team_country: String) -> void:
 	var jobs: Array = [
 		[FcStaffRole.Id.GENERAL_MANAGER, 1, 55.0],
 		[FcStaffRole.Id.HEAD_COACH, 1, 55.0],
@@ -238,7 +367,9 @@ func _hire_staff(world: FcWorld, team: FcTeam, rng: FcRng, used_names: Dictionar
 	for job in jobs:
 		for n in int(job[1]):
 			var level := clampf(rng.gaussian(float(job[2]), 11.0), 30.0, 85.0)
-			var member := _staff.generate(rng, world.ids.next_id(FcWorld.KIND_STAFF), int(job[0]), level, reference, used_names, _pick_country(rng))
+			# Staff are mostly local: the league's own country, sometimes anywhere.
+			var origin := _names.pick_origin(rng, team_country, 0.8)
+			var member := _staff.generate(rng, world.ids.next_id(FcWorld.KIND_STAFF), int(job[0]), level, reference, used_names, origin)
 			world.staff.add(member)
 			world.staff_contracts.add(_staff_contract(world, rng, member, team.id, int(job[0])))
 

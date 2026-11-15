@@ -51,6 +51,9 @@ team/        FcTeam              composed of:
                FcRoster          list of player ids (the changing part)
              FcCity              market: population, economy
              FcArena             capacity, year built, city
+league/      FcLeague            name + conferences; team membership queries; add_team / remove_team
+               FcConference      name + divisions
+               FcDivision        name + team ids
 contract/    FcContract          player_id, team_id, status, signing date, composed of:
                FcContractYear    season, salary, guaranteed, option (type/status)
                FcContractBonus   kind, season, amount, guaranteed, counts vs cap
@@ -73,6 +76,7 @@ Attribute definitions live in `data/definitions/*.json`: 28 basketball attribute
 - Staff ↔ Team: via `FcStaffContract` (staff_id, team_id, role). A team's staff = its ACTIVE staff contracts (no separate staff list, single source of truth). Rules checked by `FcWorld.validate()`: one active job per person, at most one active General Manager and one Head Coach per team, retired staff cannot hold an active job. Scouts, assistants, medical and business roles are not limited.
 - Staff contracts are separate from player `FcContract`: staff pay comes from the operating budget (Owner Mode), not the salary cap, and has no guarantees/bonuses/cap hits. Query helpers on `FcWorld`: `staff_contracts_of_team`, `staff_in_role`, `active_staff_contract_of`.
 - Save compatibility: the `staff` / `staff_contracts` snapshot sections are additive; snapshots without them load as empty, so `DATA_VERSION` stays 1.
+- Team ↔ League: a team belongs to a league by being in one of its divisions (`FcLeague` is the single source of truth). `FcWorld.validate()` requires every team to be in exactly one league whenever any league exists. League structure only; league rules (season length, playoffs, cap) will be separate data keyed by league_id.
 - Team → City / Arena: by id. Arena → City: by id. Relocation = change `city_id`; the team id is unchanged.
 - Not on the player/team by design (separate records keyed by id, to be built with their systems): career and season statistics, historical records and awards (keyed by `player_id` / `team_id` + season), team finances, staff, owner (`owner_id` reserved, unchecked until that entity exists).
 
@@ -81,15 +85,17 @@ Permanent vs changing team information: id + founded year are permanent; identit
 ## Procedural generation (`src/gen/`, content in `data/generation/*.json`)
 ```
 FcGenerationData     loads names.json, world.json, position_profiles.json, staff_profiles.json, config.json; validate()
-FcGenerationConfig   league size/shape (30 teams x 15 players, 60 free agents, staff counts, salary range...)
-FcNameGenerator      weighted name pools per fictional country; unique names across a league
+FcGenerationConfig   everything a user can customize: league name, size, areas or exact cities, conferences/divisions,
+                     roster/staff sizes, nationality mix, salary range; validate() gives readable messages
+FcNameGenerator      weighted name pools per country; nationality choice; unique names across a league
 FcPlayerGenerator    FcPlayerSpec (age, position, level, country) -> FcPlayer
 FcStaffGenerator     role + level -> FcStaffMember (role-specialized skills, reputation-based pay)
 FcWorldGenerator     seed -> complete FcWorld; new_game_state(seed, mode, team index) -> FcGameState
 ```
 - Reproducible: same seed + config = identical world. Each stage (cities, every team, free agents) uses its own forked `FcRng` stream, so changing one stage does not reshuffle the rest.
 - Player realism: attribute = overall level + position offset + a shared latent per category (skill / athleticism / IQ) + individual noise; height and weight follow the position profile; tendencies blend skill with position habits; potential grows with years left before the player's peak age. Young players have lower current level, old players decline (`age_adjusted_level`).
-- League contents: 40 fictional cities available (all in the fictional country Aldoria), 40 nicknames chosen to avoid real pro team names, 16 color schemes, generated arenas; every team gets 15 players with mid-life contracts, a GM, head coach, 3 assistants, 3 scouts, medical and business staff with contracts; plus 60 free agents. About 20% of players are from other fictional countries.
+- Places: 124 real cities in 54 countries and 6 areas (`data/generation/world.json`); teams are original franchises (100 generated nicknames, 16 color schemes, generated arenas). Cities are chosen by area + size/weighted-random, or from an exact list. Conferences/divisions are built geographically (west-east, then south-north) with sizes differing by at most 1.
+- Contents per team: 15 players with mid-life contracts, a GM, head coach, 3 assistants, 3 scouts, medical and business staff with contracts; plus a free-agent pool. Players come from the team's own country 55% of the time, otherwise by country talent weight; staff 80% local.
 - NOT generated yet (belongs to later systems): conferences/divisions/schedule, draft prospects, historical careers and league history, owners.
 - All numbers (level ranges, salary curve, profile offsets) are first drafts to be tuned against the simulation.
 
