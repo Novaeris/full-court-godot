@@ -122,11 +122,10 @@ func test_draft_order_and_rookie_contracts() -> void:
 	var rules := world.rules_of_league(1)
 	var season: FcSeason = r["seasons"][0]
 	assert_eq(season.draft.size(), 16)
-	var standings := FcStandings.compute(world.leagues.get_by_id(1), season.games)
 	var missed: Array[int] = []
-	for t in standings.league_ranking():
-		if not season.playoffs.qualified(t):
-			missed.append(t)
+	for row in season.final_standings:   # best record first; the season is archived by now
+		if not season.playoffs.qualified(row[0]):
+			missed.append(row[0])
 	assert_eq(season.draft[0][2], missed.back(), "the worst non-playoff team picks first")
 	assert_eq(season.draft[0][1], 1)
 	assert_eq(season.draft[8][0], 2, "second round starts after eight picks")

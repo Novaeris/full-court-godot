@@ -40,6 +40,10 @@ var seasons: FcRepository = FcMemoryRepository.new()
 var businesses: FcRepository = FcMemoryRepository.new()
 ## News feed, newest last: [{"date": ISO text, "kind": String, "text": String, "team": team id or 0}, ...]. Kept to the last NEWS_LIMIT items.
 var news: Array = []
+## Career statistics by player id: rows of [year, team id, gp, seconds, points, fgm, fga, tpm, tpa, ftm, fta, oreb, dreb, ast, stl, blk, tov, pf]
+## (one per regular season). Kept forever, unlike the season's own detailed statistics.
+var careers: Dictionary = {}
+const CAREER_COLUMNS := ["year", "team", "gp", "seconds", "points", "fgm", "fga", "tpm", "tpa", "ftm", "fta", "oreb", "dreb", "ast", "stl", "blk", "tov", "pf"]
 const NEWS_LIMIT := 300
 var finances: FcRepository = FcMemoryRepository.new()
 
@@ -90,6 +94,38 @@ func team_display_name(team_id: int) -> String:
 func player_name(player_id: int) -> String:
 	var p: FcPlayer = players.get_by_id(player_id)
 	return p.identity.full_name() if p != null else "-"
+
+
+## Adds a finished regular season's player statistics to every player's career.
+func record_career(season: FcSeason) -> void:
+	for pid in season.stats.lines:
+		var l: Dictionary = season.stats.lines[pid]
+		var row: Array = [season.year, l["team"]]
+		for key in FcSeasonStats.KEYS:
+			row.append(l[key])
+		if not careers.has(pid):
+			careers[pid] = []
+		# replace an existing row for the same year (a season can be recorded twice)
+		var rows: Array = careers[pid]
+		for i in range(rows.size() - 1, -1, -1):
+			if rows[i][0] == season.year:
+				rows.remove_at(i)
+		rows.append(row)
+
+
+## Career totals for a player: {"seasons", "gp", "points", "rebounds", "assists", ...}.
+func career_totals(player_id: int) -> Dictionary:
+	var t := {"seasons": 0, "gp": 0, "seconds": 0, "points": 0, "rebounds": 0, "ast": 0, "stl": 0, "blk": 0}
+	for row in careers.get(player_id, []):
+		t["seasons"] += 1
+		t["gp"] += row[2]
+		t["seconds"] += row[3]
+		t["points"] += row[4]
+		t["rebounds"] += row[11] + row[12]
+		t["ast"] += row[13]
+		t["stl"] += row[14]
+		t["blk"] += row[15]
+	return t
 
 
 ## The season of a league for a given year, or null.
@@ -305,6 +341,7 @@ func to_dict() -> Dictionary:
 		"seasons": _dicts_of(seasons),
 		"businesses": _dicts_of(businesses),
 		"news": news.duplicate(true),
+		"careers": _careers_dict(),
 		"finances": _dicts_of(finances),
 	}
 
@@ -335,6 +372,15 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 		_report(w.rules.add(FcLeagueRules.from_dict(d)), "league rules", errors)
 	for d in data.get("seasons", []):
 		_report(w.seasons.add(FcSeason.from_dict(d)), "season", errors)
+	var raw_careers: Dictionary = data.get("careers", {})
+	for key in raw_careers:
+		var rows: Array = []
+		for row in raw_careers[key]:
+			var ints: Array = []
+			for v in row:
+				ints.append(int(v))
+			rows.append(ints)
+		w.careers[int(key)] = rows
 	for item in data.get("news", []):
 		w.news.append({"date": str(item["date"]), "kind": str(item["kind"]), "text": str(item["text"]), "team": int(item["team"])})
 	for d in data.get("businesses", []):
@@ -342,6 +388,13 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 	for d in data.get("finances", []):
 		_report(w.finances.add(FcFinanceRecord.from_dict(d)), "finance record", errors)
 	return w
+
+
+func _careers_dict() -> Dictionary:
+	var out := {}
+	for pid in careers:
+		out[str(pid)] = careers[pid].duplicate(true)
+	return out
 
 
 static func _report(err: Error, label: String, errors: Array[String]) -> void:

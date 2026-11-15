@@ -50,6 +50,23 @@ func total_days() -> int:
 	return FcScheduleBuilder.length_in_days(games) if not games.is_empty() else 0
 
 
+## True once the detailed games and statistics have been dropped (see archive()).
+var archived: bool = false
+
+
+## Drops the heavy detail (every game, player statistics, stored box scores) of a
+## finished season but keeps what history needs: standings, champion, awards,
+## playoff series, draft. Career statistics are kept separately in the world.
+func archive() -> void:
+	if status != Status.COMPLETE:
+		return
+	games = []
+	stats = FcSeasonStats.new()
+	playoff_stats = FcSeasonStats.new()
+	recent_boxes = []
+	archived = true
+
+
 func games_on_day(day: int) -> Array[FcScheduledGame]:
 	var out: Array[FcScheduledGame] = []
 	for g in games:
@@ -131,6 +148,7 @@ func to_dict() -> Dictionary:
 		"final_standings": final_standings.duplicate(true), "awards": awards.duplicate(true),
 		"playoffs": playoffs.to_dict() if playoffs != null else {},
 		"draft": draft.duplicate(true), "recent_boxes": recent_boxes.duplicate(true),
+		"archived": archived,
 	}
 
 
@@ -147,6 +165,7 @@ static func from_dict(d: Dictionary) -> FcSeason:
 	s.stats = FcSeasonStats.from_dict(d.get("stats", {}))
 	s.playoff_stats = FcSeasonStats.from_dict(d.get("playoff_stats", {}))
 	s.champion_id = int(d.get("champion_id", 0))
+	s.archived = bool(d.get("archived", false))
 	s.runner_up_id = int(d.get("runner_up_id", 0))
 	for row in d.get("final_standings", []):
 		s.final_standings.append([int(row[0]), int(row[1]), int(row[2])])

@@ -40,6 +40,10 @@ func _init(game_world: FcWorld) -> void:
 func run(league_id: int, finished: FcSeason, rng: FcRng) -> Dictionary:
 	var new_year := finished.year + 1
 	var report := {}
+	# keep the detailed data of the last two seasons; older ones keep only their history
+	for s in world.seasons.all():
+		if s.league_id == league_id and s.year <= finished.year - 2:
+			s.archive()
 	report.merge(progress_and_retire(league_id, finished.year, new_year, rng.fork("progress")))
 	report.merge(expire_contracts(league_id, finished.year))
 	report["re_signed"] = re_sign(league_id, new_year, rng.fork("resign"))

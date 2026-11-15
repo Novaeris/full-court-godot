@@ -148,6 +148,10 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 - A whole 30-team, 80-game season plus playoffs takes about 13 seconds; a 1,230-game season is stored in about 100 KB.
 - Rosters are read when an engine is created; change rosters between seasons.
 
+## Career statistics and archiving
+- `FcWorld.careers` (player id -> rows of 18 numbers, one per regular season: year, team, games, seconds, points, field goals, threes, free throws, rebounds, assists, steals, blocks, turnovers, fouls) is written when a season finishes (`record_career`) and kept forever; `career_totals(player_id)` sums it. This is the base for player pages, records and the Hall of Fame.
+- Seasons older than two years are archived by the offseason (`FcSeason.archive()`): the games, player statistics and stored box scores are dropped; standings, champion, awards, playoff series and draft results stay. An archived season is under a fifth of its original size, so long careers of a league do not make saves grow without bound.
+
 ## News and box scores
 - `FcWorld.news` is a capped (300) feed of `{date, kind, text, team}` items: stars injured (overall 62+) or any injury on the owner's team, 50-point games (and 40-point games for the owner's team), champions and awards, first draft pick, big signings (55% of the maximum salary or more), retirements of good players.
 - `FcSeason.recent_boxes` keeps the box scores of the owner's team's last 20 games (the engine's `watched_teams`); other box scores are not stored. Both are saved.

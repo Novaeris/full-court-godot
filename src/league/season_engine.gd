@@ -148,6 +148,7 @@ func finish_season(season: FcSeason) -> void:
 		season.runner_up_id = season.playoffs.runner_up_id()
 	season.awards = compute_awards(season, standings)
 	season.status = FcSeason.Status.COMPLETE
+	_world.record_career(season)
 	var end_day := season.total_days() + PLAYOFF_GAP_DAYS + (season.playoffs.day if season.playoffs != null else 0)
 	var end_date := season.date_of_day(end_day)
 	_world.add_news(end_date, "champion", "%s are the %d-%02d champions, beating %s" % [_world.team_display_name(season.champion_id), season.year, (season.year + 1) % 100, _world.team_display_name(season.runner_up_id)], season.champion_id)

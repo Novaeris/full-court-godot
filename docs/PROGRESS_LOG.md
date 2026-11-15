@@ -5,7 +5,7 @@ Nothing has been pushed anywhere: the repository is local only (no remote).
 
 ## 2026-11-15, autonomous stretch (founder away)
 
-State at the end of this stretch: **363 automated tests pass**, everything committed locally.
+State at the end of this stretch: **370 automated tests pass**, everything committed locally.
 Run the tests with `./tools/run_tests.ps1`.
 
 ### Built since the founder left
@@ -22,6 +22,8 @@ Run the tests with `./tools/run_tests.ps1`.
 8. **News tab** (injuries, big games, champions, awards, signings, retirements) and a **box score viewer** for your team's last 20 games (Schedule tab).
 
 9. **AI trades** (offseason, contenders swap youth for veterans with rebuilding teams under the salary rules).
+
+10. **Career statistics** (kept forever) and **archiving** of seasons older than two years so saves stay small.
 
 ### Decisions made for you (all recorded in docs/DECISIONS.md, D-021 to D-025)
 Era presets and star usage; league balance (team spread tightened); no draft lottery; simple AI (best affordable player); finance constants (about 11% average margin, a third of teams lose money); price scaling with season length. Every number is in a JSON file under `data/` and can be changed.

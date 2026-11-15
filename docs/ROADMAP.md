@@ -29,6 +29,7 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 - Injuries (in-game, tracked across the season, lineups adapt, severe injuries have lasting effects) (347 tests)
 - News feed and box score viewer (354 tests)
 - Medical staff effects and AI trades (363 tests)
+- Career statistics and archiving of old seasons (370 tests)
 
 ## Current
 - Awaiting founder direction on the next system.
