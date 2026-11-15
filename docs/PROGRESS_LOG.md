@@ -5,7 +5,7 @@ Nothing has been pushed anywhere: the repository is local only (no remote).
 
 ## 2026-11-15, autonomous stretch (founder away)
 
-State at the end of this stretch: **357 automated tests pass**, everything committed locally.
+State at the end of this stretch: **363 automated tests pass**, everything committed locally.
 Run the tests with `./tools/run_tests.ps1`.
 
 ### Built since the founder left
@@ -21,15 +21,17 @@ Run the tests with `./tools/run_tests.ps1`.
 
 8. **News tab** (injuries, big games, champions, awards, signings, retirements) and a **box score viewer** for your team's last 20 games (Schedule tab).
 
+9. **AI trades** (offseason, contenders swap youth for veterans with rebuilding teams under the salary rules).
+
 ### Decisions made for you (all recorded in docs/DECISIONS.md, D-021 to D-025)
 Era presets and star usage; league balance (team spread tightened); no draft lottery; simple AI (best affordable player); finance constants (about 11% average margin, a third of teams lose money); price scaling with season length. Every number is in a JSON file under `data/` and can be changed.
 
 ### Known gaps and things to watch
 - **UI is a first plain version**: no box score viewer, no draft / free agency / trade screens, no theme polish, no mobile layout.
-- Dynasties: in one 6-season test (30 teams, seed 2026) a team won 4 titles with a 71-9 record, but eight-season runs of 20-team leagues with two other seeds spread the titles across 4-5 champions, so it looks seed-specific. The AI never trades; keep watching.
+- Dynasties: in one 6-season test (30 teams, seed 2026) a team won 4 titles with a 71-9 record, but eight-season runs of 20-team leagues with two other seeds spread the titles across 4-5 champions, so it looks seed-specific. The AI now makes simple one-for-one offseason trades; keep watching parity.
 - League average age drifts young (about 24.6 after six seasons; real is about 26). Retirement and the draft supply are the levers.
 - Overtime games are about 2% (real about 5-6%): end-of-game fouling and timeouts are not modeled.
-- Not built: trades, injuries, scouting uncertainty, draft lottery, awards beyond MVP/leaders/All-League/Finals MVP, Hall of Fame, records book, sponsorship contracts, loans, arena renovation projects, staff chemistry, Dynasty-mode roster control, mobile layouts, exports.
+- Not built: human trades and trade UI, draft pick trading, scouting uncertainty, draft lottery, awards beyond MVP/leaders/All-League/Finals MVP, Hall of Fame, records book, sponsorship contracts, loans, arena renovation projects, staff chemistry, Dynasty-mode roster control, mobile layouts, exports.
 
 ### How to continue
 Read docs/ROADMAP.md ("Next") and say "continue". Work order I intend to follow: UI shell, trades, injuries, history/records, scouting, Dynasty mode controls, deeper simulation.

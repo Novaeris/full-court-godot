@@ -47,6 +47,7 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 | FcLeague / conferences / divisions / world integrity with leagues / old snapshots | 8 |
 | League customization (real city data, areas, exact cities, nicknames, sizes 4-64, equal divisions for every valid size, geographic conferences and divisions, nationality mix, validation messages, save round trip) | 22 |
 | News feed and stored box scores (cap, champion/award/draft news, injury news, box scores kept for the owner's team, saving, UI news tab and box score text) | 7 |
+| AI trades (a clear win-win happens, rosters and contracts stay consistent, no-trade clauses, both sides must gain, salary rules, several offseasons stay valid) | 6 |
 | Medical staff effects (reading staff skills, prevention reduces injuries, rehabilitation shortens them) | 3 |
 | Injuries (rate and severity, switch-off, leaving the game, durability, lineup exclusion, tracking through a season, countdown by team games, saving, offseason healing, permanent loss) | 10 |
 | User interface smoke tests (every screen builds with data, league creation and its errors, team choice, dashboard, all seven tabs, playing through a season and into the next, saving and loading, owner controls, dynasty mode, money formatting) | 12 |
@@ -69,7 +70,7 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 
 Shared sample builders for tests live in `tests/support/test_data.gd` (`FcTestData`).
 
-Last verified: 357 passed, 0 failed (Godot 4.7.2).
+Last verified: 363 passed, 0 failed (Godot 4.7.2).
 
 Tests that touch disk use `user://test_saves` and clean up in `after_each()`. Inspection tools: `./tools/inspect_data.ps1`, `./tools/inspect_saves.ps1`, `./tools/simulate_games.ps1 [games=1000] [seed=2026] [era=mid_2010s] [tune=key:value,...] [box] [mirror] [leaders]` (stress test: 16 league averages vs the era's realistic ranges, one full box score, home-court check, full-season individual leaders), `./tools/finances.ps1 [seasons=2] [seed=...]` (every team's revenue, expenses, profit, valuation), `./tools/play_seasons.ps1 [seasons=5]` (several seasons with offseasons and a league-health table), `./tools/play_season.ps1 [option=value ...]` (plays a whole season and prints standings, playoffs, champion, awards), `./tools/generate_league.ps1 [option=value ...]` (e.g. `areas=europe teams=16 conferences=2 divisions=2`). The runner was also verified to report failures (exit code 1).
 

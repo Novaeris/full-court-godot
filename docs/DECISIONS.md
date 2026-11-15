@@ -143,6 +143,10 @@ Built on the founder's instruction to continue; the following product choices we
 - Injuries are stored on the player (`games_out`, `injury`) and drive lineups for both AI and human teams. The owner currently cannot rest players or rush returns. Medical staff skills now apply (injury prevention changes how often, rehabilitation how long).
 - Severe injuries cost athletic attributes permanently so careers can be altered by luck.
 
+## D-027 AI trades (2026-11-15, autonomous)
+- Only one-for-one swaps between a rebuilding team (gives a 27+ veteran) and a contender (gives a player of 25 or younger), and only in the offseason. Simple, always roster-neutral, and it moves talent from weak teams to strong ones while moving youth the other way, which should slow permanent dynasties without stripping stars at random. Draft picks are not tradeable yet (the draft is a pure function of the standings).
+- A human owner cannot yet propose or accept trades; that needs a UI and a valuation shown to the player.
+
 ## D-013 Floats in saved data; runner robustness (2026-11-15)
 - Found by a test: JSON float round trips lose last bits, so a saved-and-reloaded world differed from the original. Rule: saved floats are quantized to 3 decimals via `FcChecks.quantize` in property setters; prefer integers. Documented in ARCHITECTURE rule 7.
 - Found while testing: a test file with a syntax error made the test runner hang forever. The runner now reports such files as failures.

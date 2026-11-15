@@ -28,6 +28,7 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 - First UI shell: main menu, new league wizard, team choice, dashboard with seven tabs, owner controls; README with how to play (337 tests)
 - Injuries (in-game, tracked across the season, lineups adapt, severe injuries have lasting effects) (347 tests)
 - News feed and box score viewer (354 tests)
+- Medical staff effects and AI trades (363 tests)
 
 ## Current
 - Awaiting founder direction on the next system.

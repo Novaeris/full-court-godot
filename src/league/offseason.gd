@@ -44,6 +44,7 @@ func run(league_id: int, finished: FcSeason, rng: FcRng) -> Dictionary:
 	report.merge(expire_contracts(league_id, finished.year))
 	report["re_signed"] = re_sign(league_id, new_year, rng.fork("resign"))
 	report["drafted"] = run_draft(league_id, finished, new_year, rng.fork("draft"))
+	report["trades"] = FcTrades.new(world).run(league_id, finished, new_year, rng.fork("trades"))
 	report["signed"] = free_agency(league_id, new_year, rng.fork("market"))
 	report.merge(fill_rosters(league_id, new_year, rng.fork("fill")))
 	report.merge(staff_rollover(league_id, finished.year, new_year, rng.fork("staff")))

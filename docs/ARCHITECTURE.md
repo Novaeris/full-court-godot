@@ -189,7 +189,8 @@ FcOffseason.run      1 progress_and_retire -> 2 expire_contracts -> 3 re_sign ->
 - Draft: 2 rounds, a new prospect class (age 19-22, upside from years to peak) larger than the picks, order = non-playoff teams by worst record then playoff teams (no lottery yet), picks by value with noise that shrinks with the GM's talent-evaluation skill, rookie scale salaries with team-option years, undrafted prospects become free agents. Results saved on the finished season (`FcSeason.draft`).
 - Free agency: up to 14 rounds; teams with the most cap space act first; each round a team signs the best affordable free agent. Rosters end between the league minimum and maximum (minimum contracts fill gaps; excess is waived). 12 fresh free agents enter each year so the pool never dries up.
 - Verified over 3 consecutive seasons: world integrity (including contract rules and payroll limits) holds every year, talent stays level, average age stays 24-30.
-- Not yet: staff aging/contract renewals, trades, cap holds applied to the market, restricted/qualifying offers, player preferences beyond loyalty, the draft lottery, two-way/G-League players.
+- Trades (`FcTrades`, run after the draft): contenders (top third by record) and rebuilding teams (bottom third) swap players one for one when both teams gain by their own valuation (contenders value ability now, rebuilders potential and youth), both pass `FcCapRules.check_trade` (hard limit and salary matching), no-trade clauses are respected, contracts move unchanged, at most 2 trades per team a year. Typical result: 1-4 trades per offseason in a 20-team league.
+- Not yet: three-team or multi-player trades, draft pick trading, trades during the season, human trade offers, cap holds applied to the market, restricted/qualifying offers, player preferences beyond loyalty, the draft lottery, two-way/G-League players.
 
 ## Simulation (`src/sim/`, balance in `data/simulation/`)
 ```

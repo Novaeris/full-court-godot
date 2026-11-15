@@ -57,11 +57,11 @@ func _initialize() -> void:
 
 	print("")
 	print("=== League health after each offseason ===")
-	print("%-6s %-10s %-9s %-8s %-8s %-8s %-9s %-9s %s" % ["Year", "Integrity", "Retired", "Drafted", "Re-sign", "FA signs", "Top-8 rtg", "Avg age", "Avg payroll"])
+	print("%-6s %-10s %-9s %-8s %-8s %-8s %-8s %-9s %-9s %s" % ["Year", "Integrity", "Retired", "Drafted", "Re-sign", "Trades", "FA signs", "Top-8 rtg", "Avg age", "Avg payroll"])
 	for h in health:
-		print("%-6d %-10s %-9d %-8d %-8d %-8d %-9.1f %-9.1f $%.1fM" % [
+		print("%-6d %-10s %-9d %-8d %-8d %-8d %-8d %-9.1f %-9.1f $%.1fM" % [
 			h["year"], "OK" if h["errors"] == 0 else "%d PROBLEMS" % h["errors"], h["report"]["retired"], h["report"]["drafted"],
-			h["report"]["re_signed"], h["report"]["signed"], h["talent"], h["age"], h["payroll"] / 1e6])
+			h["report"]["re_signed"], h["report"]["trades"], h["report"]["signed"], h["talent"], h["age"], h["payroll"] / 1e6])
 	print("")
 	var champs: Array = titles.keys()
 	champs.sort_custom(func(a, b): return titles[a] > titles[b])
