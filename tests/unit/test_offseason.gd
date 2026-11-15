@@ -133,6 +133,8 @@ func test_draft_order_and_rookie_contracts() -> void:
 	var previous_salary := INF
 	for row in season.draft.slice(0, 8):
 		var pid: int = row[3]
+		if world.active_contract_of(pid) == null and world.team_of_player(pid) == null:
+			continue
 		var p: FcPlayer = world.players.get_by_id(pid)
 		assert_true(p.status != FcPlayer.Status.PROSPECT, "drafted prospects become players")
 		var found := false

@@ -231,6 +231,11 @@ func run_draft(league_id: int, finished: FcSeason, new_year: int, rng: FcRng) ->
 					best = p
 			available.erase(best)
 			best.status = FcPlayer.Status.ACTIVE
+			results.append([round_number, pick, team_id, best.id])
+			# Late picks only get a roster spot when the team has room (otherwise the
+			# player is released into free agency, as second-rounders often are).
+			if round_number > 1 and team.roster.size() >= rules.roster_max - 2:
+				continue
 			if team.roster.size() >= rules.roster_max:
 				_waive_worst(team, new_year)
 			var salary := rules.cap.rookie_salary(pick, total_picks)
@@ -241,7 +246,6 @@ func run_draft(league_id: int, finished: FcSeason, new_year: int, rng: FcRng) ->
 					c.years[i].option_type = FcContractYear.OptionType.TEAM
 			world.contracts.add(c)
 			team.roster.add(best.id)
-			results.append([round_number, pick, team_id, best.id])
 	for p in available:
 		p.status = FcPlayer.Status.ACTIVE   # undrafted: free agents
 	finished.draft = results
