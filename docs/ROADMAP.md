@@ -20,7 +20,7 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 - League rules: equal-division structure limits (4-64 teams), season schedule rules with fair home/away matchup planner, playoff formats, soft cap with hard limit (plus hard cap and no cap presets), team naming options, sensitive places (198 tests total)
 - 80-game standard season (even season lengths for every size) and extra salary rules: tax sharing, repeater tax, restriction line, rookie scale, cornerstone extension, cap holds, sign-and-trade limits, no-trade clauses (218 tests total)
 
-- Basketball simulation v1: possession engine, rotations, fatigue, coach effects, box scores and advanced stats, calibrated stress tool (245 tests total)
+- Basketball simulation v1: possession engine, rotations, fatigue, coach effects, box scores and advanced stats, calibrated stress tool; recalibrated to the 2010-2020 NBA with three era presets and realistic scoring leaders (248 tests)
 
 ## Current
 - Awaiting founder direction on the next system.

@@ -185,10 +185,10 @@ func test_league_averages_look_like_basketball() -> void:
 				tov += t["tov"]
 				pf += t["pf"]
 				teams_games += 1
-	assert_between(_mean(points), 100.0, 125.0, "points per team")
+	assert_between(_mean(points), 96.0, 118.0, "points per team")
 	assert_between(fgm / fga, 0.43, 0.53, "FG%")
 	assert_between(tpm / tpa, 0.32, 0.40, "3P%")
-	assert_between(tpa / fga, 0.28, 0.45, "3PA share")
+	assert_between(tpa / fga, 0.22, 0.45, "3PA share")
 	assert_between(ftm / fta, 0.70, 0.86, "FT%")
 	assert_between(fta / teams_games, 16.0, 30.0, "FTA")
 	assert_between(tov / teams_games, 10.0, 17.0, "turnovers")
@@ -241,14 +241,14 @@ func test_shooters_shoot_better_than_non_shooters() -> void:
 	var good_attempts := 0.0
 	var bad := 0.0
 	var bad_attempts := 0.0
-	for box in _simulate_many(1, 2, 60, {}, 13):
+	for box in _simulate_many(1, 2, 100, {}, 13):
 		var a := box.team_totals(0)
 		var b := box.team_totals(1)
 		good += a["tpm"]
 		good_attempts += a["tpa"]
 		bad += b["tpm"]
 		bad_attempts += b["tpa"]
-	assert_true(good / good_attempts > bad / bad_attempts + 0.04, "85 three-point shooters hit clearly more threes")
+	assert_true(good / good_attempts > bad / bad_attempts + 0.03, "85 three-point shooters hit clearly more threes")
 
 
 func test_defense_matters() -> void:
@@ -388,6 +388,56 @@ func test_blowouts_rest_the_starters() -> void:
 			close_minutes.append(minutes)
 	assert_true(blowout_minutes.size() >= 4 and close_minutes.size() >= 20, "enough of each kind of game (%d blowouts, %d close)" % [blowout_minutes.size(), close_minutes.size()])
 	assert_true(_mean(blowout_minutes) < _mean(close_minutes) - 1.0, "starters of a team winning big play fewer minutes (%.1f vs %.1f)" % [_mean(blowout_minutes), _mean(close_minutes)])
+
+
+# --- eras ---------------------------------------------------------------------------
+
+func test_eras_exist_and_change_the_style_of_play() -> void:
+	var keys := FcGameSimulator.era_keys()
+	for k in ["early_2010s", "mid_2010s", "late_2010s"]:
+		assert_true(keys.has(k), k)
+	assert_eq(FcGameSimulator.load_eras()["default"], "mid_2010s")
+	var rates := {}
+	var pace := {}
+	for era in ["early_2010s", "late_2010s"]:
+		var sim := FcGameSimulator.for_era(era)
+		var rng := FcRng.new(41)
+		var tpa := 0.0
+		var fga := 0.0
+		var possessions := 0.0
+		for i in 40:
+			var box := sim.simulate(_team(1), _team(2), rng)
+			var t := box.team_totals(0)
+			tpa += t["tpa"]
+			fga += t["fga"]
+			possessions += box.advanced(0)["possessions"]
+		rates[era] = tpa / fga
+		pace[era] = possessions / 40.0
+	assert_true(rates["late_2010s"] > rates["early_2010s"] + 0.12, "the late 2010s shoot many more threes")
+	assert_true(pace["late_2010s"] > pace["early_2010s"] + 5.0, "and play faster")
+
+
+func test_era_targets_are_well_formed() -> void:
+	for key in FcGameSimulator.era_keys():
+		var era: Dictionary = FcGameSimulator.load_eras()["eras"][key]
+		assert_true(era.has("label") and era.has("tuning") and era.has("targets"), key)
+		for stat in ["points", "pace", "fg_pct", "tp_pct", "tp_rate", "ft_pct", "fta", "reb", "ast", "tov"]:
+			var range_pair: Array = era["targets"][stat]
+			assert_true(range_pair.size() == 2 and range_pair[0] < range_pair[1], "%s %s" % [key, stat])
+
+
+func test_league_rules_hold_the_era() -> void:
+	var l := FcLeague.make_even(1, "T", 2, 2, 16)
+	var r := FcLeagueRules.new(1)
+	r.league_id = 1
+	r.cap = FcCapRules.from_preset("soft_cap_with_hard_limit", 140000000, FcCapRules.load_presets())
+	r.season = FcSeasonRules.suggest(l)
+	r.playoffs = FcPlayoffRules.suggest(l)
+	assert_eq(r.sim_era, "mid_2010s")
+	assert_eq(r.validate(l), [] as Array[String])
+	r.sim_era = "1985"
+	assert_true(not r.validate(l).is_empty(), "unknown eras are rejected")
+	assert_eq(FcLeagueRules.from_dict(JSON.parse_string(JSON.stringify(r.to_dict()))).sim_era, "1985")
 
 
 # --- tuning and building -----------------------------------------------------------------

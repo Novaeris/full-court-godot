@@ -23,8 +23,9 @@
 	"max_contract_years": 4,
 	"top_player_level": 74,
 	"bottom_player_level": 38,
-	"team_strength_sd": 2.5,
+	"team_strength_sd": 2.0,
 
+	"sim_era": "mid_2010s",
 	"cap_preset": "soft_cap_with_hard_limit",
 	"salary_cap": 140000000,
 

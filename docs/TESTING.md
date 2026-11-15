@@ -58,9 +58,9 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 
 Shared sample builders for tests live in `tests/support/test_data.gd` (`FcTestData`).
 
-Last verified: 245 passed, 0 failed (Godot 4.7.2).
+Last verified: 248 passed, 0 failed (Godot 4.7.2).
 
-Tests that touch disk use `user://test_saves` and clean up in `after_each()`. Inspection tools: `./tools/inspect_data.ps1`, `./tools/inspect_saves.ps1`, `./tools/simulate_games.ps1 [games=1000] [seed=2026] [box] [mirror]` (stress test: league averages vs realistic ranges, one full box score, home-court check), `./tools/generate_league.ps1 [option=value ...]` (e.g. `areas=europe teams=16 conferences=2 divisions=2`). The runner was also verified to report failures (exit code 1).
+Tests that touch disk use `user://test_saves` and clean up in `after_each()`. Inspection tools: `./tools/inspect_data.ps1`, `./tools/inspect_saves.ps1`, `./tools/simulate_games.ps1 [games=1000] [seed=2026] [era=mid_2010s] [tune=key:value,...] [box] [mirror] [leaders]` (stress test: 16 league averages vs the era's realistic ranges, one full box score, home-court check, full-season individual leaders), `./tools/generate_league.ps1 [option=value ...]` (e.g. `areas=europe teams=16 conferences=2 divisions=2`). The runner was also verified to report failures (exit code 1).
 
 ## Known issues / limits
 - Runtime script errors in a TOOL script (not the test runner) can leave Godot running forever; use `timeout` when running tools from a shell.

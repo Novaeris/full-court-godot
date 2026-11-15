@@ -4,30 +4,32 @@ extends SceneTree
 ## Run (PowerShell, from the project folder):
 ##   ./tools/simulate_games.ps1                  1000 games, seed 2026
 ##   ./tools/simulate_games.ps1 games=5000 seed=7
+##   ./tools/simulate_games.ps1 tune=three_base:0.25,rim_base:0.38   try tuning values without editing the file
+##   ./tools/simulate_games.ps1 era=late_2010s    early_2010s | mid_2010s (default) | late_2010s
 ##   ./tools/simulate_games.ps1 box              print one full box score
 ##   ./tools/simulate_games.ps1 mirror           equal teams: measures home-court advantage
 ## It builds the default league, plays random matchups, and prints league
 ## averages next to realistic target ranges (OK / CHECK), the spread of
 ## scores, how well better teams win, and sample extremes.
 
-const TARGETS := [
-	# label, key, low, high, format
-	["Points per team", "points", 105.0, 118.0, "%.1f"],
-	["Pace (possessions / 48 min)", "pace", 93.0, 103.0, "%.1f"],
-	["Field goal %", "fg_pct", 0.440, 0.490, "%.3f"],
-	["Three-point %", "tp_pct", 0.340, 0.385, "%.3f"],
-	["Three-point attempts / FGA", "tp_rate", 0.33, 0.43, "%.3f"],
-	["Free throw %", "ft_pct", 0.740, 0.810, "%.3f"],
-	["Free throw attempts", "fta", 19.0, 26.0, "%.1f"],
-	["Rebounds", "reb", 41.0, 47.0, "%.1f"],
-	["Offensive rebound %", "oreb_pct", 0.21, 0.29, "%.3f"],
-	["Assists", "ast", 21.0, 28.0, "%.1f"],
-	["Turnovers", "tov", 11.5, 15.5, "%.1f"],
-	["Steals", "stl", 6.0, 9.0, "%.1f"],
-	["Blocks", "blk", 4.0, 6.5, "%.1f"],
-	["Personal fouls", "pf", 17.0, 23.0, "%.1f"],
-	["Effective FG %", "efg", 0.500, 0.560, "%.3f"],
-	["Overtime games %", "ot_pct", 0.02, 0.09, "%.3f"],
+## label, key, display format
+const ROWS := [
+	["Points per team", "points", "%.1f"],
+	["Pace (possessions / 48 min)", "pace", "%.1f"],
+	["Field goal %", "fg_pct", "%.3f"],
+	["Three-point %", "tp_pct", "%.3f"],
+	["Three-point attempts / FGA", "tp_rate", "%.3f"],
+	["Free throw %", "ft_pct", "%.3f"],
+	["Free throw attempts", "fta", "%.1f"],
+	["Rebounds", "reb", "%.1f"],
+	["Offensive rebound %", "oreb_pct", "%.3f"],
+	["Assists", "ast", "%.1f"],
+	["Turnovers", "tov", "%.1f"],
+	["Steals", "stl", "%.1f"],
+	["Blocks", "blk", "%.1f"],
+	["Personal fouls", "pf", "%.1f"],
+	["Effective FG %", "efg", "%.3f"],
+	["Overtime games %", "ot_pct", "%.3f"],
 ]
 
 
@@ -36,7 +38,13 @@ func _initialize() -> void:
 	var seed_value := 2026
 	var show_box := false
 	var mirror := false
+	var era := ""
+	var tune := {}
+	var leaders := false
 	for arg in OS.get_cmdline_user_args():
+		if arg == "leaders":
+			leaders = true
+			continue
 		if arg == "box":
 			show_box = true
 			continue
@@ -48,6 +56,13 @@ func _initialize() -> void:
 			games = int(parts[1])
 		elif parts.size() == 2 and parts[0] == "seed":
 			seed_value = int(parts[1])
+		elif parts.size() == 2 and parts[0] == "era":
+			era = parts[1]
+		elif parts.size() == 2 and parts[0] == "tune":
+			for item in parts[1].split(","):
+				var kv := item.split(":")
+				if kv.size() == 2:
+					tune[kv[0]] = float(kv[1])
 
 	var gen := FcWorldGenerator.create_default()
 	var world := gen.generate(seed_value)
@@ -55,12 +70,19 @@ func _initialize() -> void:
 	var teams: Array[FcGameTeam] = []
 	for tid in world.teams.ids():
 		teams.append(FcGameTeam.from_world(world, tid, ratings))
-	var sim := FcGameSimulator.new()
+	var sim := FcGameSimulator.new(tune, era)
 	var rng := FcRng.new(seed_value).fork("games")
+	var eras := FcGameSimulator.load_eras()
+	var era_key := era if era != "" else str(eras.get("default", ""))
+	var targets: Dictionary = eras.get("eras", {}).get(era_key, {}).get("targets", {})
 
 	if show_box:
 		var box := sim.simulate(teams[0], teams[1], rng)
 		_print_box(box)
+		quit(0)
+		return
+	if leaders:
+		_season_leaders(sim, rng, world, teams)
 		quit(0)
 		return
 	if mirror:
@@ -120,16 +142,17 @@ func _initialize() -> void:
 		"efg": (totals["fgm"] + 0.5 * totals["tpm"]) / totals["fga"],
 		"ot_pct": float(overtime) / games,
 	}
-	print("=== %d games simulated in %.1f s (%.1f ms per game), seed %d ===" % [games, seconds, seconds * 1000.0 / games, seed_value])
+	print("=== %d games simulated in %.1f s (%.1f ms per game), seed %d, era: %s ===" % [games, seconds, seconds * 1000.0 / games, seed_value, era_key])
 	print("")
 	print("%-32s %9s   %-17s %s" % ["League average (per team)", "Result", "Realistic range", ""])
 	var flagged := 0
-	for row in TARGETS:
+	for row in ROWS:
 		var v: float = avg[row[1]]
-		var ok: bool = v >= row[2] and v <= row[3]
+		var range_pair: Array = targets.get(row[1], [-INF, INF])
+		var ok: bool = v >= range_pair[0] and v <= range_pair[1]
 		if not ok:
 			flagged += 1
-		print("%-32s %9s   %-17s %s" % [row[0], row[4] % v, (row[4] + " - " + row[4]) % [row[2], row[3]], "OK" if ok else "CHECK"])
+		print("%-32s %9s   %-17s %s" % [row[0], row[2] % v, (row[2] + " - " + row[2]) % [range_pair[0], range_pair[1]], "OK" if ok else "CHECK"])
 	print("")
 	print("Home team wins %.1f%% (teams are not equal, so see 'mirror' for the pure home edge)" % (100.0 * home_wins / games))
 	margins.sort()
@@ -159,8 +182,86 @@ func _initialize() -> void:
 	print("  5 strongest teams win %.1f%% | 5 weakest teams win %.1f%%" % [top_wins * 20.0, bottom_wins * 20.0])
 	print("  correlation of team rating and win%%: %.2f" % _correlation(rows.map(func(r): return r["rating"]), rows.map(func(r): return r["win_pct"])))
 	print("")
-	print("%d of %d checks outside the realistic range." % [flagged, TARGETS.size()])
+	print("%d of %d checks outside the realistic range." % [flagged, ROWS.size()])
 	quit(0)
+
+
+## Plays one full season (every pair of teams as often as the schedule rules say, with
+## the home/away split from the matchup planner) and prints the individual leaders,
+## which is where star realism shows up: real scoring leaders average about 28-35 points.
+func _season_leaders(sim: FcGameSimulator, rng: FcRng, world: FcWorld, teams: Array[FcGameTeam]) -> void:
+	var league: FcLeague = world.leagues.get_by_id(1)
+	var rules: FcLeagueRules = world.rules_of_league(1)
+	var plan := FcMatchupPlanner.plan(league, rules.season)
+	var by_id := {}
+	for t in teams:
+		by_id[t.team_id] = t
+	var lines := {}   # player id -> {"name","team","gp","pts","reb","ast","stl","blk","min"}
+	var wins := {}
+	var best_night := {"pts": 0, "name": ""}
+	var fifty_games := 0
+	var games := 0
+	var t0 := Time.get_ticks_msec()
+	for pair in plan.pairs:
+		for g in int(pair["games"]):
+			var a_is_home: bool = g < int(pair["a_home"])
+			var home: FcGameTeam = by_id[pair["a"] if a_is_home else pair["b"]]
+			var away: FcGameTeam = by_id[pair["b"] if a_is_home else pair["a"]]
+			var box := sim.simulate(home, away, rng)
+			games += 1
+			wins[box.winner_team_id()] = int(wins.get(box.winner_team_id(), 0)) + 1
+			for p in box.players:
+				if p.seconds <= 0:
+					continue
+				if not lines.has(p.player_id):
+					lines[p.player_id] = {"name": p.name, "team": "", "gp": 0, "pts": 0, "reb": 0, "ast": 0, "stl": 0, "blk": 0, "min": 0.0}
+				var l: Dictionary = lines[p.player_id]
+				l["team"] = box.abbreviations[0] if p.team_id == box.team_ids[0] else box.abbreviations[1]
+				l["gp"] += 1
+				l["pts"] += p.points
+				l["reb"] += p.rebounds()
+				l["ast"] += p.ast
+				l["stl"] += p.stl
+				l["blk"] += p.blk
+				l["min"] += p.minutes()
+				if p.points >= 50:
+					fifty_games += 1
+				if p.points > best_night["pts"]:
+					best_night = {"pts": p.points, "name": p.name}
+	var seconds := (Time.get_ticks_msec() - t0) / 1000.0
+	print("=== One full season: %d games in %.1f s ===" % [games, seconds])
+	var regulars: Array = []
+	for id in lines:
+		if lines[id]["gp"] >= 50:
+			regulars.append(lines[id])
+	var show := func(title: String, key: String, count: int):
+		regulars.sort_custom(func(a, b): return float(a[key]) / a["gp"] > float(b[key]) / b["gp"])
+		var parts: Array = []
+		for i in mini(count, regulars.size()):
+			parts.append("%s %.1f" % [regulars[i]["name"], float(regulars[i][key]) / regulars[i]["gp"]])
+		print("%s: %s" % [title, " | ".join(parts)])
+	show.call("Points per game leaders", "pts", 6)
+	show.call("Rebounds per game leaders", "reb", 4)
+	show.call("Assists per game leaders", "ast", 4)
+	show.call("Steals per game leaders", "stl", 3)
+	show.call("Blocks per game leaders", "blk", 3)
+	var over_20 := 0
+	var over_25 := 0
+	var minutes_leader := 0.0
+	for l in regulars:
+		var ppg: float = float(l["pts"]) / l["gp"]
+		if ppg >= 20.0:
+			over_20 += 1
+		if ppg >= 25.0:
+			over_25 += 1
+		minutes_leader = maxf(minutes_leader, float(l["min"]) / l["gp"])
+	print("")
+	print("Players averaging 20+ points: %d (real 2010s: about 20-28 of ~450)   25+: %d (real: about 6-10)" % [over_20, over_25])
+	print("Highest minutes per game: %.1f (real: about 36-38)" % minutes_leader)
+	print("Best single game: %d points (%s); 50-point games this season: %d (real: about 8-25)" % [best_night["pts"], best_night["name"], fifty_games])
+	var win_list: Array = wins.values()
+	win_list.sort()
+	print("Wins: best team %d, worst team %d of %d games (real: best ~65, worst ~17-20 of 82)" % [win_list[-1], win_list[0], int(rules.season.games_per_team(league))])
 
 
 ## Plays one team against an identical copy of itself, so the only differences

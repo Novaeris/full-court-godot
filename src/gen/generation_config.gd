@@ -59,6 +59,8 @@ var bottom_player_level: float = 38.0
 var team_strength_sd: float = 4.0
 
 ## Salary rules: a preset from data/rules/cap_presets.json and the cap size.
+## Playing style of the games: "early_2010s", "mid_2010s" or "late_2010s".
+var sim_era: String = "mid_2010s"
 var cap_preset: String = "soft_cap_with_hard_limit"
 var salary_cap: int = 140000000
 
@@ -107,6 +109,7 @@ static func load_default(data: FcGenerationData) -> FcGenerationConfig:
 	c.top_player_level = float(d.get("top_player_level", c.top_player_level))
 	c.bottom_player_level = float(d.get("bottom_player_level", c.bottom_player_level))
 	c.team_strength_sd = float(d.get("team_strength_sd", c.team_strength_sd))
+	c.sim_era = str(d.get("sim_era", c.sim_era))
 	c.cap_preset = str(d.get("cap_preset", c.cap_preset))
 	c.salary_cap = int(d.get("salary_cap", c.salary_cap))
 	c.auto_season = bool(d.get("auto_season", c.auto_season))
@@ -144,6 +147,7 @@ func build_rules(league: FcLeague) -> FcLeagueRules:
 	r.cap.max_contract_years = maxi(r.cap.max_contract_years, max_contract_years)
 	r.roster_min = roster_min
 	r.roster_max = roster_max
+	r.sim_era = sim_era
 	if auto_season:
 		r.season = FcSeasonRules.suggest(league, target_games)
 	else:

@@ -44,19 +44,47 @@ var _game_pace_shift: float = 0.0
 var _luck: Array[float] = [0.0, 0.0]
 
 
-## `tuning` overrides the shipped values (used by tests and tools).
-func _init(tuning: Dictionary = {}) -> void:
-	_t = load_tuning()
+## `tuning` overrides the shipped values (used by tests and tools). `era`
+## picks a playing style from data/simulation/eras.json ("" = the default era).
+func _init(tuning: Dictionary = {}, era: String = "") -> void:
+	_t = load_tuning(era)
 	for key in tuning:
 		_t[key] = tuning[key]
 
 
-static func load_tuning() -> Dictionary:
-	var file := FileAccess.open("res://data/simulation/tuning.json", FileAccess.READ)
+static func for_era(era: String) -> FcGameSimulator:
+	return FcGameSimulator.new({}, era)
+
+
+static func _load_json(path: String) -> Dictionary:
+	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null:
 		return {}
 	var parsed = FcChecks.parse_json(file.get_as_text())
 	return parsed if parsed is Dictionary else {}
+
+
+## Base tuning plus the overlay of the chosen era (see eras.json).
+static func load_tuning(era: String = "") -> Dictionary:
+	var tuning := _load_json("res://data/simulation/tuning.json")
+	var eras := load_eras()
+	var key := era if era != "" else str(eras.get("default", ""))
+	var overlay: Dictionary = eras.get("eras", {}).get(key, {}).get("tuning", {})
+	for k in overlay:
+		tuning[k] = overlay[k]
+	return tuning
+
+
+static func load_eras() -> Dictionary:
+	return _load_json("res://data/simulation/eras.json")
+
+
+## Era keys, e.g. ["early_2010s", "mid_2010s", "late_2010s"].
+static func era_keys() -> Array[String]:
+	var out: Array[String] = []
+	for k in load_eras().get("eras", {}):
+		out.append(str(k))
+	return out
 
 
 ## Plays the whole game. Side 0 is `home`, side 1 is `away`.
@@ -231,10 +259,10 @@ func _free_throws(o: int, d: int, shooter: FcSimPlayer, count: int) -> int:
 func _rebound(o: int, d: int) -> int:
 	if _rng.chance(float(_t["team_rebound"])):
 		return END if _rng.chance(0.65) else CONTINUE
-	var off_w := _weights(o, "rebound", 2.0, true)
+	var off_w := _weights(o, "rebound", float(_t["rebound_exponent"]), true)
 	for i in off_w.size():
 		off_w[i] *= 0.6 + 0.8 * _court[o][i].tend_oreb / 100.0
-	var def_w := _weights(d, "rebound", 2.0, true)
+	var def_w := _weights(d, "rebound", float(_t["rebound_exponent"]), true)
 	var off_total := 0.0
 	for w in off_w:
 		off_total += w
@@ -315,7 +343,7 @@ func _pick_shot_type(shooter: FcSimPlayer, o: int) -> int:
 func _pick_scorer(o: int) -> FcSimPlayer:
 	var weights: Array = []
 	for p in _court[o]:
-		var w: float = pow(maxf(p.ratings["scoring"], 5.0) / 50.0, float(_t["usage_exponent"])) * (0.6 + 0.8 * (1.0 - p.tend_pass / 100.0))
+		var w: float = pow(clampf(p.ratings["scoring"], 5.0, float(_t["usage_max_rating"])) / 50.0, float(_t["usage_exponent"])) * (0.6 + 0.8 * (1.0 - p.tend_pass / 100.0))
 		weights.append(w * (0.5 + 0.5 * p.freshness()))
 	return _pick_weighted(_court[o], weights)
 
@@ -323,7 +351,7 @@ func _pick_scorer(o: int) -> FcSimPlayer:
 func _pick_passer(o: int, shooter: FcSimPlayer) -> FcSimPlayer:
 	var weights: Array = []
 	for p in _court[o]:
-		weights.append(0.001 if p == shooter else pow(maxf(p.ratings["playmaking"], 5.0) / 50.0, 2.0) * (0.5 + p.tend_pass / 100.0))
+		weights.append(0.001 if p == shooter else pow(maxf(p.ratings["playmaking"], 5.0) / 50.0, float(_t["passer_exponent"])) * pow(0.5 + p.tend_pass / 100.0, 2.0))
 	return _pick_weighted(_court[o], weights)
 
 
@@ -378,7 +406,7 @@ func _use_time(seconds: float) -> void:
 		for p in _teams[side].players:
 			if p.on_court:
 				p.seconds_f += seconds
-				p.energy = maxf(0.0, p.energy - seconds * float(_t["energy_drain_per_second"]) * (1.5 - p.stamina / 100.0))
+				p.energy = maxf(0.0, p.energy - seconds * float(_t["energy_drain_per_second"]) * (1.3 - 0.6 * p.stamina / 100.0))
 			else:
 				p.energy = minf(100.0, p.energy + seconds * float(_t["energy_recover_per_second"]) * (0.7 + p.stamina / 100.0 * 0.6))
 
@@ -472,7 +500,8 @@ func _substitutions(side: int) -> void:
 			in_trouble = p.fouls >= int(_t["foul_trouble_early"])
 		elif not late_close:
 			in_trouble = p.fouls >= int(_t["foul_out"]) - 1
-		var tired: bool = p.energy < out_threshold
+		var tired: bool = p.energy < out_threshold \
+			or (p.seconds_f > float(_t["minutes_soft_cap_seconds"]) and not late_close)
 		if not in_trouble and not tired:
 			continue
 		var key: float = p.energy - (1000.0 if in_trouble else 0.0)
