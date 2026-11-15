@@ -63,7 +63,7 @@ var cap_preset: String = "soft_cap_with_hard_limit"
 var salary_cap: int = 140000000
 
 var auto_season: bool = true
-var target_games: int = 82
+var target_games: int = 80
 var games_per_division_opponent: int = 3
 var games_per_conference_opponent: int = 2
 var games_per_other_conference_opponent: int = 1

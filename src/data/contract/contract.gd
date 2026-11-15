@@ -19,6 +19,10 @@ var signed_on: FcDate = FcDate.new(2026, 7, 1)
 var status: int = Status.ACTIVE
 var years: Array[FcContractYear] = []
 var bonuses: Array[FcContractBonus] = []
+## A cornerstone extension: may pay above the normal maximum salary (see FcCapRules).
+var is_cornerstone: bool = false
+## The player must consent to a trade (see FcCapRules.trade_requires_consent).
+var no_trade: bool = false
 
 
 func _init(contract_id: int = 0) -> void:
@@ -134,6 +138,7 @@ func to_dict() -> Dictionary:
 		"schema": SCHEMA_VERSION, "id": id, "player_id": player_id,
 		"team_id": team_id, "signed_on": signed_on.to_iso(), "status": status,
 		"years": year_dicts, "bonuses": bonus_dicts,
+		"is_cornerstone": is_cornerstone, "no_trade": no_trade,
 	}
 
 
@@ -144,6 +149,8 @@ static func from_dict(data: Dictionary) -> FcContract:
 	var d := FcDate.from_iso(str(data.get("signed_on", "")))
 	c.signed_on = d if d != null else FcDate.new(0, 0, 0)
 	c.status = int(data.get("status", Status.ACTIVE))
+	c.is_cornerstone = bool(data.get("is_cornerstone", false))
+	c.no_trade = bool(data.get("no_trade", false))
 	for y in data.get("years", []):
 		c.years.append(FcContractYear.from_dict(y))
 	for b in data.get("bonuses", []):

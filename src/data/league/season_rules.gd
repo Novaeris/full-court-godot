@@ -10,8 +10,9 @@ extends RefCounted
 ## other-conference opponents per team.
 ##
 ## RECOMMENDED ranges (the founder's guideline) are 2-3 / 1-2 / 1-2. Wider
-## values are allowed (1-4 / 1-3 / 1-3) because small leagues need more games
-## per opponent to get a long enough season.
+## values are allowed (1-5 / 1-3 / 1-3) because most leagues need more games
+## per opponent to get a long enough season (a 30-team league reaches 80
+## games with 5 / 3 / 2). suggest() prefers EVEN season lengths.
 ## Whether a schedule can actually be built is shown by FcMatchupPlanner.
 
 const MIN_GAMES_PER_TEAM := 10
@@ -19,7 +20,11 @@ const MAX_GAMES_PER_TEAM := 120
 const RECOMMENDED_DIVISION := [2, 3]
 const RECOMMENDED_CONFERENCE := [1, 2]
 const RECOMMENDED_OTHER := [1, 2]
-const ALLOWED_DIVISION := [1, 4]
+const ALLOWED_DIVISION := [1, 5]
+## An odd season length costs as much as 10 games of distance from the target.
+const ODD_SEASON_PENALTY := 10.0
+## Leaving the recommended ranges only breaks ties; it never shortens a season.
+const OUTSIDE_RECOMMENDED_PENALTY := 1.0
 const ALLOWED_CONFERENCE := [1, 3]
 const ALLOWED_OTHER := [1, 3]
 
@@ -110,11 +115,11 @@ static func from_dict(data: Dictionary) -> FcSeasonRules:
 
 
 ## Picks games-per-opponent values that give a season length close to
-## `target_games`. Values inside the recommended ranges are strongly
-## preferred; wider values are used only when the recommended ones cannot get
-## near the target (small leagues). A league with one conference gets 0 for
-## the other-conference tier (it has no such opponents).
-static func suggest(league: FcLeague, target_games: int = 82) -> FcSeasonRules:
+## `target_games` (default 80). Scoring: distance from the target, plus a
+## penalty for an ODD season length (a season should end on an even number),
+## plus a smaller penalty for each tier outside its recommended range.
+## A league with one conference gets 0 for the other-conference tier.
+static func suggest(league: FcLeague, target_games: int = 80) -> FcSeasonRules:
 	var best := FcSeasonRules.new()
 	var best_score := INF
 	var multi_conference := league.conferences.size() > 1
@@ -130,10 +135,12 @@ static func suggest(league: FcLeague, target_games: int = 82) -> FcSeasonRules:
 				if games < MIN_GAMES_PER_TEAM or games > MAX_GAMES_PER_TEAM:
 					continue
 				var score := absf(games - target_games)
-				score += 6.0 * _outside(gd, RECOMMENDED_DIVISION)
-				score += 6.0 * _outside(gc, RECOMMENDED_CONFERENCE)
+				if games % 2 == 1:
+					score += ODD_SEASON_PENALTY
+				score += OUTSIDE_RECOMMENDED_PENALTY * _outside(gd, RECOMMENDED_DIVISION)
+				score += OUTSIDE_RECOMMENDED_PENALTY * _outside(gc, RECOMMENDED_CONFERENCE)
 				if multi_conference:
-					score += 6.0 * _outside(go, RECOMMENDED_OTHER)
+					score += OUTSIDE_RECOMMENDED_PENALTY * _outside(go, RECOMMENDED_OTHER)
 				if score < best_score:
 					best_score = score
 					best = r

@@ -144,14 +144,14 @@ func test_suggest_season_for_many_sizes() -> void:
 
 func test_suggest_prefers_recommended_ranges_and_target() -> void:
 	var sixty_four := _league(2, 4, 64)
-	var r := FcSeasonRules.suggest(sixty_four, 82)
-	assert_true(r.advice(sixty_four).is_empty(), "64 teams can reach ~82 inside the recommended ranges")
-	assert_between(r.games_per_team(sixty_four), 70.0, 95.0, "64-team season")
+	var r := FcSeasonRules.suggest(sixty_four, 80)
+	assert_between(r.games_per_team(sixty_four), 70.0, 90.0, "64-team season")
+	assert_eq(r.games_per_team(sixty_four) % 2, 0, "ends on an even number")
 	var thirty := _league(2, 3, 30)
-	var t := FcSeasonRules.suggest(thirty, 82)
-	assert_between(t.games_per_team(thirty), 70.0, 95.0, "30 teams needs wider values to reach the target")
-	var recommended_only := FcSeasonRules.suggest(thirty, 60)
-	assert_true(recommended_only.advice(thirty).is_empty(), "a 60-game target fits the recommended ranges")
+	var t := FcSeasonRules.suggest(thirty, 80)
+	assert_eq(t.games_per_team(thirty), 80, "30 teams needs a wider division value to reach 80")
+	var recommended_only := FcSeasonRules.suggest(thirty, 62)
+	assert_true(recommended_only.advice(thirty).is_empty(), "a 62-game target is exactly 3/2/2, inside the recommended ranges")
 
 
 # --- the matchup planner: proof that the rules can be played fairly --------
@@ -306,7 +306,8 @@ func test_payroll_tiers_tax_and_space() -> void:
 	assert_eq(cap.payroll_tier(100000000), "under_minimum")
 	assert_eq(cap.payroll_tier(130000000), "under_cap")
 	assert_eq(cap.payroll_tier(150000000), "over_cap")
-	assert_eq(cap.payroll_tier(180000000), "over_tax")
+	assert_eq(cap.payroll_tier(172000000), "over_tax")
+	assert_eq(cap.payroll_tier(180000000), "over_restriction")
 	assert_eq(cap.payroll_tier(190000000), "over_limit")
 	assert_eq(cap.cap_space(130000000), 10000000)
 	assert_eq(cap.cap_space(150000000), 0)

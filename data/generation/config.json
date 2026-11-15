@@ -29,7 +29,7 @@
 	"salary_cap": 140000000,
 
 	"auto_season": true,
-	"target_games": 82,
+	"target_games": 80,
 	"games_per_division_opponent": 3,
 	"games_per_conference_opponent": 2,
 	"games_per_other_conference_opponent": 1,

@@ -18,6 +18,7 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 - Procedural generation: names, players, staff, cities, arenas, teams, rosters, contracts, free agents from a seed (129 tests total)
 - Real-world city database (154 cities, 7 areas) and customizable leagues: size, areas/exact cities, conferences/divisions (159 tests total)
 - League rules: equal-division structure limits (4-64 teams), season schedule rules with fair home/away matchup planner, playoff formats, soft cap with hard limit (plus hard cap and no cap presets), team naming options, sensitive places (198 tests total)
+- 80-game standard season (even season lengths for every size) and extra salary rules: tax sharing, repeater tax, restriction line, rookie scale, cornerstone extension, cap holds, sign-and-trade limits, no-trade clauses (218 tests total)
 
 ## Current
 - Awaiting founder direction on the next system.

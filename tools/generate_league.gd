@@ -189,6 +189,18 @@ func _print_rules(w: FcWorld, league: FcLeague, rules: FcLeagueRules, season: in
 		cap.min_player_salary / 1e6, cap.max_player_salary / 1e6, cap.max_contract_years, cap.max_annual_raise_percent])
 	print("  Over the cap a team may: re-sign own players %s, mid-level exception $%.1fM, minimum contracts %s" % [
 		"yes" if cap.own_player_exception else "no", cap.mid_level_exception / 1e6, "yes" if cap.minimum_contract_exception else "no"])
+	if cap.cap_type == "soft" or cap.cap_type == "none":
+		print("  Tax: repeat taxpayers (%d of the last 4 seasons) pay +%d%%; %d%% of the tax is shared equally among teams at or under the cap%s" % [
+			cap.repeater_years_required, cap.repeater_tax_extra_percent, cap.tax_distribution_percent,
+			"" if cap.restriction_line == 0 else "; above $%.1fM exceptions are unavailable and trades must match salaries" % (cap.restriction_line / 1e6)])
+	print("  Rookie scale: first pick $%.1fM down to $%.2fM, %d-year contracts (%d guaranteed)" % [
+		cap.rookie_scale_top / 1e6, cap.rookie_scale_bottom / 1e6, cap.rookie_contract_years, cap.rookie_guaranteed_years])
+	if cap.cornerstone_enabled:
+		print("  Cornerstone extension: one per team, up to $%.1fM, after %d seasons with the team" % [cap.cornerstone_max_salary / 1e6, cap.cornerstone_min_seasons_with_team])
+	print("  Cap holds %s | sign-and-trade %s | no-trade clauses %s" % [
+		"on (%d%% of last salary)" % cap.cap_hold_percent if cap.cap_holds_enabled else "off",
+		"allowed" if cap.sign_and_trade_allowed else "banned",
+		"after %d seasons with a team" % cap.no_trade_min_seasons_with_team if cap.no_trade_clauses_allowed else "off"])
 	var payrolls: Array = []
 	var over_cap := 0
 	var taxed := 0

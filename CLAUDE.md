@@ -34,6 +34,7 @@ The developer is a solo, beginner programmer. Explain decisions in plain languag
 6. No raw floats in saved data (JSON loses precision): use integers or `FcChecks.quantize()` in a setter. Store 64-bit numbers as text.
 7. Do not add dependencies/plugins/databases without explaining tradeoffs and getting approval.
 8. Do not build placeholder systems or empty folders for show.
+9. Naming and IP: real places are fine; teams, players, staff and branding are original. Do not use league-branded terms or names (e.g. NBA's "Bird rights", "Designated Veteran", "apron", trophy or league names); use our own or generic terms ("cornerstone extension", "restriction line"). Rules and mechanics are not copyrightable but names can be trademarked. A lawyer should review before a commercial release.
 
 ## Coding conventions (GDScript)
 - Files `snake_case.gd`; global classes `class_name FcPascalCase` (the `Fc` prefix avoids clashes with Godot built-ins).
