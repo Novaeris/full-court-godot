@@ -175,6 +175,11 @@ func generate(seed_value: int) -> FcWorld:
 	league_rules.league_id = league.id
 	world.rules.add(league_rules)
 	_add_free_agents(world, root.fork("free_agents"), used_names, reference)
+	var finance := FcFinanceEngine.new(world)
+	var money_scale := finance.scale_for(league_rules)
+	var price_scale := finance.price_scale_for(league_rules, league)
+	for t in teams:
+		world.businesses.add(finance.initial_business(t, money_scale, price_scale))
 	return world
 
 

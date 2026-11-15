@@ -15,6 +15,8 @@ var _world: FcWorld
 var _ratings := FcPlayerRatings.load_default()
 var _sim: FcGameSimulator
 var _teams: Dictionary = {}
+## Teams whose owner sets prices and marketing (Owner Mode); AI teams are automatic.
+var human_teams: Array[int] = []
 
 
 func _init(world: FcWorld, era: String = "") -> void:
@@ -144,6 +146,8 @@ func finish_season(season: FcSeason) -> void:
 		season.runner_up_id = season.playoffs.runner_up_id()
 	season.awards = compute_awards(season, standings)
 	season.status = FcSeason.Status.COMPLETE
+	if _world.businesses.count() > 0:
+		FcFinanceEngine.new(_world).settle(season.league_id, season, human_teams)
 
 
 # --- awards ------------------------------------------------------------------------

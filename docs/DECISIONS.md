@@ -131,6 +131,13 @@ Built on the founder's instruction to continue; the following product choices we
 - The AI is intentionally simple (best available affordable player). It never trades. Owner Mode will let the human replace the AI's decisions for one team.
 - Staff are not aged or renewed yet (their contracts will need a rollover step).
 
+## D-025 Owner Mode business model (2026-11-15, autonomous)
+- The owner's levers in v1 are ticket price, marketing budget and facilities investment (plus, through the GM, payroll via the salary rules). The AI sets a revenue-maximizing price (fills the arena) and default marketing for every non-human team.
+- Chosen realism: big markets earn far more but the cap and tax narrow the gap; a third of teams lose money in an average year. Targets are a typical professional league's, not exact figures.
+- Brand and fan interest move slowly (catch-up rates 0.20 and 0.30 per season) so success compounds over years; a losing franchise's interest decays.
+- Per-game prices scale with season length so short seasons are not unprofitable by construction.
+- To be built on top: owner decisions UI, sponsorship and loan negotiations, the owner's own targets and evaluation (profit, wins, valuation), GM/coach hiring and firing, arena renovation projects.
+
 ## D-013 Floats in saved data; runner robustness (2026-11-15)
 - Found by a test: JSON float round trips lose last bits, so a saved-and-reloaded world differed from the original. Rule: saved floats are quantized to 3 decimals via `FcChecks.quantize` in property setters; prefer integers. Documented in ARCHITECTURE rule 7.
 - Found while testing: a test file with a syntax error made the test runner hang forever. The runner now reports such files as failures.

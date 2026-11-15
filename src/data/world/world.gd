@@ -22,6 +22,7 @@ const KIND_CONFERENCE := "conference"
 const KIND_DIVISION := "division"
 const KIND_RULES := "league_rules"
 const KIND_SEASON := "season"
+const KIND_FINANCE := "finance"
 
 var definitions: FcDefinitionSet
 var ids := FcIdGenerator.new()
@@ -35,6 +36,9 @@ var staff_contracts: FcRepository = FcMemoryRepository.new()
 var leagues: FcRepository = FcMemoryRepository.new()
 var rules: FcRepository = FcMemoryRepository.new()
 var seasons: FcRepository = FcMemoryRepository.new()
+## Business state per team (id = team id) and yearly financial results.
+var businesses: FcRepository = FcMemoryRepository.new()
+var finances: FcRepository = FcMemoryRepository.new()
 
 
 func _init(defs: FcDefinitionSet) -> void:
@@ -180,6 +184,16 @@ func validate(season: int = 0) -> Array[String]:
 			continue
 		for e in sn.validate(season_league):
 			errors.append("season %d: %s" % [sn.id, e])
+	for b in businesses.all():
+		if not teams.has_id(b.id):
+			errors.append("business %d: team does not exist" % b.id)
+		for e in b.validate():
+			errors.append("business %d: %s" % [b.id, e])
+	for fr in finances.all():
+		if not teams.has_id(fr.team_id):
+			errors.append("finance record %d: team %d does not exist" % [fr.id, fr.team_id])
+		for e in fr.validate():
+			errors.append("finance record %d: %s" % [fr.id, e])
 	var rules_per_league := {}
 	for r in rules.all():
 		var league: FcLeague = leagues.get_by_id(r.league_id)
@@ -266,6 +280,8 @@ func to_dict() -> Dictionary:
 		"leagues": _dicts_of(leagues),
 		"rules": _dicts_of(rules),
 		"seasons": _dicts_of(seasons),
+		"businesses": _dicts_of(businesses),
+		"finances": _dicts_of(finances),
 	}
 
 
@@ -295,6 +311,10 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 		_report(w.rules.add(FcLeagueRules.from_dict(d)), "league rules", errors)
 	for d in data.get("seasons", []):
 		_report(w.seasons.add(FcSeason.from_dict(d)), "season", errors)
+	for d in data.get("businesses", []):
+		_report(w.businesses.add(FcTeamBusiness.from_dict(d)), "team business", errors)
+	for d in data.get("finances", []):
+		_report(w.finances.add(FcFinanceRecord.from_dict(d)), "finance record", errors)
 	return w
 
 

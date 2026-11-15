@@ -148,6 +148,20 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 - A whole 30-team, 80-game season plus playoffs takes about 13 seconds; a 1,230-game season is stored in about 100 KB.
 - Rosters are read when an engine is created; change rosters between seasons.
 
+## Business model (`src/league/finance_engine.gd`, `src/data/business/`, `data/simulation/finance.json`)
+```
+FcTeamBusiness     per team (id = team id): ticket price, marketing budget, facilities level, fan interest, brand, cash, debt, valuation
+FcFinanceRecord    per team per season: 8 revenue lines, 9 expense lines, wins, playoff rounds, attendance, end-of-season brand/cash/debt/valuation
+FcFinanceEngine    demand(), attendance(), best_price(), initial_business(), invest_in_facilities(), settle()
+```
+- Demand = capacity x (how much the city cares about the team) x market size x local wealth x arena quality, falling with price (elasticity 1.3). Attendance = demand capped at capacity. The best price is where demand just fills the arena.
+- Revenue: tickets, playoff gates (premium), concessions, merchandise (brand x market), sponsorship (brand x market x playoff success), broadcasting (equal share), arena events, luxury-tax share. Expenses: payroll, luxury tax (repeater rate uses the finance history), staff, arena operations, marketing, travel, administration, facilities upkeep, interest. A cash shortfall becomes debt; positive cash repays half of it each year.
+- Feedback loops: winning and playoff success raise fan interest; interest and marketing raise brand; both lift next season's attendance and revenue; valuation = revenue x (2.6 + 1.2 x brand) - debt. Arena facilities decay 1.5 points a year and cost money to rebuild.
+- Money values are for a $140M cap and scale with the cap; per-game prices scale with season length (a 40-game season charges twice the ticket price) so the economy balances at any season length.
+- `FcSeasonEngine.finish_season` settles all teams automatically. `FcSeasonEngine.human_teams` lists the teams whose owner sets price and marketing (Owner Mode); AI teams re-price and use default marketing each season.
+- Calibrated (30 teams, 80 games): average revenue about 1.8x the cap, about 11% average margin, a third of teams lose money, large markets earn up to $120M profit, small markets lose up to $45M. Check with `tools/finances.ps1`.
+- Not yet: sponsorship deals as negotiable contracts, loans and owner capital injections, arena expansion beyond facilities level, merchandise lines, season tickets, revenue sharing beyond the tax, owner distributions, bankruptcy rules.
+
 ## Offseason (`src/league/offseason.gd`, `player_progression.gd`, `player_market.gd`)
 ```
 FcPlayerProgression  yearly development/decline per attribute (potential, peak age, development rate, work ethic, coach player-development skill, volatility); retirement odds by age and ability. Data: data/simulation/progression.json

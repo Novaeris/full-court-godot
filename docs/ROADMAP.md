@@ -23,6 +23,7 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 - Basketball simulation v1: possession engine, rotations, fatigue, coach effects, box scores and advanced stats, calibrated stress tool; recalibrated to the 2010-2020 NBA with three era presets and realistic scoring leaders (248 tests)
 - Season engine: dated calendar, standings with tiebreakers, playoffs (division leaders or seeding, conference or league brackets, byes, home court), champion, awards, player season statistics, league balance tuning (280 tests)
 - Offseason: player progression and retirement, contract expiry, AI re-signing, 2-round draft with rookie scale, free agency under the salary rules, legal rosters; three seasons verified (299 tests)
+- Owner Mode business engine: demand and pricing, 8 revenue and 9 expense lines, fan interest, brand, debt, valuation, owner levers (price, marketing, facilities), AI teams run automatically (313 tests)
 
 ## Current
 - Awaiting founder direction on the next system.
