@@ -14,6 +14,7 @@ var players: Array[FcSimPlayer] = []
 var tactics: Dictionary = {
 	"pace": 50.0, "three": 50.0, "aggression": 50.0, "ball_movement": 50.0,
 	"offense": 50.0, "defense": 50.0, "game_management": 50.0,
+	"injury_prevention": 50.0, "rehabilitation": 50.0,
 }
 
 
@@ -43,6 +44,19 @@ static func from_world(world: FcWorld, team_id: int, ratings: FcPlayerRatings) -
 	while g.players.size() < 8 and not injured.is_empty():
 		g.players.append(FcSimPlayer.new(injured.pop_front(), ratings, team_id))
 	g.sort_by_overall()
+	# medical staff: the average skill of the team's doctors and trainers
+	var prevention := 0.0
+	var rehab := 0.0
+	var medics := 0
+	for sc in world.staff_contracts_of_team(team_id, FcStaffRole.Id.MEDICAL):
+		var m: FcStaffMember = world.staff.get_by_id(sc.staff_id)
+		if m != null:
+			prevention += m.skills.get_value("injury_prevention")
+			rehab += m.skills.get_value("rehabilitation")
+			medics += 1
+	if medics > 0:
+		g.tactics["injury_prevention"] = prevention / medics
+		g.tactics["rehabilitation"] = rehab / medics
 	var coach := world.staff_in_role(team_id, FcStaffRole.Id.HEAD_COACH)
 	if coach != null:
 		g.tactics["pace"] = float(coach.philosophy.get_value("pace_preference"))

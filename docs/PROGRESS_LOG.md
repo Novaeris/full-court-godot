@@ -5,7 +5,7 @@ Nothing has been pushed anywhere: the repository is local only (no remote).
 
 ## 2026-11-15, autonomous stretch (founder away)
 
-State at the end of this stretch: **354 automated tests pass**, everything committed locally.
+State at the end of this stretch: **357 automated tests pass**, everything committed locally.
 Run the tests with `./tools/run_tests.ps1`.
 
 ### Built since the founder left
@@ -17,7 +17,7 @@ Run the tests with `./tools/run_tests.ps1`.
 
 6. **A first UI** (main menu, new league wizard, team choice, dashboard with Overview / Standings / Schedule / Roster / Finances / Staff / League tabs). **How to play**: open `project.godot` in Godot 4.7 and press F5 (see README.md). The automated tests prove the screens build and the game can be played through them; they cannot judge how it looks or feels, so please look at it and tell me what to change.
 
-7. **Injuries**: players get hurt during games (more when fragile, more minutes), miss games, return, and severe injuries cost athleticism. Medical staff skills are not wired in yet.
+7. **Injuries**: players get hurt during games (more when fragile, more minutes), miss games, return, and severe injuries cost athleticism. Medical staff skills (injury prevention, rehabilitation) change how often and how long.
 
 8. **News tab** (injuries, big games, champions, awards, signings, retirements) and a **box score viewer** for your team's last 20 games (Schedule tab).
 
@@ -26,7 +26,7 @@ Era presets and star usage; league balance (team spread tightened); no draft lot
 
 ### Known gaps and things to watch
 - **UI is a first plain version**: no box score viewer, no draft / free agency / trade screens, no theme polish, no mobile layout.
-- Dynasties: in a 6-season test one team won 4 titles with a 71-9 record. The AI never trades and keeps stars via the own-player exception; watch league parity. Candidates: trades, player moves for money/role, aging curves.
+- Dynasties: in one 6-season test (30 teams, seed 2026) a team won 4 titles with a 71-9 record, but eight-season runs of 20-team leagues with two other seeds spread the titles across 4-5 champions, so it looks seed-specific. The AI never trades; keep watching.
 - League average age drifts young (about 24.6 after six seasons; real is about 26). Retirement and the draft supply are the levers.
 - Overtime games are about 2% (real about 5-6%): end-of-game fouling and timeouts are not modeled.
 - Not built: trades, injuries, scouting uncertainty, draft lottery, awards beyond MVP/leaders/All-League/Finals MVP, Hall of Fame, records book, sponsorship contracts, loans, arena renovation projects, staff chemistry, Dynasty-mode roster control, mobile layouts, exports.

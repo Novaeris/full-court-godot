@@ -415,6 +415,7 @@ func _use_time(seconds: float) -> void:
 				p.energy = maxf(0.0, p.energy - seconds * float(_t["energy_drain_per_second"]) * (1.3 - 0.6 * p.stamina / 100.0))
 				if float(_t["injury_per_minute"]) > 0.0 and not p.injured:
 					var chance := float(_t["injury_per_minute"]) * seconds / 60.0 * (1.4 - 0.8 * p.durability / 100.0)
+					chance *= 1.25 - float(_teams[side].tactics["injury_prevention"]) / 200.0
 					if _rng.chance(chance):
 						hurt.append([side, p])
 			else:

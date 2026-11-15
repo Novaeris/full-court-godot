@@ -203,4 +203,4 @@ func test_severe_injuries_cost_athleticism() -> void:
 	engine._apply_injuries(box)
 	for key in ["speed", "agility", "vertical", "stamina"]:
 		assert_true(p.attributes.get_value(key) < 70 and p.attributes.get_value(key) >= 67, key)
-	assert_eq(p.games_out, 75)
+	assert_between(p.games_out, 60.0, 90.0, "75 games, shortened or lengthened by his team medical staff")
