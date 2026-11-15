@@ -1,0 +1,13 @@
+{
+	"schema": 1,
+	"kind": "personality",
+	"definitions": [
+		{"key": "loyalty", "name": "Loyalty", "category": "personality", "description": "Attachment to the current team and city.", "min": 0, "max": 100, "default": 50},
+		{"key": "ambition", "name": "Ambition", "category": "personality", "description": "Desire for titles, stardom and a bigger role.", "min": 0, "max": 100, "default": 50},
+		{"key": "ego", "name": "Ego", "category": "personality", "description": "Need for recognition and playing time.", "min": 0, "max": 100, "default": 50},
+		{"key": "money_focus", "name": "Money Focus", "category": "personality", "description": "How much contract value drives decisions.", "min": 0, "max": 100, "default": 50},
+		{"key": "professionalism", "name": "Professionalism", "category": "personality", "description": "Reliability off the court.", "min": 0, "max": 100, "default": 50},
+		{"key": "temperament", "name": "Temperament", "category": "personality", "description": "Emotional steadiness (high = calm).", "min": 0, "max": 100, "default": 50},
+		{"key": "adaptability", "name": "Adaptability", "category": "personality", "description": "Comfort with new roles, systems and teammates.", "min": 0, "max": 100, "default": 50}
+	]
+}

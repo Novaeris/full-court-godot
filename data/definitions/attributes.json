@@ -1,0 +1,37 @@
+{
+	"schema": 1,
+	"kind": "attributes",
+	"definitions": [
+		{"key": "close_finishing", "name": "Close Finishing", "category": "offensive", "description": "Finishing plays right at the rim and in the paint.", "min": 0, "max": 100, "default": 50},
+		{"key": "layups", "name": "Layups", "category": "offensive", "description": "Skill at layups and floaters off drives.", "min": 0, "max": 100, "default": 50},
+		{"key": "dunking", "name": "Dunking", "category": "offensive", "description": "Ability to finish with dunks.", "min": 0, "max": 100, "default": 50},
+		{"key": "mid_range", "name": "Mid-Range Shooting", "category": "offensive", "description": "Shooting accuracy from mid-range.", "min": 0, "max": 100, "default": 50},
+		{"key": "three_point", "name": "Three-Point Shooting", "category": "offensive", "description": "Shooting accuracy from beyond the arc.", "min": 0, "max": 100, "default": 50},
+		{"key": "free_throw", "name": "Free Throws", "category": "offensive", "description": "Free throw accuracy.", "min": 0, "max": 100, "default": 50},
+		{"key": "ball_handling", "name": "Ball Handling", "category": "offensive", "description": "Dribbling control and protecting the ball.", "min": 0, "max": 100, "default": 50},
+		{"key": "passing", "name": "Passing", "category": "offensive", "description": "Accuracy and creativity as a passer.", "min": 0, "max": 100, "default": 50},
+		{"key": "offensive_awareness", "name": "Offensive Awareness", "category": "offensive", "description": "Movement and positioning without the ball.", "min": 0, "max": 100, "default": 50},
+		{"key": "shot_selection", "name": "Shot Selection", "category": "offensive", "description": "Taking good shots at the right times.", "min": 0, "max": 100, "default": 50},
+
+		{"key": "perimeter_defense", "name": "Perimeter Defense", "category": "defensive", "description": "Guarding ball handlers and wings.", "min": 0, "max": 100, "default": 50},
+		{"key": "interior_defense", "name": "Interior Defense", "category": "defensive", "description": "Protecting the paint and guarding post players.", "min": 0, "max": 100, "default": 50},
+		{"key": "steals", "name": "Steals", "category": "defensive", "description": "Ability to take the ball away.", "min": 0, "max": 100, "default": 50},
+		{"key": "blocks", "name": "Blocks", "category": "defensive", "description": "Ability to block shots.", "min": 0, "max": 100, "default": 50},
+		{"key": "defensive_awareness", "name": "Defensive Awareness", "category": "defensive", "description": "Rotations, help defense and reading plays.", "min": 0, "max": 100, "default": 50},
+		{"key": "rebounding", "name": "Rebounding", "category": "defensive", "description": "Securing missed shots at both ends.", "min": 0, "max": 100, "default": 50},
+
+		{"key": "speed", "name": "Speed", "category": "physical", "description": "Straight-line quickness.", "min": 0, "max": 100, "default": 50},
+		{"key": "strength", "name": "Strength", "category": "physical", "description": "Physical power in contact.", "min": 0, "max": 100, "default": 50},
+		{"key": "agility", "name": "Agility", "category": "physical", "description": "Lateral quickness and change of direction.", "min": 0, "max": 100, "default": 50},
+		{"key": "vertical", "name": "Vertical", "category": "physical", "description": "Jumping ability.", "min": 0, "max": 100, "default": 50},
+		{"key": "stamina", "name": "Stamina", "category": "physical", "description": "Resistance to fatigue.", "min": 0, "max": 100, "default": 50},
+		{"key": "durability", "name": "Durability", "category": "physical", "description": "Resistance to injury.", "min": 0, "max": 100, "default": 50},
+
+		{"key": "basketball_iq", "name": "Basketball IQ", "category": "mental", "description": "Overall understanding of the game.", "min": 0, "max": 100, "default": 50},
+		{"key": "decision_making", "name": "Decision Making", "category": "mental", "description": "Choosing the right action under pressure.", "min": 0, "max": 100, "default": 50},
+		{"key": "consistency", "name": "Consistency", "category": "mental", "description": "Delivering the same level game after game.", "min": 0, "max": 100, "default": 50},
+		{"key": "leadership", "name": "Leadership", "category": "mental", "description": "Positive influence on teammates.", "min": 0, "max": 100, "default": 50},
+		{"key": "work_ethic", "name": "Work Ethic", "category": "mental", "description": "Commitment to training and improvement.", "min": 0, "max": 100, "default": 50},
+		{"key": "competitive_mentality", "name": "Competitive Mentality", "category": "mental", "description": "Drive to win and performance in big moments.", "min": 0, "max": 100, "default": 50}
+	]
+}

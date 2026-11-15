@@ -22,6 +22,12 @@ Deep multi-decade management: rosters, contracts, cap, free agency, trades, draf
 ## Fictional universe
 Original cities, teams, branding, arenas, conferences, rules, players, coaches, executives, rivalries and history. Procedurally generated but coherent. Stable IDs; history persists.
 
+## Implemented design decisions (data model)
+- Players have 28 attributes in four groups (offensive 10, defensive 6, physical 6, mental 6), 7 personality traits (loyalty, ambition, ego, money focus, professionalism, temperament, adaptability) and 8 tendencies (how often they shoot threes, drive, post up, etc.). All rated 0-100 and defined in data files so they can be rebalanced. These are first drafts to be tuned against the simulation.
+- Each player also has a hidden growth profile: potential, peak age, development rate, volatility.
+- Contracts are standalone agreements with per-season salary, guaranteed money, player/team options and bonuses; this is what Owner Mode finance and later cap rules will build on.
+- A team's market comes from its city (population, economy); its building is a separate arena; its roster is a list of players it has active contracts with.
+
 ## Simulation principles
 - Attributes (offense, defense, physical, mental) must change outcomes; no decorative stats.
 - Possession-based engine accounting for tendencies, roles, tactics, matchups, fatigue, injuries, home court, pace, variance.

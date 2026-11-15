@@ -14,6 +14,8 @@ The developer is a solo, beginner programmer. Explain decisions in plain languag
 
 ## Layout
 - `src/core/`   Foundation utilities with no game knowledge (seeded RNG, ID generation).
+- `src/data/`   Data model: attributes, player, team, contract, world/repositories (see docs/ARCHITECTURE.md). No UI or simulation code here.
+- `data/definitions/`  JSON definitions of attributes, personality traits, tendencies. Edit these to rebalance, not code.
 - `src/...`     Further modules are added only when they hold real code (see docs/ARCHITECTURE.md).
 - `tests/`      Automated tests. `tests/unit/test_*.gd`; base class `FcTestCase`.
 - `tools/`      Dev scripts (test runner wrapper, later: season stress-test).

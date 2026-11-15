@@ -8,12 +8,14 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 - Core: `FcRng`, `FcIdGenerator` (tested)
 - Headless test runner + `tools/run_tests.ps1`
 - Project docs
+- Foundation approved by founder
+- Data model: data-driven attribute system, Player (+ parts), Team (+ roster/city/arena), Contract (years/options/bonuses), repositories, FcWorld with integrity validation (58 tests)
 
 ## Current
-- Founder review/approval of the foundation (architecture, test runner choice D-004).
+- Awaiting founder direction on the next system (recommended: save system).
 
 ## Next (proposed order, driven by dependencies)
-1. **Data model**: attribute definitions (data-driven), Player, Team, Staff, Contract classes with to/from dict.
+1. **Staff / coach / executive entities** (same patterns as Player; needed for Owner Mode hiring).
 2. **Save system**: versioned save format, slots, atomic write, round-trip tests.
 3. **Procedural generation**: names, players (attributes, potential, personality), teams, fictional cities/league layout.
 4. **Basketball engine v1**: possession simulation, box scores, stress-test tool for plausibility.

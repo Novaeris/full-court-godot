@@ -38,9 +38,18 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 |---|---|
 | FcRng (determinism, forking, state restore, distributions) | 7 |
 | FcIdGenerator (sequence, independence, save round-trip) | 3 |
-| Everything else | not built yet |
+| FcDate (validity, leap years, ISO round trip, age math) | 4 |
+| Attribute system (shipped JSON valid, catalog errors, set validation, clamping, save compatibility, adding attributes) | 7 |
+| FcPlayer (validation, positions, retirement, round trip, sparse/corrupt data) | 9 |
+| FcTeam, FcRoster, FcCity, FcArena | 8 |
+| FcContract (cap hit, guarantees, options, validation, round trip) | 7 |
+| FcRepository / FcMemoryRepository | 2 |
+| FcWorld (integrity checks, round trip, JSON text round trip, duplicate ids) | 11 |
+| Everything else (simulation, generation, save files, league ops) | not built yet |
 
-Last verified: 10 passed, 0 failed (Godot 4.7.2). The runner was also verified to report failures (exit code 1).
+Shared sample builders for tests live in `tests/support/test_data.gd` (`FcTestData`).
+
+Last verified: 58 passed, 0 failed (Godot 4.7.2). The runner was also verified to report failures (exit code 1).
 
 ## Known issues / limits
 - Runner discovers methods by name only; no setup/teardown beyond `before_each`.

@@ -1,0 +1,14 @@
+{
+	"schema": 1,
+	"kind": "tendencies",
+	"definitions": [
+		{"key": "three_point_tendency", "name": "Three-Point Tendency", "category": "shooting", "description": "How often the player looks for threes.", "min": 0, "max": 100, "default": 50},
+		{"key": "mid_range_tendency", "name": "Mid-Range Tendency", "category": "shooting", "description": "How often the player takes mid-range shots.", "min": 0, "max": 100, "default": 50},
+		{"key": "drive_tendency", "name": "Drive Tendency", "category": "scoring", "description": "How often the player attacks the rim off the dribble.", "min": 0, "max": 100, "default": 50},
+		{"key": "post_tendency", "name": "Post Tendency", "category": "scoring", "description": "How often the player works in the post.", "min": 0, "max": 100, "default": 50},
+		{"key": "pass_tendency", "name": "Pass-First Tendency", "category": "playmaking", "description": "Preference for passing over shooting.", "min": 0, "max": 100, "default": 50},
+		{"key": "gamble_tendency", "name": "Steal Gamble Tendency", "category": "defense", "description": "Willingness to risk positioning for steals.", "min": 0, "max": 100, "default": 50},
+		{"key": "foul_tendency", "name": "Foul Tendency", "category": "defense", "description": "Defensive aggressiveness that risks fouls.", "min": 0, "max": 100, "default": 50},
+		{"key": "offensive_rebound_tendency", "name": "Offensive Rebound Tendency", "category": "rebounding", "description": "Crashing the offensive glass versus getting back.", "min": 0, "max": 100, "default": 50}
+	]
+}

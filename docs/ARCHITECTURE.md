@@ -1,6 +1,6 @@
 # Architecture
 
-Status: foundation stage. Items marked **(planned)** do not exist yet; items without it do.
+Items marked **(planned)** do not exist yet; everything else is implemented and tested.
 
 ## Guiding idea
 One shared basketball universe + simulation core. Game modes (Owner, Dynasty) are thin layers that decide *what the player is allowed to do and see*, not separate games. The UI is a replaceable skin over the core.
@@ -9,48 +9,76 @@ One shared basketball universe + simulation core. Game modes (Owner, Dynasty) ar
 
 ```
 UI (scenes, screens, widgets)                      (planned)
-  ↓ reads state, sends commands
 Game Modes (Owner, Dynasty: permissions, flows)    (planned)
-  ↓
 League & Business Systems (schedule, standings,    (planned)
-  draft, free agency, trades, finances)
-  ↓
+  draft, free agency, trades, finances, cap rules)
 Basketball Simulation (possessions, box scores)    (planned)
-  ↓
-Data Model (players, teams, staff, contracts, ...) (planned)
-  ↓
-Core (FcRng, FcIdGenerator)                        EXISTS: src/core/
+Data Model (src/data): players, teams, contracts,  IMPLEMENTED
+  attributes, world container, repositories
+Core (src/core): FcRng, FcIdGenerator              IMPLEMENTED
 ```
 
-Save/load sits beside the data model: it serializes the data model, never the UI. Procedural generation (names, players, draft classes) sits beside the data model and uses only `FcRng`.
+Save/load serializes the data model, never the UI (planned; the data model already produces/consumes snapshots). Procedural generation (planned) uses only `FcRng` and the data model.
 
-## Modules
-| Module | Responsibility | Status |
-|---|---|---|
-| `src/core/rng.gd` (`FcRng`) | Seeded, forkable, save-able random numbers. All randomness goes through it so any run is reproducible. | Done, tested |
-| `src/core/id_generator.gd` (`FcIdGenerator`) | Stable, never-reused integer IDs per entity kind; serializable. | Done, tested |
-| Data model | Plain data classes (RefCounted/Resource) with `to_dict()`/`from_dict()`; reference each other by ID. | Planned |
-| Simulation | Possession-by-possession engine, headless, driven by attributes + tactics. | Planned |
-| League rules | Data-driven config (conference layout, season length, playoff format, cap rules). | Planned |
-| Save system | Versioned files, slots, metadata, atomic writes, migrations. | Planned |
-| Game modes | Owner / Dynasty permission + flow layer over the shared core. | Planned |
-| UI | Reusable components, responsive layouts (PC vs mobile arrangements). | Planned |
+## Data model rules
+1. Every entity has a stable integer `id` from `FcIdGenerator` (never reused, 0 = none).
+2. Entities reference each other **by ID only**, never by object. This prevents circular references and makes saving trivial.
+3. Each class has `validate() -> Array[String]` (empty = valid), `to_dict()` and `static from_dict()`. `from_dict` tolerates missing fields (fills defaults) and never crashes on bad data; `validate()` reports it.
+4. Top-level entities write a `"schema"` version. Old saves load with defaults for new fields; real migrations will be added by the save system when a field is removed or changes meaning.
+5. Money is whole dollars (`int`). Seasons are the calendar year in which they start. Dates are `FcDate` (ISO text when saved). Physical measures are metric.
+6. The data model contains no simulation, UI, or Godot scene code.
 
-## Data architecture (recommended direction)
-- In memory: typed GDScript classes holding dictionaries/arrays keyed by integer ID, so lookups are O(1).
-- On disk (saves): versioned structured data (JSON-compatible dictionaries, compressed binary option later). Human-debuggable early on, easy to migrate.
-- SQLite is **not** adopted now. Reason: it adds a native plugin dependency that complicates mobile exports, and a league of a few thousand players with decades of history fits comfortably in memory. Revisit if historical stats (millions of rows) make loading/search slow. See DECISIONS.md.
+## Data model map (`src/data/`)
+
+```
+common/      FcChecks (validation helpers), FcDate
+attributes/  FcAttributeDef      one rating's definition (key, range, default...)
+             FcAttributeCatalog  loaded list of definitions of one kind
+             FcAttributeSet      one entity's values, validated against a catalog
+             FcDefinitionSet     the 3 catalogs: attributes, personality, tendencies
+player/      FcPlayer            composed of:
+               FcPlayerIdentity  names, birth date, birthplace, country
+               FcPlayerPhysical  height, weight, wingspan, handedness
+               FcPlayerDevelopment potential, peak age, development rate, volatility
+               3 x FcAttributeSet  attributes, personality, tendencies
+               FcPosition        position ids (primary + optional secondary)
+team/        FcTeam              composed of:
+               FcTeamIdentity    nickname, abbreviation, founded year
+               FcTeamBranding    colors, logo key
+               FcRoster          list of player ids (the changing part)
+             FcCity              market: population, economy
+             FcArena             capacity, year built, city
+contract/    FcContract          player_id, team_id, status, signing date, composed of:
+               FcContractYear    season, salary, guaranteed, option (type/status)
+               FcContractBonus   kind, season, amount, guaranteed, counts vs cap
+world/       FcRepository        persistence interface (abstract)
+             FcMemoryRepository  in-memory implementation
+             FcWorld             definitions + id generator + repositories +
+                                 cross-entity validation + snapshot to/from dict
+```
+
+Attribute definitions live in `data/definitions/*.json` (28 basketball attributes, 7 personality traits, 8 tendencies). Add, rename or rebalance by editing JSON; `FcAttributeSet` fills any attribute added later with its default when old data loads.
+
+## Relationships
+- Player ↔ Team: via `FcRoster` (the team's roster is the single source of truth for membership). A player does not store his team.
+- Player ↔ Contract ↔ Team: a contract holds `player_id` and `team_id`. A player may have many contracts over time but at most one `ACTIVE`; every rostered player must have an ACTIVE contract with that team (checked by `FcWorld.validate()`).
+- Team → City / Arena: by id. Arena → City: by id. Relocation = change `city_id`; the team id is unchanged.
+- Not on the player/team by design (separate records keyed by id, to be built with their systems): career and season statistics, historical records and awards (keyed by `player_id` / `team_id` + season), team finances, staff, owner (`owner_id` reserved, unchecked until that entity exists).
+
+Permanent vs changing team information: id + founded year are permanent; identity/branding/city/arena/owner change rarely (rebrand, relocation); roster changes constantly; per-season data (records, finances) will be season-keyed records.
+
+## Persistence abstraction
+Game systems use `FcRepository` (get, has, add, update, remove, ids, all, count) and never a specific storage engine. `FcMemoryRepository` is the only implementation today. SQLite or another store can later be added as another `FcRepository` implementation. The save system (planned) will wrap `FcWorld.to_dict()` with slots, metadata, versioning, atomic writes and migrations.
+Known limit: `team_of_player()` and `active_contract_of()` scan linearly; indexes will be added when profiling justifies them.
 
 ## Simulation architecture (planned)
-- Pure functions of (state, tactics, rng) → events/stats. No scene tree access.
-- Game = loop of possessions; each possession resolves via attribute-weighted probabilities tied to basketball logic (not arbitrary dice).
-- Stress tools simulate thousands of games with fixed seeds and check statistical plausibility.
+Pure functions of (state, tactics, rng) → events/stats, no scene tree access. Possession-based, attribute-driven. Stress tools simulate thousands of games with fixed seeds.
 
 ## Game mode architecture (planned)
-A mode defines a *permission set* (which actions the player may take directly vs delegate to AI staff) and which UI screens are available. Owner Mode delegates roster decisions to an AI GM; Dynasty Mode exposes them. Both call the same core services.
+A mode defines a permission set (which actions the player does directly vs. delegates to AI staff) and which UI screens are available. Both modes call the same core services.
 
 ## UI structure (planned)
-Godot Control scenes, reusable components (tables, stat cards, charts), theme resource for consistent typography/colors. PC and mobile get separate layout arrangements from the same screen logic.
+Godot Control scenes, reusable components, shared theme. PC and mobile get separate layouts from the same screen logic.
 
 ## Testing
-See TESTING.md. Headless custom runner (`tests/run_tests.gd`) with `FcTestCase`.
+See TESTING.md.

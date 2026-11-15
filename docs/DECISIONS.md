@@ -15,7 +15,7 @@ Godot 4.7.2 stable (standard, non-.NET), installed with `winget install GodotEng
 ## D-003 Renderer
 `gl_compatibility` for both desktop and mobile. A management game is UI-heavy, not graphics-heavy; this renderer maximizes device compatibility.
 
-## D-004 Test framework: custom minimal runner (PENDING FOUNDER APPROVAL)
+## D-004 Test framework: custom minimal runner (APPROVED)
 Chosen: ~60-line headless runner (`tests/run_tests.gd`) + `FcTestCase`.
 Alternative: GUT (popular third-party Godot test plugin).
 Reasons: zero dependencies, works immediately on 4.7, simple for a beginner to read. GUT can be adopted later if we need mocking/richer reporting; tests are plain methods so migration is easy.
@@ -26,5 +26,19 @@ All simulation randomness goes through `FcRng` (seeded, forkable, state-saveable
 ## D-006 IDs
 Stable integer IDs per entity kind (`FcIdGenerator`), never reused. Chosen over strings/UUIDs for speed, small saves, and simple dictionary keys.
 
-## D-007 No SQLite yet
-Deferred; see ARCHITECTURE.md "Data architecture". Revisit when history volume demands it.
+## D-007 No SQLite yet (APPROVED, with condition)
+Deferred. Condition from founder: keep a clean persistence abstraction. Implemented as `FcRepository` with `FcMemoryRepository`; a SQLite-backed implementation can be added later without changing game systems. Revisit when history volume demands it.
+
+## D-008 Line endings (APPROVED)
+`.gitattributes` forces LF for Godot/data/text files and CRLF for `.ps1`/`.bat`. No remote repository or push until the founder explicitly authorizes it.
+
+## D-009 Data model shape (2026-11-15)
+- Entities reference each other by integer ID only (no object references): no circular dependencies, trivial serialization.
+- Player is split into identity, physical, development and three attribute sets. Contracts, team membership and statistics are NOT on the player.
+- Contract is an independent entity (`player_id`, `team_id`, years, options, bonuses). Money is integer dollars.
+- Roster is the single source of truth for team membership; contracts must agree (validated in `FcWorld`).
+- Attributes, personality traits and tendencies are data (`data/definitions/*.json`), separate from values (`FcAttributeSet`). One mechanism serves all three.
+- City and Arena are their own entities so relocation/renovation do not require changing team identity.
+- Seasons are identified by the calendar year in which they start.
+- Alternatives rejected: one large Player class (hard to evolve); salary stored on player (blocks options, bonuses, history, cap queries); attributes as hard-coded variables (every balance change needs code edits).
+- Statistics, history, finances, staff and owner are deferred as separate records keyed by id, to be designed with their systems.
