@@ -27,6 +27,7 @@ func _initialize() -> void:
 			var test = script.new()
 			test.before_each()
 			test.call(name)
+			test.after_each()
 			if test.failures.is_empty():
 				passed += 1
 			else:

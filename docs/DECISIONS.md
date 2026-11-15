@@ -32,6 +32,15 @@ Deferred. Condition from founder: keep a clean persistence abstraction. Implemen
 ## D-008 Line endings (APPROVED)
 `.gitattributes` forces LF for Godot/data/text files and CRLF for `.ps1`/`.bat`. No remote repository or push until the founder explicitly authorizes it.
 
+## D-010 Save format (2026-11-15)
+- JSON text: header line + payload, SHA-256 checksum, one file per slot under `user://saves/`.
+  Alternatives: binary/compressed (smaller, not debuggable; can be added later via format version), SQLite (deferred, see D-007), Godot Resource files (tied to engine internals and unsafe to load from untrusted files).
+- Atomic write with verification and `.bak`; recovery order main → temp → backup.
+- `DATA_VERSION` + step migrator; newer saves refused rather than guessed at.
+- Saving never refused for integrity problems; loading reports warnings.
+- `user://` is the per-user game data folder (on Windows: `%APPDATA%\Godot\app_userdata\Full Court\`). Works on all target platforms.
+- Bug found and fixed while designing: JSON numbers are doubles, so 64-bit RNG state/seed are saved as text.
+
 ## D-009 Data model shape (2026-11-15)
 - Entities reference each other by integer ID only (no object references): no circular dependencies, trivial serialization.
 - Player is split into identity, physical, development and three attribute sets. Contracts, team membership and statistics are NOT on the player.

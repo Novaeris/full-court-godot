@@ -24,3 +24,8 @@ func assert_between(actual: float, low: float, high: float, message: String = ""
 ## Runs before every test method. Override to set up fresh state.
 func before_each() -> void:
 	pass
+
+
+## Runs after every test method (even failed ones). Override to clean up files.
+func after_each() -> void:
+	pass

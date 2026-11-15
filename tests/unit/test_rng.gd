@@ -38,6 +38,19 @@ func test_state_save_and_restore() -> void:
 	assert_eq(b.next_float(), expected, "restored generator continues identically")
 
 
+func test_state_survives_json_with_huge_seed() -> void:
+	# Regression: 64-bit values lose precision if stored as JSON numbers.
+	var a := FcRng.new(9223372036854775807)
+	for i in 7:
+		a.next_float()
+	var through_json = JSON.parse_string(JSON.stringify(a.get_state()))
+	var b := FcRng.new(0)
+	b.set_state(through_json)
+	assert_eq(b.get_seed(), 9223372036854775807, "seed preserved")
+	for i in 20:
+		assert_eq(b.range_int(0, 1000000000), a.range_int(0, 1000000000), "draw %d" % i)
+
+
 func test_chance_matches_probability() -> void:
 	var r := FcRng.new(2024)
 	var hits := 0

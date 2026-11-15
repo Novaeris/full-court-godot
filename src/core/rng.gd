@@ -75,8 +75,10 @@ func weighted_index(weights: Array) -> int:
 
 
 ## Saves the generator position so it can be restored after loading a save.
+## Values are stored as TEXT because the internal state is a 64-bit number and
+## JSON numbers are doubles, which would silently lose precision.
 func get_state() -> Dictionary:
-	return {"seed": _seed, "state": _rng.state}
+	return {"seed": str(_seed), "state": str(_rng.state)}
 
 
 func set_state(data: Dictionary) -> void:

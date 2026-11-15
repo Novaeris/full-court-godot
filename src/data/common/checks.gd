@@ -27,3 +27,13 @@ static func is_abbreviation(value: String) -> bool:
 
 static func is_blank(value: String) -> bool:
 	return value.strip_edges().is_empty()
+
+
+## Parses JSON text without printing engine errors. Returns null if invalid.
+## (JSON.parse_string logs an ERROR for bad input, which is noise when we
+## EXPECT to handle damaged files.)
+static func parse_json(text: String) -> Variant:
+	var json := JSON.new()
+	if json.parse(text) != OK:
+		return null
+	return json.data

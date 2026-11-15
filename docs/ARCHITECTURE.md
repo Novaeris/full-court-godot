@@ -15,10 +15,11 @@ League & Business Systems (schedule, standings,    (planned)
 Basketball Simulation (possessions, box scores)    (planned)
 Data Model (src/data): players, teams, contracts,  IMPLEMENTED
   attributes, world container, repositories
-Core (src/core): FcRng, FcIdGenerator              IMPLEMENTED
+Core (src/core): FcRng, FcIdGenerator, FcVersion   IMPLEMENTED
+Save system (src/save) beside the data model        IMPLEMENTED
 ```
 
-Save/load serializes the data model, never the UI (planned; the data model already produces/consumes snapshots). Procedural generation (planned) uses only `FcRng` and the data model.
+Save/load serializes the data model, never the UI. Procedural generation (planned) uses only `FcRng` and the data model.
 
 ## Data model rules
 1. Every entity has a stable integer `id` from `FcIdGenerator` (never reused, 0 = none).
@@ -66,6 +67,17 @@ Attribute definitions live in `data/definitions/*.json` (28 basketball attribute
 - Not on the player/team by design (separate records keyed by id, to be built with their systems): career and season statistics, historical records and awards (keyed by `player_id` / `team_id` + season), team finances, staff, owner (`owner_id` reserved, unchecked until that entity exists).
 
 Permanent vs changing team information: id + founded year are permanent; identity/branding/city/arena/owner change rarely (rebrand, relocation); roster changes constantly; per-season data (records, finances) will be season-keyed records.
+
+## Save system (`src/save/`, root object `src/data/world/game_state.gd`)
+- `FcGameState`: the root of a playthrough: world, random generator position, mode (owner/dynasty), user team, current season/date. This is what a slot contains.
+- `FcSaveManager`: save / load_slot / list_slots / delete_slot / autosave. Slots are named `[a-z0-9_]{1,32}`; `autosave` is reserved.
+- File (`<slot>.sav` in `user://saves/`): line 1 = header JSON (`FcSaveMetadata`: label, team, season, mode, versions, timestamp, SHA-256 + byte count of payload); rest = payload JSON. Listing slots reads only line 1.
+- Safe writing: write `.tmp` → read back and verify checksum → rotate old save to `.bak` → rename `.tmp` into place. A verified complete copy exists at every step.
+- Recovery on load: main file → verified `.tmp` → `.bak`. `FcSaveResult.recovered_from` says which was used so the UI can tell the player. Damaged files with no usable copy return `CORRUPT` with a plain-language message; nothing crashes.
+- Versioning: `FcVersion.DATA_VERSION` (currently 1) is stored in every header. Saves from a newer game are refused (`UNSUPPORTED_VERSION`). Older saves go through `FcSaveMigrator` steps (N→N+1, registered per version; none yet). Rule: when a saved shape changes, bump DATA_VERSION and add a step; never edit released steps.
+- Policy: saving never refuses because of world integrity problems (progress matters most); problems are returned as `warnings` on save and load.
+- 64-bit values (e.g. RNG state) are stored as text, because JSON numbers are doubles and would lose precision.
+- Not built yet: compression/binary format, cloud sync, save-slot screenshots, multiple autosave rotation, automatic autosave triggers (those belong to the game loop).
 
 ## Persistence abstraction
 Game systems use `FcRepository` (get, has, add, update, remove, ids, all, count) and never a specific storage engine. `FcMemoryRepository` is the only implementation today. SQLite or another store can later be added as another `FcRepository` implementation. The save system (planned) will wrap `FcWorld.to_dict()` with slots, metadata, versioning, atomic writes and migrations.

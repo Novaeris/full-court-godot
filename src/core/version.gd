@@ -1,0 +1,11 @@
+class_name FcVersion
+extends RefCounted
+## Version numbers used by saves.
+
+## Human-facing game version (shown in save slot info).
+const GAME_VERSION := "0.1.0"
+
+## Version of the save DATA layout. Increase it whenever saved data changes
+## shape in a way old code cannot read, AND add a migration step for the old
+## version in FcSaveMigrator. Never change a released version's meaning.
+const DATA_VERSION := 1

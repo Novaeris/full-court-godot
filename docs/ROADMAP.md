@@ -11,12 +11,14 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 - Foundation approved by founder
 - Data model: data-driven attribute system, Player (+ parts), Team (+ roster/city/arena), Contract (years/options/bonuses), repositories, FcWorld with integrity validation (58 tests)
 
+- Save system: FcGameState root, slots, autosave slot, checksummed files, atomic write with backup, corruption recovery, version migrator (81 tests total)
+
 ## Current
-- Awaiting founder direction on the next system (recommended: save system).
+- Awaiting founder direction on the next system.
 
 ## Next (proposed order, driven by dependencies)
 1. **Staff / coach / executive entities** (same patterns as Player; needed for Owner Mode hiring).
-2. **Save system**: versioned save format, slots, atomic write, round-trip tests.
+2. (done) Save system.
 3. **Procedural generation**: names, players (attributes, potential, personality), teams, fictional cities/league layout.
 4. **Basketball engine v1**: possession simulation, box scores, stress-test tool for plausibility.
 5. **League operations**: schedule, standings, playoffs, season progression.

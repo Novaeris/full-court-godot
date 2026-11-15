@@ -86,7 +86,7 @@ static func from_file(path: String) -> FcAttributeCatalog:
 		var c := FcAttributeCatalog.new()
 		c.load_errors.append("cannot open %s" % path)
 		return c
-	var parsed = JSON.parse_string(file.get_as_text())
+	var parsed = FcChecks.parse_json(file.get_as_text())
 	if not (parsed is Dictionary):
 		var c2 := FcAttributeCatalog.new()
 		c2.load_errors.append("%s is not valid JSON object" % path)

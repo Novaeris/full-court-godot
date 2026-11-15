@@ -50,6 +50,13 @@ static func contract(id: int, player_id: int, team_id: int) -> FcContract:
 	return c
 
 
+## A valid playthrough state around the sample world, controlling team 1.
+static func game_state() -> FcGameState:
+	var s := FcGameState.new(world(), FcRng.new(424242))
+	s.user_team_id = 1
+	return s
+
+
 ## A small healthy world: 1 city, 1 arena, 1 team, 2 players on its roster with contracts.
 static func world() -> FcWorld:
 	var d := defs()
