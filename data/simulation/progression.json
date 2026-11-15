@@ -1,0 +1,20 @@
+{
+	"schema": 1,
+	"note": "How players change each offseason. Young players grow toward their potential by their peak age (faster with a high development rate, a hard-working personality and a coach who develops players); after the peak they decline, physical attributes first. Edit to rebalance.",
+	"growth_cap": 6.0,
+	"decline_per_year": 0.6,
+	"late_decline_after_age": 33,
+	"late_decline_extra": 0.3,
+	"noise_base": 0.9,
+	"noise_volatility": 2.5,
+	"coach_effect": 0.25,
+	"work_ethic_effect": 0.2,
+	"physical_decline_age_shift": 2,
+	"category_growth": {"offensive": 1.0, "defensive": 0.95, "physical": 1.2, "mental": 1.0},
+	"category_decline": {"offensive": 0.7, "defensive": 0.8, "physical": 1.5, "mental": 0.2},
+	"retire_start_age": 33,
+	"retire_per_year": 0.09,
+	"retire_low_overall_below": 42,
+	"retire_low_overall_bonus": 0.18,
+	"retire_forced_age": 42
+}
