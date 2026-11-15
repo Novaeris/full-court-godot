@@ -17,6 +17,8 @@ var _sim: FcGameSimulator
 var _teams: Dictionary = {}
 ## Teams whose owner sets prices and marketing (Owner Mode); AI teams are automatic.
 var human_teams: Array[int] = []
+## Teams whose box scores are kept (the owner's team) and whose events become news.
+var watched_teams: Array[int] = []
 
 
 func _init(world: FcWorld, era: String = "") -> void:
@@ -146,6 +148,13 @@ func finish_season(season: FcSeason) -> void:
 		season.runner_up_id = season.playoffs.runner_up_id()
 	season.awards = compute_awards(season, standings)
 	season.status = FcSeason.Status.COMPLETE
+	var end_day := season.total_days() + PLAYOFF_GAP_DAYS + (season.playoffs.day if season.playoffs != null else 0)
+	var end_date := season.date_of_day(end_day)
+	_world.add_news(end_date, "champion", "%s are the %d-%02d champions, beating %s" % [_world.team_display_name(season.champion_id), season.year, (season.year + 1) % 100, _world.team_display_name(season.runner_up_id)], season.champion_id)
+	if season.awards.has("mvp"):
+		_world.add_news(end_date, "award", "%s is the %d-%02d Most Valuable Player" % [_world.player_name(season.awards["mvp"]), season.year, (season.year + 1) % 100])
+	if season.awards.has("scoring_champion"):
+		_world.add_news(end_date, "award", "%s wins the scoring title with %.1f points a game" % [_world.player_name(season.awards["scoring_champion"]), season.stats.per_game(season.awards["scoring_champion"], "points")])
 	if _world.businesses.count() > 0:
 		FcFinanceEngine.new(_world).settle(season.league_id, season, human_teams)
 
@@ -234,6 +243,31 @@ static func severe_loss(player_id: int, key: String) -> int:
 	return 1 + absi(hash("%d:%s" % [player_id, key])) % 3
 
 
+# --- news and box scores -----------------------------------------------------------------
+
+func _record_news_and_box(season: FcSeason, g: FcScheduledGame, box: FcBoxScore) -> void:
+	var date := season.date_of_day(g.day)
+	var watched := watched_teams.has(g.home_id) or watched_teams.has(g.away_id)
+	if watched:
+		var entry := {"day": g.day, "series": g.series, "box": box.to_dict()}
+		season.recent_boxes.append(entry)
+		if season.recent_boxes.size() > FcSeason.RECENT_BOX_LIMIT:
+			season.recent_boxes.pop_front()
+	for p in box.players:
+		if p.points >= 50:
+			_world.add_news(date, "milestone", "%s scored %d points for %s (%s)" % [p.name, p.points, _world.team_display_name(p.team_id), box.summary()], p.team_id)
+		elif p.points >= 40 and watched_teams.has(p.team_id):
+			_world.add_news(date, "milestone", "%s scored %d points for %s" % [p.name, p.points, _world.team_display_name(p.team_id)], p.team_id)
+	for row in box.injuries:
+		var player: FcPlayer = _world.players.get_by_id(row[0])
+		var team := _world.team_of_player(row[0])
+		if player == null or team == null:
+			continue
+		var star := _ratings.overall(player) >= 62.0
+		if star or watched_teams.has(team.id):
+			_world.add_news(date, "injury", "%s (%s) suffered a %s and will miss %d game%s" % [player.identity.full_name(), team.identity.abbreviation, row[2], row[1], "" if row[1] == 1 else "s"], team.id)
+
+
 # --- one game -----------------------------------------------------------------------
 
 func _team(team_id: int) -> FcGameTeam:
@@ -249,6 +283,7 @@ func _play_game(season: FcSeason, g: FcScheduledGame, rng: FcRng, playoff: bool)
 	g.away_score = box.scores[1]
 	g.overtimes = box.overtimes
 	_apply_injuries(box)
+	_record_news_and_box(season, g, box)
 	if playoff:
 		season.playoff_stats.add_box_score(box)
 	else:

@@ -131,6 +131,8 @@ func progress_and_retire(league_id: int, finished_year: int, new_year: int, rng:
 		if progression.should_retire(p, age, rng):
 			p.status = FcPlayer.Status.RETIRED
 			p.retired_season = finished_year
+			if ratings.overall(p) >= 58.0:
+				world.add_news(FcDate.new(new_year, 6, 30), "retirement", "%s has retired after a long career" % p.identity.full_name(), team_id)
 			_remove_from_roster(p.id)
 			_terminate_contract(p.id, FcContract.Status.TERMINATED)
 			retired += 1
@@ -190,6 +192,8 @@ func _sign(team: FcTeam, player: FcPlayer, salary: int, years: int, first_season
 		first_season, years, salary, rules.cap, today)
 	world.contracts.add(c)
 	team.roster.add(player.id)
+	if salary >= rules.cap.max_player_salary * 0.55:
+		world.add_news(today, "signing", "%s sign %s for %s a year over %d years" % [world.team_display_name(team.id), player.identity.full_name(), "$%.1fM" % (salary / 1e6), years], team.id)
 
 
 # --- 4. the draft ----------------------------------------------------------------------------
@@ -238,6 +242,8 @@ func run_draft(league_id: int, finished: FcSeason, new_year: int, rng: FcRng) ->
 			available.erase(best)
 			best.status = FcPlayer.Status.ACTIVE
 			results.append([round_number, pick, team_id, best.id])
+			if pick == 1:
+				world.add_news(FcDate.new(new_year, 6, 25), "draft", "%s select %s with the first pick of the draft" % [world.team_display_name(team_id), best.identity.full_name()], team_id)
 			# Late picks only get a roster spot when the team has room (otherwise the
 			# player is released into free agency, as second-rounders often are).
 			if round_number > 1 and team.roster.size() >= rules.roster_max - 2:

@@ -33,6 +33,9 @@ var awards: Dictionary = {}
 var playoffs: FcPlayoffs = null
 ## The draft held after this season: [[round, pick, team id, player id], ...].
 var draft: Array = []
+## Box scores (as dictionaries, with the game day) of the most recent games of the teams the owner watches.
+var recent_boxes: Array = []
+const RECENT_BOX_LIMIT := 20
 
 
 func _init(season_id: int = 0) -> void:
@@ -127,7 +130,7 @@ func to_dict() -> Dictionary:
 		"champion_id": champion_id, "runner_up_id": runner_up_id,
 		"final_standings": final_standings.duplicate(true), "awards": awards.duplicate(true),
 		"playoffs": playoffs.to_dict() if playoffs != null else {},
-		"draft": draft.duplicate(true),
+		"draft": draft.duplicate(true), "recent_boxes": recent_boxes.duplicate(true),
 	}
 
 
@@ -158,6 +161,9 @@ static func from_dict(d: Dictionary) -> FcSeason:
 			s.awards[str(key)] = ids
 		else:
 			s.awards[str(key)] = int(value)
+	for entry in d.get("recent_boxes", []):
+		# normalize through FcBoxScore so integers stay integers after a JSON round trip
+		s.recent_boxes.append({"day": int(entry["day"]), "series": int(entry["series"]), "box": FcBoxScore.from_dict(entry["box"]).to_dict()})
 	for row in d.get("draft", []):
 		s.draft.append([int(row[0]), int(row[1]), int(row[2]), int(row[3])])
 	var po: Dictionary = d.get("playoffs", {})

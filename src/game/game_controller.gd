@@ -42,6 +42,7 @@ static func resume(game_state: FcGameState) -> FcGameController:
 func _prepare_engine() -> void:
 	engine = FcSeasonEngine.for_league(state.world, league_id)
 	engine.human_teams = [state.user_team_id] as Array[int] if state.mode == FcGameState.MODE_OWNER else ([] as Array[int])
+	engine.watched_teams = [state.user_team_id] as Array[int]
 
 
 func _start_season(year: int) -> FcSeason:

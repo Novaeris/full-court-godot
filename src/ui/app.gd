@@ -13,7 +13,7 @@ const AREA_CHOICES := [
 ]
 const CAP_CHOICES := [["Soft cap with hard limit (recommended)", "soft_cap_with_hard_limit"], ["Hard cap", "hard_cap"], ["No cap (luxury tax only)", "no_cap"]]
 const ERA_CHOICES := [["Mid 2010s (default)", "mid_2010s"], ["Early 2010s: slower, mid-range", "early_2010s"], ["Late 2010s: fast, three-point heavy", "late_2010s"]]
-const TAB_NAMES := ["Overview", "Standings", "Schedule", "Roster", "Finances", "Staff", "League"]
+const TAB_NAMES := ["Overview", "Standings", "Schedule", "Roster", "Finances", "Staff", "News", "League"]
 
 var controller: FcGameController
 var saves := FcSaveManager.new()
@@ -361,6 +361,7 @@ func build_tab(tab_name: String) -> Control:
 		"Roster": return _tab_roster()
 		"Finances": return _tab_finances()
 		"Staff": return _tab_staff()
+		"News": return _tab_news()
 	return _tab_league()
 
 
@@ -416,9 +417,11 @@ func _tab_schedule() -> Control:
 	var s := controller.season()
 	var tid := controller.state.user_team_id
 	var rows: Array = []
+	var keys: Array = []
 	for g in s.games:
 		if not g.involves(tid):
 			continue
+		keys.append([g.day, g.series])
 		var home := g.home_id == tid
 		var opp := g.away_id if home else g.home_id
 		var result := ""
@@ -427,7 +430,55 @@ func _tab_schedule() -> Control:
 			var theirs := g.away_score if home else g.home_score
 			result = "%s %d-%d%s" % ["W" if mine > theirs else "L", mine, theirs, " (OT)" if g.overtimes > 0 else ""]
 		rows.append([s.date_of_day(g.day).to_iso(), "Playoffs" if g.series > 0 else "", "vs" if home else "at", _team_name(opp), result])
-	return FcUiTables.table(["Date", "", "", "Opponent", "Result"], rows, [0, 70, 40, 260, 120])
+	var table := FcUiTables.table(["Date", "", "", "Opponent", "Result"], rows, [0, 70, 40, 260, 120])
+	table.set_meta("keys", keys)
+	var box := VBoxContainer.new()
+	box.add_child(table)
+	var row := HBoxContainer.new()
+	row.add_child(FcUiTables.button("Box score of selected game", func():
+		var item := table.get_selected()
+		if item == null:
+			_say("Select a game first.")
+			return
+		var key: Array = keys[item.get_index()]
+		var text := box_score_text(key[0], key[1])
+		_say("No box score is kept for that game (only your most recent games are stored)." if text == "" else "")
+		if text != "":
+			_show_text_popup("Box score", text)))
+	row.add_child(FcUiTables.label("Box scores are kept for your team's last %d games." % FcSeason.RECENT_BOX_LIMIT))
+	box.add_child(row)
+	return box
+
+
+## The box score of a recently played game of the owner's team as text, or "" if none is stored.
+func box_score_text(day: int, series: int) -> String:
+	for entry in controller.season().recent_boxes:
+		if int(entry["day"]) == day and int(entry["series"]) == series:
+			var box := FcBoxScore.from_dict(entry["box"])
+			var by_period := ""
+			for side in 2:
+				var parts: Array = []
+				for v in box.period_scores[side]:
+					parts.append(str(v))
+				by_period += "%s: %s\n" % [box.abbreviations[side], "  ".join(parts)]
+			return "%s\n%s\n%s\n\n%s" % [box.summary(), by_period, box.table(0), box.table(1)]
+	return ""
+
+
+func _show_text_popup(title: String, text: String) -> void:
+	var dialog := AcceptDialog.new()
+	dialog.title = title
+	dialog.min_size = Vector2i(900, 600)
+	var scroll := ScrollContainer.new()
+	var label := Label.new()
+	label.text = text
+	var font := SystemFont.new()
+	font.font_names = PackedStringArray(["Consolas", "Courier New", "monospace"])
+	label.add_theme_font_override("font", font)
+	scroll.add_child(label)
+	dialog.add_child(scroll)
+	add_child(dialog)
+	dialog.popup_centered()
 
 
 func _tab_roster() -> Control:
@@ -540,6 +591,18 @@ func _tab_staff() -> Control:
 			show_dashboard()))
 		box.add_child(row)
 	return box
+
+
+func _tab_news() -> Control:
+	var w := controller.state.world
+	var rows: Array = []
+	var items: Array = w.news.duplicate()
+	items.reverse()
+	var mine := controller.state.user_team_id
+	for item in items.slice(0, 80):
+		var tag: String = {"injury": "Injury", "milestone": "Milestone", "champion": "Champions", "award": "Award", "signing": "Signing", "retirement": "Retirement", "draft": "Draft", "staff": "Staff"}.get(item["kind"], "News")
+		rows.append([item["date"], tag, ("* " if item["team"] == mine else "") + item["text"]])
+	return FcUiTables.table(["Date", "Type", "Headline"], rows, [100, 90, 0])
 
 
 func _tab_league() -> Control:

@@ -27,6 +27,7 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 - Staff rollover (aging, renewals, vacancy hiring), game controller API for screens and Owner Mode decisions, saves that continue identically (325 tests)
 - First UI shell: main menu, new league wizard, team choice, dashboard with seven tabs, owner controls; README with how to play (337 tests)
 - Injuries (in-game, tracked across the season, lineups adapt, severe injuries have lasting effects) (347 tests)
+- News feed and box score viewer (354 tests)
 
 ## Current
 - Awaiting founder direction on the next system.

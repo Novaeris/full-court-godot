@@ -15,10 +15,11 @@ static func table(columns: Array, rows: Array, widths: Array = []) -> Tree:
 	tree.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for i in columns.size():
 		tree.set_column_title(i, str(columns[i]))
-		tree.set_column_expand(i, i == 0 or widths.is_empty())
-		if i < widths.size():
+		# a width of 0 (or no width) makes the column flexible; otherwise it is fixed
+		var fixed := i < widths.size() and int(widths[i]) > 0
+		tree.set_column_expand(i, not fixed)
+		if fixed:
 			tree.set_column_custom_minimum_width(i, int(widths[i]))
-			tree.set_column_expand(i, false)
 		if i > 0:
 			tree.set_column_title_alignment(i, HORIZONTAL_ALIGNMENT_RIGHT)
 	var root := tree.create_item()

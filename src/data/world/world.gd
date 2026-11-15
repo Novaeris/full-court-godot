@@ -38,6 +38,9 @@ var rules: FcRepository = FcMemoryRepository.new()
 var seasons: FcRepository = FcMemoryRepository.new()
 ## Business state per team (id = team id) and yearly financial results.
 var businesses: FcRepository = FcMemoryRepository.new()
+## News feed, newest last: [{"date": ISO text, "kind": String, "text": String, "team": team id or 0}, ...]. Kept to the last NEWS_LIMIT items.
+var news: Array = []
+const NEWS_LIMIT := 300
 var finances: FcRepository = FcMemoryRepository.new()
 
 
@@ -67,6 +70,26 @@ func league_of_team(team_id: int) -> FcLeague:
 		if l.contains_team(team_id):
 			return l
 	return null
+
+
+## Adds a news item (kinds: "injury", "milestone", "champion", "award", "signing", "retirement", "draft", "staff").
+func add_news(date: FcDate, kind: String, text: String, team_id: int = 0) -> void:
+	news.append({"date": date.to_iso(), "kind": kind, "text": text, "team": team_id})
+	if news.size() > NEWS_LIMIT:
+		news = news.slice(news.size() - NEWS_LIMIT)
+
+
+func team_display_name(team_id: int) -> String:
+	var t: FcTeam = teams.get_by_id(team_id)
+	if t == null:
+		return "-"
+	var c: FcCity = cities.get_by_id(t.city_id)
+	return t.identity.display_name(c.name if c != null else "")
+
+
+func player_name(player_id: int) -> String:
+	var p: FcPlayer = players.get_by_id(player_id)
+	return p.identity.full_name() if p != null else "-"
 
 
 ## The season of a league for a given year, or null.
@@ -281,6 +304,7 @@ func to_dict() -> Dictionary:
 		"rules": _dicts_of(rules),
 		"seasons": _dicts_of(seasons),
 		"businesses": _dicts_of(businesses),
+		"news": news.duplicate(true),
 		"finances": _dicts_of(finances),
 	}
 
@@ -311,6 +335,8 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 		_report(w.rules.add(FcLeagueRules.from_dict(d)), "league rules", errors)
 	for d in data.get("seasons", []):
 		_report(w.seasons.add(FcSeason.from_dict(d)), "season", errors)
+	for item in data.get("news", []):
+		w.news.append({"date": str(item["date"]), "kind": str(item["kind"]), "text": str(item["text"]), "team": int(item["team"])})
 	for d in data.get("businesses", []):
 		_report(w.businesses.add(FcTeamBusiness.from_dict(d)), "team business", errors)
 	for d in data.get("finances", []):
