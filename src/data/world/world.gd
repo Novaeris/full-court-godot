@@ -21,6 +21,7 @@ const KIND_LEAGUE := "league"
 const KIND_CONFERENCE := "conference"
 const KIND_DIVISION := "division"
 const KIND_RULES := "league_rules"
+const KIND_SEASON := "season"
 
 var definitions: FcDefinitionSet
 var ids := FcIdGenerator.new()
@@ -33,6 +34,7 @@ var staff: FcRepository = FcMemoryRepository.new()
 var staff_contracts: FcRepository = FcMemoryRepository.new()
 var leagues: FcRepository = FcMemoryRepository.new()
 var rules: FcRepository = FcMemoryRepository.new()
+var seasons: FcRepository = FcMemoryRepository.new()
 
 
 func _init(defs: FcDefinitionSet) -> void:
@@ -60,6 +62,14 @@ func league_of_team(team_id: int) -> FcLeague:
 	for l in leagues.all():
 		if l.contains_team(team_id):
 			return l
+	return null
+
+
+## The season of a league for a given year, or null.
+func season_of(league_id: int, year: int) -> FcSeason:
+	for s in seasons.all():
+		if s.league_id == league_id and s.year == year:
+			return s
 	return null
 
 
@@ -163,6 +173,13 @@ func validate(season: int = 0) -> Array[String]:
 			if not team_league.has(t.id):
 				errors.append("team %d is not in any league" % t.id)
 
+	for sn in seasons.all():
+		var season_league: FcLeague = leagues.get_by_id(sn.league_id)
+		if season_league == null:
+			errors.append("season %d: league %d does not exist" % [sn.id, sn.league_id])
+			continue
+		for e in sn.validate(season_league):
+			errors.append("season %d: %s" % [sn.id, e])
 	var rules_per_league := {}
 	for r in rules.all():
 		var league: FcLeague = leagues.get_by_id(r.league_id)
@@ -248,6 +265,7 @@ func to_dict() -> Dictionary:
 		"staff_contracts": _dicts_of(staff_contracts),
 		"leagues": _dicts_of(leagues),
 		"rules": _dicts_of(rules),
+		"seasons": _dicts_of(seasons),
 	}
 
 
@@ -275,6 +293,8 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 		_report(w.leagues.add(FcLeague.from_dict(d)), "league", errors)
 	for d in data.get("rules", []):
 		_report(w.rules.add(FcLeagueRules.from_dict(d)), "league rules", errors)
+	for d in data.get("seasons", []):
+		_report(w.seasons.add(FcSeason.from_dict(d)), "season", errors)
 	return w
 
 
