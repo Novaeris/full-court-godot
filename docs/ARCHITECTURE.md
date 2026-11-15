@@ -15,6 +15,7 @@ League & Business Systems (schedule, standings,    (planned)
 Basketball Simulation (possessions, box scores)    (planned)
 Data Model (src/data): players, teams, contracts,  IMPLEMENTED
   attributes, world container, repositories
+Procedural generation (src/gen, data/generation)    IMPLEMENTED
 Core (src/core): FcRng, FcIdGenerator, FcVersion   IMPLEMENTED
 Save system (src/save) beside the data model        IMPLEMENTED
 ```
@@ -28,6 +29,7 @@ Save/load serializes the data model, never the UI. Procedural generation (planne
 4. Top-level entities write a `"schema"` version. Old saves load with defaults for new fields; real migrations will be added by the save system when a field is removed or changes meaning.
 5. Money is whole dollars (`int`). Seasons are the calendar year in which they start. Dates are `FcDate` (ISO text when saved). Physical measures are metric.
 6. The data model contains no simulation, UI, or Godot scene code.
+7. **No raw floats in saved data.** Godot's JSON keeps only ~14 significant digits, so an arbitrary float changes in its last bits after save + load, which would break exact reproducibility. Floats that must be saved go through `FcChecks.quantize()` (3 decimals) in a property setter (see `FcPlayerDevelopment`). Prefer integers (money in dollars, ratings 0-100). 64-bit values are saved as text.
 
 ## Data model map (`src/data/`)
 
@@ -75,6 +77,21 @@ Attribute definitions live in `data/definitions/*.json`: 28 basketball attribute
 - Not on the player/team by design (separate records keyed by id, to be built with their systems): career and season statistics, historical records and awards (keyed by `player_id` / `team_id` + season), team finances, staff, owner (`owner_id` reserved, unchecked until that entity exists).
 
 Permanent vs changing team information: id + founded year are permanent; identity/branding/city/arena/owner change rarely (rebrand, relocation); roster changes constantly; per-season data (records, finances) will be season-keyed records.
+
+## Procedural generation (`src/gen/`, content in `data/generation/*.json`)
+```
+FcGenerationData     loads names.json, world.json, position_profiles.json, staff_profiles.json, config.json; validate()
+FcGenerationConfig   league size/shape (30 teams x 15 players, 60 free agents, staff counts, salary range...)
+FcNameGenerator      weighted name pools per fictional country; unique names across a league
+FcPlayerGenerator    FcPlayerSpec (age, position, level, country) -> FcPlayer
+FcStaffGenerator     role + level -> FcStaffMember (role-specialized skills, reputation-based pay)
+FcWorldGenerator     seed -> complete FcWorld; new_game_state(seed, mode, team index) -> FcGameState
+```
+- Reproducible: same seed + config = identical world. Each stage (cities, every team, free agents) uses its own forked `FcRng` stream, so changing one stage does not reshuffle the rest.
+- Player realism: attribute = overall level + position offset + a shared latent per category (skill / athleticism / IQ) + individual noise; height and weight follow the position profile; tendencies blend skill with position habits; potential grows with years left before the player's peak age. Young players have lower current level, old players decline (`age_adjusted_level`).
+- League contents: 40 fictional cities available (all in the fictional country Aldoria), 40 nicknames chosen to avoid real pro team names, 16 color schemes, generated arenas; every team gets 15 players with mid-life contracts, a GM, head coach, 3 assistants, 3 scouts, medical and business staff with contracts; plus 60 free agents. About 20% of players are from other fictional countries.
+- NOT generated yet (belongs to later systems): conferences/divisions/schedule, draft prospects, historical careers and league history, owners.
+- All numbers (level ranges, salary curve, profile offsets) are first drafts to be tuned against the simulation.
 
 ## Save system (`src/save/`, root object `src/data/world/game_state.gd`)
 - `FcGameState`: the root of a playthrough: world, random generator position, mode (owner/dynasty), user team, current season/date. This is what a slot contains.

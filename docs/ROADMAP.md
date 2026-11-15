@@ -15,11 +15,14 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 
 - Staff: FcStaffMember (GM, coaches, scouts, medical, business), roles, staff contracts, data-driven skills and philosophy, world rules (100 tests total)
 
+- Procedural generation: names, players, staff, cities, arenas, teams, rosters, contracts, free agents from a seed (129 tests total)
+
 ## Current
 - Awaiting founder direction on the next system.
 
 ## Next (proposed order, driven by dependencies)
-1. (done) Staff entities. 2. (done) Save system.
+1. (done) Staff entities. 2. (done) Save system. 3. (done) Procedural generation of the league.
+   Next candidates: league structure + schedule + standings, or the basketball simulation engine (the simulation can already be fed a generated league).
 3. **Procedural generation**: names, players (attributes, potential, personality), teams, fictional cities/league layout.
 4. **Basketball engine v1**: possession simulation, box scores, stress-test tool for plausibility.
 5. **League operations**: schedule, standings, playoffs, season progression.

@@ -31,6 +31,9 @@ Original cities, teams, branding, arenas, conferences, rules, players, coaches, 
 - Staff roles: General Manager, Head Coach, Assistant Coach, Scout, Medical Staff, Business Executive. Each person has 17 possible skills (coaching: offensive/defensive strategy, development, game management, motivation, discipline; front office: talent evaluation, negotiation, trade acumen, long-term planning; scouting: accuracy, regional knowledge; business: financial acumen, marketing, community relations; medical: injury prevention, rehabilitation), the same personality traits as players, and a philosophy (pace, three-point emphasis, defensive aggression, ball movement, youth focus, star reliance, risk tolerance). In Owner Mode the owner hires and fires these people; a team may have only one GM and one head coach.
 - Staff have a reputation (0-100) that will drive salary demands and who accepts which job.
 
+- The fictional world: the home country Aldoria has six regions (Northreach, Calder Coast, Heartland, Sunvale, Tidewater, Highmark) and 40 cities available. A starting league has 30 teams. Player nationalities include Aldoria plus six other fictional countries (Brenmark, Castellia, Tarsany, Kalunda, Shirane, Highcourt), each with its own naming style.
+- A typical generated team: 15 players (stars rated in the high 70s, bench in the 40s), average age about 26-27, payroll roughly $65M-$195M, and 10 staff.
+
 ## Simulation principles
 - Attributes (offense, defense, physical, mental) must change outcomes; no decorative stats.
 - Possession-based engine accounting for tendencies, roles, tactics, matchups, fatigue, injuries, home court, pace, variance.

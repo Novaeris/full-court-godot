@@ -15,8 +15,9 @@ func _initialize() -> void:
 	var failed := 0
 	for path in files:
 		var script: GDScript = load(path)
-		if script == null:
-			print("FAIL  %s (could not load)" % path)
+		# A test file with a syntax error must FAIL the run, never hang or be skipped.
+		if script == null or not script.can_instantiate():
+			print("FAIL  %s (could not load: syntax error?)" % path)
 			failed += 1
 			continue
 		var probe = script.new()

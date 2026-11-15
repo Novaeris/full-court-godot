@@ -11,10 +11,16 @@ const MAX_PEAK_AGE := 34
 var potential: int = 50
 ## Age around which the player is expected to peak.
 var peak_age: int = 26
-## Multiplier on growth speed. 1.0 = typical.
-var development_rate: float = 1.0
+## Multiplier on growth speed. 1.0 = typical. Stored to 3 decimals (see
+## FcChecks.quantize) so saves reload bit-for-bit identical.
+var development_rate: float = 1.0:
+	set(value):
+		development_rate = FcChecks.quantize(value)
 ## How uneven progress is year to year, 0 (steady) to 1 (wild swings).
-var volatility: float = 0.2
+## Stored to 3 decimals, like development_rate.
+var volatility: float = 0.2:
+	set(value):
+		volatility = FcChecks.quantize(value)
 
 
 func validate() -> Array[String]:

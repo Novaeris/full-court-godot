@@ -1,0 +1,43 @@
+{
+	"schema": 1,
+	"home_country": "aldoria",
+	"countries": {
+		"aldoria": {"name": "Aldoria", "pools": {"anglo": 4, "hispanic": 2, "west_african": 3, "south_european": 1, "east_asian": 1}},
+		"brenmark": {"name": "Brenmark", "pools": {"nordic": 1}},
+		"castellia": {"name": "Castellia", "pools": {"hispanic": 3, "south_european": 2}},
+		"tarsany": {"name": "Tarsany", "pools": {"east_european": 1}},
+		"kalunda": {"name": "Kalunda", "pools": {"west_african": 1}},
+		"shirane": {"name": "Shirane", "pools": {"east_asian": 1}},
+		"highcourt": {"name": "Highcourt", "pools": {"anglo": 1}}
+	},
+	"pools": {
+		"anglo": {
+			"first": ["James", "Michael", "Ryan", "Tyler", "Connor", "Jack", "Ethan", "Logan", "Cole", "Dylan", "Mason", "Caleb", "Owen", "Luke", "Hunter", "Blake", "Trevor", "Wesley", "Grant", "Julian", "Brandon", "Austin", "Nolan", "Garrett", "Chase", "Preston", "Colin", "Reid"],
+			"last": ["Whitfield", "Calloway", "Hargrove", "Prescott", "Langley", "Dunmore", "Thornton", "Ashby", "Kingsley", "Merrick", "Holloway", "Sutton", "Barlow", "Ellison", "Fairbanks", "Garrity", "Hadley", "Kendrick", "Lockhart", "Mercer", "Norwood", "Pemberton", "Radcliffe", "Sheridan", "Tennant", "Underhill", "Wexler", "Yardley"]
+		},
+		"hispanic": {
+			"first": ["Mateo", "Santiago", "Diego", "Javier", "Rafael", "Alejandro", "Andres", "Emilio", "Joaquin", "Lucas", "Nicolas", "Pablo", "Sergio", "Tomas", "Victor", "Gabriel", "Hector", "Ignacio", "Leandro", "Marcos", "Oscar", "Ramon", "Esteban", "Fabian", "Gonzalo", "Ivan", "Julio", "Cristian"],
+			"last": ["Alvarado", "Benitez", "Castellanos", "Delgado", "Escobar", "Fuentes", "Guerrero", "Herrera", "Ibarra", "Jimenez", "Lozano", "Maldonado", "Navarro", "Ortega", "Paredes", "Quintero", "Rivas", "Salazar", "Trujillo", "Urbina", "Valdez", "Zamora", "Bautista", "Cardenas", "Duarte", "Espinoza", "Figueroa", "Gallegos"]
+		},
+		"west_african": {
+			"first": ["Kofi", "Kwame", "Emeka", "Chidi", "Tunde", "Olu", "Seun", "Femi", "Ade", "Yaw", "Kwabena", "Ibrahim", "Mamadou", "Sekou", "Amadou", "Ousmane", "Chike", "Obinna", "Segun", "Kojo", "Nnamdi", "Babatunde", "Idris", "Lamine", "Moussa", "Tidiane", "Kelechi", "Uche"],
+			"last": ["Mensah", "Boateng", "Okafor", "Adeyemi", "Diallo", "Traore", "Konate", "Osei", "Nwosu", "Balogun", "Camara", "Sow", "Ndiaye", "Owusu", "Abubakar", "Eze", "Okonkwo", "Adebayo", "Bangura", "Keita", "Sesay", "Toure", "Appiah", "Danso", "Ogunleye", "Cisse", "Fofana", "Bello"]
+		},
+		"south_european": {
+			"first": ["Luca", "Marco", "Matteo", "Giorgio", "Stefano", "Dario", "Nikos", "Dimitri", "Alessio", "Fabrizio", "Tommaso", "Andrea", "Paolo", "Enzo", "Nuno", "Rui", "Tiago", "Joao", "Bruno", "Ricardo", "Vasco", "Filipe", "Costas", "Yannis", "Pavlos", "Leonidas", "Rocco", "Gianluca"],
+			"last": ["Moretti", "Ricci", "Conti", "Barone", "Marino", "Greco", "Fontana", "Caruso", "Ferreira", "Pereira", "Carvalho", "Teixeira", "Almeida", "Sampaio", "Papadakis", "Karras", "Vlachos", "Nikolaidis", "Georgiou", "Lombardi", "Serrano", "Bellini", "Costa", "Rinaldi", "Santoro", "Moreira", "Faria", "Sousa"]
+		},
+		"east_european": {
+			"first": ["Dmitri", "Nikola", "Marko", "Luka", "Stefan", "Milan", "Andrei", "Viktor", "Tomasz", "Piotr", "Jakub", "Mateusz", "Bogdan", "Radu", "Zoran", "Goran", "Dragan", "Vlad", "Anton", "Pavel", "Jan", "Ondrej", "Lukas", "Matej", "Aleksandar", "Darko", "Filip", "Emil"],
+			"last": ["Petrovic", "Jovanovic", "Kovacs", "Novak", "Horvat", "Kowalski", "Wisniewski", "Popescu", "Ionescu", "Dimitrov", "Ivanov", "Marinkovic", "Stojanovic", "Zelenka", "Svoboda", "Kral", "Vukovic", "Pavlovic", "Kozlov", "Sokolov", "Volkov", "Morozov", "Lebedev", "Orlov", "Pavlenko", "Kravets", "Mihailov", "Tkachenko"]
+		},
+		"nordic": {
+			"first": ["Erik", "Lars", "Anders", "Magnus", "Henrik", "Olav", "Sven", "Emil", "Axel", "Nils", "Gustav", "Mikael", "Jonas", "Rasmus", "Soren", "Bjorn", "Leif", "Torsten", "Kasper", "Viggo", "Oskar", "Elias", "Mattias", "Joakim", "Fredrik", "Haakon", "Eirik", "Anton"],
+			"last": ["Lindqvist", "Johansen", "Eriksson", "Andersen", "Nilsson", "Bergstrom", "Hansen", "Larsen", "Holm", "Sandberg", "Nyberg", "Dahl", "Strand", "Lund", "Berg", "Haugen", "Solberg", "Kristiansen", "Jorgensen", "Pedersen", "Ekstrom", "Forsberg", "Hedlund", "Ostberg", "Wallin", "Backman", "Thorsen", "Aaberg"]
+		},
+		"east_asian": {
+			"first": ["Hiroshi", "Kenji", "Takumi", "Daichi", "Ren", "Haruto", "Sota", "Yuto", "Min-jun", "Joon-ho", "Seung", "Hyun-woo", "Jae-won", "Dong-hyun", "Wei", "Jun", "Hao", "Ming", "Lei", "Jian", "Bo", "Tao", "Yong", "Kai", "Sung-min", "Riku", "Shun", "Akira"],
+			"last": ["Tanaka", "Watanabe", "Nakamura", "Kobayashi", "Yamada", "Sato", "Kim", "Park", "Choi", "Jung", "Kang", "Cho", "Wang", "Li", "Zhang", "Liu", "Chen", "Yang", "Huang", "Zhao", "Wu", "Zhou", "Xu", "Lin", "Han", "Sun", "Ma", "Guo"]
+		}
+	}
+}

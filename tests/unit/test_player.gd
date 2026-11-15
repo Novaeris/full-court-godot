@@ -70,6 +70,24 @@ func test_round_trip() -> void:
 	assert_eq(copy.validate(), [] as Array[String])
 
 
+func test_float_fields_survive_json_exactly() -> void:
+	# Regression: raw doubles lose their last bits in JSON text.
+	var rng := FcRng.new(99)
+	for i in 200:
+		var p := FcTestData.player(1, defs)
+		p.development.development_rate = rng.range_float(0.5, 1.5)
+		p.development.volatility = rng.range_float(0.0, 1.0)
+		var copy := FcPlayer.from_dict(JSON.parse_string(JSON.stringify(p.to_dict())), defs)
+		assert_eq(copy.development.development_rate, p.development.development_rate, "rate %d" % i)
+		assert_eq(copy.development.volatility, p.development.volatility, "volatility %d" % i)
+
+
+func test_quantize() -> void:
+	assert_eq(FcChecks.quantize(0.95715457201004), 0.957)
+	assert_eq(FcChecks.quantize(1.0), 1.0)
+	assert_eq(FcChecks.quantize(1.23456, 2), 1.23)
+
+
 func test_loading_sparse_old_save_uses_defaults() -> void:
 	var p := FcPlayer.from_dict({"id": 3, "identity": {"first_name": "A", "last_name": "B", "country": "C", "birth_date": "1999-01-01"}}, defs)
 	assert_eq(p.attributes.get_value("speed"), 50, "missing attributes default")

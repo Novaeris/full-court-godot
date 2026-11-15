@@ -16,6 +16,7 @@ The developer is a solo, beginner programmer. Explain decisions in plain languag
 - `src/core/`   Foundation utilities with no game knowledge (seeded RNG, ID generation).
 - `src/data/`   Data model: attributes, player, team, contract, world/repositories (see docs/ARCHITECTURE.md). No UI or simulation code here.
 - `src/save/`   Save system (slots, checksums, backups, migrations). Changing saved data shape REQUIRES bumping `FcVersion.DATA_VERSION` and adding a migration step.
+- `src/gen/`    Procedural generation (names, players, staff, whole league). Content lives in `data/generation/*.json`. Always generate through seeded `FcRng`.
 - `data/definitions/`  JSON definitions of attributes, personality traits, tendencies. Edit these to rebalance, not code.
 - `src/...`     Further modules are added only when they hold real code (see docs/ARCHITECTURE.md).
 - `tests/`      Automated tests. `tests/unit/test_*.gd`; base class `FcTestCase`.
@@ -28,8 +29,9 @@ The developer is a solo, beginner programmer. Explain decisions in plain languag
 3. Every entity has a stable integer ID from `FcIdGenerator`; IDs are never reused. Reference other entities by ID, not by object.
 4. Data-driven where practical (league rules, attributes, constants live in data, not scattered literals).
 5. Save formats are versioned. Never change a saved format without a migration.
-6. Do not add dependencies/plugins/databases without explaining tradeoffs and getting approval.
-7. Do not build placeholder systems or empty folders for show.
+6. No raw floats in saved data (JSON loses precision): use integers or `FcChecks.quantize()` in a setter. Store 64-bit numbers as text.
+7. Do not add dependencies/plugins/databases without explaining tradeoffs and getting approval.
+8. Do not build placeholder systems or empty folders for show.
 
 ## Coding conventions (GDScript)
 - Files `snake_case.gd`; global classes `class_name FcPascalCase` (the `Fc` prefix avoids clashes with Godot built-ins).

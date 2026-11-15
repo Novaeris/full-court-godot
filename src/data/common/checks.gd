@@ -29,6 +29,14 @@ static func is_blank(value: String) -> bool:
 	return value.strip_edges().is_empty()
 
 
+## Rounds a float to a fixed number of decimals in a way that survives saving.
+## Godot's JSON writes floats with ~14 significant digits, so an arbitrary
+## double changes in its last bits after save + load. A value that came from
+## text with few decimals does not. RULE: floats in saved data go through this.
+static func quantize(value: float, decimals: int = 3) -> float:
+	return String.num(value, decimals).to_float()
+
+
 ## Parses JSON text without printing engine errors. Returns null if invalid.
 ## (JSON.parse_string logs an ERROR for bad input, which is noise when we
 ## EXPECT to handle damaged files.)

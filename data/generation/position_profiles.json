@@ -1,0 +1,49 @@
+{
+	"schema": 1,
+	"note": "Body size and how each position's attributes/tendencies differ from the player's overall level. Offsets are added to the base level; only notable attributes are listed.",
+	"positions": {
+		"PG": {
+			"height_mean": 187, "height_sd": 5, "bmi_mean": 23.2,
+			"offsets": {
+				"ball_handling": 14, "passing": 14, "three_point": 5, "free_throw": 4, "speed": 8, "agility": 8,
+				"steals": 5, "perimeter_defense": 5, "decision_making": 6, "basketball_iq": 4, "shot_selection": 2,
+				"rebounding": -14, "blocks": -16, "interior_defense": -13, "strength": -10, "dunking": -10, "close_finishing": -6
+			},
+			"tendency_offsets": {"pass_tendency": 14, "drive_tendency": 6, "three_point_tendency": 4, "post_tendency": -20, "offensive_rebound_tendency": -14}
+		},
+		"SG": {
+			"height_mean": 195, "height_sd": 5, "bmi_mean": 23.6,
+			"offsets": {
+				"three_point": 10, "mid_range": 8, "free_throw": 4, "ball_handling": 5, "speed": 4, "agility": 4,
+				"perimeter_defense": 3, "offensive_awareness": 2,
+				"rebounding": -8, "blocks": -10, "interior_defense": -8, "strength": -5, "passing": -2
+			},
+			"tendency_offsets": {"three_point_tendency": 10, "mid_range_tendency": 6, "post_tendency": -14, "offensive_rebound_tendency": -8}
+		},
+		"SF": {
+			"height_mean": 202, "height_sd": 5, "bmi_mean": 24.2,
+			"offsets": {
+				"perimeter_defense": 4, "speed": 2, "vertical": 4, "layups": 3, "dunking": 3, "mid_range": 2, "three_point": 2,
+				"rebounding": -1, "blocks": -3, "ball_handling": -3
+			},
+			"tendency_offsets": {"drive_tendency": 4}
+		},
+		"PF": {
+			"height_mean": 207, "height_sd": 4, "bmi_mean": 25.4,
+			"offsets": {
+				"rebounding": 10, "strength": 9, "interior_defense": 8, "blocks": 6, "close_finishing": 8, "dunking": 7,
+				"mid_range": 1, "three_point": -6, "ball_handling": -9, "passing": -5, "speed": -5, "agility": -4, "free_throw": -3
+			},
+			"tendency_offsets": {"post_tendency": 12, "offensive_rebound_tendency": 12, "three_point_tendency": -10, "drive_tendency": -6}
+		},
+		"C": {
+			"height_mean": 213, "height_sd": 4, "bmi_mean": 26.2,
+			"offsets": {
+				"rebounding": 14, "blocks": 14, "interior_defense": 14, "strength": 12, "close_finishing": 12, "dunking": 10,
+				"three_point": -14, "mid_range": -8, "ball_handling": -15, "passing": -8, "speed": -12, "agility": -10,
+				"free_throw": -8, "steals": -8, "perimeter_defense": -10
+			},
+			"tendency_offsets": {"post_tendency": 20, "offensive_rebound_tendency": 16, "three_point_tendency": -20, "drive_tendency": -14, "pass_tendency": -8, "gamble_tendency": -10}
+		}
+	}
+}

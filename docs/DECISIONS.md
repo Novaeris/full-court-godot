@@ -50,6 +50,18 @@ Deferred. Condition from founder: keep a clean persistence abstraction. Implemen
 - Staff sections in snapshots are additive (missing = empty), so DATA_VERSION stays 1. If a future change removes or reinterprets saved fields, bump it and add a migration.
 - What staff skills DO (coach quality affecting development, GM evaluation affecting trades, scouting accuracy) is deliberately not implemented; each hooks in when its system is built.
 
+## D-012 Procedural generation (2026-11-15)
+- Content in JSON (`data/generation/`), logic in `src/gen/`. Names: 7 pools mixed per fictional country (Aldoria is home; Brenmark, Castellia, Tarsany, Kalunda, Shirane, Highcourt supply ~20% international players). Cities, countries, nicknames, arenas are all fictional; nicknames avoid real pro team names.
+- Hand-curated city and nickname lists rather than syllable-generated names: better quality and no accidental unfortunate names; 40 of each is enough for a 30-team league and some expansion. Can be extended or made procedural later.
+- Player quality comes from one `level` plus position profile and shared latents, so attributes correlate sensibly. Rejected: independent random attributes (unrealistic players).
+- League structure (30 teams) is a generation DEFAULT in config, not a league rule; conferences/divisions are a later system. Founder input needed when that system is designed.
+- Contracts are generated partly served (started up to N-1 seasons ago) so expirations are staggered from day one.
+- All generation numbers are first drafts; they will be tuned with the simulation and stress tests.
+
+## D-013 Floats in saved data; runner robustness (2026-11-15)
+- Found by a test: JSON float round trips lose last bits, so a saved-and-reloaded world differed from the original. Rule: saved floats are quantized to 3 decimals via `FcChecks.quantize` in property setters; prefer integers. Documented in ARCHITECTURE rule 7.
+- Found while testing: a test file with a syntax error made the test runner hang forever. The runner now reports such files as failures.
+
 ## D-009 Data model shape (2026-11-15)
 - Entities reference each other by integer ID only (no object references): no circular dependencies, trivial serialization.
 - Player is split into identity, physical, development and three attribute sets. Contracts, team membership and statistics are NOT on the player.

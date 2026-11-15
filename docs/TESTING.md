@@ -43,7 +43,8 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 | FcIdGenerator (sequence, independence, save round-trip) | 3 |
 | FcDate (validity, leap years, ISO round trip, age math) | 4 |
 | Attribute system (shipped JSON valid, catalog errors, set validation, clamping, save compatibility, adding attributes) | 7 |
-| FcPlayer (validation, positions, retirement, round trip, sparse/corrupt data) | 9 |
+| FcPlayer (validation, positions, retirement, round trip, exact float round trip, sparse/corrupt data) | 11 |
+| Generation (data validity, names, player realism by position/level/age, tendencies, staff specialization, full league validity, reproducibility, uniqueness, contracts/payroll, free agents, custom configs, save round trip) | 27 |
 | FcTeam, FcRoster, FcCity, FcArena | 8 |
 | FcContract (cap hit, guarantees, options, validation, round trip) | 7 |
 | FcRepository / FcMemoryRepository | 2 |
@@ -52,10 +53,11 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 
 Shared sample builders for tests live in `tests/support/test_data.gd` (`FcTestData`).
 
-Last verified: 100 passed, 0 failed (Godot 4.7.2).
+Last verified: 129 passed, 0 failed (Godot 4.7.2).
 
-Tests that touch disk use `user://test_saves` and clean up in `after_each()`. Inspection demos: `./tools/inspect_data.ps1`, `./tools/inspect_saves.ps1`. The runner was also verified to report failures (exit code 1).
+Tests that touch disk use `user://test_saves` and clean up in `after_each()`. Inspection tools: `./tools/inspect_data.ps1`, `./tools/inspect_saves.ps1`, `./tools/generate_league.ps1 [seed]`. The runner was also verified to report failures (exit code 1).
 
 ## Known issues / limits
-- Runner discovers methods by name only; no setup/teardown beyond `before_each`.
+- Runner discovers methods by name only. A test file with a syntax error is reported as a FAIL (an earlier version hung forever instead; fixed).
+- GDScript gotcha: `var x := <untyped value>` is a parse error in this project (warnings are errors). Annotate the type: `var x: String = ...`.
 - No stress-test tooling yet (planned with the simulation engine).

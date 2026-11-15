@@ -1,0 +1,31 @@
+{
+	"schema": 1,
+	"note": "How each staff role is generated. Skills in a role's boosted categories/skills are raised; all other skills are lowered (specialists). Salaries scale with reputation squared between salary_min and salary_max (whole dollars).",
+	"off_role_penalty": -12,
+	"roles": {
+		"general_manager": {
+			"age_min": 38, "age_max": 66, "salary_min": 800000, "salary_max": 6000000,
+			"category_boosts": {"front_office": 14}, "skill_boosts": {"scouting_accuracy": 0, "financial_acumen": 4}
+		},
+		"head_coach": {
+			"age_min": 36, "age_max": 66, "salary_min": 1000000, "salary_max": 9000000,
+			"category_boosts": {"coaching": 14}, "skill_boosts": {"talent_evaluation": 2}
+		},
+		"assistant_coach": {
+			"age_min": 28, "age_max": 62, "salary_min": 250000, "salary_max": 1200000,
+			"category_boosts": {"coaching": 8}, "skill_boosts": {}
+		},
+		"scout": {
+			"age_min": 28, "age_max": 66, "salary_min": 120000, "salary_max": 700000,
+			"category_boosts": {"scouting": 14}, "skill_boosts": {"talent_evaluation": 10}
+		},
+		"medical": {
+			"age_min": 30, "age_max": 64, "salary_min": 200000, "salary_max": 1500000,
+			"category_boosts": {"medical": 14}, "skill_boosts": {}
+		},
+		"business_executive": {
+			"age_min": 32, "age_max": 64, "salary_min": 300000, "salary_max": 3000000,
+			"category_boosts": {"business": 14}, "skill_boosts": {}
+		}
+	}
+}
