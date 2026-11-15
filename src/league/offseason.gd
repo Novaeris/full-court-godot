@@ -46,6 +46,7 @@ func run(league_id: int, finished: FcSeason, rng: FcRng) -> Dictionary:
 	report["drafted"] = run_draft(league_id, finished, new_year, rng.fork("draft"))
 	report["signed"] = free_agency(league_id, new_year, rng.fork("market"))
 	report.merge(fill_rosters(league_id, new_year, rng.fork("fill")))
+	report.merge(staff_rollover(league_id, finished.year, new_year, rng.fork("staff")))
 	return report
 
 
@@ -367,6 +368,86 @@ func fill_rosters(league_id: int, new_year: int, rng: FcRng) -> Dictionary:
 			if rules.cap.check_signing(payroll(team_id, new_year), rules.cap.min_player_salary, FcCapRules.SigningKind.MINIMUM).allowed:
 				_sign(team, p, rules.cap.min_player_salary, 1, new_year, today, rules)
 	return {"waived": waived, "emergency": emergency}
+
+
+# --- 7. staff ---------------------------------------------------------------------------------------
+
+## Staff age: skills drift a little, experience grows, older staff may retire.
+## Expired staff contracts are renewed (70%) or the vacancy is filled from the
+## pool of staff without a job (best reputation first); if the pool has nobody
+## suitable a new person is generated. Every team keeps the same number of
+## staff in each role.
+func staff_rollover(league_id: int, finished_year: int, new_year: int, rng: FcRng) -> Dictionary:
+	var rules := _rules(league_id)
+	var league := _league(league_id)
+	var today := FcDate.new(new_year, 7, 1)
+	var staff_gen := FcStaffGenerator.new(_gen_data, world.definitions)
+	var retired := 0
+	var renewed := 0
+	var hired := 0
+	var vacancies: Array = []   # [team id, role]
+	# 1. aging and retirement
+	for m in world.staff.all():
+		if m.status != FcStaffMember.Status.ACTIVE:
+			continue
+		m.experience_years += 1
+		for key in world.definitions.staff_skills.keys():
+			m.skills.set_clamped(key, m.skills.get_value(key) + roundi(rng.gaussian(0.0, 1.2)))
+		var age: int = m.age_on(FcDate.new(new_year, 7, 1))
+		var chance: float = 1.0 if age >= 72 else (0.0 if age < 62 else (age - 61) * 0.12)
+		if rng.chance(chance):
+			m.status = FcStaffMember.Status.RETIRED
+			m.retired_season = finished_year
+			var job := world.active_staff_contract_of(m.id)
+			if job != null:
+				job.status = FcContract.Status.TERMINATED
+				vacancies.append([job.team_id, job.role])
+			retired += 1
+	# 2. expired contracts: renew or vacate
+	for c in world.staff_contracts.all():
+		if c.status == FcContract.Status.ACTIVE and c.end_season() <= finished_year:
+			var m: FcStaffMember = world.staff.get_by_id(c.staff_id)
+			c.status = FcContract.Status.EXPIRED
+			if m != null and m.status == FcStaffMember.Status.ACTIVE and rng.chance(0.7):
+				world.staff_contracts.add(_staff_contract(c.staff_id, c.team_id, c.role, m.reputation, new_year, rng, staff_gen, today))
+				renewed += 1
+			else:
+				vacancies.append([c.team_id, c.role])
+	# 3. fill vacancies
+	for v in vacancies:
+		var best: FcStaffMember = null
+		for m in world.staff.all():
+			if m.status == FcStaffMember.Status.ACTIVE and m.primary_role == v[1] and world.active_staff_contract_of(m.id) == null:
+				if best == null or m.reputation > best.reputation:
+					best = m
+		if best == null:
+			best = staff_gen.generate(rng, world.ids.next_id(FcWorld.KIND_STAFF), v[1], clampf(rng.gaussian(52.0, 10.0), 30.0, 80.0), today, _names_taken_staff())
+			world.staff.add(best)
+		world.staff_contracts.add(_staff_contract(best.id, v[0], v[1], best.reputation, new_year, rng, staff_gen, today))
+		hired += 1
+	return {"staff_retired": retired, "staff_renewed": renewed, "staff_hired": hired}
+
+
+func _names_taken_staff() -> Dictionary:
+	var taken := {}
+	for m in world.staff.all():
+		taken[m.identity.full_name()] = true
+	for p in world.players.all():
+		taken[p.identity.full_name()] = true
+	return taken
+
+
+func _staff_contract(staff_id: int, team_id: int, role: int, reputation: int, new_year: int, rng: FcRng, staff_gen: FcStaffGenerator, today: FcDate) -> FcStaffContract:
+	var c := FcStaffContract.new(world.ids.next_id(FcWorld.KIND_STAFF_CONTRACT))
+	c.staff_id = staff_id
+	c.team_id = team_id
+	c.role = role
+	c.signed_on = today
+	var years := rng.range_int(1, 3)
+	var salary := staff_gen.salary_for(role, reputation)
+	for i in years:
+		c.years.append(FcContractYear.new(new_year + i, roundi(salary * pow(1.04, i) / 10000.0) * 10000))
+	return c
 
 
 ## Releases the team's lowest-value player (his contract is terminated).

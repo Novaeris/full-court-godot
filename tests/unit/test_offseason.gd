@@ -215,3 +215,17 @@ func test_hard_cap_leagues_survive_an_offseason() -> void:
 	var rules := world.rules_of_league(1)
 	for t in world.teams.all():
 		assert_true(world.payroll_of_team(t.id, 2027) <= rules.cap.salary_cap, "a hard cap is never exceeded")
+
+
+func test_every_team_keeps_its_staff_through_the_years() -> void:
+	var r := _simulated()
+	var world: FcWorld = r["world"]
+	for t in world.teams.all():
+		assert_true(world.staff_in_role(t.id, FcStaffRole.Id.GENERAL_MANAGER) != null, "team %d has a GM" % t.id)
+		assert_true(world.staff_in_role(t.id, FcStaffRole.Id.HEAD_COACH) != null, "team %d has a head coach" % t.id)
+		assert_eq(world.staff_contracts_of_team(t.id, FcStaffRole.Id.ASSISTANT_COACH).size(), 1, "the assistant coach slot is kept")
+		for sc in world.staff_contracts_of_team(t.id):
+			assert_true(sc.is_in_force_in(r["year"]), "staff contracts cover the new season")
+	for report in r["reports"]:
+		assert_true(report["staff_hired"] >= 0 and report.has("staff_renewed"))
+	assert_true((r["reports"] as Array).any(func(rep): return rep["staff_renewed"] + rep["staff_hired"] > 0), "some staff contracts were renewed or refilled")
