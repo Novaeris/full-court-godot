@@ -109,3 +109,17 @@ func test_careers_survive_saving() -> void:
 	assert_eq(loaded.state.world.careers, g.state.world.careers)
 	manager.delete_slot(FcSaveManager.AUTOSAVE_SLOT)
 	DirAccess.remove_absolute("user://test_saves_careers")
+
+
+func test_career_leaders() -> void:
+	var g := _game(22)
+	g.start_next_season()
+	g.sim_playoffs()
+	var w := g.state.world
+	var leaders := w.career_leaders("points", 5)
+	assert_eq(leaders.size(), 5)
+	for i in range(1, leaders.size()):
+		assert_true(w.career_totals(leaders[i - 1])["points"] >= w.career_totals(leaders[i])["points"], "sorted best first")
+	assert_true(w.career_totals(leaders[0])["seasons"] >= 1)
+	assert_eq(w.career_leaders("points", 3).size(), 3)
+	assert_eq(FcWorld.new(FcDefinitionSet.load_default()).career_leaders("points").size(), 0)

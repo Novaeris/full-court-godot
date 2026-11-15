@@ -128,6 +128,18 @@ func career_totals(player_id: int) -> Dictionary:
 	return t
 
 
+## Player ids with the highest career total of a stat ("points", "rebounds", "ast", "stl", "blk", "gp").
+func career_leaders(stat: String, count: int = 10) -> Array[int]:
+	var totals := {}
+	for pid in careers:
+		totals[pid] = career_totals(pid)[stat]
+	var ids: Array[int] = []
+	for pid in totals:
+		ids.append(int(pid))
+	ids.sort_custom(func(a: int, b: int): return totals[a] > totals[b] if totals[a] != totals[b] else a < b)
+	return ids.slice(0, count)
+
+
 ## The season of a league for a given year, or null.
 func season_of(league_id: int, year: int) -> FcSeason:
 	for s in seasons.all():

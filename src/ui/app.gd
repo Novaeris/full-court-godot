@@ -692,6 +692,20 @@ func _tab_league() -> Control:
 	history.reverse()
 	box.add_child(FcUiTables.label("Champions", 18, true))
 	box.add_child(FcUiTables.table(["Season", "Champion", "Runner-up", "MVP"], history))
+	var all_time := HBoxContainer.new()
+	all_time.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	for entry in [["points", "Points"], ["rebounds", "Rebounds"], ["ast", "Assists"]]:
+		var col := VBoxContainer.new()
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_child(FcUiTables.label("All-time %s" % entry[1].to_lower(), 18, true))
+		var leader_rows: Array = []
+		for pid in w.career_leaders(entry[0], 8):
+			var totals := w.career_totals(pid)
+			var p: FcPlayer = w.players.get_by_id(pid)
+			leader_rows.append([p.identity.full_name() + ("" if p.status == FcPlayer.Status.RETIRED else " *"), totals["seasons"], totals[entry[0]]])
+		col.add_child(FcUiTables.table(["Player (* active)", "Seasons", entry[1]], leader_rows, [0, 70, 80]))
+		all_time.add_child(col)
+	box.add_child(all_time)
 	return box
 
 
