@@ -1,0 +1,14 @@
+; Engine configuration file.
+; Edited by Godot; changes to the format can break the project.
+
+config_version=5
+
+[application]
+
+config/name="Full Court"
+config/features=PackedStringArray("4.7")
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
