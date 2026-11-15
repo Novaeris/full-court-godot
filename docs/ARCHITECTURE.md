@@ -148,6 +148,14 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 - A whole 30-team, 80-game season plus playoffs takes about 13 seconds; a 1,230-game season is stored in about 100 KB.
 - Rosters are read when an engine is created; change rosters between seasons.
 
+## Game controller (`src/game/game_controller.gd`)
+The single object a screen talks to. It owns the `FcGameState` and drives everything; it has no UI code.
+- Create: `FcGameController.new_game(generator, seed, mode, user_team_index)` or `resume(loaded_state)`.
+- Time: `advance_day()`, `advance_days(n)`, `sim_regular_season()`, `sim_playoffs()`, `start_next_season()` (runs the full offseason, returns its report). Phases: regular_season -> playoffs (starts automatically when the last game is played) -> season_complete.
+- Information: `standings()`, `user_record()`, `next_user_game()`, `season()`, `owner_report()` (profit, valuation change, wins vs expectation, approval 0-100).
+- Owner decisions (Owner Mode): `set_ticket_price`, `set_marketing_budget`, `invest_in_facilities`, `fire_staff`, `hire_staff`, `staff_pool`, `asking_salary`. In Dynasty mode no team is "human" for pricing.
+- Saving: `autosave(manager)`. All randomness comes from `state.rng`, which every save contains, so a loaded game plays out exactly as the original would have (tested mid-season and between seasons).
+
 ## Business model (`src/league/finance_engine.gd`, `src/data/business/`, `data/simulation/finance.json`)
 ```
 FcTeamBusiness     per team (id = team id): ticket price, marketing budget, facilities level, fan interest, brand, cash, debt, valuation

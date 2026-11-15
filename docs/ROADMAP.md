@@ -24,13 +24,14 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 - Season engine: dated calendar, standings with tiebreakers, playoffs (division leaders or seeding, conference or league brackets, byes, home court), champion, awards, player season statistics, league balance tuning (280 tests)
 - Offseason: player progression and retirement, contract expiry, AI re-signing, 2-round draft with rookie scale, free agency under the salary rules, legal rosters; three seasons verified (299 tests)
 - Owner Mode business engine: demand and pricing, 8 revenue and 9 expense lines, fan interest, brand, debt, valuation, owner levers (price, marketing, facilities), AI teams run automatically (313 tests)
+- Staff rollover (aging, renewals, vacancy hiring), game controller API for screens and Owner Mode decisions, saves that continue identically (325 tests)
 
 ## Current
 - Awaiting founder direction on the next system.
 
 ## Next (proposed order, driven by dependencies)
 1. (done) Staff entities. 2. (done) Save system. 3. (done) Procedural generation of the league.
-   League structure, league rules, simulation v1 and the season engine are done. Next (autonomous work order): season rollover and player progression (aging, development, retirement), draft with prospects and rookie contracts, contract expiry and free agency with AI teams, trades, Owner Mode finances (revenue, expenses, valuation), a game controller and autosave, a basic UI shell, then injuries and deeper simulation.
+   League structure, league rules, simulation v1 and the season engine are done. Next (autonomous work order): a basic UI shell on the game controller (main menu, new league wizard, owner dashboard, standings, schedule, box scores, roster, finances), trades, injuries, history/records and the Hall of Fame, scouting and prospect uncertainty, dynasty-mode roster control, deeper simulation (matchups, timeouts, end-game fouling).
 4. **Basketball engine v1**: possession simulation, box scores, stress-test tool for plausibility.
 5. **League operations**: schedule, standings, playoffs, season progression.
 6. **Basic UI shell**: main menu, save selection, standings, box score viewer (manual testing begins).

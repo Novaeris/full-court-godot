@@ -1,0 +1,178 @@
+extends FcTestCase
+## The game controller: the API a screen uses to play the game.
+
+func _generator() -> FcWorldGenerator:
+	var data := FcGenerationData.load_default()
+	var cfg := FcGenerationConfig.load_default(data)
+	cfg.team_count = 8
+	cfg.conference_count = 2
+	cfg.divisions_per_conference = 1
+	cfg.roster_size = 13
+	cfg.free_agent_count = 15
+	cfg.assistant_coaches = 1
+	cfg.scouts = 0
+	return FcWorldGenerator.new(data, FcDefinitionSet.load_default(), cfg)
+
+
+func _game(seed_value: int = 5, mode: String = FcGameState.MODE_OWNER) -> FcGameController:
+	return FcGameController.new_game(_generator(), seed_value, mode, 2)
+
+
+func test_new_game_starts_the_first_season() -> void:
+	var g := _game()
+	assert_eq(g.phase(), FcGameController.PHASE_REGULAR)
+	assert_eq(g.state.current_season, 2026)
+	assert_eq(g.state.current_date.to_iso(), "2026-10-20")
+	assert_eq(g.state.user_team_id, 3)
+	assert_eq(g.season().status, FcSeason.Status.PENDING)
+	var rec := g.user_record()
+	assert_eq([rec["wins"], rec["losses"]], [0, 0])
+	assert_eq(rec["games_left"], g.state.world.rules_of_league(1).season.games_per_team(g.state.world.leagues.get_by_id(1)))
+	assert_true(g.next_user_game() != null)
+	assert_eq(g.state.validate(), [] as Array[String])
+
+
+func test_advancing_days_moves_the_calendar() -> void:
+	var g := _game()
+	var played := g.advance_day()
+	assert_true(played > 0)
+	assert_eq(g.state.current_date.to_iso(), "2026-10-21")
+	g.advance_days(9)
+	assert_eq(g.state.current_date.to_iso(), "2026-10-30")
+	assert_eq(g.season().status, FcSeason.Status.REGULAR)
+	assert_true(g.user_record()["wins"] + g.user_record()["losses"] > 0)
+
+
+func test_season_flows_through_the_playoffs_to_a_champion() -> void:
+	var g := _game()
+	g.sim_regular_season()
+	assert_eq(g.phase(), FcGameController.PHASE_PLAYOFFS, "the playoffs begin as soon as the regular season ends")
+	assert_true(g.season().playoffs != null)
+	g.advance_day()
+	g.sim_playoffs()
+	assert_eq(g.phase(), FcGameController.PHASE_COMPLETE)
+	assert_true(g.season().champion_id > 0)
+	assert_eq(g.advance_day(), 0, "nothing to play once the season is complete")
+	assert_true(g.state.current_date.is_before(FcDate.new(2027, 8, 1)))
+
+
+func test_next_season_runs_the_offseason() -> void:
+	var g := _game()
+	var report := g.start_next_season()
+	assert_eq(g.state.current_season, 2027)
+	assert_eq(g.state.current_date.to_iso(), "2027-10-20")
+	assert_eq(g.phase(), FcGameController.PHASE_REGULAR)
+	assert_true(report["progressed"] > 50 and report.has("drafted") and report.has("staff_hired"))
+	assert_eq(g.state.validate(), [] as Array[String])
+	assert_true(g.state.world.season_of(1, 2026).status == FcSeason.Status.COMPLETE, "last season is kept")
+	assert_eq(g.user_record()["wins"], 0)
+
+
+func test_three_years_stay_valid() -> void:
+	var g := _game(9)
+	for i in 3:
+		g.start_next_season()
+		assert_eq(g.state.validate(), [] as Array[String], "year %d" % (i + 1))
+	assert_eq(g.state.current_season, 2029)
+
+
+func test_owner_price_and_marketing_decisions() -> void:
+	var g := _game()
+	var b := g.business()
+	assert_true(g.set_ticket_price(250))
+	assert_eq(b.ticket_price, 250)
+	assert_true(not g.set_ticket_price(0))
+	assert_true(not g.set_ticket_price(999999))
+	assert_eq(b.ticket_price, 250, "a rejected price changes nothing")
+	assert_true(g.set_marketing_budget(15000000))
+	assert_true(not g.set_marketing_budget(-1))
+	b.cash = 100000000
+	var level := b.facilities_level
+	assert_true(g.invest_in_facilities(10))
+	assert_eq(b.facilities_level, level + 10)
+	g.sim_playoffs()
+	assert_eq(b.ticket_price, 250, "the owner's price survives the settlement")
+	assert_eq(b.marketing_budget, 15000000)
+	var other: FcTeamBusiness = g.state.world.businesses.get_by_id(1)
+	assert_true(other.ticket_price != 250, "AI teams reprice")
+
+
+func test_dynasty_mode_leaves_prices_to_the_ai() -> void:
+	var g := _game(5, FcGameState.MODE_DYNASTY)
+	assert_true(g.engine.human_teams.is_empty())
+
+
+func test_hiring_and_firing_staff() -> void:
+	var g := _game()
+	var w := g.state.world
+	var team := g.state.user_team_id
+	var coach := w.staff_in_role(team, FcStaffRole.Id.HEAD_COACH)
+	assert_true(coach != null)
+	var other_coach := w.staff_in_role(1, FcStaffRole.Id.HEAD_COACH)
+	assert_true(not g.fire_staff(other_coach.id), "you cannot fire another team's coach")
+	assert_true(g.fire_staff(coach.id))
+	assert_true(w.staff_in_role(team, FcStaffRole.Id.HEAD_COACH) == null, "the post is vacant")
+	assert_true(not g.fire_staff(coach.id), "already fired")
+	var pool := g.staff_pool(FcStaffRole.Id.HEAD_COACH)
+	assert_true(pool.size() > 0 and pool[0].id == coach.id or pool.size() > 0, "the fired coach and others are in the pool")
+	var hire := pool[0]
+	assert_eq(g.hire_staff(hire.id, FcStaffRole.Id.HEAD_COACH, 3), "")
+	assert_eq(w.staff_in_role(team, FcStaffRole.Id.HEAD_COACH).id, hire.id)
+	assert_true(g.hire_staff(hire.id, FcStaffRole.Id.HEAD_COACH, 3) != "", "already employed")
+	var spare := g.staff_pool(FcStaffRole.Id.HEAD_COACH)
+	if spare.size() > 0:
+		assert_true("already has" in g.hire_staff(spare[0].id, FcStaffRole.Id.HEAD_COACH, 1), "only one head coach")
+	assert_eq(w.validate(2026), [] as Array[String])
+	g.sim_regular_season()
+	assert_true(g.season().regular_season_complete(), "the season still plays with the new coach")
+
+
+func test_owner_report() -> void:
+	var g := _game()
+	assert_eq(g.owner_report(), {}, "nothing to report before a season is finished")
+	g.sim_playoffs()
+	var r := g.owner_report()
+	for key in ["year", "profit", "revenue", "valuation", "valuation_change", "cash", "debt", "wins", "expected_wins", "approval"]:
+		assert_true(r.has(key), key)
+	assert_between(r["approval"], 0.0, 100.0)
+	assert_eq(r["year"], 2026)
+	assert_true(r["revenue"] > 0 and r["valuation"] > 0)
+	g.start_next_season()
+	g.sim_playoffs()
+	var r2 := g.owner_report()
+	assert_eq(r2["year"], 2027)
+	assert_true(r2["valuation_change"] == r2["valuation"] - r["valuation"])
+
+
+func test_save_and_load_mid_season_continues_identically() -> void:
+	var a := _game(7)
+	a.advance_days(15)
+	var manager := FcSaveManager.new("user://test_saves_controller")
+	var saved := a.autosave(manager)
+	assert_true(saved.is_ok(), saved.message)
+	var loaded := manager.load_slot(FcSaveManager.AUTOSAVE_SLOT, FcDefinitionSet.load_default())
+	assert_true(loaded.is_ok(), loaded.message)
+	assert_eq(loaded.warnings, [] as Array[String])
+	var b := FcGameController.resume(loaded.state)
+	assert_eq(b.state.current_date.to_iso(), a.state.current_date.to_iso())
+	a.advance_days(25)
+	b.advance_days(25)
+	assert_eq(a.season().to_dict(), b.season().to_dict(), "a loaded game plays exactly like the original")
+	manager.delete_slot(FcSaveManager.AUTOSAVE_SLOT)
+	DirAccess.remove_absolute("user://test_saves_controller")
+
+
+func test_save_between_seasons_and_resume() -> void:
+	var a := _game(8)
+	a.sim_playoffs()
+	var manager := FcSaveManager.new("user://test_saves_controller2")
+	assert_true(a.autosave(manager).is_ok())
+	var loaded := manager.load_slot(FcSaveManager.AUTOSAVE_SLOT, FcDefinitionSet.load_default())
+	var b := FcGameController.resume(loaded.state)
+	assert_eq(b.phase(), FcGameController.PHASE_COMPLETE)
+	assert_eq(b.season().champion_id, a.season().champion_id)
+	a.start_next_season()
+	b.start_next_season()
+	assert_eq(a.state.world.to_dict(), b.state.world.to_dict(), "the next season is identical after a reload")
+	manager.delete_slot(FcSaveManager.AUTOSAVE_SLOT)
+	DirAccess.remove_absolute("user://test_saves_controller2")

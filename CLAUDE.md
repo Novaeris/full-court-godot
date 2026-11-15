@@ -22,6 +22,7 @@ The developer is a solo, beginner programmer. Explain decisions in plain languag
 - `src/sim/`    Game simulation (headless, pure). Balance numbers live in `data/simulation/*.json`; recalibrate with `tools/simulate_games.ps1` after any change and keep all 16 league-average checks in range.
 - `src/data/season/` + `src/league/season_engine.gd`: seasons (calendar, results, playoffs, awards). `tools/play_season.ps1` plays one.
 - `src/data/business/` + `src/league/finance_engine.gd`: Owner Mode business model. `tools/finances.ps1` shows the books.
+- `src/game/`  The game controller: the one API screens use. Screens must call it, never the engines directly.
 - `data/definitions/`  JSON definitions of attributes, personality traits, tendencies. Edit these to rebalance, not code.
 - `src/...`     Further modules are added only when they hold real code (see docs/ARCHITECTURE.md).
 - `tests/`      Automated tests. `tests/unit/test_*.gd`; base class `FcTestCase`.
