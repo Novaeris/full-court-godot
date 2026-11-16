@@ -33,7 +33,7 @@ Era presets and star usage; league balance (team spread tightened); no draft lot
 - **UI is a first plain version**: no box score viewer, no draft / free agency / trade screens, no theme polish, no mobile layout.
 - Dynasties: in one 6-season test (30 teams, seed 2026) a team won 4 titles with a 71-9 record, but eight-season runs of 20-team leagues with two other seeds spread the titles across 4-5 champions, so it looks seed-specific. The AI now makes simple one-for-one offseason trades; keep watching parity.
 - League average age drifts young (about 24.6 after six seasons; real is about 26). Retirement and the draft supply are the levers.
-- Overtime games are about 2% (real about 5-6%): end-of-game fouling and timeouts are not modeled.
+- Overtime games are about 2.6% (real about 5-6%). Tried (2026-11-16): late-game intentional fouling by the trailing team plus hurry/stall tempo. Over 8,000 games it left the rate unchanged (about 2.7%) and raised pace and fouls, so it was reverted. The gap is probably in how final margins cluster (ties need a heavier peak near zero); a different approach (e.g. last-possession logic, closer-game variance) is needed.
 - Market tab (free agents + latest draft) is read-only; no signing or draft interaction yet.
 - Human trades work (Trades tab, one-for-many swaps under the cap rules); the AI never proposes trades to the user.
 - Hall of Fame and record book exist (History tab); a records page for team records and retired numbers is not built.
