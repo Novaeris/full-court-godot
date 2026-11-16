@@ -108,3 +108,7 @@ Tests that touch disk use `user://test_saves` and clean up in `after_each()`. In
 - Runner discovers methods by name only. A test file with a syntax error is reported as a FAIL (an earlier version hung forever instead; fixed).
 - GDScript gotcha: `var x := <untyped value>` is a parse error in this project (warnings are errors). Annotate the type: `var x: String = ...`.
 - No stress-test tooling yet (planned with the simulation engine).
+
+
+## Mouse-click test (tools/click_test.ps1)
+`tools/click_test.gd` hosts the app in its own 1280x800 viewport and sends real mouse press and release events at the positions of the controls (so it needs no window and also works with one). It clicks through: New Game, a drop-down, Create League, a table row to choose a team, Start Game, Next Week, every tab, Borrow/Repay, Use suggestion, Start project, a roster row and the profile popup, Release (and Release with nothing selected shows a hint), a free agent row and Sign, a trade list and Check the offer, To End of Regular Season, Play All Playoffs, Begin Offseason (with the warning), a draft row and a workout, Draft selected prospect, Finish Offseason; after each click it checks that the game state really changed. 54 clicks, 0 problems, repeated 3 times in both headless and windowed modes. Limits: the entries inside a drop-down list are chosen directly after a real click on the drop-down (the list is a separate pop-up window); typing into text boxes is not simulated; layout and looks are still checked by screenshots (`tools/screenshot.ps1`).
