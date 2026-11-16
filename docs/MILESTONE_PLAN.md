@@ -23,7 +23,7 @@ Scope (in rough order):
 1. **Owner reputation and changing jobs** (decided: the player cannot lose, but can transfer to another team "like
    a job"): the owner's approval and results build a career reputation; at season's end the owner gets job offers
    from other franchises (better reputation = better franchises) and may transfer. A good run also unlocks more room
-   (bigger loan limit). *Built first.*
+   (bigger loan limit). *Built first (done 2026-11-16: reputation, offers, transfer).*
 2. **Ticket pricing depth**: separate prices for playoffs, season tickets vs single games, and a simple "special
    promotion night" lever.
 3. **AI teams propose trades to you** (inbox with accept/decline) and rival GMs react to your moves.

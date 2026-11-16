@@ -41,6 +41,11 @@ const BUDGETS := ["frugal", "normal", "aggressive"]
 ## 0 = normal; 2 = the owner's draft is under way; 1 = the draft and the rest of the first half are
 ## done and the owner's free-agency window is open (current_season is still the season that just ended).
 var offseason_stage: int = 0
+## The owner's career (Owner Mode): "reputation" 0-100 (starts at START_REPUTATION), "history"
+## [[year, team id, approval, wins, title (0 or 1)], ...] one row per finished season, and
+## "transfer_year" (the last season in which the owner changed teams, 0 = never).
+var owner_career: Dictionary = {"reputation": 40, "history": [], "transfer_year": 0}
+const START_REPUTATION := 40
 ## The draft while it is under way (stage 2), see FcOffseason.prepare_draft. Empty otherwise.
 var draft_state: Dictionary = {}
 
@@ -84,6 +89,7 @@ func to_dict() -> Dictionary:
 		"delegation": delegation.duplicate(),
 		"direction": direction.duplicate(),
 		"offseason_stage": offseason_stage,
+		"owner_career": owner_career.duplicate(true),
 		"draft_state": draft_state.duplicate(true),
 		"rng": rng.get_state(),
 		"world": world.to_dict(),
@@ -132,6 +138,12 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 	s.user_team_id = int(data.get("user_team_id", 0))
 	s.current_season = int(data.get("current_season", 2026))
 	s.offseason_stage = int(data.get("offseason_stage", 0))
+	var raw_career = data.get("owner_career", {})
+	if raw_career is Dictionary and not raw_career.is_empty():
+		var rows: Array = []
+		for entry in raw_career.get("history", []):
+			rows.append([int(entry[0]), int(entry[1]), int(entry[2]), int(entry[3]), int(entry[4])])
+		s.owner_career = {"reputation": clampi(int(raw_career.get("reputation", START_REPUTATION)), 0, 100), "history": rows, "transfer_year": int(raw_career.get("transfer_year", 0))}
 	var raw_draft = data.get("draft_state", {})
 	if raw_draft is Dictionary and not raw_draft.is_empty():
 		s.draft_state = _clean_draft_state(raw_draft)

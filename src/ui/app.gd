@@ -734,6 +734,38 @@ func _tab_overview() -> Control:
 			FcUiTables.money(report["profit"]), FcUiTables.money(report["revenue"]), FcUiTables.money(report["valuation"]),
 			FcUiTables.money(report["valuation_change"]), FcUiTables.money(report["cash"]), FcUiTables.money(report["debt"])]))
 		box.add_child(FcUiTables.label("Wins %d (expected about %d)    Owner approval: %d / 100" % [report["wins"], report["expected_wins"], report["approval"]]))
+	if controller.state.mode == FcGameState.MODE_OWNER:
+		var history := controller.owner_history()
+		var stints: Array[String] = []
+		for row in history:
+			var label := _team_name(row[1])
+			if stints.is_empty() or not stints[stints.size() - 1].begins_with(label):
+				stints.append("%s (1)" % label)
+			else:
+				var n := int(stints[stints.size() - 1].rsplit("(")[1].trim_suffix(")")) + 1
+				stints[stints.size() - 1] = "%s (%d)" % [label, n]
+		box.add_child(FcUiTables.label("Owner reputation: %d / 100.%s" % [controller.owner_reputation(), "  Your career, seasons per team: " + ", ".join(stints) if not stints.is_empty() else ""]))
+		var offers := controller.job_offers()
+		if not offers.is_empty():
+			box.add_child(FcUiTables.label("Job offers: other franchises would like you as their owner (you can change teams once a season, before the offseason starts)", 18, true))
+			var offer_rows: Array = []
+			var offer_ids: Array[int] = []
+			for o in offers:
+				offer_rows.append([o["name"], FcUiTables.money(o["valuation"]), o["wins"], FcUiTables.money(o["payroll"]), o["fan_interest"], FcUiTables.money(o["cash"]), FcUiTables.money(o["debt"]), o["seats"]])
+				offer_ids.append(o["team"])
+			var offer_table := FcUiTables.table(["Team", "Value", "Wins", "Payroll", "Fans", "Cash", "Debt", "Seats"], offer_rows, [0, 90, 50, 90, 50, 90, 90, 60])
+			offer_table.custom_minimum_size = Vector2(0, 150)
+			offer_table.size_flags_vertical = Control.SIZE_FILL
+			box.add_child(offer_table)
+			box.add_child(FcUiTables.button("Take the job with the selected team", func():
+				var picked := offer_table.get_selected()
+				if picked == null:
+					_say("Select a team first.")
+					return
+				var result := controller.transfer_to(offer_ids[picked.get_index()])
+				if result["ok"]:
+					show_dashboard()
+				_say(result["reason"])))
 	var news: Array = controller.state.world.news
 	if not news.is_empty():
 		box.add_child(FcUiTables.label("Latest news", 18, true))

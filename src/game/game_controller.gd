@@ -153,6 +153,8 @@ func begin_offseason() -> Dictionary:
 	sim_playoffs()
 	var finished := season()
 	_gm_log = []
+	if state.mode == FcGameState.MODE_OWNER:
+		_record_owner_season()
 	if state.mode == FcGameState.MODE_OWNER and state.delegation["contracts"]:
 		_gm_re_sign_players()
 	var offseason := _new_offseason()
@@ -255,6 +257,109 @@ func propose_trade(ai_team_id: int, give_ids: Array, get_ids: Array, preview: bo
 		return {"accepted": false, "reason": "Finish the draft first."}
 	var desk := FcTradeDesk.new(state.world)
 	return desk.propose(league_id, contract_year(), state.user_team_id, ai_team_id, give_ids, get_ids, is_contending(ai_team_id), not preview, give_picks, get_picks, first_tradable_pick_year())
+
+
+# --- the owner's career: reputation and changing jobs -----------------------------------------
+
+## The owner's reputation (0-100): built from how owners of the franchise did each season.
+func owner_reputation() -> int:
+	if state.mode == FcGameState.MODE_OWNER and season().status == FcSeason.Status.COMPLETE:
+		_record_owner_season()   # the finished season counts as soon as it is over
+	return int(state.owner_career["reputation"])
+
+
+## One row per finished season as owner: [[year, team id, approval, wins, title], ...].
+func owner_history() -> Array:
+	return state.owner_career["history"]
+
+
+## At the end of a season: reputation moves toward the owner's approval (70% old, 30% new) and
+## a title adds 5. Recorded once per season.
+func _record_owner_season() -> void:
+	var year := state.current_season
+	var history: Array = state.owner_career["history"]
+	for row in history:
+		if row[0] == year:
+			return
+	var report := owner_report()
+	if report.is_empty():
+		return
+	var title := 1 if season().champion_id == state.user_team_id else 0
+	history.append([year, state.user_team_id, report["approval"], report["wins"], title])
+	state.owner_career["reputation"] = clampi(roundi(0.7 * owner_reputation() + 0.3 * report["approval"]) + 5 * title, 0, 100)
+
+
+## Franchises ranked by value, as a fraction: 0 = the least valuable team, 1 = the most.
+func _prestige() -> Dictionary:
+	var ranked: Array = []
+	var w := state.world
+	for tid in w.leagues.get_by_id(league_id).all_team_ids():
+		var b: FcTeamBusiness = w.businesses.get_by_id(tid)
+		ranked.append([b.valuation if b != null else 0, tid])
+	ranked.sort()
+	var out := {}
+	for i in ranked.size():
+		out[ranked[i][1]] = float(i) / maxf(1.0, ranked.size() - 1.0)
+	return out
+
+
+## Teams the owner could move to when the season is over: a better reputation opens the more
+## valuable franchises (a team is on offer if its prestige is at most reputation/100 + 0.25),
+## and a weaker team is always among them. Up to 3 offers, the same every time you look.
+## [{"team", "name", "valuation", "wins", "payroll", "fan_interest", "cash", "debt", "seats"}].
+func job_offers() -> Array:
+	if state.mode != FcGameState.MODE_OWNER or phase() != PHASE_COMPLETE:
+		return []
+	var w := state.world
+	var prestige := _prestige()
+	var allowed: Array = []
+	for tid in prestige:
+		if tid != state.user_team_id and prestige[tid] <= owner_reputation() / 100.0 + 0.25:
+			allowed.append(tid)
+	allowed.sort()
+	var rng := FcRng.new(hash("jobs:%d:%d" % [state.user_team_id, state.current_season]))
+	var picks: Array[int] = []
+	var pool := allowed.duplicate()
+	while picks.size() < 3 and not pool.is_empty():
+		var index := rng.range_int(0, pool.size() - 1)
+		picks.append(pool[index])
+		pool.remove_at(index)
+	var finance := FcFinanceEngine.new(w)
+	var st := standings()
+	var out: Array = []
+	for tid in picks:
+		var team: FcTeam = w.teams.get_by_id(tid)
+		var b: FcTeamBusiness = w.businesses.get_by_id(tid)
+		out.append({"team": tid, "name": w.team_display_name(tid), "valuation": b.valuation, "wins": st.records[tid]["w"],
+			"payroll": w.payroll_of_team(tid, state.current_season), "fan_interest": b.fan_interest, "cash": b.cash, "debt": b.debt,
+			"seats": w.arenas.get_by_id(team.arena_id).capacity})
+	out.sort_custom(func(a, b): return a["valuation"] > b["valuation"])
+	return out
+
+
+## Takes over another franchise (one of the current job offers), once per season, before the
+## offseason begins. The old team goes back to the AI. Everything you decided for the old team
+## that is still pending (agreed extensions) is dropped. Returns {"ok": bool, "reason": String}.
+func transfer_to(team_id: int) -> Dictionary:
+	var offered := false
+	for offer in job_offers():
+		if offer["team"] == team_id:
+			offered = true
+	if not offered:
+		return {"ok": false, "reason": "That team has not offered you the job."}
+	if int(state.owner_career["transfer_year"]) == state.current_season:
+		return {"ok": false, "reason": "You already changed teams this season."}
+	_record_owner_season()
+	var w := state.world
+	var old_name := w.team_display_name(state.user_team_id)
+	state.user_team_id = team_id
+	state.owner_career["transfer_year"] = state.current_season
+	state.agreed_extensions.clear()
+	state.agreed_terms.clear()
+	state.agreed_staff_terms.clear()
+	_prepare_engine()
+	w.add_news(state.current_date, "staff", "%s's owner moves on: %s now has a new owner." % [old_name, w.team_display_name(team_id)], team_id)
+	return {"ok": true, "reason": "You are now the owner of %s." % w.team_display_name(team_id)}
 
 
 # --- the draft (Owner Mode) -----------------------------------------------------------------
