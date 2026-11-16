@@ -56,7 +56,7 @@ func run(league_id: int, finished: FcSeason, rng: FcRng) -> Dictionary:
 
 
 ## Aging and retirement, expiring contracts, re-signing, the draft and AI trades,
-## all automatic (Dynasty Mode, tools and tests). A human owner uses the pieces
+## all automatic (spectator mode, tools and tests). A human owner uses the pieces
 ## instead (run_before_draft, prepare_draft / make_pick / finish_draft,
 ## run_after_draft) so they can draft and sign free agents before run_second_half.
 ## Uses the same random streams either way.

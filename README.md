@@ -1,6 +1,6 @@
 # Full Court
 
-A basketball management simulation (Godot 4.7, GDScript). Three modes are planned (Owner, Career, Dynasty); Owner Mode is being built first.
+A basketball management simulation (Godot 4.7, GDScript). Three modes are planned: Owner Mode (being built first), Career Mode (create a player, RPG progression) and Dynasty Mode (a card-collecting game). A watch-only Spectator mode also exists for testing.
 Real cities and countries; original franchises, players and staff.
 
 ## Play it

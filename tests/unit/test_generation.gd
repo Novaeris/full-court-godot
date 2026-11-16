@@ -370,10 +370,10 @@ func test_generated_world_survives_json_and_save() -> void:
 	var gen := _generator(8)
 	gen.config.conference_count = 1
 	gen.config.divisions_per_conference = 2
-	var state := gen.new_game_state(SEED, FcGameState.MODE_DYNASTY, 2)
+	var state := gen.new_game_state(SEED, FcGameState.MODE_SPECTATOR, 2)
 	assert_eq(state.validate(), [] as Array[String])
 	assert_eq(state.user_team_id, 3)
-	assert_eq(state.mode, "dynasty")
+	assert_eq(state.mode, "spectator")
 	var manager := FcSaveManager.new("user://test_saves_gen")
 	var saved := manager.save("gen_test", state, "Generated")
 	assert_true(saved.is_ok(), saved.message)

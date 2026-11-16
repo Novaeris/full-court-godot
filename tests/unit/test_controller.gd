@@ -97,8 +97,8 @@ func test_owner_price_and_marketing_decisions() -> void:
 	assert_true(other.ticket_price != 250, "AI teams reprice")
 
 
-func test_dynasty_mode_leaves_prices_to_the_ai() -> void:
-	var g := _game(5, FcGameState.MODE_DYNASTY)
+func test_spectator_mode_leaves_prices_to_the_ai() -> void:
+	var g := _game(5, FcGameState.MODE_SPECTATOR)
 	assert_true(g.engine.human_teams.is_empty())
 
 
@@ -279,8 +279,8 @@ func test_owner_decides_who_stays_when_contracts_end() -> void:
 	assert_true(team.roster.size() >= w.rules_of_league(g.league_id).roster_min, "the roster is refilled to a legal size")
 
 
-func test_dynasty_mode_still_re_signs_automatically() -> void:
-	var g := _game(37, FcGameState.MODE_DYNASTY)
+func test_spectator_mode_still_re_signs_automatically() -> void:
+	var g := _game(37, FcGameState.MODE_SPECTATOR)
 	g.sim_playoffs()
 	var expiring := g.expiring_players()
 	var report := g.start_next_season()

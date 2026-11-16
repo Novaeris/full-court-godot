@@ -159,7 +159,7 @@ func show_new_league() -> void:
 	_form["games"] = _options(grid, "Season length (30-team league)", GAMES_CHOICES.map(func(a): return a[0]))
 	_form["games"].selected = 2
 	_form["lottery"] = _options(grid, "Draft lottery", ["On (worst teams are favoured but not guaranteed)", "Off (worst record picks first)"])
-	_form["mode"] = _options(grid, "Game mode", ["Owner Mode", "Dynasty Mode"])
+	_form["mode"] = _options(grid, "Game mode", ["Owner Mode", "Spectator (watch the league, no owner controls)"])
 	_form["seed"] = _line_edit(grid, "Random seed (same seed = same league)", str(randi() % 100000))
 	(_form["teams"] as OptionButton).item_selected.connect(func(_i): _fill_structures())
 	_fill_structures()
@@ -230,7 +230,7 @@ func on_create_league(overrides: Dictionary = {}) -> bool:
 	var seed_value := int(seed_text) if seed_text.is_valid_int() else hash(seed_text)
 	var mode := FcGameState.MODE_OWNER
 	if overrides.is_empty() and (_form["mode"] as OptionButton).selected == 1:
-		mode = FcGameState.MODE_DYNASTY
+		mode = FcGameState.MODE_SPECTATOR
 	elif not overrides.is_empty():
 		mode = str(overrides.get("mode", mode))
 	_pending_state = generator.new_game_state(seed_value, mode, 0)
@@ -296,7 +296,7 @@ func show_dashboard() -> void:
 	var info := FcUiTables.label("%s    Season %d-%02d    %s    Mode: %s" % [
 		controller.state.current_date.to_iso(), s.year, (s.year + 1) % 100,
 		{"regular_season": "Regular season", "playoffs": "Playoffs", "season_complete": "Season complete", "offseason": "Offseason: free agency is open to you first", "draft": "The draft"}[phase],
-		"Owner" if controller.state.mode == FcGameState.MODE_OWNER else "Dynasty"], 16)
+		"Owner" if controller.state.mode == FcGameState.MODE_OWNER else "Spectator"], 16)
 	box.add_child(info)
 	var actions := HBoxContainer.new()
 	actions.add_theme_constant_override("separation", 6)
@@ -352,7 +352,7 @@ func on_sim_playoffs() -> void:
 ## One button, three jobs. Owner Mode: first press (season over) warns about players whose
 ## contracts end, then begins the offseason (draft and re-signing done, free agency open to
 ## you); the next press lets the AI teams sign players and starts the new season.
-## Dynasty Mode: one press does everything.
+## Spectator mode: one press does everything.
 func on_next_season() -> void:
 	if controller.state.mode == FcGameState.MODE_OWNER and controller.state.offseason_stage == 0 and controller.phase() != FcGameController.PHASE_PLAYOFFS and controller.phase() != FcGameController.PHASE_REGULAR and not _confirm_next_season:
 		var leaving := controller.expiring_players().filter(func(e): return not e["agreed"])

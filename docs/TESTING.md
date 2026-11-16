@@ -66,7 +66,7 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 | Contract negotiation (price vs years vs loyalty, lowball refused with a counter, offered terms used, extension terms used and cleared, saved) | 5 |
 | Interactive draft (user on the clock, scouted board and ranges, user pick, staff pick equals auto, save mid-draft, signings wait, unfinished draft, old saves) | 9 |
 | Offseason window (pausing changes nothing, signing in the window gets a next-season contract, window survives saving) | 3 |
-| Owner decides who stays (extend, leave, cleared after use, Dynasty unchanged, final-year only, state save) | 4 |
+| Owner decides who stays (extend, leave, cleared after use, spectator mode unchanged, final-year only, state save) | 4 |
 | Table alignment follows content; new games have a valuation and can borrow at once | 2 |
 | Revenue sharing (zero-sum, small markets receive, big markets pay) | 1 |
 | Arena projects (cost up front, time to build, effect, one at a time, needs cash, suites, save) | 3 |

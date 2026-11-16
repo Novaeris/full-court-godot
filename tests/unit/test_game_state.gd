@@ -18,7 +18,7 @@ func test_invalid_state_is_reported() -> void:
 
 func test_round_trip_including_random_position() -> void:
 	var s := FcTestData.game_state()
-	s.mode = FcGameState.MODE_DYNASTY
+	s.mode = FcGameState.MODE_SPECTATOR
 	s.current_season = 2031
 	s.current_date = FcDate.new(2031, 11, 3)
 	for i in 25:
@@ -47,3 +47,10 @@ func test_agreed_extensions_are_saved_and_old_saves_default() -> void:
 	var old := g.to_dict()
 	old.erase("agreed_extensions")
 	assert_eq(FcGameState.from_dict(old, FcDefinitionSet.load_default()).agreed_extensions, [] as Array[int])
+
+
+func test_old_dynasty_saves_load_as_spectator() -> void:
+	var g := FcGameState.new(FcWorld.new(FcDefinitionSet.load_default()), FcRng.new(1))
+	var d := g.to_dict()
+	d["mode"] = "dynasty"
+	assert_eq(FcGameState.from_dict(d, FcDefinitionSet.load_default()).mode, FcGameState.MODE_SPECTATOR)

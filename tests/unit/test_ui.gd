@@ -167,8 +167,8 @@ func test_owner_can_change_prices_from_the_finance_tab() -> void:
 	tab.free()
 
 
-func test_dynasty_mode_hides_owner_controls() -> void:
-	assert_true(app.on_create_league({"teams": 8, "conferences": 2, "divisions": 1, "free_agents": 10, "seed": "5", "mode": "dynasty"}))
+func test_spectator_mode_hides_owner_controls() -> void:
+	assert_true(app.on_create_league({"teams": 8, "conferences": 2, "divisions": 1, "free_agents": 10, "seed": "5", "mode": "spectator"}))
 	app.on_start_game(app._pending_state.world.teams.ids()[0])
 	var tab := app.build_tab("Finances")
 	var stack: Array = [tab]

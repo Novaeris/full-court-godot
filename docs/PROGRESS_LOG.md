@@ -31,7 +31,7 @@ mid-draft). Everything is committed locally; nothing is published.
 - The UI is plain: tables and buttons, no theme polish, no mobile layout, only checked at 1280x800. Some columns are tight at that size.
 -  no staff chemistry; the AI never proposes trades to you; no ticket pricing by game type.
 - A small-market owner who starts with a high payroll loses money in season 1 (valid challenge, recovered by season 3 in testing).
-- Dynasty Mode (lineups and minutes control) and Career Mode are not built.
+- Career Mode (RPG player career) and Dynasty Mode (card collecting) are defined (D-029) but not built. The old watch-only mode that was called "dynasty" in the code is now "Spectator".
 
 ### Questions for the founder
 1. **Career Mode**: what does the player do in it, and how is it different from Dynasty Mode? Nothing is built for it until you describe it.

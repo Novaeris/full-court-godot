@@ -8,8 +8,10 @@ extends RefCounted
 
 const SCHEMA_VERSION := 1
 const MODE_OWNER := "owner"
-const MODE_DYNASTY := "dynasty"
-const MODES := [MODE_OWNER, MODE_DYNASTY]
+## Watch-only mode: the AI runs every team, including yours (no owner controls). It is NOT the
+## planned Dynasty Mode (a card-collecting game, see D-029); it used to be called "dynasty".
+const MODE_SPECTATOR := "spectator"
+const MODES := [MODE_OWNER, MODE_SPECTATOR]
 
 var world: FcWorld
 var rng: FcRng
@@ -125,6 +127,8 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 		errors.append("saved random generator state missing; using a fresh one")
 	var s := FcGameState.new(w, r)
 	s.mode = str(data.get("mode", MODE_OWNER))
+	if s.mode == "dynasty":
+		s.mode = MODE_SPECTATOR   # saves made before the rename
 	s.user_team_id = int(data.get("user_team_id", 0))
 	s.current_season = int(data.get("current_season", 2026))
 	s.offseason_stage = int(data.get("offseason_stage", 0))

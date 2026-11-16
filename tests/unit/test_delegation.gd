@@ -23,9 +23,9 @@ func test_nothing_is_delegated_by_default_and_the_gm_is_described() -> void:
 	assert_true(gm["name"] != "" and gm["talent_evaluation"] >= 0)
 	assert_true(g.set_delegation("draft", true) and g.delegation_on("draft"))
 	assert_true(not g.set_delegation("nonsense", true))
-	var dynasty := _game()
-	dynasty.state.mode = FcGameState.MODE_DYNASTY
-	assert_true(not dynasty.set_delegation("draft", true), "only Owner Mode delegates")
+	var spectator := _game()
+	spectator.state.mode = FcGameState.MODE_SPECTATOR
+	assert_true(not spectator.set_delegation("draft", true), "only Owner Mode delegates")
 
 
 func test_delegation_is_saved_and_old_saves_default_to_off() -> void:

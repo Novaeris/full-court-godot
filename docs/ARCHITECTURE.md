@@ -3,13 +3,13 @@
 Items marked **(planned)** do not exist yet; everything else is implemented and tested.
 
 ## Guiding idea
-One shared basketball universe + simulation core. Game modes (Owner, Dynasty) are thin layers that decide *what the player is allowed to do and see*, not separate games. The UI is a replaceable skin over the core.
+One shared basketball universe + simulation core. Game modes (Owner now; Career and Dynasty later, see D-029) are thin layers that decide *what the player is allowed to do and see*, not separate games. The UI is a replaceable skin over the core.
 
 ## Layers (dependencies point downward only)
 
 ```
 UI (scenes, screens, widgets)                      (planned)
-Game Modes (Owner, Dynasty: permissions, flows)    (planned)
+Game Modes (Owner; Career and Dynasty later: permissions, flows)    (planned)
 League & Business Systems (schedule, standings,    (planned)
   draft, free agency, trades, finances, cap rules)
 Basketball Simulation (src/sim)                    IMPLEMENTED (v1)
@@ -117,7 +117,7 @@ FcWorldGenerator     seed -> complete FcWorld; new_game_state(seed, mode, team i
 - All numbers (level ranges, salary curve, profile offsets) are first drafts to be tuned against the simulation.
 
 ## Save system (`src/save/`, root object `src/data/world/game_state.gd`)
-- `FcGameState`: the root of a playthrough: world, random generator position, mode (owner/dynasty), user team, current season/date. This is what a slot contains.
+- `FcGameState`: the root of a playthrough: world, random generator position, mode (owner/spectator; the planned Career and Dynasty modes are not in the code yet), user team, current season/date. This is what a slot contains.
 - `FcSaveManager`: save / load_slot / list_slots / delete_slot / autosave. Slots are named `[a-z0-9_]{1,32}`; `autosave` is reserved.
 - File (`<slot>.sav` in `user://saves/`): line 1 = header JSON (`FcSaveMetadata`: label, team, season, mode, versions, timestamp, SHA-256 + byte count of payload); rest = payload JSON. Listing slots reads only line 1.
 - Safe writing: write `.tmp` → read back and verify checksum → rotate old save to `.bak` → rename `.tmp` into place. A verified complete copy exists at every step.
