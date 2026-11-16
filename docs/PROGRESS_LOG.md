@@ -3,7 +3,42 @@
 Newest first. Written so someone returning after a break can see where things stand.
 Nothing has been pushed anywhere: the repository is local only (no remote).
 
-## 2026-11-15, autonomous stretch (founder away)
+## 2026-11-16 hand-off: where Owner Mode stands
+
+**469 automated tests pass** (`./tools/run_tests.ps1`), plus two long checks that drive the real UI:
+`./tools/click_test.ps1` (54 simulated mouse clicks through a whole season and offseason) and
+`./tools/ui_playthrough.ps1 seasons=3 teams=30` (many owner features over several seasons, saving and loading
+mid-draft). Everything is committed locally; nothing is published.
+
+### Try this first (about 10 minutes)
+1. Open `project.godot` in Godot 4.7 and press F5. **New Game**, pick 12 teams for a quick league, Owner Mode, choose a team.
+2. **Finances** tab: press "Use suggestion" for the ticket price; try concession prices and the merchandise range.
+3. **Staff** tab: tick "Re-sign my players", "Run the draft" etc. to let your general manager do things, and set a philosophy and budget.
+4. Press **To End of Regular Season**, **Play All Playoffs**, then **Begin Offseason**. In the **Draft** tab invite a prospect to a workout, pick one, then in the **Market** tab sign a free agent (change the offer and see how he reacts), and **Finish Offseason**.
+5. **Trades** tab: try a trade with players and a draft pick.
+
+### What exists in Owner Mode now
+- **Business**: ticket price (with a suggested price), marketing, concession prices, merchandise range, sponsorship style, loans, arena projects (seats, suites), arena quality, revenue sharing between markets, business executive effects, a league finance comparison, franchise value.
+- **People**: hire and fire staff; the GM, coaches, scouts, medical staff and business executive all have effects. Staff changes are reported as news.
+- **Players**: roster, profiles, careers; sign free agents and release players (with negotiation: salary and years), re-sign decisions at season end, trades with players and draft picks (AI teams value picks by the original team's strength).
+- **Draft**: a lottery option; a scouted board with ranges (better GM and scouts, narrower ranges), 5 workouts, your own picks, a staff pick option, trading picks; the AI trades picks too.
+- **Offseason flow**: Begin Offseason -> the draft -> a free-agency window before the AI teams sign -> Finish Offseason.
+- **Delegation**: the GM can re-sign, run the draft, sign free agents, trade and cover injuries, steered by your philosophy (win now / balanced / rebuild) and budget; his skill sets how well he judges players; a report card grades him.
+- **League**: history, champions, awards, records, Hall of Fame, all-time leaders, news.
+
+### Known gaps (also see the older list below)
+- Overtime games are about 2.6% (real about 5-6%); one fix was tried and reverted.
+- The UI is plain: tables and buttons, no theme polish, no mobile layout, only checked at 1280x800. Some columns are tight at that size.
+- No contract negotiation for staff; no named multi-year sponsor contracts; no staff chemistry; the AI never proposes trades to you; no ticket pricing by game type.
+- A small-market owner who starts with a high payroll loses money in season 1 (valid challenge, recovered by season 3 in testing).
+- Dynasty Mode (lineups and minutes control) and Career Mode are not built.
+
+### Questions for the founder
+1. **Career Mode**: what does the player do in it, and how is it different from Dynasty Mode? Nothing is built for it until you describe it.
+2. Is the pace of the free-agency/draft flow right (the offseason now has a draft screen and a window, and the GM can skip them)?
+3. Do you want me to continue with Owner Mode depth (staff negotiation, named sponsors) or begin Dynasty Mode next?
+
+## (older) 2026-11-15, autonomous stretch (founder away)
 
 State at the end of this stretch: **469 automated tests pass**, everything committed locally.
 Run the tests with `./tools/run_tests.ps1`.
