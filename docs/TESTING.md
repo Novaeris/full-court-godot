@@ -48,6 +48,7 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 | League customization (real city data, areas, exact cities, nicknames, sizes 4-64, equal divisions for every valid size, geographic conferences and divisions, nationality mix, validation messages, save round trip) | 22 |
 | News feed and stored box scores (cap, champion/award/draft news, injury news, box scores kept for the owner's team, saving, UI news tab and box score text) | 7 |
 | Career statistics and archiving (career rows, accumulation, no double counting, archived seasons keep history, size reduction, active seasons protected, saving) | 7 |
+| Practice facility and medical center (effects, level cap, injuries shorter, saved) | 3 |
 | History tab shows the ownership career | 1 |
 | Playoff ticket premium (attendance falls with price, sweet spot, saved, setter) | 3 |
 | Hard limit enforced after raises; old contracts forgotten (bounded growth) | 2 |
@@ -105,7 +106,7 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 
 Shared sample builders for tests live in `tests/support/test_data.gd` (`FcTestData`).
 
-Last verified: 498 passed, 0 failed (Godot 4.7.2).
+Last verified: 501 passed, 0 failed (Godot 4.7.2).
 
 Tests that touch disk use `user://test_saves` and clean up in `after_each()`. Inspection tools: `./tools/inspect_data.ps1`, `./tools/inspect_saves.ps1`, `./tools/simulate_games.ps1 [games=1000] [seed=2026] [era=mid_2010s] [tune=key:value,...] [box] [mirror] [leaders]` (stress test: 16 league averages vs the era's realistic ranges, one full box score, home-court check, full-season individual leaders), `./tools/finances.ps1 [seasons=2] [seed=...]` (every team's revenue, expenses, profit, valuation), `./tools/play_seasons.ps1 [seasons=5]` (several seasons with offseasons and a league-health table), `./tools/play_season.ps1 [option=value ...]` (plays a whole season and prints standings, playoffs, champion, awards), `./tools/generate_league.ps1 [option=value ...]` (e.g. `areas=europe teams=16 conferences=2 divisions=2`). The runner was also verified to report failures (exit code 1).
 

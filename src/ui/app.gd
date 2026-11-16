@@ -1163,7 +1163,11 @@ func _tab_finances() -> Control:
 		var detail: Array[String] = []
 		for o in options:
 			detail.append("%s: %s" % [o["name"], o["description"]])
-		box.add_child(FcUiTables.label("  " + "   |   ".join(detail)))
+		var detail_label := FcUiTables.label("  " + "   |   ".join(detail))
+		detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		detail_label.custom_minimum_size = Vector2(200, 0)
+		box.add_child(detail_label)
+		box.add_child(FcUiTables.label("  Built so far: arena suites level %d, practice facility level %d, medical center level %d." % [b.suites_level, b.practice_level, b.medical_level]))
 	var fin := FcFinanceEngine.new(w)
 	var rows: Array = []
 	var years: Array = []

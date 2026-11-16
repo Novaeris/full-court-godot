@@ -226,7 +226,9 @@ func _apply_injuries(box: FcBoxScore) -> void:
 		if owner_team != null:
 			# good rehabilitation staff shorten injuries by up to 15%, poor staff lengthen them
 			var rehab := _team(owner_team.id).tactics["rehabilitation"] as float
-			p.games_out = maxi(1, roundi(row[1] * (1.15 - rehab / 333.0)))
+			var clinic: FcTeamBusiness = _world.businesses.get_by_id(owner_team.id)
+			var clinic_factor := 1.0 - 0.06 * (clinic.medical_level if clinic != null else 0)
+			p.games_out = maxi(1, roundi(row[1] * (1.15 - rehab / 333.0) * clinic_factor))
 		if row[1] >= 60:
 			for key in ["speed", "agility", "vertical", "stamina"]:
 				p.attributes.set_clamped(key, p.attributes.get_value(key) - severe_loss(p.id, key))

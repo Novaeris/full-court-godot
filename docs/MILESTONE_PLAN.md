@@ -29,7 +29,7 @@ Scope (in rough order):
 3. **AI teams propose trades to you** (inbox with accept/decline) *(done 2026-11-16)*; rival GMs reacting to your moves is still open.
 4. **Staff chemistry and coaching philosophy fit** (the data already exists: staff philosophy, player personality).
 5. **Facilities beyond seats and suites**: practice facility (development speed), medical center (injury recovery),
-   each a project like the arena ones.
+   each a project like the arena ones *(done 2026-11-16)*.
 6. **Franchise events**: relocation and expansion (saves can grow to 100 teams per D-005), a new arena.
 Done when: a scripted 20-season owner playthrough exercises every lever, stays valid, and the books and league
 health checks stay in range.

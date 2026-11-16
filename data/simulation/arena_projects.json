@@ -4,8 +4,13 @@
 	"projects": [
 		{"key": "expand_seating", "name": "Expand seating", "cost": 25000000, "seasons": 2, "capacity": 1500, "max_capacity": 26000,
 			"description": "+1,500 seats (more tickets if there is demand, but more upkeep)."},
+		{"key": "practice_facility", "name": "Practice facility", "cost": 18000000, "seasons": 1, "practice": 1, "max_practice": 3,
+			"description": "Players develop faster (+5 on the coaching rating of player development per level), up to 3 levels; each level costs upkeep every season."},
+		{"key": "medical_center", "name": "Medical center", "cost": 15000000, "seasons": 1, "medical": 1, "max_medical": 3,
+			"description": "Injuries heal faster (6% shorter per level), up to 3 levels; each level costs upkeep every season."},
 		{"key": "luxury_suites", "name": "Luxury suites", "cost": 12000000, "seasons": 1, "suites": 1, "max_suites": 3,
 			"description": "More arena event income (each level adds 25%), up to 3 levels."}
 	],
-	"suite_event_bonus": 0.25
+	"suite_event_bonus": 0.25,
+	"facility_upkeep_per_level": 2000000
 }

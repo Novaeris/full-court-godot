@@ -218,7 +218,7 @@ func test_arena_projects_cost_time_and_then_apply() -> void:
 	var w := g.state.world
 	var team: FcTeam = w.teams.get_by_id(g.state.user_team_id)
 	var arena: FcArena = w.arenas.get_by_id(team.arena_id)
-	assert_eq(g.arena_project_options().size(), 2)
+	assert_eq(g.arena_project_options().size(), 4)
 	var seats := arena.capacity
 	g.business().cash = 200000000
 	var cash := g.business().cash
@@ -412,3 +412,45 @@ func test_playoff_premium_setter_validates() -> void:
 	var g := _game(46)
 	assert_true(g.set_playoff_premium(200) and g.business().playoff_premium_pct == 200)
 	assert_true(not g.set_playoff_premium(90) and not g.set_playoff_premium(400))
+
+
+func test_practice_facility_and_medical_center_have_effects() -> void:
+	var g := _game(47)
+	var w := g.state.world
+	var team_id := g.state.user_team_id
+	g.business().cash = 500000000
+	var off := FcOffseason.new(w)
+	var coaching_before: float = off._coach_development(team_id)
+	assert_true(g.start_arena_project("practice_facility")["ok"])
+	assert_true(g.start_arena_project("medical_center")["ok"])
+	g.sim_playoffs()
+	assert_eq(g.business().practice_level, 1, "built after one season")
+	assert_eq(g.business().medical_level, 1)
+	var off2 := FcOffseason.new(w)
+	assert_true(off2._coach_development(team_id) >= coaching_before + FcOffseason.PRACTICE_BONUS_PER_LEVEL - 0.001 or off2._coach_development(team_id) >= 99.9, "players develop faster")
+	var fin := FcFinanceEngine.new(w)
+	var finance_record := fin.record_of(team_id, 2026)
+	assert_true(finance_record != null)
+	# the cap of three levels
+	for i in 3:
+		g.business().practice_level = 3
+	assert_true(not g.start_arena_project("practice_facility")["ok"], "already at the top level")
+
+
+func test_medical_center_shortens_injuries() -> void:
+	var g := _game(48)
+	var w := g.state.world
+	var team: FcTeam = w.teams.get_by_id(g.state.user_team_id)
+	var engine := g.engine
+	var box := FcBoxScore.new()
+	box.team_ids = [team.id, team.id]
+	var player_id: int = team.roster.player_ids[0]
+	box.injuries = [[player_id, 40, "a test injury"]]
+	g.business().medical_level = 0
+	engine._apply_injuries(box)
+	var plain: int = w.players.get_by_id(player_id).games_out
+	var player: FcPlayer = w.players.get_by_id(player_id)
+	player.games_out = 0
+	g.business().medical_level = 3
+	engine._apply_injuries(box)
+	assert_true(player.games_out < plain, "a medical center cuts the games missed (%d vs %d)" % [player.games_out, plain])

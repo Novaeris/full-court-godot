@@ -18,6 +18,8 @@ const DRAFT_ROUNDS := 2
 const UNDRAFTED_EXTRA := 20
 const FRESH_FREE_AGENTS := 12
 const MARKET_ROUNDS := 14
+## A practice facility adds this much to a team's coaching rating of player development per level.
+const PRACTICE_BONUS_PER_LEVEL := 5.0
 
 ## Teams run by a human: their expiring players are NOT re-signed automatically
 ## (the owner decides with FcGameController.extend_contract; the rest become free agents).
@@ -129,7 +131,11 @@ func _coach_development(team_id: int) -> float:
 			if member != null:
 				total += member.skills.get_value("player_development")
 				count += 1
-	return total / count if count > 0 else 50.0
+	var level := total / count if count > 0 else 50.0
+	var business: FcTeamBusiness = world.businesses.get_by_id(team_id)
+	if business != null:
+		level = minf(100.0, level + PRACTICE_BONUS_PER_LEVEL * business.practice_level)
+	return level
 
 
 func payroll(team_id: int, season_year: int) -> int:

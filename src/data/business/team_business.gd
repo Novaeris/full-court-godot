@@ -32,6 +32,10 @@ const SPONSOR_PLANS := ["Balanced", "Steady", "Performance"]
 var projects: Array = []
 ## Levels of luxury suites built (each raises arena event income).
 var suites_level: int = 0
+## Practice facility and medical center levels (0-3): faster player development and faster
+## injury recovery, at a yearly upkeep (see data/simulation/arena_projects.json).
+var practice_level: int = 0
+var medical_level: int = 0
 ## Sponsorship contracts signed by the owner: [{"sponsor": String, "amount": int a year,
 ## "bonus": int per playoff round won, "years_left": int}]. Each covers a share of the
 ## sponsorship income with a fixed payment (see data/simulation/finance.json).
@@ -77,7 +81,7 @@ func to_dict() -> Dictionary:
 	return {
 		"schema": SCHEMA_VERSION, "id": id, "ticket_price": ticket_price,
 		"marketing_budget": marketing_budget, "facilities_level": facilities_level,
-		"fan_interest": fan_interest, "brand": brand, "cash": cash, "debt": debt, "valuation": valuation, "mid_level_used_season": mid_level_used_season, "sponsor_plan": sponsor_plan, "projects": projects.duplicate(true), "suites_level": suites_level, "sponsor_deals": sponsor_deals.duplicate(true), "concession_price_pct": concession_price_pct, "playoff_premium_pct": playoff_premium_pct, "merch_tier": merch_tier,
+		"fan_interest": fan_interest, "brand": brand, "cash": cash, "debt": debt, "valuation": valuation, "mid_level_used_season": mid_level_used_season, "sponsor_plan": sponsor_plan, "projects": projects.duplicate(true), "suites_level": suites_level, "practice_level": practice_level, "medical_level": medical_level, "sponsor_deals": sponsor_deals.duplicate(true), "concession_price_pct": concession_price_pct, "playoff_premium_pct": playoff_premium_pct, "merch_tier": merch_tier,
 	}
 
 
@@ -94,6 +98,8 @@ static func from_dict(d: Dictionary) -> FcTeamBusiness:
 	b.mid_level_used_season = int(d.get("mid_level_used_season", 0))
 	b.sponsor_plan = clampi(int(d.get("sponsor_plan", 0)), 0, 2)
 	b.suites_level = int(d.get("suites_level", 0))
+	b.practice_level = clampi(int(d.get("practice_level", 0)), 0, 3)
+	b.medical_level = clampi(int(d.get("medical_level", 0)), 0, 3)
 	for deal in d.get("sponsor_deals", []):
 		b.sponsor_deals.append({"sponsor": str(deal["sponsor"]), "amount": int(deal["amount"]), "bonus": int(deal["bonus"]), "years_left": int(deal["years_left"])})
 	b.concession_price_pct = clampi(int(d.get("concession_price_pct", 100)), 70, 150)

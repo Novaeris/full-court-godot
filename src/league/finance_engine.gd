@@ -52,6 +52,10 @@ func start_project(business: FcTeamBusiness, arena: FcArena, key: String, scale:
 		return "The arena cannot grow beyond %d seats." % int(def["max_capacity"])
 	if def.has("max_suites") and business.suites_level >= int(def["max_suites"]):
 		return "All suite levels are already built."
+	if def.has("max_practice") and business.practice_level >= int(def["max_practice"]):
+		return "The practice facility is already at its highest level."
+	if def.has("max_medical") and business.medical_level >= int(def["max_medical"]):
+		return "The medical center is already at its highest level."
 	if def.has("facilities") and business.facilities_level >= 100:
 		return "The arena is already in perfect condition."
 	var cost := roundi(float(def["cost"]) * scale)
@@ -75,6 +79,10 @@ func advance_projects(business: FcTeamBusiness, arena: FcArena, team_id: int, ye
 			arena.capacity = mini(int(def["max_capacity"]), arena.capacity + int(def["capacity"]))
 		if def.has("suites"):
 			business.suites_level = mini(int(def["max_suites"]), business.suites_level + int(def["suites"]))
+		if def.has("practice"):
+			business.practice_level = mini(int(def["max_practice"]), business.practice_level + int(def["practice"]))
+		if def.has("medical"):
+			business.medical_level = mini(int(def["max_medical"]), business.medical_level + int(def["medical"]))
 		if def.has("facilities"):
 			business.facilities_level = mini(100, business.facilities_level + int(def["facilities"]))
 		world.add_news(FcDate.new(year + 1, 6, 1), "staff", "%s finished a building project: %s" % [world.team_display_name(team_id), def.get("name", p["key"])], team_id)
@@ -379,7 +387,8 @@ func settle(league_id: int, season: FcSeason, human_teams: Array[int] = []) -> A
 		var cost_factor := 1.0 - float(k["executive_cost_effect"]) * (executive_skill(tid, "financial_acumen") - float(k["executive_neutral_skill"])) / 50.0
 		rec.expenses["travel"] = roundi(float(k["travel"]) * scale * cost_factor)
 		rec.expenses["administration"] = roundi(float(k["administration"]) * scale * cost_factor)
-		rec.expenses["facilities"] = roundi(business.facilities_level * float(k["facilities_cost_per_point"]) * scale / 3.0)
+		rec.expenses["facilities"] = roundi(business.facilities_level * float(k["facilities_cost_per_point"]) * scale / 3.0) \
+			+ roundi((business.practice_level + business.medical_level) * float(load_arena_projects().get("facility_upkeep_per_level", 0)) * scale)
 		rec.expenses["interest"] = roundi(business.debt * float(k["debt_interest"]))
 
 		# cash, debt, then the slow-moving brand values

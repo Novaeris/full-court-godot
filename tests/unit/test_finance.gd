@@ -504,3 +504,12 @@ func test_playoff_premium_is_saved_and_validated() -> void:
 	b.playoff_premium_pct = 220
 	assert_eq(FcTeamBusiness.from_dict(JSON.parse_string(JSON.stringify(b.to_dict()))).playoff_premium_pct, 220)
 	assert_eq(FcTeamBusiness.from_dict({"id": 2}).playoff_premium_pct, 160)
+
+
+func test_facility_levels_cost_upkeep_and_save() -> void:
+	var b := FcTeamBusiness.new(2)
+	b.practice_level = 2
+	b.medical_level = 3
+	var back := FcTeamBusiness.from_dict(JSON.parse_string(JSON.stringify(b.to_dict())))
+	assert_eq([back.practice_level, back.medical_level], [2, 3])
+	assert_eq(FcTeamBusiness.from_dict({"id": 2}).practice_level, 0)
