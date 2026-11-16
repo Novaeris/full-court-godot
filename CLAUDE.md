@@ -6,7 +6,7 @@ The developer is a solo, beginner programmer. Explain decisions in plain languag
 
 ## Established decisions (do not change without the user's explicit approval)
 - Engine: Godot 4.7 standard (NOT .NET). Language: GDScript. Renderer: gl_compatibility (mobile-friendly).
-- Platforms: Windows first; architecture must not block Mac/Android/iOS.
+- Platforms (D-030): PC (Windows first, Mac later) will host all three modes; **mobile (Android/iOS) is for Dynasty Mode only**. Owner and Career screens are designed for desktop (mouse, big windows); only Dynasty needs touch layouts. Architecture still must not block Mac/Android/iOS.
 - Modes (defined by the founder 2026-11-16, see D-029): THREE modes. **Owner Mode** (being built first): control every operation of a franchise, simulated for up to 50 years; cannot be lost, but the owner can transfer to another team like changing jobs; randomized players. **Career Mode**: create one player and take them through an RPG-style career (about 20 years); randomized players. **Dynasty Mode**: a card-collecting game inspired by NBA 2K MyTeam with static, hand-made players (the founder will supply them) and some paid features. Only Owner Mode is in progress: do not build Career or Dynasty code until they are scheduled. Owner and Career share the simulation/league core.
 - Free-to-play, no pay-to-win. No monetization code until there is a clear reason.
 - Real-world places are fine (real cities and countries, user-selectable by area). Teams, players, staff and branding are ORIGINAL and generated: no real franchises, player names, logos or league IP (those need licenses). Changed from "fully fictional" by the founder on 2026-11-15.

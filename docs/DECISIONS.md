@@ -154,6 +154,10 @@ Built on the founder's instruction to continue; the following product choices we
 - Art and audio will be produced with AI tools (founder). Platform priority after Windows: **mobile** (Android/iOS), so touch-friendly layouts move earlier in the plan.
 - Consequences: the 50-year target is an M2 requirement (health, performance and save size over 50 seasons); Dynasty Mode is a separate product track (collection, lineups, likely online); legal review must cover loot-box rules, AI-generated assets (rights, store disclosure) and invented names.
 
+## D-030 Platforms by mode (2026-11-16, founder)
+- PC (Windows first, Mac later) carries all three modes. Mobile (Android/iOS) carries **Dynasty Mode only**.
+- Consequences: Owner and Career Mode UI is desktop-first (no touch-first redesign needed, no phone performance or save-size limits for Owner/Career); the mobile work in the plan (M5) is about the Dynasty card game; the simulation core still has to run on phones because Dynasty matches use it, so it must stay light and headless-capable.
+
 ## D-028 Three modes (2026-11-16, founder)
 - The game has three modes: Owner Mode, Career Mode and Dynasty Mode. Owner Mode is built first (current work). Career Mode needs a definition from the founder before any design or code; Dynasty Mode (deep roster/lineup control) comes after Owner Mode. `FcGameState.MODES` currently lists only owner and dynasty; add career when it is defined.
 - Consequence: Dynasty-mode features (e.g. setting lineups and minutes) are not the next priority; Owner Mode keeps getting depth first.

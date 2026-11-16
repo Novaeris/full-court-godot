@@ -58,19 +58,18 @@ explanations next to every lever, a first-game tutorial, settings (volume, text 
 standings screens with more information, a proper save/load screen, error messages in plain language.
 Done when: you and two fresh testers can play a season without help; the click test and screenshots cover every
 screen at two sizes.
-Decided: art and audio will be made with AI tools by the founder. Mobile is the first platform after Windows, so
-the UI is designed touch-first from here (big buttons, no hover-only actions, scrolling lists).
+Decided: art and audio will be made with AI tools by the founder. Mobile is for **Dynasty Mode only** (D-030), so Owner and
+Career Mode UI is designed for desktop (mouse, large windows); touch layouts are needed only for Dynasty.
 Needs from you: the look you want (references, mood, colours). Reminder for later (M8): AI-made assets need a rights
 and store-disclosure check.
 
 ## M5. Platforms and builds (size XL)
-Goal: the game runs on Windows first, then **mobile (Android and iOS)**, then Mac (decided: mobile is the priority
-after Windows, so M4 and M5 move closer together).
-Scope: Windows export and installer; touch-friendly layouts and small screens (the UI is code-built, so this is a
-rework of layout code); platform save locations; performance on phones (the "gl_compatibility" renderer was chosen
-for this); automated builds; crash logs the player can send.
+Goal: the game runs on Windows first, then Mac; **mobile (Android and iOS) carries Dynasty Mode only** (D-030).
+Scope: Windows export and installer, then Mac; for mobile only the Dynasty card game needs touch layouts and phone
+performance (the simulation core must run on phones for matches; the "gl_compatibility" renderer was chosen for this);
+platform save locations; automated builds; crash logs the player can send.
 Done when: a build installs and plays a full season on each target.
-Needs from you: devices to test on (or accept emulators), and Apple/Google developer accounts when we get there.
+Needs from you: later, for Dynasty on phones: devices (or emulators) and Apple/Google developer accounts.
 
 ## M6. Career Mode (size XL; defined, not scheduled)
 Goal: the player creates one player and takes them through a roughly **20-year** RPG-style career (decided).
@@ -102,11 +101,12 @@ Needs from you: business decisions (price model, release order, who tests).
 ## Proposed order and why
 1. **M1 and M2 together** (Owner Mode complete and healthy for 50 seasons): it is the first mode and everything
    else reuses these systems.
-2. **M4 UI polish, touch-first** next, then **M5 mobile and platform builds** soon after: the biggest gap between
-   "works" and "feels like a game", and cheaper to fix before the other modes multiply the screens.
+2. **M4 UI polish (desktop)** next, then **M5 PC builds** (Windows, then Mac): the biggest gap between "works" and
+   "feels like a game", and cheaper to fix before the other modes multiply the screens. Mobile belongs to M7 (Dynasty).
 3. **M3 Simulation depth** in parallel with M4/M5 where convenient (it is mostly separate code).
 4. **M6 Career Mode** (shares the core) once Owner Mode is shippable and the design exists.
-5. **M7 Dynasty Mode** last: a separate product with its own systems, design and legal questions.
+5. **M7 Dynasty Mode** last: a separate product with its own systems, design and legal questions, and the only mode on
+   mobile (touch UI, phone builds, store accounts).
 6. **M8** legal items start early (loot boxes, AI-made assets, names); the rest at the end.
 
 ## Risks and how this plan handles them
