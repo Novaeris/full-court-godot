@@ -26,7 +26,7 @@ Scope (in rough order):
    (bigger loan limit). *Built first (done 2026-11-16: reputation, offers, transfer).*
 2. **Ticket pricing depth**: separate prices for playoffs, season tickets vs single games, and a simple "special
    promotion night" lever.
-3. **AI teams propose trades to you** (inbox with accept/decline) and rival GMs react to your moves.
+3. **AI teams propose trades to you** (inbox with accept/decline) *(done 2026-11-16)*; rival GMs reacting to your moves is still open.
 4. **Staff chemistry and coaching philosophy fit** (the data already exists: staff philosophy, player personality).
 5. **Facilities beyond seats and suites**: practice facility (development speed), medical center (injury recovery),
    each a project like the arena ones.

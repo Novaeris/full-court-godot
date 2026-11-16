@@ -250,6 +250,45 @@ func tradable_picks(team_id: int) -> Array:
 	return out
 
 
+## Offers other teams make to the owner (see FcTradeOffers): during the regular season (new ones
+## every two weeks) and in the free-agency window. [{"team", "name", "give", "get"}] where
+## give is the owner's player and get is the AI team's player. Declined offers stay hidden until the next batch.
+func trade_offers() -> Array:
+	if state.mode != FcGameState.MODE_OWNER or state.offseason_stage == 2:
+		return []
+	var bucket := 0
+	match phase():
+		PHASE_REGULAR:
+			bucket = season().next_day / 14
+		PHASE_OFFSEASON:
+			bucket = 1000
+		_:
+			return []
+	var offers := FcTradeOffers.new(state.world).generate(league_id, contract_year(), state.user_team_id, is_contending, bucket, first_tradable_pick_year())
+	var visible: Array = []
+	for o in offers:
+		if not _declined_offers.has("%d:%d:%d:%d" % [bucket, o["team"], o["give"], o["get"]]):
+			o["bucket"] = bucket
+			visible.append(o)
+	return visible
+
+
+var _declined_offers: Dictionary = {}
+
+
+func decline_trade_offer(offer: Dictionary) -> void:
+	_declined_offers["%d:%d:%d:%d" % [offer["bucket"], offer["team"], offer["give"], offer["get"]]] = true
+
+
+## Accepts one of the current offers (it is checked again against the rules). Returns the
+## same {"accepted", "reason"} as propose_trade.
+func accept_trade_offer(offer: Dictionary) -> Dictionary:
+	for o in trade_offers():
+		if o["team"] == offer["team"] and o["give"] == offer["give"] and o["get"] == offer["get"]:
+			return propose_trade(o["team"], [o["give"]], [o["get"]])
+	return {"accepted": false, "reason": "That offer is no longer available."}
+
+
 ## Proposes a trade from the user's team. `preview` true only checks it.
 ## Returns {"accepted": bool, "reason": String}.
 func propose_trade(ai_team_id: int, give_ids: Array, get_ids: Array, preview: bool = false, give_picks: Array = [], get_picks: Array = []) -> Dictionary:

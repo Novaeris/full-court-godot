@@ -477,6 +477,37 @@ func _tab_trades() -> Control:
 	picker.item_selected.connect(func(i):
 		_trade_partner = others[i]
 		show_dashboard())
+	var offers := controller.trade_offers()
+	if not offers.is_empty():
+		box.add_child(FcUiTables.label("Offers from other teams (new ones every two weeks)", 18, true))
+		var offer_rows: Array = []
+		for o in offers:
+			var theirs: FcPlayer = w.players.get_by_id(o["get"])
+			var mine: FcPlayer = w.players.get_by_id(o["give"])
+			var ratings_now := FcPlayerRatings.load_default()
+			offer_rows.append([o["name"], "%s (%d, age %d)" % [mine.identity.full_name(), roundi(ratings_now.overall(mine)), mine.age_on(FcDate.new(controller.contract_year(), 7, 1))], "%s (%d, age %d)" % [theirs.identity.full_name(), roundi(ratings_now.overall(theirs)), theirs.age_on(FcDate.new(controller.contract_year(), 7, 1))]])
+		var offer_table := FcUiTables.table(["Team", "They want", "They offer you"], offer_rows)
+		offer_table.custom_minimum_size = Vector2(0, 135)
+		offer_table.size_flags_vertical = Control.SIZE_FILL
+		box.add_child(offer_table)
+		var offer_buttons := HBoxContainer.new()
+		offer_buttons.add_child(FcUiTables.button("Accept selected offer", func():
+			var picked := offer_table.get_selected()
+			if picked == null:
+				_say("Select an offer first.")
+				return
+			var result := controller.accept_trade_offer(offers[picked.get_index()])
+			_say(result["reason"])
+			if result["accepted"]:
+				show_dashboard()))
+		offer_buttons.add_child(FcUiTables.button("Decline selected offer", func():
+			var picked2 := offer_table.get_selected()
+			if picked2 == null:
+				_say("Select an offer first.")
+				return
+			controller.decline_trade_offer(offers[picked2.get_index()])
+			show_dashboard()))
+		box.add_child(offer_buttons)
 	box.add_child(FcUiTables.label("Trade with:", 18, true))
 	box.add_child(picker)
 	var ratings := FcPlayerRatings.load_default()
