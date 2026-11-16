@@ -43,6 +43,16 @@ func _init(game_world: FcWorld) -> void:
 ## Runs the whole offseason after `finished` (a COMPLETE FcSeason). `new_year` is
 ## the year of the season about to start. Returns a report of counts.
 func run(league_id: int, finished: FcSeason, rng: FcRng) -> Dictionary:
+	var report := run_first_half(league_id, finished, rng)
+	report.merge(run_second_half(league_id, finished, rng))
+	return report
+
+
+## Aging and retirement, expiring contracts, re-signing, the draft and AI trades.
+## A human owner can act (sign free agents, release players) between this and
+## run_second_half. Uses the same random streams as run(), so the two halves
+## together give exactly the same result.
+func run_first_half(league_id: int, finished: FcSeason, rng: FcRng) -> Dictionary:
 	var new_year := finished.year + 1
 	var report := {}
 	# keep the detailed data of the last two seasons; older ones keep only their history
@@ -54,6 +64,13 @@ func run(league_id: int, finished: FcSeason, rng: FcRng) -> Dictionary:
 	report["re_signed"] = re_sign(league_id, new_year, rng.fork("resign"))
 	report["drafted"] = run_draft(league_id, finished, new_year, rng.fork("draft"))
 	report["trades"] = FcTrades.new(world).run(league_id, finished, new_year, rng.fork("trades"))
+	return report
+
+
+## AI free agency, legal rosters and staff changes.
+func run_second_half(league_id: int, finished: FcSeason, rng: FcRng) -> Dictionary:
+	var new_year := finished.year + 1
+	var report := {}
 	report["signed"] = free_agency(league_id, new_year, rng.fork("market"))
 	report.merge(fill_rosters(league_id, new_year, rng.fork("fill")))
 	report.merge(staff_rollover(league_id, finished.year, new_year, rng.fork("staff")))

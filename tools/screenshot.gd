@@ -4,12 +4,14 @@ extends SceneTree
 ##   godot_console --path . --script res://tools/screenshot.gd -- screen=Roster out=C:/temp/roster.png days=20
 ## screen: menu | new_league | Overview | Standings | Schedule | Roster | Finances | Staff | Market | Trades | History | News | League
 ## days: how many days to play first (so tables have data).
+## offseason=1: play the season out and open the owner's offseason window.
 
 var _app: FcApp
 var _screen := "Overview"
 var _out := "user://screenshot.png"
 var _days := 14
 var _frames := 0
+var _offseason := false
 
 
 func _initialize() -> void:
@@ -21,6 +23,7 @@ func _initialize() -> void:
 			"screen": _screen = kv[1]
 			"out": _out = kv[1]
 			"days": _days = int(kv[1])
+			"offseason": _offseason = kv[1] == "1"
 	root.size = Vector2i(1280, 800)
 	_app = FcApp.new()
 	_app.saves = FcSaveManager.new("user://screenshot_saves")
@@ -34,6 +37,12 @@ func _initialize() -> void:
 	_app.on_create_league({"teams": 12, "conferences": 2, "divisions": 1, "free_agents": 12, "seed": "5", "name": "Screenshot League"})
 	_app.on_start_game(_app._pending_state.world.teams.ids()[2])
 	_app.on_advance(_days)
+	if _offseason:
+		_app.on_sim_regular()
+		_app.on_sim_playoffs()
+		_app.on_next_season()
+		if _app.controller.state.offseason_stage == 0:
+			_app.on_next_season()
 	var index := FcApp.TAB_NAMES.find(_screen)
 	if index >= 0:
 		_app._tabs.current_tab = index

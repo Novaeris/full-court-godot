@@ -295,7 +295,7 @@ func show_dashboard() -> void:
 	var phase := controller.phase()
 	var info := FcUiTables.label("%s    Season %d-%02d    %s    Mode: %s" % [
 		controller.state.current_date.to_iso(), s.year, (s.year + 1) % 100,
-		{"regular_season": "Regular season", "playoffs": "Playoffs", "season_complete": "Season complete"}[phase],
+		{"regular_season": "Regular season", "playoffs": "Playoffs", "season_complete": "Season complete", "offseason": "Offseason: free agency is open to you first"}[phase],
 		"Owner" if controller.state.mode == FcGameState.MODE_OWNER else "Dynasty"], 16)
 	box.add_child(info)
 	var actions := HBoxContainer.new()
@@ -309,8 +309,13 @@ func show_dashboard() -> void:
 		FcGameController.PHASE_PLAYOFFS:
 			actions.add_child(FcUiTables.button("Next Playoff Day", func(): on_advance(1)))
 			actions.add_child(FcUiTables.button("Play All Playoffs", func(): on_sim_playoffs()))
+		FcGameController.PHASE_OFFSEASON:
+			actions.add_child(FcUiTables.button("Finish Offseason and Start Next Season", on_next_season))
 		_:
-			actions.add_child(FcUiTables.button("Start Next Season (offseason)", on_next_season))
+			if controller.state.mode == FcGameState.MODE_OWNER:
+				actions.add_child(FcUiTables.button("Begin Offseason (draft, contracts, free agency)", on_next_season))
+			else:
+				actions.add_child(FcUiTables.button("Start Next Season (offseason)", on_next_season))
 	actions.add_child(FcUiTables.button("Save", on_save))
 	actions.add_child(FcUiTables.button("Main Menu", show_main_menu))
 	box.add_child(actions)
@@ -342,8 +347,12 @@ func on_sim_playoffs() -> void:
 	_say("Champions: %s" % _team_name(champion))
 
 
+## One button, three jobs. Owner Mode: first press (season over) warns about players whose
+## contracts end, then begins the offseason (draft and re-signing done, free agency open to
+## you); the next press lets the AI teams sign players and starts the new season.
+## Dynasty Mode: one press does everything.
 func on_next_season() -> void:
-	if controller.state.mode == FcGameState.MODE_OWNER and not _confirm_next_season:
+	if controller.state.mode == FcGameState.MODE_OWNER and controller.state.offseason_stage == 0 and controller.phase() != FcGameController.PHASE_PLAYOFFS and controller.phase() != FcGameController.PHASE_REGULAR and not _confirm_next_season:
 		var leaving := controller.expiring_players().filter(func(e): return not e["agreed"])
 		if not leaving.is_empty():
 			var names: Array[String] = []
@@ -353,10 +362,16 @@ func on_next_season() -> void:
 			_say("These players' contracts end and they will LEAVE unless you extend them (Roster tab): %s. Press Start Next Season again to let them go." % ", ".join(names))
 			return
 	_confirm_next_season = false
+	if controller.state.mode == FcGameState.MODE_OWNER and controller.state.offseason_stage == 0:
+		var first := controller.begin_offseason()
+		controller.autosave(saves)
+		show_dashboard()
+		_say("Offseason: %d retired, %d drafted, %d re-signed, %d trades. Sign free agents on the Market tab before the AI teams do, then finish the offseason." % [first["retired"], first["drafted"], first["re_signed"], first["trades"]])
+		return
 	var report := controller.start_next_season()
 	controller.autosave(saves)
 	show_dashboard()
-	_say("New season. Offseason: %d retired, %d drafted, %d free agents signed, %d re-signed." % [report["retired"], report["drafted"], report["signed"], report["re_signed"]])
+	_say("New season. The AI teams signed %d free agents." % report["signed"] if not report.has("retired") else "New season. Offseason: %d retired, %d drafted, %d free agents signed, %d re-signed." % [report["retired"], report["drafted"], report["signed"], report["re_signed"]])
 
 
 func on_save() -> void:
@@ -491,6 +506,7 @@ func _tab_market() -> Control:
 	var year := controller.state.current_season
 	var left := VBoxContainer.new()
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left.size_flags_stretch_ratio = 1.05
 	left.add_child(FcUiTables.label("Best free agents", 18, true))
 	var agents := controller.free_agent_market(20)
 	var rows: Array = []
@@ -526,13 +542,19 @@ func _tab_market() -> Control:
 			if p != null:
 				var moved: int = entry["moved"]
 				draft_rows.append([entry["pick"], _team_name(entry["team"]), "%+d" % moved if moved != 0 else "-", p.identity.full_name(), FcPosition.abbreviation(p.primary_position), roundi(ratings.overall(p)), p.development.potential])
-		right.add_child(FcUiTables.label("After the %d season. %s" % [report["year"], "Lottery on: 'Lot.' shows how many places the lottery moved a team up (+) or down (-)." if report["lottery"] else "No lottery: order follows the records."]))
+		var note := FcUiTables.label("After the %d season. %s" % [report["year"], "Lottery on: 'Lot.' shows how many places the lottery moved a team up (+) or down (-)." if report["lottery"] else "No lottery: order follows the records."])
+		note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		note.custom_minimum_size = Vector2(100, 0)
+		right.add_child(note)
 		var winners: Array[String] = []
 		for entry in report["rows"]:
 			if entry["round"] == 1 and entry["moved"] > 0:
 				winners.append("%s jumped %d place%s to pick %d" % [_team_name(entry["team"]), entry["moved"], "" if entry["moved"] == 1 else "s", entry["pick"]])
 		if not winners.is_empty():
-			right.add_child(FcUiTables.label("Lottery winners: " + "; ".join(winners)))
+			var winners_label := FcUiTables.label("Lottery winners: " + "; ".join(winners))
+			winners_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			winners_label.custom_minimum_size = Vector2(100, 0)
+			right.add_child(winners_label)
 	right.add_child(FcUiTables.table(["Pick", "Team", "Lot.", "Player", "Pos", "Ovr", "Pot"], draft_rows, [50, 0, 50, 0, 50, 50, 50]))
 	box.add_child(right)
 	return box

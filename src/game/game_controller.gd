@@ -13,6 +13,9 @@ extends RefCounted
 const PHASE_REGULAR := "regular_season"
 const PHASE_PLAYOFFS := "playoffs"
 const PHASE_COMPLETE := "season_complete"
+## Owner Mode only: the draft and re-signing are done and the owner may sign free agents
+## before the AI teams do (see begin_offseason / start_next_season).
+const PHASE_OFFSEASON := "offseason"
 const SEASON_START_MONTH := 10
 const SEASON_START_DAY := 20
 
@@ -59,7 +62,7 @@ func phase() -> String:
 		FcSeason.Status.PLAYOFFS:
 			return PHASE_PLAYOFFS
 		FcSeason.Status.COMPLETE:
-			return PHASE_COMPLETE
+			return PHASE_OFFSEASON if state.offseason_stage == 1 else PHASE_COMPLETE
 	return PHASE_REGULAR
 
 
@@ -104,19 +107,48 @@ func sim_playoffs() -> void:
 ## contracts, draft, free agency, staff) and starts the next season.
 ## Returns the offseason report.
 func start_next_season() -> Dictionary:
-	sim_playoffs()
+	var report := {}
+	if state.offseason_stage == 0:
+		report = begin_offseason()
 	var finished := season()
-	var offseason := FcOffseason.new(state.world)
-	offseason.human_team_ids = [state.user_team_id] as Array[int] if state.mode == FcGameState.MODE_OWNER else ([] as Array[int])
-	offseason.agreed_re_signs = state.agreed_extensions.duplicate()
-	var report := offseason.run(league_id, finished, state.rng)
-	state.agreed_extensions.clear()
+	var offseason := _new_offseason()
+	report.merge(offseason.run_second_half(league_id, finished, state.rng))
+	state.offseason_stage = 0
 	state.current_season = finished.year + 1
 	state.current_date = FcDate.new(state.current_season, 7, 1)
 	_prepare_engine()
 	_start_season(state.current_season)
 	_update_date()
 	return report
+
+
+func _new_offseason() -> FcOffseason:
+	var offseason := FcOffseason.new(state.world)
+	offseason.human_team_ids = [state.user_team_id] as Array[int] if state.mode == FcGameState.MODE_OWNER else ([] as Array[int])
+	offseason.agreed_re_signs = state.agreed_extensions.duplicate()
+	return offseason
+
+
+## First half of the offseason: finishes the season if needed, then aging and retirement,
+## contracts ending, re-signing the agreed players, the draft and AI trades. Afterwards,
+## in Owner Mode, the phase is PHASE_OFFSEASON and the owner can sign free agents and
+## release players before start_next_season() lets the AI teams sign players.
+## Returns the report so far.
+func begin_offseason() -> Dictionary:
+	sim_playoffs()
+	var finished := season()
+	var offseason := _new_offseason()
+	var report := offseason.run_first_half(league_id, finished, state.rng)
+	state.agreed_extensions.clear()
+	if state.mode == FcGameState.MODE_OWNER:
+		state.offseason_stage = 1
+	return report
+
+
+## The season whose contracts and ages count right now: the next season during the
+## owner's offseason window, otherwise the current one.
+func contract_year() -> int:
+	return state.current_season + (1 if state.offseason_stage == 1 else 0)
 
 
 func _update_date() -> void:
@@ -170,7 +202,7 @@ func is_contending(team_id: int) -> bool:
 ## Returns {"accepted": bool, "reason": String}.
 func propose_trade(ai_team_id: int, give_ids: Array, get_ids: Array, preview: bool = false) -> Dictionary:
 	var desk := FcTradeDesk.new(state.world)
-	return desk.propose(league_id, state.current_season, state.user_team_id, ai_team_id, give_ids, get_ids, is_contending(ai_team_id), not preview)
+	return desk.propose(league_id, contract_year(), state.user_team_id, ai_team_id, give_ids, get_ids, is_contending(ai_team_id), not preview)
 
 
 # --- contracts ending -----------------------------------------------------------------------
@@ -261,7 +293,7 @@ func free_agent_market(limit: int = 30) -> Array:
 	var w := state.world
 	var rules := w.rules_of_league(league_id)
 	var market := FcPlayerMarket.new(FcPlayerRatings.load_default())
-	var year := state.current_season
+	var year := contract_year()
 	var out: Array = []
 	for p in w.players.all():
 		if p.status == FcPlayer.Status.ACTIVE and w.team_of_player(p.id) == null:
@@ -284,7 +316,7 @@ func sign_free_agent(player_id: int) -> Dictionary:
 	var rules := w.rules_of_league(league_id)
 	if team.roster.size() >= rules.roster_max:
 		return {"signed": false, "reason": "Your roster is full (%d players). Trade or release someone first." % rules.roster_max}
-	var year := state.current_season
+	var year := contract_year()
 	var market := FcPlayerMarket.new(FcPlayerRatings.load_default())
 	var age: int = p.age_on(FcDate.new(year, 7, 1))
 	var ask := market.asking_salary(p, age, rules.cap)
@@ -341,7 +373,7 @@ func release_player(player_id: int) -> Dictionary:
 	var c := w.active_contract_of(player_id)
 	var cost := 0
 	if c != null:
-		cost = c.salary_for(state.current_season) / 2
+		cost = c.salary_for(contract_year()) / 2
 		c.status = FcContract.Status.TERMINATED
 	team.roster.remove(player_id)
 	var b := business()

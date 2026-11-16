@@ -296,3 +296,59 @@ func test_only_final_year_players_can_be_extended() -> void:
 			assert_true(not g.extend_contract(pid)["ok"])
 			return
 	assert_true(false, "expected a player with a longer contract")
+
+
+func _roster_fingerprint(g: FcGameController) -> Array:
+	var out: Array = []
+	for t in g.state.world.teams.all():
+		var ids: Array = t.roster.player_ids.duplicate()
+		ids.sort()
+		out.append([t.id, ids])
+	return out
+
+
+func test_pausing_in_the_offseason_changes_nothing() -> void:
+	var a := _game(40)
+	a.start_next_season()
+	var b := _game(40)
+	var first := b.begin_offseason()
+	assert_eq(b.phase(), FcGameController.PHASE_OFFSEASON)
+	assert_eq(b.state.offseason_stage, 1)
+	assert_eq(b.state.current_season, 2026, "still the old season until the offseason is finished")
+	assert_true(first.has("drafted") and not first.has("signed"), "AI free agency has not happened yet")
+	b.start_next_season()
+	assert_eq(b.state.offseason_stage, 0)
+	assert_eq(b.state.current_season, 2027)
+	assert_eq(_roster_fingerprint(a), _roster_fingerprint(b), "same result with or without the pause")
+
+
+func test_free_agent_signed_in_the_window_gets_a_next_season_contract() -> void:
+	var g := _game(41)
+	g.begin_offseason()
+	var w := g.state.world
+	var team: FcTeam = w.teams.get_by_id(g.state.user_team_id)
+	var rules := w.rules_of_league(g.league_id)
+	while team.roster.size() >= rules.roster_max:
+		assert_true(g.release_player(team.roster.player_ids[team.roster.size() - 1])["released"])
+	var target: FcPlayer = g.free_agent_market(60).back()["player"]
+	var r := g.sign_free_agent(target.id)
+	assert_true(r["signed"], r["reason"])
+	assert_eq(w.active_contract_of(target.id).start_season(), 2027)
+	g.start_next_season()
+	assert_true(team.roster.contains(target.id), "he is still on the roster in the new season")
+	assert_eq(w.validate(g.state.current_season), [] as Array[String])
+
+
+func test_offseason_window_survives_saving() -> void:
+	var g := _game(42)
+	g.begin_offseason()
+	var manager := FcSaveManager.new("user://test_saves_window")
+	assert_true(g.autosave(manager).is_ok())
+	var loaded := manager.load_slot(FcSaveManager.AUTOSAVE_SLOT, FcDefinitionSet.load_default())
+	assert_true(loaded.is_ok(), loaded.message)
+	var again := FcGameController.resume(loaded.state)
+	assert_eq(again.phase(), FcGameController.PHASE_OFFSEASON)
+	again.start_next_season()
+	assert_eq(again.state.current_season, 2027)
+	manager.delete_slot(FcSaveManager.AUTOSAVE_SLOT)
+	DirAccess.remove_absolute("user://test_saves_window")

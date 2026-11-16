@@ -22,6 +22,9 @@ var current_date: FcDate = FcDate.new(2026, 7, 1)
 ## Players the owner has agreed to keep when their contracts end this season. Applied by the
 ## offseason as new contracts, then cleared. (Missing in older saves = nobody.)
 var agreed_extensions: Array[int] = []
+## 0 = normal; 1 = the offseason's first half has run and the owner's free-agency window is open
+## (current_season is still the season that just ended).
+var offseason_stage: int = 0
 
 
 func _init(game_world: FcWorld, random: FcRng) -> void:
@@ -58,6 +61,7 @@ func to_dict() -> Dictionary:
 		"current_season": current_season,
 		"current_date": current_date.to_iso(),
 		"agreed_extensions": agreed_extensions.duplicate(),
+		"offseason_stage": offseason_stage,
 		"rng": rng.get_state(),
 		"world": world.to_dict(),
 	}
@@ -76,6 +80,7 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 	s.mode = str(data.get("mode", MODE_OWNER))
 	s.user_team_id = int(data.get("user_team_id", 0))
 	s.current_season = int(data.get("current_season", 2026))
+	s.offseason_stage = int(data.get("offseason_stage", 0))
 	for pid in data.get("agreed_extensions", []):
 		s.agreed_extensions.append(int(pid))
 	var d := FcDate.from_iso(str(data.get("current_date", "")))
