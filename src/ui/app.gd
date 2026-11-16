@@ -963,6 +963,12 @@ func _tab_finances() -> Control:
 		FcUiTables.money(w.payroll_of_team(b.id, controller.state.current_season)), FcUiTables.money(cap.salary_cap),
 		FcUiTables.money(cap.effective_limit()), FcUiTables.money(b.cash), FcUiTables.money(b.debt), FcUiTables.money(b.valuation)]))
 	box.add_child(FcUiTables.label("Fan interest %d, brand %d, arena quality %d." % [b.fan_interest, b.brand, b.facilities_level]))
+	var finance_engine := FcFinanceEngine.new(w)
+	var executive := w.staff_in_role(b.id, FcStaffRole.Id.BUSINESS_EXECUTIVE)
+	if executive == null:
+		box.add_child(FcUiTables.label("No business executive: sponsorships, marketing and overhead all suffer. Hire one on the Staff tab."))
+	else:
+		box.add_child(FcUiTables.label("Business executive %s: marketing %d (sponsorships and brand), financial acumen %d (overhead), community relations %d (fan interest)." % [executive.identity.full_name(), executive.skills.get_value("marketing"), executive.skills.get_value("financial_acumen"), executive.skills.get_value("community_relations")]))
 	if controller.state.mode == FcGameState.MODE_OWNER:
 		var row := HBoxContainer.new()
 		row.add_child(FcUiTables.label("Ticket price $"))

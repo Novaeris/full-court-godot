@@ -312,3 +312,37 @@ func test_revenue_sharing_sums_to_zero_and_favours_small_markets() -> void:
 	assert_between(net, -16, 16, "what is paid equals what is received (rounding only)")
 	assert_true(fin.record_of(smallest_id, 2026).revenue["revenue_sharing"] > 0, "the smallest market receives")
 	assert_true(fin.record_of(biggest_id, 2026).expenses["revenue_sharing"] > 0, "the biggest market pays")
+
+
+func _season_with_executives(marketing: int, acumen: int, community: int) -> FcFinanceRecord:
+	var world := _build_world()
+	for m in world.staff.all():
+		if m.primary_role == FcStaffRole.Id.BUSINESS_EXECUTIVE:
+			m.skills.set_clamped("marketing", marketing)
+			m.skills.set_clamped("financial_acumen", acumen)
+			m.skills.set_clamped("community_relations", community)
+	var rng := FcRng.new(3)
+	var engine := FcSeasonEngine.for_league(world, 1)
+	var season := engine.start_season(1, 2026, FcDate.new(2026, 10, 20), rng.fork("s"))
+	engine.play_full_season(season, rng.fork("p"))
+	return FcFinanceEngine.new(world).record_of(1, 2026)
+
+
+func test_business_executives_change_the_books() -> void:
+	var strong := _season_with_executives(95, 95, 95)
+	var weak := _season_with_executives(20, 20, 20)
+	assert_true(strong.revenue["sponsorship"] > weak.revenue["sponsorship"], "a marketing expert brings more sponsorship")
+	assert_true(strong.expenses["administration"] < weak.expenses["administration"], "a financial expert trims overhead")
+	assert_true(strong.fan_interest_end >= weak.fan_interest_end, "community work lifts fan interest")
+	assert_true(strong.profit() > weak.profit())
+
+
+func test_a_team_without_a_business_executive_does_worse() -> void:
+	var world := _build_world()
+	var fin := FcFinanceEngine.new(world)
+	var with_exec := fin.executive_skill(1, "marketing")
+	for sc in world.staff_contracts_of_team(1, FcStaffRole.Id.BUSINESS_EXECUTIVE):
+		sc.status = FcContract.Status.TERMINATED
+	var without := fin.executive_skill(1, "marketing")
+	assert_eq(without, float(fin.k["no_executive_skill"]))
+	assert_true(without < with_exec or with_exec <= without)

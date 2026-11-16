@@ -81,6 +81,20 @@ func advance_projects(business: FcTeamBusiness, arena: FcArena, team_id: int, ye
 	business.projects = remaining
 
 
+## The average skill (0-100) of a team's business executives in one skill
+## ("marketing", "financial_acumen", "community_relations"). A team with no executive
+## counts as `no_executive_skill`, so hiring one matters. the typical executive (`executive_neutral_skill`) is neutral.
+func executive_skill(team_id: int, skill: String) -> float:
+	var total := 0.0
+	var count := 0
+	for sc in world.staff_contracts_of_team(team_id, FcStaffRole.Id.BUSINESS_EXECUTIVE):
+		var m: FcStaffMember = world.staff.get_by_id(sc.staff_id)
+		if m != null:
+			total += m.skills.get_value(skill)
+			count += 1
+	return total / count if count > 0 else float(k["no_executive_skill"])
+
+
 static func load_constants() -> Dictionary:
 	var file := FileAccess.open("res://data/simulation/finance.json", FileAccess.READ)
 	var parsed = FcChecks.parse_json(file.get_as_text()) if file != null else null
@@ -244,7 +258,7 @@ func settle(league_id: int, season: FcSeason, human_teams: Array[int] = []) -> A
 			plan_factor = float(k["sponsor_steady_multiplier"])
 		elif business.sponsor_plan == 2:
 			plan_factor = float(k["sponsor_performance_base"]) + float(k["sponsor_performance_win_weight"]) * standings.win_pct(tid) + float(k["sponsor_performance_playoff_weight"]) * success
-		rec.revenue["sponsorship"] = roundi(float(k["sponsorship_base"]) * scale * (0.5 + business.brand / 100.0) * pow(m, 0.8) * plan_factor)
+		rec.revenue["sponsorship"] = roundi(float(k["sponsorship_base"]) * scale * (0.5 + business.brand / 100.0) * pow(m, 0.8) * plan_factor * (1.0 + float(k["executive_sponsorship_effect"]) * (executive_skill(tid, "marketing") - float(k["executive_neutral_skill"])) / 50.0))
 		rec.revenue["broadcasting"] = roundi(float(k["broadcasting_per_team"]) * scale)
 		rec.revenue["arena_events"] = roundi(float(k["arena_events_base"]) * scale * city.economy_index / 100.0 * arena.capacity / float(k["reference_capacity"]) * (1.0 + float(load_arena_projects().get("suite_event_bonus", 0.2)) * business.suites_level))
 		rec.revenue["tax_share"] = int(shared["payouts"].get(tid, 0))
@@ -264,8 +278,9 @@ func settle(league_id: int, season: FcSeason, human_teams: Array[int] = []) -> A
 		rec.expenses["staff"] = staff_pay
 		rec.expenses["arena_operations"] = roundi(float(k["arena_operations"]) * scale * arena.capacity / float(k["reference_capacity"]))
 		rec.expenses["marketing"] = business.marketing_budget
-		rec.expenses["travel"] = roundi(float(k["travel"]) * scale)
-		rec.expenses["administration"] = roundi(float(k["administration"]) * scale)
+		var cost_factor := 1.0 - float(k["executive_cost_effect"]) * (executive_skill(tid, "financial_acumen") - float(k["executive_neutral_skill"])) / 50.0
+		rec.expenses["travel"] = roundi(float(k["travel"]) * scale * cost_factor)
+		rec.expenses["administration"] = roundi(float(k["administration"]) * scale * cost_factor)
 		rec.expenses["facilities"] = roundi(business.facilities_level * float(k["facilities_cost_per_point"]) * scale / 3.0)
 		rec.expenses["interest"] = roundi(business.debt * float(k["debt_interest"]))
 
@@ -281,9 +296,10 @@ func settle(league_id: int, season: FcSeason, human_teams: Array[int] = []) -> A
 			business.cash -= repay
 		var win_pct := standings.win_pct(tid)
 		var star := clampf((_best_overall(tid) - 50.0) / 40.0, 0.0, 1.0)
-		var interest_target := 25.0 + 55.0 * pow(win_pct, 0.9) + 12.0 * success + 8.0 * star
+		var interest_target := 25.0 + 55.0 * pow(win_pct, 0.9) + 12.0 * success + 8.0 * star \
+			+ float(k["executive_interest_effect"]) * (executive_skill(tid, "community_relations") - float(k["executive_neutral_skill"])) / 50.0
 		business.fan_interest = clampi(roundi(business.fan_interest + float(k["interest_catchup"]) * (interest_target - business.fan_interest)), 5, 100)
-		var marketing_effect := clampf(float(business.marketing_budget) / (12000000.0 * scale), 0.0, 1.0)
+		var marketing_effect := clampf(float(business.marketing_budget) / (12000000.0 * scale) * (1.0 + float(k["executive_marketing_effect"]) * (executive_skill(tid, "marketing") - float(k["executive_neutral_skill"])) / 50.0), 0.0, 1.0)
 		var brand_target := 15.0 + 0.55 * business.fan_interest + 20.0 * marketing_effect + (8.0 if season.champion_id == tid else 0.0)
 		business.brand = clampi(roundi(business.brand + float(k["brand_catchup"]) * (brand_target - business.brand)), 5, 100)
 		business.facilities_level = clampi(roundi(business.facilities_level - float(k["facilities_decay"])), 0, 100)

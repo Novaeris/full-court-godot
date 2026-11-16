@@ -148,6 +148,9 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 - A whole 30-team, 80-game season plus playoffs takes about 13 seconds; a 1,230-game season is stored in about 100 KB.
 - Rosters are read when an engine is created; change rosters between seasons.
 
+## Business executives (Owner Mode)
+- The business executive's skills now matter (`FcFinanceEngine.executive_skill`, constants in finance.json): marketing scales sponsorship income (+/-20% around the typical executive, skill 62) and the brand effect of the marketing budget (+/-40%); financial acumen scales travel and administration costs (-/+20%); community relations moves fan interest (+/-10 points of its target). A team with no executive counts as skill 35, so hiring one pays off. The typical executive is neutral, so the league's average margin stays about 8%. Shown on the Finances tab.
+
 ## Sponsorship style and loans (Owner Mode)
 - `FcTeamBusiness.sponsor_plan`: 0 balanced (default, all AI teams), 1 steady (95% of base, ignores results), 2 performance (65% base plus weight on win percentage and playoff rounds, so it pays more only for winners). Constants in `data/simulation/finance.json`. `FcGameController.set_sponsor_plan`.
 - `borrow(amount)` adds cash and debt up to `loan_limit()` (40% of franchise value); `repay_debt(amount)` pays from cash. Debt already costs 6% interest a season in the finance engine. Both are on the Finances tab. Not built: named sponsor contracts with multiple years, negotiated loan terms.
