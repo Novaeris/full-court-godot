@@ -147,6 +147,10 @@ Built on the founder's instruction to continue; the following product choices we
 - Only one-for-one swaps between a rebuilding team (gives a 27+ veteran) and a contender (gives a player of 25 or younger), and only in the offseason. Simple, always roster-neutral, and it moves talent from weak teams to strong ones while moving youth the other way, which should slow permanent dynasties without stripping stars at random. Draft picks are not tradeable yet (the draft is a pure function of the standings).
 - A human owner cannot yet propose or accept trades; that needs a UI and a valuation shown to the player.
 
+## D-028 Three modes (2026-11-16, founder)
+- The game has three modes: Owner Mode, Career Mode and Dynasty Mode. Owner Mode is built first (current work). Career Mode needs a definition from the founder before any design or code; Dynasty Mode (deep roster/lineup control) comes after Owner Mode. `FcGameState.MODES` currently lists only owner and dynasty; add career when it is defined.
+- Consequence: Dynasty-mode features (e.g. setting lineups and minutes) are not the next priority; Owner Mode keeps getting depth first.
+
 ## D-013 Floats in saved data; runner robustness (2026-11-15)
 - Found by a test: JSON float round trips lose last bits, so a saved-and-reloaded world differed from the original. Rule: saved floats are quantized to 3 decimals via `FcChecks.quantize` in property setters; prefer integers. Documented in ARCHITECTURE rule 7.
 - Found while testing: a test file with a syntax error made the test runner hang forever. The runner now reports such files as failures.

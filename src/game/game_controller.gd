@@ -134,6 +134,7 @@ func _new_offseason() -> FcOffseason:
 	var offseason := FcOffseason.new(state.world)
 	offseason.human_team_ids = [state.user_team_id] as Array[int] if state.mode == FcGameState.MODE_OWNER else ([] as Array[int])
 	offseason.agreed_re_signs = state.agreed_extensions.duplicate()
+	offseason.agreed_terms = state.agreed_terms.duplicate(true)
 	return offseason
 
 
@@ -149,11 +150,13 @@ func begin_offseason() -> Dictionary:
 	if state.mode != FcGameState.MODE_OWNER:
 		var all := offseason.run_first_half(league_id, finished, state.rng)
 		state.agreed_extensions.clear()
+		state.agreed_terms.clear()
 		_report_so_far = all.duplicate()
 		return all
 	var report := offseason.run_before_draft(league_id, finished, state.rng)
 	_report_so_far = report.duplicate()
 	state.agreed_extensions.clear()
+	state.agreed_terms.clear()
 	state.draft_state = offseason.prepare_draft(league_id, finished, finished.year + 1, state.rng.fork("draft"))
 	state.offseason_stage = 2
 	_draft_advance_to_user()
@@ -344,9 +347,11 @@ func expiring_players() -> Array:
 
 
 ## Agrees to keep a player whose deal ends this season. When the season ends he is
-## re-signed at his asking salary (own-player exception) on a new contract.
-## Returns {"ok": bool, "reason": String}.
-func extend_contract(player_id: int) -> Dictionary:
+## re-signed on a new contract at the agreed terms (own-player exception). With no
+## terms given the contract is his asking price for the length he wants; a lower
+## offer is accepted only if he is flexible enough (see FcPlayerMarket.minimum_acceptable).
+## Returns {"ok": bool, "reason": String, "required": int (the least he accepts, if refused)}.
+func extend_contract(player_id: int, salary_offered: int = -1, years_offered: int = -1) -> Dictionary:
 	var w := state.world
 	var team: FcTeam = w.teams.get_by_id(state.user_team_id)
 	var rules := w.rules_of_league(league_id)
@@ -360,13 +365,19 @@ func extend_contract(player_id: int) -> Dictionary:
 	var next_year := state.current_season + 1
 	var age: int = p.age_on(FcDate.new(next_year, 7, 1))
 	var ask := market.asking_salary(p, age, rules.cap)
-	var check := rules.cap.check_signing(w.payroll_of_team(team.id, next_year), ask, FcCapRules.SigningKind.OWN_PLAYER)
-	if not check.allowed:
-		return {"ok": false, "reason": "%s wants %s a year, but %s." % [p.identity.full_name(), "$%.1fM" % (ask / 1e6), check.reason]}
+	var years := clampi(years_offered if years_offered > 0 else market.desired_years(age, rules.cap), 1, rules.cap.max_contract_years)
+	var wanted := clampi(salary_offered if salary_offered > 0 else ask, rules.cap.min_player_salary, rules.cap.max_player_salary)
 	if state.agreed_extensions.has(player_id):
 		return {"ok": false, "reason": "%s has already agreed to stay." % p.identity.full_name()}
+	var verdict := market.evaluate_offer(p, age, rules.cap, wanted, years, true)
+	if not verdict["accepted"]:
+		return {"ok": false, "required": verdict["required"], "reason": "%s will not accept that: he wants at least %s a year for %d years." % [p.identity.full_name(), "$%.2fM" % (verdict["required"] / 1e6), years]}
+	var check := rules.cap.check_signing(w.payroll_of_team(team.id, next_year), wanted, FcCapRules.SigningKind.OWN_PLAYER)
+	if not check.allowed:
+		return {"ok": false, "reason": "%s would get %s a year, but %s." % [p.identity.full_name(), "$%.1fM" % (wanted / 1e6), check.reason]}
 	state.agreed_extensions.append(player_id)
-	return {"ok": true, "reason": "%s agreed to a new %d-year deal at %s a year, starting next season." % [p.identity.full_name(), market.desired_years(age, rules.cap), "$%.1fM" % (ask / 1e6)]}
+	state.agreed_terms[player_id] = [wanted, years]
+	return {"ok": true, "reason": "%s agreed to a new %d-year deal at %s a year, starting next season." % [p.identity.full_name(), years, "$%.2fM" % (wanted / 1e6)]}
 
 
 # --- the draft ------------------------------------------------------------------------------
@@ -420,11 +431,13 @@ func free_agent_market(limit: int = 30) -> Array:
 	return out.slice(0, limit)
 
 
-## Signs a free agent for the user's team at his asking price. The cheapest legal
-## route is used: cap space, then the minimum contract (only for players asking
-## close to the minimum), then the mid-level exception (once a season).
-## Returns {"signed": bool, "reason": String}.
-func sign_free_agent(player_id: int) -> Dictionary:
+## Signs a free agent for the user's team. With no terms given: his asking price for the
+## length he wants. A lower offer works only if he is flexible enough (see
+## FcPlayerMarket.minimum_acceptable); a refusal says what he would accept. The legal route
+## is the cheapest available: cap space, then the minimum contract (near-minimum players
+## accept it), then the mid-level exception (once a season).
+## Returns {"signed": bool, "reason": String, "required": int (the least he accepts, if refused)}.
+func sign_free_agent(player_id: int, salary_offered: int = -1, years_offered: int = -1) -> Dictionary:
 	if state.offseason_stage == 2:
 		return {"signed": false, "reason": "Finish the draft first."}
 	var w := state.world
@@ -439,25 +452,32 @@ func sign_free_agent(player_id: int) -> Dictionary:
 	var market := FcPlayerMarket.new(FcPlayerRatings.load_default())
 	var age: int = p.age_on(FcDate.new(year, 7, 1))
 	var ask := market.asking_salary(p, age, rules.cap)
+	var years := clampi(years_offered if years_offered > 0 else market.desired_years(age, rules.cap), 1, rules.cap.max_contract_years)
+	var offer := clampi(salary_offered if salary_offered > 0 else ask, rules.cap.min_player_salary, rules.cap.max_player_salary)
+	var verdict := market.evaluate_offer(p, age, rules.cap, offer, years, false)
+	if not verdict["accepted"]:
+		return {"signed": false, "required": verdict["required"], "reason": "%s will not accept that: he wants at least %s a year for %d years." % [p.identity.full_name(), "$%.2fM" % (verdict["required"] / 1e6), years]}
 	var payroll := w.payroll_of_team(team.id, year)
-	var offer := ask
 	var kind := -1
 	var use_mle := false
 	var last_reason := ""
-	var check := rules.cap.check_signing(payroll, ask, FcCapRules.SigningKind.CAP_SPACE)
+	var check := rules.cap.check_signing(payroll, offer, FcCapRules.SigningKind.CAP_SPACE)
 	if check.allowed:
 		kind = FcCapRules.SigningKind.CAP_SPACE
 	else:
 		last_reason = check.reason
-		if ask <= int(rules.cap.min_player_salary * 1.35):
-			offer = rules.cap.min_player_salary
-			var min_check := rules.cap.check_signing(payroll, offer, FcCapRules.SigningKind.MINIMUM)
+		var minimum_try := offer
+		if salary_offered <= 0 and ask <= int(rules.cap.min_player_salary * 1.35):
+			minimum_try = rules.cap.min_player_salary   # a default offer to a near-minimum player uses the minimum contract
+		if minimum_try == rules.cap.min_player_salary:
+			var min_check := rules.cap.check_signing(payroll, minimum_try, FcCapRules.SigningKind.MINIMUM)
 			if min_check.allowed:
+				offer = minimum_try
 				kind = FcCapRules.SigningKind.MINIMUM
 			else:
 				last_reason = min_check.reason
 		if kind < 0:
-			var mle := rules.cap.check_signing(payroll, ask, FcCapRules.SigningKind.MID_LEVEL)
+			var mle := rules.cap.check_signing(payroll, offer, FcCapRules.SigningKind.MID_LEVEL)
 			if business().mid_level_used_season == year:
 				last_reason = "your mid-level exception is already used this season"
 			elif mle.allowed:
@@ -466,15 +486,15 @@ func sign_free_agent(player_id: int) -> Dictionary:
 			else:
 				last_reason = mle.reason
 	if kind < 0:
-		return {"signed": false, "reason": "%s asks %s a year, and you cannot sign him: %s." % [p.identity.full_name(), "$%.1fM" % (ask / 1e6), last_reason]}
+		return {"signed": false, "reason": "%s would accept %s a year, but you cannot sign him: %s." % [p.identity.full_name(), "$%.2fM" % (offer / 1e6), last_reason]}
 	var today := state.current_date
-	var c := FcPlayerMarket.make_contract(w.ids.next_id(FcWorld.KIND_CONTRACT), p.id, team.id, year, market.desired_years(age, rules.cap), offer, rules.cap, today)
+	var c := FcPlayerMarket.make_contract(w.ids.next_id(FcWorld.KIND_CONTRACT), p.id, team.id, year, years, offer, rules.cap, today)
 	w.contracts.add(c)
 	team.roster.add(p.id)
 	if use_mle:
 		business().mid_level_used_season = year
 	w.add_news(today, "signing", "%s sign %s" % [w.team_display_name(team.id), p.identity.full_name()], team.id)
-	return {"signed": true, "reason": "Signed %s for %s a year over %d years." % [p.identity.full_name(), "$%.1fM" % (offer / 1e6), c.length()]}
+	return {"signed": true, "reason": "Signed %s for %s a year over %d years." % [p.identity.full_name(), "$%.2fM" % (offer / 1e6), c.length()]}
 
 
 ## Releases a player from the user's team. The team pays half of his current

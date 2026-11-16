@@ -7,7 +7,7 @@ The developer is a solo, beginner programmer. Explain decisions in plain languag
 ## Established decisions (do not change without the user's explicit approval)
 - Engine: Godot 4.7 standard (NOT .NET). Language: GDScript. Renderer: gl_compatibility (mobile-friendly).
 - Platforms: Windows first; architecture must not block Mac/Android/iOS.
-- Modes: Owner Mode first, Dynasty Mode later. Both share one simulation/league core.
+- Modes: THREE game modes: Owner Mode, Career Mode and Dynasty Mode (the founder restated this on 2026-11-16). Owner Mode is built first and is the only one in progress. All modes share one simulation/league core. Career Mode's exact design is still to be defined by the founder: do not build it or add placeholder code for it until it is described.
 - Free-to-play, no pay-to-win. No monetization code until there is a clear reason.
 - Real-world places are fine (real cities and countries, user-selectable by area). Teams, players, staff and branding are ORIGINAL and generated: no real franchises, player names, logos or league IP (those need licenses). Changed from "fully fictional" by the founder on 2026-11-15.
 - Leagues are user-customizable: size, which areas/cities, number of conferences and divisions.

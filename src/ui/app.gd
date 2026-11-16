@@ -613,15 +613,34 @@ func _tab_market() -> Control:
 		agent_ids.append(p.id)
 	var fa_table := FcUiTables.table(["Player", "Pos", "Age", "Ovr", "Pot", "Asks", "Years"], rows, [0, 50, 50, 50, 50, 90, 50])
 	left.add_child(fa_table)
-	left.add_child(FcUiTables.button("Sign selected free agent", func():
+	var offer_row := HBoxContainer.new()
+	offer_row.add_child(FcUiTables.label("Offer $M a year"))
+	var offer_salary := SpinBox.new()
+	offer_salary.min_value = 0.1
+	offer_salary.max_value = 100
+	offer_salary.step = 0.05
+	offer_row.add_child(offer_salary)
+	offer_row.add_child(FcUiTables.label("  years"))
+	var offer_years := SpinBox.new()
+	offer_years.min_value = 1
+	offer_years.max_value = 5
+	offer_row.add_child(offer_years)
+	fa_table.item_selected.connect(func():
+		var picked := fa_table.get_selected()
+		if picked != null:
+			offer_salary.value = agents[picked.get_index()]["ask"] / 1e6
+			offer_years.value = agents[picked.get_index()]["years"])
+	offer_row.add_child(FcUiTables.button("Sign selected free agent", func():
 		var item := fa_table.get_selected()
 		if item == null:
 			_say("Select a free agent first.")
 			return
-		var r := controller.sign_free_agent(agent_ids[item.get_index()])
+		var r := controller.sign_free_agent(agent_ids[item.get_index()], roundi(offer_salary.value * 1e6), int(offer_years.value))
 		if r["signed"]:
 			show_dashboard()
 		_say(r["reason"])))
+	left.add_child(offer_row)
+	left.add_child(FcUiTables.label("Players ask for the amount shown but accept a little less, especially for longer contracts. Change the offer and press the button; a refusal tells you the least he will take."))
 	box.add_child(left)
 	var right := VBoxContainer.new()
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -849,12 +868,31 @@ func _tab_roster() -> Control:
 	var box := VBoxContainer.new()
 	box.add_child(table)
 	var row := HBoxContainer.new()
+	var expiring := {}
+	for e in controller.expiring_players():
+		expiring[e["player"].id] = e
+	var ext_salary := SpinBox.new()
+	ext_salary.min_value = 0.1
+	ext_salary.max_value = 100
+	ext_salary.step = 0.05
+	var ext_years := SpinBox.new()
+	ext_years.min_value = 1
+	ext_years.max_value = 5
+	table.item_selected.connect(func():
+		var picked := table.get_selected()
+		if picked != null and expiring.has(ids[picked.get_index()]):
+			ext_salary.value = expiring[ids[picked.get_index()]]["ask"] / 1e6
+			ext_years.value = expiring[ids[picked.get_index()]]["years"])
+	row.add_child(FcUiTables.label("Extension $M"))
+	row.add_child(ext_salary)
+	row.add_child(FcUiTables.label("years"))
+	row.add_child(ext_years)
 	row.add_child(FcUiTables.button("Extend contract of selected player", func():
 		var item := table.get_selected()
 		if item == null:
 			_say("Select a player first.")
 			return
-		var r := controller.extend_contract(ids[item.get_index()])
+		var r := controller.extend_contract(ids[item.get_index()], roundi(ext_salary.value * 1e6), int(ext_years.value))
 		if r["ok"]:
 			show_dashboard()
 		_say(r["reason"])))

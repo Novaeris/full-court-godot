@@ -41,6 +41,34 @@ func desired_years(age: int, cap: FcCapRules) -> int:
 	return clampi(roundi(5.0 - (age - 26) * 0.5), 1, cap.max_contract_years)
 
 
+## Players are a little flexible: they accept a salary somewhat below their asking
+## price (BASE_FLEXIBILITY), more so when re-signing with a team they are loyal to,
+## and they like longer security (SECURITY_PER_YEAR less per year above the length
+## they want, more per year below it).
+const BASE_FLEXIBILITY := 0.06
+const SECURITY_PER_YEAR := 0.025
+
+
+## The least first-year salary this player accepts for a contract of `years`.
+## `own_team` is true when he is re-signing with his current team.
+func minimum_acceptable(player: FcPlayer, age: int, cap: FcCapRules, years: int, own_team: bool) -> int:
+	var ask := asking_salary(player, age, cap)
+	var flex := BASE_FLEXIBILITY
+	if own_team:
+		flex += 0.03 + (player.personality.get_value("loyalty") - 50.0) / 1000.0
+	var year_factor := 1.0 - SECURITY_PER_YEAR * clampi(years - desired_years(age, cap), -2, 3)
+	return maxi(cap.min_player_salary, int(ceil(ask * (1.0 - flex) * year_factor / 10000.0)) * 10000)
+
+
+## Would he accept this offer? {"accepted": bool, "required": int}. A near-minimum
+## player also accepts the minimum salary (the minimum-contract exception).
+func evaluate_offer(player: FcPlayer, age: int, cap: FcCapRules, salary: int, years: int, own_team: bool) -> Dictionary:
+	var required := minimum_acceptable(player, age, cap, years, own_team)
+	var ask := asking_salary(player, age, cap)
+	var accepted := salary >= required or (salary == cap.min_player_salary and ask <= int(cap.min_player_salary * 1.35))
+	return {"accepted": accepted, "required": required}
+
+
 ## A new contract: `years` seasons from `first_season`, 4% raises, no options.
 static func make_contract(contract_id: int, player_id: int, team_id: int, first_season: int,
 		years: int, first_salary: int, cap: FcCapRules, signed_on: FcDate) -> FcContract:

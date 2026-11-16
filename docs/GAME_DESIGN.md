@@ -16,6 +16,9 @@ Player owns a franchise and runs it as a business; delegates basketball work to 
 - Legacy: franchise value and stability over decades.
 Key tradeoff loop: winning raises attendance, sponsors, valuation; but payroll, facilities and operating costs erode profit.
 
+### Career Mode (later; design to be defined by the founder)
+The game has three modes. Career Mode sits alongside Owner and Dynasty Mode and shares the same simulation and league core. Its rules, the role the player takes and what makes it different from Dynasty Mode are not yet described, so nothing is built for it. Open question for the founder: what does the player do in Career Mode?
+
 ### Dynasty Mode (later, likely premium)
 Deep multi-decade management: rosters, contracts, cap, free agency, trades, drafts, scouting, development, tactics, chemistry, injuries, history, Hall of Fame. Uses the same core as Owner Mode with more direct permissions.
 

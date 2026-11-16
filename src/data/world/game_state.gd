@@ -22,6 +22,8 @@ var current_date: FcDate = FcDate.new(2026, 7, 1)
 ## Players the owner has agreed to keep when their contracts end this season. Applied by the
 ## offseason as new contracts, then cleared. (Missing in older saves = nobody.)
 var agreed_extensions: Array[int] = []
+## Terms agreed with those players: player id -> [first-year salary, years].
+var agreed_terms: Dictionary = {}
 ## 0 = normal; 2 = the owner's draft is under way; 1 = the draft and the rest of the first half are
 ## done and the owner's free-agency window is open (current_season is still the season that just ended).
 var offseason_stage: int = 0
@@ -63,11 +65,19 @@ func to_dict() -> Dictionary:
 		"current_season": current_season,
 		"current_date": current_date.to_iso(),
 		"agreed_extensions": agreed_extensions.duplicate(),
+		"agreed_terms": _terms_for_json(),
 		"offseason_stage": offseason_stage,
 		"draft_state": draft_state.duplicate(true),
 		"rng": rng.get_state(),
 		"world": world.to_dict(),
 	}
+
+
+func _terms_for_json() -> Dictionary:
+	var out := {}
+	for pid in agreed_terms:
+		out[str(pid)] = agreed_terms[pid].duplicate()
+	return out
 
 
 ## JSON turns whole numbers into floats; put the draft state's integers back.
@@ -102,6 +112,10 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 	var raw_draft = data.get("draft_state", {})
 	if raw_draft is Dictionary and not raw_draft.is_empty():
 		s.draft_state = _clean_draft_state(raw_draft)
+	var raw_terms = data.get("agreed_terms", {})
+	if raw_terms is Dictionary:
+		for key in raw_terms:
+			s.agreed_terms[int(key)] = [int(raw_terms[key][0]), int(raw_terms[key][1])]
 	for pid in data.get("agreed_extensions", []):
 		s.agreed_extensions.append(int(pid))
 	var d := FcDate.from_iso(str(data.get("current_date", "")))

@@ -24,6 +24,8 @@ const MARKET_ROUNDS := 14
 var human_team_ids: Array[int] = []
 ## Players the human owner agreed to keep: they are re-signed at their asking price (if still legal).
 var agreed_re_signs: Array[int] = []
+## The agreed terms: player id -> [first-year salary, years] (missing = the asking price).
+var agreed_terms: Dictionary = {}
 var world: FcWorld
 var ratings := FcPlayerRatings.load_default()
 var market: FcPlayerMarket
@@ -221,10 +223,14 @@ func re_sign(league_id: int, new_year: int, rng: FcRng) -> int:
 		if not agreed and not rng.chance(wants):
 			continue
 		var ask := market.asking_salary(p, age, rules.cap)
+		var years := market.desired_years(age, rules.cap)
+		if agreed and agreed_terms.has(p.id):
+			ask = int(agreed_terms[p.id][0])
+			years = int(agreed_terms[p.id][1])
 		var check := rules.cap.check_signing(payroll(team.id, new_year), ask, FcCapRules.SigningKind.OWN_PLAYER)
 		if not check.allowed:
 			continue
-		_sign(team, p, ask, market.desired_years(age, rules.cap), new_year, today, rules)
+		_sign(team, p, ask, years, new_year, today, rules)
 		signed += 1
 	return signed
 
