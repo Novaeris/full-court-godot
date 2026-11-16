@@ -152,6 +152,10 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 - `FcTeamBusiness.sponsor_plan`: 0 balanced (default, all AI teams), 1 steady (95% of base, ignores results), 2 performance (65% base plus weight on win percentage and playoff rounds, so it pays more only for winners). Constants in `data/simulation/finance.json`. `FcGameController.set_sponsor_plan`.
 - `borrow(amount)` adds cash and debt up to `loan_limit()` (40% of franchise value); `repay_debt(amount)` pays from cash. Debt already costs 6% interest a season in the finance engine. Both are on the Finances tab. Not built: named sponsor contracts with multiple years, negotiated loan terms.
 
+## Contract decisions at season end (Owner Mode)
+- In Owner Mode the offseason no longer re-signs the owner's expiring players automatically. `FcGameController.expiring_players()` lists them (with asking salary and years); `extend_contract(player_id)` records an agreement in `FcGameState.agreed_extensions` (saved; missing in old saves = nobody) after checking the own-player cap rule. When the next season starts, `FcOffseason` (given `human_team_ids` and `agreed_re_signs`) re-signs the agreed players on a new contract at their asking price and everyone else becomes a free agent. Dynasty Mode is unchanged (automatic). The UI warns once, listing the players who will leave, before starting the next season; the Roster tab has "Extend contract of selected player".
+- Not built yet: choosing among the free agents and the draft before the AI teams act (the offseason still runs in one step after the re-signing decisions).
+
 ## Looking at the screens
 - `tools/screenshot.gd` renders the real UI in a window and saves a PNG so the screens can be inspected (not headless; it opens a window for a moment):
   `godot_console --path . --script res://tools/screenshot.gd -- screen=Roster out=C:/temp/roster.png days=20`

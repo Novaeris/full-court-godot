@@ -253,3 +253,46 @@ func test_new_game_has_a_valuation_and_a_borrowing_limit() -> void:
 	assert_true(g.borrow(1000000)["ok"], "loans work in the first season")
 	g.business().valuation = 0   # an old save
 	assert_true(g.loan_limit() > 0, "old saves fall back to an estimate")
+
+
+func test_owner_decides_who_stays_when_contracts_end() -> void:
+	var g := _game(36)
+	g.sim_playoffs()
+	var w := g.state.world
+	var expiring := g.expiring_players()
+	assert_true(expiring.size() > 0, "some contracts end this season")
+	var keep: FcPlayer = expiring[0]["player"]
+	var leave: FcPlayer = expiring[expiring.size() - 1]["player"]
+	assert_true(keep.id != leave.id or expiring.size() == 1)
+	var r := g.extend_contract(keep.id)
+	assert_true(r["ok"], r["reason"])
+	assert_true(g.state.agreed_extensions.has(keep.id))
+	assert_true(not g.extend_contract(keep.id)["ok"], "no need to agree twice")
+	g.start_next_season()
+	assert_true(g.state.agreed_extensions.is_empty(), "agreements are cleared once applied")
+	assert_true(w.active_contract_of(keep.id) != null and w.active_contract_of(keep.id).end_season() > g.state.current_season - 1, "he has a new contract")
+	assert_eq(w.validate(g.state.current_season), [] as Array[String])
+	var team: FcTeam = w.teams.get_by_id(g.state.user_team_id)
+	assert_true(team.roster.contains(keep.id), "the extended player stays")
+	if leave.id != keep.id:
+		assert_true(not team.roster.contains(leave.id), "players who were not extended leave")
+	assert_true(team.roster.size() >= w.rules_of_league(g.league_id).roster_min, "the roster is refilled to a legal size")
+
+
+func test_dynasty_mode_still_re_signs_automatically() -> void:
+	var g := _game(37, FcGameState.MODE_DYNASTY)
+	g.sim_playoffs()
+	var expiring := g.expiring_players()
+	var report := g.start_next_season()
+	assert_true(report["re_signed"] > 0 or expiring.is_empty())
+
+
+func test_only_final_year_players_can_be_extended() -> void:
+	var g := _game(38)
+	var w := g.state.world
+	var team: FcTeam = w.teams.get_by_id(g.state.user_team_id)
+	for pid in team.roster.player_ids:
+		if w.active_contract_of(pid).end_season() > g.state.current_season:
+			assert_true(not g.extend_contract(pid)["ok"])
+			return
+	assert_true(false, "expected a player with a longer contract")

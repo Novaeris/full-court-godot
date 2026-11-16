@@ -120,6 +120,9 @@ func test_clicking_through_a_whole_season_and_into_the_next() -> void:
 	assert_true("Champions:" in _labels_text(overview), "the overview names the champion")
 	overview.free()
 	app.on_next_season()
+	if app.controller.state.current_season == 2026:
+		assert_true("LEAVE" in app._message.text, "the first press warns about players whose contracts end")
+		app.on_next_season()
 	assert_eq(app.controller.state.current_season, 2027)
 	assert_true("New season" in app._message.text)
 	assert_eq(app.controller.state.validate(), [] as Array[String])

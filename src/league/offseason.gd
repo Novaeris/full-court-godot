@@ -19,6 +19,11 @@ const UNDRAFTED_EXTRA := 20
 const FRESH_FREE_AGENTS := 12
 const MARKET_ROUNDS := 14
 
+## Teams run by a human: their expiring players are NOT re-signed automatically
+## (the owner decides with FcGameController.extend_contract; the rest become free agents).
+var human_team_ids: Array[int] = []
+## Players the human owner agreed to keep: they are re-signed at their asking price (if still legal).
+var agreed_re_signs: Array[int] = []
 var world: FcWorld
 var ratings := FcPlayerRatings.load_default()
 var market: FcPlayerMarket
@@ -175,13 +180,16 @@ func re_sign(league_id: int, new_year: int, rng: FcRng) -> int:
 		var team: FcTeam = world.teams.get_by_id(entry[1])
 		if p == null or team == null or p.status != FcPlayer.Status.ACTIVE:
 			continue
+		var agreed := human_team_ids.has(team.id) and agreed_re_signs.has(p.id)
+		if human_team_ids.has(team.id) and not agreed:
+			continue
 		if team.roster.size() >= rules.roster_max:
 			continue
 		var age := _age(p, new_year)
 		var worth := market.value(p, age)
 		var wants := clampf(0.30 + (worth - 45.0) / 55.0, 0.08, 0.96)
 		wants += (p.personality.get_value("loyalty") - 50.0) / 400.0
-		if not rng.chance(wants):
+		if not agreed and not rng.chance(wants):
 			continue
 		var ask := market.asking_salary(p, age, rules.cap)
 		var check := rules.cap.check_signing(payroll(team.id, new_year), ask, FcCapRules.SigningKind.OWN_PLAYER)

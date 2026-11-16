@@ -37,3 +37,13 @@ func test_missing_rng_is_reported() -> void:
 	var errors: Array[String] = []
 	FcGameState.from_dict(data, FcTestData.defs(), errors)
 	assert_eq(errors.size(), 1)
+
+
+func test_agreed_extensions_are_saved_and_old_saves_default() -> void:
+	var g := FcGameState.new(FcWorld.new(FcDefinitionSet.load_default()), FcRng.new(1))
+	g.agreed_extensions = [4, 9] as Array[int]
+	var back := FcGameState.from_dict(JSON.parse_string(JSON.stringify(g.to_dict())), FcDefinitionSet.load_default())
+	assert_eq(back.agreed_extensions, [4, 9] as Array[int])
+	var old := g.to_dict()
+	old.erase("agreed_extensions")
+	assert_eq(FcGameState.from_dict(old, FcDefinitionSet.load_default()).agreed_extensions, [] as Array[int])

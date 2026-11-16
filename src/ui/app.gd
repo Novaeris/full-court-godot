@@ -27,6 +27,8 @@ var _pending_state: FcGameState
 var _tabs: TabContainer
 ## The team the user is talking to in the Trades tab (0 = first other team).
 var _trade_partner: int = 0
+## Set after the warning about expiring contracts; a second press starts the next season.
+var _confirm_next_season: bool = false
 var _last_tab := 0
 var _form := {}
 var _message: Label
@@ -341,6 +343,16 @@ func on_sim_playoffs() -> void:
 
 
 func on_next_season() -> void:
+	if controller.state.mode == FcGameState.MODE_OWNER and not _confirm_next_season:
+		var leaving := controller.expiring_players().filter(func(e): return not e["agreed"])
+		if not leaving.is_empty():
+			var names: Array[String] = []
+			for e in leaving:
+				names.append(e["player"].identity.full_name())
+			_confirm_next_season = true
+			_say("These players' contracts end and they will LEAVE unless you extend them (Roster tab): %s. Press Start Next Season again to let them go." % ", ".join(names))
+			return
+	_confirm_next_season = false
 	var report := controller.start_next_season()
 	controller.autosave(saves)
 	show_dashboard()
@@ -719,6 +731,15 @@ func _tab_roster() -> Control:
 	var box := VBoxContainer.new()
 	box.add_child(table)
 	var row := HBoxContainer.new()
+	row.add_child(FcUiTables.button("Extend contract of selected player", func():
+		var item := table.get_selected()
+		if item == null:
+			_say("Select a player first.")
+			return
+		var r := controller.extend_contract(ids[item.get_index()])
+		if r["ok"]:
+			show_dashboard()
+		_say(r["reason"])))
 	row.add_child(FcUiTables.button("Release selected player (pay half his salary)", func():
 		var item := table.get_selected()
 		if item == null:

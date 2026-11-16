@@ -106,7 +106,11 @@ func sim_playoffs() -> void:
 func start_next_season() -> Dictionary:
 	sim_playoffs()
 	var finished := season()
-	var report := FcOffseason.new(state.world).run(league_id, finished, state.rng)
+	var offseason := FcOffseason.new(state.world)
+	offseason.human_team_ids = [state.user_team_id] as Array[int] if state.mode == FcGameState.MODE_OWNER else ([] as Array[int])
+	offseason.agreed_re_signs = state.agreed_extensions.duplicate()
+	var report := offseason.run(league_id, finished, state.rng)
+	state.agreed_extensions.clear()
 	state.current_season = finished.year + 1
 	state.current_date = FcDate.new(state.current_season, 7, 1)
 	_prepare_engine()
@@ -167,6 +171,53 @@ func is_contending(team_id: int) -> bool:
 func propose_trade(ai_team_id: int, give_ids: Array, get_ids: Array, preview: bool = false) -> Dictionary:
 	var desk := FcTradeDesk.new(state.world)
 	return desk.propose(league_id, state.current_season, state.user_team_id, ai_team_id, give_ids, get_ids, is_contending(ai_team_id), not preview)
+
+
+# --- contracts ending -----------------------------------------------------------------------
+
+## The user's players whose contract ends with this season:
+## [{"player", "age", "ask", "years", "agreed" (bool)}].
+## In Owner Mode they leave as free agents unless agreed with extend_contract().
+func expiring_players() -> Array:
+	var w := state.world
+	var team: FcTeam = w.teams.get_by_id(state.user_team_id)
+	var rules := w.rules_of_league(league_id)
+	var market := FcPlayerMarket.new(FcPlayerRatings.load_default())
+	var out: Array = []
+	for pid in team.roster.player_ids:
+		var c := w.active_contract_of(pid)
+		if c == null or c.end_season() > state.current_season:
+			continue
+		var p: FcPlayer = w.players.get_by_id(pid)
+		var age: int = p.age_on(FcDate.new(state.current_season + 1, 7, 1))
+		out.append({"player": p, "age": age, "ask": market.asking_salary(p, age, rules.cap), "years": market.desired_years(age, rules.cap), "agreed": state.agreed_extensions.has(pid)})
+	return out
+
+
+## Agrees to keep a player whose deal ends this season. When the season ends he is
+## re-signed at his asking salary (own-player exception) on a new contract.
+## Returns {"ok": bool, "reason": String}.
+func extend_contract(player_id: int) -> Dictionary:
+	var w := state.world
+	var team: FcTeam = w.teams.get_by_id(state.user_team_id)
+	var rules := w.rules_of_league(league_id)
+	if not team.roster.contains(player_id):
+		return {"ok": false, "reason": "That player is not on your roster."}
+	var c := w.active_contract_of(player_id)
+	if c == null or c.end_season() > state.current_season:
+		return {"ok": false, "reason": "Only players in the last year of their contract can be extended."}
+	var p: FcPlayer = w.players.get_by_id(player_id)
+	var market := FcPlayerMarket.new(FcPlayerRatings.load_default())
+	var next_year := state.current_season + 1
+	var age: int = p.age_on(FcDate.new(next_year, 7, 1))
+	var ask := market.asking_salary(p, age, rules.cap)
+	var check := rules.cap.check_signing(w.payroll_of_team(team.id, next_year), ask, FcCapRules.SigningKind.OWN_PLAYER)
+	if not check.allowed:
+		return {"ok": false, "reason": "%s wants %s a year, but %s." % [p.identity.full_name(), "$%.1fM" % (ask / 1e6), check.reason]}
+	if state.agreed_extensions.has(player_id):
+		return {"ok": false, "reason": "%s has already agreed to stay." % p.identity.full_name()}
+	state.agreed_extensions.append(player_id)
+	return {"ok": true, "reason": "%s agreed to a new %d-year deal at %s a year, starting next season." % [p.identity.full_name(), market.desired_years(age, rules.cap), "$%.1fM" % (ask / 1e6)]}
 
 
 # --- the draft ------------------------------------------------------------------------------

@@ -47,6 +47,9 @@ func _initialize() -> void:
 
 
 func _decide(game: FcGameController, strategy: String) -> void:
+	# every strategy keeps its players: agree to re-sign everyone whose contract ends
+	for entry in game.expiring_players():
+		game.extend_contract(entry["player"].id)
 	match strategy:
 		"builder":
 			game.start_arena_project("luxury_suites")
