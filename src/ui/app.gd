@@ -1062,7 +1062,7 @@ func _tab_staff() -> Control:
 		else:
 			box.add_child(FcUiTables.label("%s (talent evaluation %d, negotiation %d). A sharper eye means better re-signing, drafting and signings; leave an area unticked to decide it yourself." % [gm["name"], gm["talent_evaluation"], gm["negotiation"]]))
 			var checks := HBoxContainer.new()
-			for entry in [["contracts", "Re-sign my players"], ["draft", "Run the draft"], ["free_agency", "Sign free agents"], ["trades", "Make trades"]]:
+			for entry in [["contracts", "Re-sign my players"], ["draft", "Run the draft"], ["free_agency", "Sign free agents"], ["trades", "Make trades"], ["injuries", "Replace injured players"]]:
 				var check := CheckBox.new()
 				check.text = entry[1]
 				check.button_pressed = controller.delegation_on(entry[0])

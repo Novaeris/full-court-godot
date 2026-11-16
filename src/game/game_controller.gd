@@ -80,6 +80,8 @@ func advance_day() -> int:
 	match phase():
 		PHASE_REGULAR:
 			played = engine.play_day(s, state.rng)
+			if state.mode == FcGameState.MODE_OWNER and state.delegation["injuries"]:
+				_gm_cover_injuries(s)
 			if s.regular_season_complete():
 				engine.start_playoffs(s)
 		PHASE_PLAYOFFS:
@@ -381,6 +383,80 @@ func _gm_trades() -> void:
 		if trades.attempt(league_id, seller, buyer, finished.year + 1, rng):
 			made += 1
 			_gm_log.append("Your general manager made a trade: %s." % state.world.news[state.world.news.size() - 1]["text"] if state.world.news.size() > news_before else "Your general manager made a trade.")
+
+
+## In-season moves by the GM ("injuries" delegation). Checked once a day, at most one move
+## every GM_MOVE_GAP_DAYS: when injuries leave the team with fewer than GM_MIN_HEALTHY
+## healthy players, or a top-eight player is out for GM_LONG_INJURY games or more while
+## the healthy group is still thin (13 or fewer), the GM signs the best free agent he can
+## afford (preferring the injured player's position). A full roster makes room by releasing
+## the weakest player who is not hurt and not in the top eight (the usual buyout applies).
+const GM_MIN_HEALTHY := 11
+const GM_LONG_INJURY := 10
+const GM_MOVE_GAP_DAYS := 7
+var _gm_last_move_day: int = -100
+
+
+func _gm_cover_injuries(s: FcSeason) -> void:
+	if s.next_day - _gm_last_move_day < GM_MOVE_GAP_DAYS:
+		return
+	var w := state.world
+	var team: FcTeam = w.teams.get_by_id(state.user_team_id)
+	var rules := w.rules_of_league(league_id)
+	var ratings := FcPlayerRatings.load_default()
+	var healthy := 0
+	var ranked: Array = []
+	for pid in team.roster.player_ids:
+		var p: FcPlayer = w.players.get_by_id(pid)
+		ranked.append([ratings.overall(p), p])
+		if p.games_out <= 0:
+			healthy += 1
+	ranked.sort_custom(func(a, b): return a[0] > b[0])
+	var missing: FcPlayer = null
+	for i in mini(8, ranked.size()):
+		var p2: FcPlayer = ranked[i][1]
+		if p2.games_out >= GM_LONG_INJURY and (missing == null or p2.games_out > missing.games_out):
+			missing = p2
+	if healthy >= GM_MIN_HEALTHY and not (missing != null and healthy <= 13):
+		return
+	var market := FcPlayerMarket.new(ratings)
+	var candidates: Array = []
+	for entry in free_agent_market(40):
+		candidates.append([_gm_value(entry["player"], entry["age"], market), entry["player"], entry["ask"]])
+	candidates.sort_custom(func(a, b): return a[0] > b[0])
+	var target: FcPlayer = null
+	var target_ask := 0
+	for c in candidates:
+		if w.payroll_of_team(team.id, state.current_season) + c[2] > gm_payroll_limit():
+			continue
+		if target == null:
+			target = c[1]
+			target_ask = c[2]
+		if missing != null and c[1].primary_position == missing.primary_position:
+			target = c[1]
+			target_ask = c[2]
+			break
+	if target == null:
+		return
+	if team.roster.size() >= rules.roster_max:
+		var drop: FcPlayer = null
+		var drop_value := INF
+		for i in range(8, ranked.size()):
+			var q: FcPlayer = ranked[i][1]
+			if q.games_out <= 0 and ranked[i][0] < drop_value:
+				drop_value = ranked[i][0]
+				drop = q
+		if drop == null:
+			return
+		var released := release_player(drop.id)
+		if not released["released"]:
+			return
+	var result := sign_free_agent(target.id)
+	if not result["signed"]:
+		return
+	_gm_last_move_day = s.next_day
+	var reason := "to cover injuries" if missing == null else "to replace %s (out %d games)" % [missing.identity.full_name(), missing.games_out]
+	w.add_news(state.current_date, "signing", "Your general manager signed %s %s." % [target.identity.full_name(), reason], team.id)
 
 
 ## A report card on the general manager for the last finished season.

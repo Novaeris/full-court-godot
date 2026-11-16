@@ -25,9 +25,9 @@ var agreed_extensions: Array[int] = []
 ## Terms agreed with those players: player id -> [first-year salary, years].
 var agreed_terms: Dictionary = {}
 ## What the owner lets the general manager handle (Owner Mode): "contracts" (re-signing),
-## "draft", "free_agency". Off = the owner decides. Missing in older saves = all off.
-var delegation: Dictionary = {"contracts": false, "draft": false, "free_agency": false, "trades": false}
-const DELEGATION_KEYS := ["contracts", "draft", "free_agency", "trades"]
+## "draft", "free_agency", "trades", "injuries" (in-season replacements). Off = the owner decides. Missing in older saves = all off.
+var delegation: Dictionary = {"contracts": false, "draft": false, "free_agency": false, "trades": false, "injuries": false}
+const DELEGATION_KEYS := ["contracts", "draft", "free_agency", "trades", "injuries"]
 ## The owner's direction for the general manager (Owner Mode): "philosophy" is one of
 ## PHILOSOPHIES (win now = value ability today, rebuild = value youth and potential and
 ## sell veterans), "budget" one of BUDGETS (how much payroll the GM may commit).

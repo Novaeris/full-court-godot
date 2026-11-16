@@ -224,3 +224,79 @@ func test_owner_is_told_when_staff_change() -> void:
 			told = true
 	assert_true(told, "a staff change on the owner's team is reported")
 	assert_true(w.staff_in_role(team_id, FcStaffRole.Id.GENERAL_MANAGER) != null, "the team still has a GM")
+
+
+func _injure_best(g: FcGameController, count: int) -> Array[FcPlayer]:
+	var w := g.state.world
+	var team: FcTeam = w.teams.get_by_id(g.state.user_team_id)
+	var ratings := FcPlayerRatings.load_default()
+	var players: Array = []
+	for pid in team.roster.player_ids:
+		players.append(w.players.get_by_id(pid))
+	players.sort_custom(func(a, b): return ratings.overall(a) > ratings.overall(b))
+	var out: Array[FcPlayer] = []
+	for i in count:
+		players[i].games_out = 40
+		players[i].injury = "a test injury"
+		out.append(players[i])
+	return out
+
+
+func test_the_gm_covers_injuries_when_asked() -> void:
+	var g := _game(101)
+	g.set_delegation("injuries", true)
+	_injure_best(g, 3)   # 12 players, 3 hurt: 9 healthy
+	var team: FcTeam = g.state.world.teams.get_by_id(g.state.user_team_id)
+	var before := team.roster.size()
+	var news_before := g.state.world.news.size()
+	g.advance_day()
+	assert_eq(team.roster.size(), before + 1, "he signed a replacement")
+	var told := false
+	for i in range(news_before, g.state.world.news.size()):
+		if "general manager signed" in g.state.world.news[i]["text"]:
+			told = true
+	assert_true(told, "and the news says so")
+	assert_eq(g.state.world.validate(g.state.current_season), [] as Array[String])
+
+
+func test_the_gm_waits_between_moves_and_does_nothing_unless_asked() -> void:
+	var off := _game(102)
+	_injure_best(off, 3)
+	var off_team: FcTeam = off.state.world.teams.get_by_id(off.state.user_team_id)
+	var size := off_team.roster.size()
+	off.advance_day()
+	assert_eq(off_team.roster.size(), size, "no delegation, no moves")
+	var g := _game(102)
+	g.set_delegation("injuries", true)
+	_injure_best(g, 5)
+	var team: FcTeam = g.state.world.teams.get_by_id(g.state.user_team_id)
+	var start := team.roster.size()
+	g.advance_day()
+	var after_first := team.roster.size()
+	assert_eq(after_first, start + 1)
+	g.advance_day()
+	assert_eq(team.roster.size(), after_first, "one move a week at most")
+	g.advance_days(FcGameController.GM_MOVE_GAP_DAYS)
+	assert_true(team.roster.size() <= g.state.world.rules_of_league(1).roster_max)
+
+
+func test_a_full_roster_makes_room_for_the_replacement() -> void:
+	var g := _game(103)
+	g.set_delegation("injuries", true)
+	var w := g.state.world
+	var rules := w.rules_of_league(1)
+	var team: FcTeam = w.teams.get_by_id(g.state.user_team_id)
+	var spare := g.free_agent_market(40)
+	var i := 0
+	while team.roster.size() < rules.roster_max and i < spare.size():
+		var q: FcPlayer = spare[i]["player"]
+		i += 1
+		w.contracts.add(FcPlayerMarket.make_contract(w.ids.next_id(FcWorld.KIND_CONTRACT), q.id, team.id, g.state.current_season, 1, rules.cap.min_player_salary, rules.cap, g.state.current_date))
+		team.roster.add(q.id)
+	assert_eq(team.roster.size(), rules.roster_max)
+	var hurt := _injure_best(g, 5)   # 10 healthy of 15
+	g.advance_day()
+	assert_eq(team.roster.size(), rules.roster_max, "someone left to make room and someone arrived")
+	for p in hurt:
+		assert_true(team.roster.contains(p.id), "injured stars are not dropped")
+	assert_eq(w.validate(g.state.current_season), [] as Array[String])
