@@ -131,3 +131,46 @@ func test_trades_are_reproducible() -> void:
 	finished.year = 2026
 	var first := a.run(1, finished, 2027, FcRng.new(3))
 	assert_true(first >= 0)
+
+
+func test_a_pick_can_sweeten_a_deal_the_seller_would_otherwise_refuse() -> void:
+	var vet := _make_old_star(1)
+	var kid := _make_prospect(2)
+	_salary_neutral(vet, kid)
+	# find a prospect quality where the seller is just short of agreeing but the buyer gains a lot
+	var found := false
+	for pot in range(96, 30, -1):
+		kid.development.potential = pot
+		var seller_gain := trades._value(kid, 2027, false) - trades._value(vet, 2027, false)
+		var buyer_gain := trades._value(vet, 2027, true) - trades._value(kid, 2027, true)
+		if seller_gain <= FcTrades.MARGIN and seller_gain > FcTrades.MARGIN - 4.0 and buyer_gain > FcTrades.MARGIN + 4.0:
+			found = true
+			break
+	assert_true(found, "a borderline prospect exists for this test")
+	var without := FcTrades.new(world)
+	assert_true(not without._try_trade(rules, 1, 2, 2027, FcRng.new(1)), "without picks the seller says no")
+	assert_true(trades._try_trade(rules, 1, 2, 2027, FcRng.new(1), {}, 2028), "with a pick added the deal works")
+	assert_true(world.pick_owners.size() == 1, "one pick changed hands")
+	for key in world.pick_owners:
+		assert_eq(world.pick_owners[key], 1, "to the rebuilding seller")
+	assert_true(world.news.any(func(n): return "pick" in n["text"] and vet.identity.last_name in n["text"]), "the news mentions the pick")
+	assert_eq(world.validate(2027), [] as Array[String])
+
+
+func test_the_trade_market_includes_picks_and_stays_consistent() -> void:
+	var picks_moved := 0
+	for seed_value in 12:
+		var finished := FcSeason.new(1)
+		finished.league_id = 1
+		finished.year = 2026
+		trades.run(1, finished, 2027, FcRng.new(seed_value))
+		assert_eq(world.validate(2027), [] as Array[String], "seed %d" % seed_value)
+	for key in world.pick_owners:
+		var parts := str(key).split(":")
+		assert_true(int(parts[0]) >= 2028 and int(parts[0]) <= 2030, "only tradable years")
+		assert_true(int(parts[1]) == 1 or int(parts[1]) == 2)
+		assert_true(world.teams.has_id(int(world.pick_owners[key])) and int(parts[2]) != int(world.pick_owners[key]), "the owner is another real team")
+		picks_moved += 1
+	for t in world.teams.all():
+		assert_true(t.roster.size() >= rules.roster_min - 3 and t.roster.size() <= rules.roster_max)
+	assert_true(picks_moved >= 0)

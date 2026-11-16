@@ -75,8 +75,13 @@ func propose(league_id: int, year: int, user_team_id: int, ai_team_id: int, give
 	if received < given * (1.0 + AI_PROFIT) + 1.0:
 		return _no("%s turned the offer down: it does not think it gets enough back." % world.team_display_name(ai_team_id))
 	if execute:
-		_move(give_ids, user_team, ai_team, ai_team_id)
-		_move(get_ids, ai_team, user_team, user_team_id)
+		# everybody leaves first, then everybody arrives: a full roster only has room after its outgoing players go
+		for pid in give_ids:
+			user_team.roster.remove(pid)
+		for pid in get_ids:
+			ai_team.roster.remove(pid)
+		_arrive(give_ids, ai_team, ai_team_id)
+		_arrive(get_ids, user_team, user_team_id)
 		for pick in give_picks:
 			world.set_pick_owner(pick[0], pick[1], pick[2], ai_team_id)
 		for pick in get_picks:
@@ -104,26 +109,9 @@ func _pick_ok(pick: Array, owner_id: int, first_pick_year: int) -> bool:
 		and world.pick_owner(pick[0], pick[1], pick[2]) == owner_id
 
 
-## Team id -> 0 (weakest team) .. 1 (strongest), by the average rating of its best eight players.
+## Team id -> 0 (weakest team) .. 1 (strongest); see FcTrades.strength_fractions.
 func _strength_fractions(league: FcLeague) -> Dictionary:
-	var ratings := FcPlayerRatings.load_default()
-	var scored: Array = []
-	for tid in league.all_team_ids():
-		var values: Array = []
-		for pid in world.teams.get_by_id(tid).roster.player_ids:
-			values.append(ratings.overall(world.players.get_by_id(pid)))
-		values.sort()
-		values.reverse()
-		var top := values.slice(0, 8)
-		var total := 0.0
-		for v in top:
-			total += v
-		scored.append([total / maxf(1.0, top.size()), tid])
-	scored.sort()
-	var out := {}
-	for i in scored.size():
-		out[scored[i][1]] = float(i) / maxf(1.0, scored.size() - 1.0)
-	return out
+	return trades.strength_fractions(league)
 
 
 ## What the AI thinks a set of picks is worth, in the same units as _package_value. A pick is
@@ -141,9 +129,8 @@ func _picks_value(picks: Array, first_pick_year: int, strengths: Dictionary, con
 	return total
 
 
-func _move(ids: Array, from: FcTeam, to: FcTeam, to_id: int) -> void:
+func _arrive(ids: Array, to: FcTeam, to_id: int) -> void:
 	for pid in ids:
-		from.roster.remove(pid)
 		to.roster.add(pid)
 		world.active_contract_of(pid).team_id = to_id
 

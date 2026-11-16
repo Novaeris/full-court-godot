@@ -94,3 +94,32 @@ func test_bad_inputs_are_refused() -> void:
 	assert_true(not g.propose_trade(user_id, [], [])["accepted"], "cannot trade with yourself")
 	assert_true(not g.propose_trade(ai_id, [], [])["accepted"], "empty trade")
 	assert_true(not g.propose_trade(ai_id, [_best(ai_id)], [_worst(ai_id)])["accepted"], "offering a player you do not own")
+
+
+func test_trades_work_when_both_rosters_are_full() -> void:
+	var w := g.state.world
+	var rules := w.rules_of_league(g.league_id)
+	var user: FcTeam = w.teams.get_by_id(user_id)
+	var ai: FcTeam = w.teams.get_by_id(ai_id)
+	# fill both rosters to the maximum with players from the free-agent pool
+	var spare := g.free_agent_market(60)
+	var i := 0
+	for team in [user, ai]:
+		while team.roster.size() < rules.roster_max and i < spare.size():
+			var q: FcPlayer = spare[i]["player"]
+			i += 1
+			var c := FcPlayerMarket.make_contract(w.ids.next_id(FcWorld.KIND_CONTRACT), q.id, team.id, g.state.current_season, 1, rules.cap.min_player_salary, rules.cap, g.state.current_date)
+			w.contracts.add(c)
+			team.roster.add(q.id)
+	assert_eq(user.roster.size(), rules.roster_max)
+	assert_eq(ai.roster.size(), rules.roster_max)
+	var star := _best(user_id)
+	var scrub := _worst(ai_id)
+	var year := g.state.current_season
+	w.active_contract_of(scrub).year_for(year).salary = w.active_contract_of(star).year_for(year).salary
+	var r := g.propose_trade(ai_id, [star], [scrub])
+	assert_true(r["accepted"], r["reason"])
+	assert_true(ai.roster.contains(star) and user.roster.contains(scrub), "both players arrived even though both rosters were full")
+	assert_eq(user.roster.size(), rules.roster_max)
+	assert_eq(ai.roster.size(), rules.roster_max)
+	assert_eq(w.validate(year), [] as Array[String])

@@ -108,7 +108,7 @@ func test_the_traded_pick_is_used_in_the_draft_and_pruned_after() -> void:
 			found = true
 			assert_eq(row[2], ai_id, "the new owner made the pick")
 	assert_true(found, "the traded pick was used")
-	assert_true(w.pick_owners.is_empty(), "ownership of a held draft is forgotten")
+	assert_true(not w.pick_owners.keys().any(func(k): return str(k).begins_with("2027:")), "ownership of a held draft is forgotten")
 	assert_eq(g.first_tradable_pick_year(), 2028, "the next draft is 2028 after the window opens")
 	assert_eq(w.validate(g.state.current_season), [] as Array[String])
 
