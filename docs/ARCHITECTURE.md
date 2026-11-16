@@ -152,6 +152,9 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 - `FcTeamBusiness.sponsor_plan`: 0 balanced (default, all AI teams), 1 steady (95% of base, ignores results), 2 performance (65% base plus weight on win percentage and playoff rounds, so it pays more only for winners). Constants in `data/simulation/finance.json`. `FcGameController.set_sponsor_plan`.
 - `borrow(amount)` adds cash and debt up to `loan_limit()` (40% of franchise value); `repay_debt(amount)` pays from cash. Debt already costs 6% interest a season in the finance engine. Both are on the Finances tab. Not built: named sponsor contracts with multiple years, negotiated loan terms.
 
+## Revenue sharing
+- Every season end, teams in big markets pay and teams in small markets receive a transfer of `revenue_sharing_amount` ($120M at a $140M cap) times (league average market factor minus the team's) / average. It sums to zero over the league, so league-wide profit is unchanged. Found with `tools/owner_playthrough.ps1`: before this, the owner of the smallest market lost $55-75M a year and fell into a debt spiral; now about $15-20M a year (still the hardest team to own, which is a valid challenge but survivable).
+
 ## Arena projects (Owner Mode)
 - Definitions in `data/simulation/arena_projects.json` (cost scaled by the cap, seasons to build, effect): expand seating (+1,500 seats, up to 26,000; more upkeep because arena operations scale with capacity) and luxury suites (+25% arena event income per level, 3 levels). Running projects are saved on `FcTeamBusiness.projects` ({key, seasons_left}); `FcFinanceEngine.start_project` charges the cost up front, `advance_projects` runs at every season end and applies the effect (arena capacity is changed on the saved `FcArena`). Controller: `arena_project_options()`, `start_arena_project(key)`; the Finances tab has a picker. The quick "+10 arena quality" button remains for upkeep-style improvement.
 

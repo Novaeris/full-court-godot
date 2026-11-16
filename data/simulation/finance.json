@@ -23,6 +23,7 @@
 	"brand_catchup": 0.20,
 	"debt_interest": 0.06,
 	"loan_limit_share": 0.4,
+	"revenue_sharing_amount": 120000000,
 	"sponsor_steady_multiplier": 0.95,
 	"sponsor_performance_base": 0.65,
 	"sponsor_performance_win_weight": 0.55,

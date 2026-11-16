@@ -189,6 +189,13 @@ func settle(league_id: int, season: FcSeason, human_teams: Array[int] = []) -> A
 		repeats[tid] = _tax_seasons_in_last_four(tid, year)
 	var shared := cap.distribute_luxury_tax(payrolls, repeats)
 
+	# Revenue sharing: big markets pay and small markets receive, so every team can survive.
+	# The transfers are based on market size and sum to zero over the league.
+	var market_sum := 0.0
+	for tid in league.all_team_ids():
+		market_sum += market_factor(world.cities.get_by_id(world.teams.get_by_id(tid).city_id))
+	var market_mean := market_sum / maxf(1.0, league.all_team_ids().size())
+
 	var records: Array[FcFinanceRecord] = []
 	for tid in league.all_team_ids():
 		var team: FcTeam = world.teams.get_by_id(tid)
@@ -233,6 +240,11 @@ func settle(league_id: int, season: FcSeason, human_teams: Array[int] = []) -> A
 		rec.revenue["broadcasting"] = roundi(float(k["broadcasting_per_team"]) * scale)
 		rec.revenue["arena_events"] = roundi(float(k["arena_events_base"]) * scale * city.economy_index / 100.0 * arena.capacity / float(k["reference_capacity"]) * (1.0 + float(load_arena_projects().get("suite_event_bonus", 0.2)) * business.suites_level))
 		rec.revenue["tax_share"] = int(shared["payouts"].get(tid, 0))
+		var transfer := roundi(float(k["revenue_sharing_amount"]) * scale * (market_mean - m) / market_mean)
+		if transfer >= 0:
+			rec.revenue["revenue_sharing"] = transfer
+		else:
+			rec.expenses["revenue_sharing"] = -transfer
 
 		var tax := cap.luxury_tax(payrolls[tid], repeats[tid])
 		rec.paid_tax = tax > 0

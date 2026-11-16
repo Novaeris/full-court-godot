@@ -287,3 +287,28 @@ func test_business_saves_projects() -> void:
 	assert_eq(back.projects, b.projects)
 	assert_eq(back.suites_level, 2)
 	assert_eq(FcTeamBusiness.from_dict({"id": 2}).projects, [])
+
+
+func test_revenue_sharing_sums_to_zero_and_favours_small_markets() -> void:
+	var played := _played()
+	var world: FcWorld = played["world"]
+	var fin := FcFinanceEngine.new(world)
+	var net := 0
+	var smallest_id := 0
+	var biggest_id := 0
+	var small := INF
+	var big := -INF
+	for t in world.teams.all():
+		var rec := fin.record_of(t.id, 2026)
+		net += rec.revenue["revenue_sharing"] - rec.expenses["revenue_sharing"]
+		assert_true(rec.revenue["revenue_sharing"] == 0 or rec.expenses["revenue_sharing"] == 0, "a team either pays or receives")
+		var m := fin.market_factor(world.cities.get_by_id(t.city_id))
+		if m < small:
+			small = m
+			smallest_id = t.id
+		if m > big:
+			big = m
+			biggest_id = t.id
+	assert_between(net, -16, 16, "what is paid equals what is received (rounding only)")
+	assert_true(fin.record_of(smallest_id, 2026).revenue["revenue_sharing"] > 0, "the smallest market receives")
+	assert_true(fin.record_of(biggest_id, 2026).expenses["revenue_sharing"] > 0, "the biggest market pays")
