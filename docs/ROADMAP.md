@@ -32,7 +32,7 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 - Career statistics and archiving of old seasons (370 tests)
 
 ## Current
-- Awaiting founder direction on the next system.
+- Owner Mode depth (see `docs/PROGRESS_LOG.md`). A milestone plan is drafted in `docs/MILESTONE_PLAN.md` and awaits founder review; until it is approved the "Next" list below is only a rough guide.
 
 ## Next (proposed order, driven by dependencies)
 1. (done) Staff entities. 2. (done) Save system. 3. (done) Procedural generation of the league.
