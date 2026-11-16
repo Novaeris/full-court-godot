@@ -277,3 +277,13 @@ func test_business_saves_sponsor_plan() -> void:
 	var old := b.to_dict()
 	old.erase("sponsor_plan")
 	assert_eq(FcTeamBusiness.from_dict(old).sponsor_plan, 0)
+
+
+func test_business_saves_projects() -> void:
+	var b := FcTeamBusiness.new(2)
+	b.projects = [{"key": "expand_seating", "seasons_left": 2}]
+	b.suites_level = 2
+	var back := FcTeamBusiness.from_dict(JSON.parse_string(JSON.stringify(b.to_dict())))
+	assert_eq(back.projects, b.projects)
+	assert_eq(back.suites_level, 2)
+	assert_eq(FcTeamBusiness.from_dict({"id": 2}).projects, [])

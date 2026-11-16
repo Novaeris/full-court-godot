@@ -28,6 +28,10 @@ var mid_level_used_season: int = 0
 ## pays much more for winning and playoff success).
 var sponsor_plan: int = 0
 const SPONSOR_PLANS := ["Balanced", "Steady", "Performance"]
+## Arena projects under way: [{"key": String, "seasons_left": int}, ...] (see data/simulation/arena_projects.json).
+var projects: Array = []
+## Levels of luxury suites built (each raises arena event income).
+var suites_level: int = 0
 
 
 func _init(team_id: int = 0) -> void:
@@ -58,7 +62,7 @@ func to_dict() -> Dictionary:
 	return {
 		"schema": SCHEMA_VERSION, "id": id, "ticket_price": ticket_price,
 		"marketing_budget": marketing_budget, "facilities_level": facilities_level,
-		"fan_interest": fan_interest, "brand": brand, "cash": cash, "debt": debt, "valuation": valuation, "mid_level_used_season": mid_level_used_season, "sponsor_plan": sponsor_plan,
+		"fan_interest": fan_interest, "brand": brand, "cash": cash, "debt": debt, "valuation": valuation, "mid_level_used_season": mid_level_used_season, "sponsor_plan": sponsor_plan, "projects": projects.duplicate(true), "suites_level": suites_level,
 	}
 
 
@@ -74,4 +78,7 @@ static func from_dict(d: Dictionary) -> FcTeamBusiness:
 	b.valuation = int(d.get("valuation", b.valuation))
 	b.mid_level_used_season = int(d.get("mid_level_used_season", 0))
 	b.sponsor_plan = clampi(int(d.get("sponsor_plan", 0)), 0, 2)
+	b.suites_level = int(d.get("suites_level", 0))
+	for item in d.get("projects", []):
+		b.projects.append({"key": str(item["key"]), "seasons_left": int(item["seasons_left"])})
 	return b

@@ -1,0 +1,11 @@
+{
+	"schema": 1,
+	"note": "Arena building projects the owner can start. Costs are for a league with a $140M cap and scale with the cap. A project is paid up front, takes `seasons` season-ends to finish, and then applies its effect. Only one project of each kind can run at a time.",
+	"projects": [
+		{"key": "expand_seating", "name": "Expand seating", "cost": 25000000, "seasons": 2, "capacity": 1500, "max_capacity": 26000,
+			"description": "+1,500 seats (more tickets if there is demand, but more upkeep)."},
+		{"key": "luxury_suites", "name": "Luxury suites", "cost": 12000000, "seasons": 1, "suites": 1, "max_suites": 3,
+			"description": "More arena event income (each level adds 25%), up to 3 levels."}
+	],
+	"suite_event_bonus": 0.25
+}

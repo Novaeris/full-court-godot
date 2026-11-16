@@ -785,6 +785,23 @@ func _tab_finances() -> Control:
 				show_dashboard()))
 		loans.add_child(FcUiTables.label("   Borrowing limit %s" % FcUiTables.money(controller.loan_limit())))
 		box.add_child(loans)
+		var build := HBoxContainer.new()
+		build.add_child(FcUiTables.label("Arena project:"))
+		var options := controller.arena_project_options()
+		var project_pick := OptionButton.new()
+		for o in options:
+			project_pick.add_item("%s (%s, %d season%s)%s" % [o["name"], FcUiTables.money(o["cost"]), o["seasons"], "" if o["seasons"] == 1 else "s", " - under way" if o["running"] else ""])
+		build.add_child(project_pick)
+		build.add_child(FcUiTables.button("Start project", func():
+			var r := controller.start_arena_project(options[project_pick.selected]["key"])
+			_say(r["reason"])
+			if r["ok"]:
+				show_dashboard()))
+		box.add_child(build)
+		var detail: Array[String] = []
+		for o in options:
+			detail.append("%s: %s" % [o["name"], o["description"]])
+		box.add_child(FcUiTables.label("  " + "   |   ".join(detail)))
 	var fin := FcFinanceEngine.new(w)
 	var rows: Array = []
 	var years: Array = []

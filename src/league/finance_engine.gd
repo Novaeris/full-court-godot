@@ -25,6 +25,62 @@ func _init(game_world: FcWorld) -> void:
 	k = load_constants()
 
 
+## The arena project definitions: {"projects": [...], "suite_event_bonus": float}.
+static func load_arena_projects() -> Dictionary:
+	var file := FileAccess.open("res://data/simulation/arena_projects.json", FileAccess.READ)
+	var parsed = FcChecks.parse_json(file.get_as_text()) if file != null else null
+	return parsed if parsed is Dictionary else {"projects": []}
+
+
+static func project_def(key: String) -> Dictionary:
+	for p in load_arena_projects()["projects"]:
+		if p["key"] == key:
+			return p
+	return {}
+
+
+## Starts a project if it exists, is not already running, is not already maxed out
+## and the team can pay. Returns "" on success or the reason it cannot start.
+func start_project(business: FcTeamBusiness, arena: FcArena, key: String, scale: float) -> String:
+	var def := project_def(key)
+	if def.is_empty():
+		return "Unknown project."
+	for p in business.projects:
+		if p["key"] == key:
+			return "That project is already under way."
+	if def.has("max_capacity") and arena.capacity + int(def["capacity"]) > int(def["max_capacity"]):
+		return "The arena cannot grow beyond %d seats." % int(def["max_capacity"])
+	if def.has("max_suites") and business.suites_level >= int(def["max_suites"]):
+		return "All suite levels are already built."
+	if def.has("facilities") and business.facilities_level >= 100:
+		return "The arena is already in perfect condition."
+	var cost := roundi(float(def["cost"]) * scale)
+	if cost > business.cash:
+		return "You need %s in cash (you can borrow on the Finances tab)." % ("$%.1fM" % (cost / 1e6))
+	business.cash -= cost
+	business.projects.append({"key": key, "seasons_left": int(def["seasons"])})
+	return ""
+
+
+## Called at the end of each season: projects move closer to done and apply their effect when finished.
+func advance_projects(business: FcTeamBusiness, arena: FcArena, team_id: int, year: int) -> void:
+	var remaining: Array = []
+	for p in business.projects:
+		p["seasons_left"] = int(p["seasons_left"]) - 1
+		if p["seasons_left"] > 0:
+			remaining.append(p)
+			continue
+		var def := project_def(p["key"])
+		if def.has("capacity"):
+			arena.capacity = mini(int(def["max_capacity"]), arena.capacity + int(def["capacity"]))
+		if def.has("suites"):
+			business.suites_level = mini(int(def["max_suites"]), business.suites_level + int(def["suites"]))
+		if def.has("facilities"):
+			business.facilities_level = mini(100, business.facilities_level + int(def["facilities"]))
+		world.add_news(FcDate.new(year + 1, 6, 1), "staff", "%s finished a building project: %s" % [world.team_display_name(team_id), def.get("name", p["key"])], team_id)
+	business.projects = remaining
+
+
 static func load_constants() -> Dictionary:
 	var file := FileAccess.open("res://data/simulation/finance.json", FileAccess.READ)
 	var parsed = FcChecks.parse_json(file.get_as_text()) if file != null else null
@@ -175,7 +231,7 @@ func settle(league_id: int, season: FcSeason, human_teams: Array[int] = []) -> A
 			plan_factor = float(k["sponsor_performance_base"]) + float(k["sponsor_performance_win_weight"]) * standings.win_pct(tid) + float(k["sponsor_performance_playoff_weight"]) * success
 		rec.revenue["sponsorship"] = roundi(float(k["sponsorship_base"]) * scale * (0.5 + business.brand / 100.0) * pow(m, 0.8) * plan_factor)
 		rec.revenue["broadcasting"] = roundi(float(k["broadcasting_per_team"]) * scale)
-		rec.revenue["arena_events"] = roundi(float(k["arena_events_base"]) * scale * city.economy_index / 100.0 * arena.capacity / float(k["reference_capacity"]))
+		rec.revenue["arena_events"] = roundi(float(k["arena_events_base"]) * scale * city.economy_index / 100.0 * arena.capacity / float(k["reference_capacity"]) * (1.0 + float(load_arena_projects().get("suite_event_bonus", 0.2)) * business.suites_level))
 		rec.revenue["tax_share"] = int(shared["payouts"].get(tid, 0))
 
 		var tax := cap.luxury_tax(payrolls[tid], repeats[tid])
@@ -217,6 +273,7 @@ func settle(league_id: int, season: FcSeason, human_teams: Array[int] = []) -> A
 		rec.brand_end = business.brand
 		rec.cash_end = business.cash
 		rec.debt_end = business.debt
+		advance_projects(business, arena, tid, year)
 		rec.valuation_end = business.valuation
 		world.finances.add(rec)
 		records.append(rec)

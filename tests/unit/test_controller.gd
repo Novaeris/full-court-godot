@@ -211,3 +211,36 @@ func test_sponsor_plan_changes_sponsorship_income() -> void:
 	assert_true(results[0] != results[1] and results[0] != results[2], "plans pay differently: %s" % str(results))
 	var g2 := _game(32)
 	assert_true(not g2.set_sponsor_plan(3))
+
+
+func test_arena_projects_cost_time_and_then_apply() -> void:
+	var g := _game(33)
+	var w := g.state.world
+	var team: FcTeam = w.teams.get_by_id(g.state.user_team_id)
+	var arena: FcArena = w.arenas.get_by_id(team.arena_id)
+	assert_eq(g.arena_project_options().size(), 2)
+	var seats := arena.capacity
+	g.business().cash = 200000000
+	var cash := g.business().cash
+	var r := g.start_arena_project("expand_seating")
+	assert_true(r["ok"], r["reason"])
+	assert_true(g.business().cash < cash, "it is paid up front")
+	assert_true(not g.start_arena_project("expand_seating")["ok"], "not twice at once")
+	assert_true(not g.start_arena_project("nonsense")["ok"])
+	g.sim_playoffs()
+	assert_eq(arena.capacity, seats, "after one season the two-season project is not done")
+	g.start_next_season()
+	g.sim_playoffs()
+	assert_eq(arena.capacity, seats + 1500, "finished after two season ends")
+	assert_true(g.business().projects.is_empty())
+
+
+func test_suites_raise_event_income_and_need_cash() -> void:
+	var g := _game(34)
+	g.business().cash = 1000
+	var r := g.start_arena_project("expand_seating")
+	assert_true(not r["ok"] and "cash" in r["reason"])
+	g.business().cash = 500000000
+	assert_true(g.start_arena_project("luxury_suites")["ok"])
+	g.sim_playoffs()
+	assert_eq(g.business().suites_level, 1, "suites take one season")

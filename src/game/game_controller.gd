@@ -304,6 +304,30 @@ func release_player(player_id: int) -> Dictionary:
 
 # --- owner decisions --------------------------------------------------------------------
 
+## Arena projects: [{"key", "name", "description", "cost", "seasons", "running" (bool)}].
+func arena_project_options() -> Array:
+	var scale := FcFinanceEngine.new(state.world).scale_for(state.world.rules_of_league(league_id))
+	var out: Array = []
+	for def in FcFinanceEngine.load_arena_projects()["projects"]:
+		var running := false
+		for p in business().projects:
+			if p["key"] == def["key"]:
+				running = true
+		out.append({"key": def["key"], "name": def["name"], "description": def["description"], "cost": roundi(float(def["cost"]) * scale), "seasons": int(def["seasons"]), "running": running})
+	return out
+
+
+## Starts an arena project. Returns {"ok": bool, "reason": String}.
+func start_arena_project(key: String) -> Dictionary:
+	var w := state.world
+	var team: FcTeam = w.teams.get_by_id(state.user_team_id)
+	var finance := FcFinanceEngine.new(w)
+	var problem := finance.start_project(business(), w.arenas.get_by_id(team.arena_id), key, finance.scale_for(w.rules_of_league(league_id)))
+	if problem != "":
+		return {"ok": false, "reason": problem}
+	return {"ok": true, "reason": "Project started: %s." % FcFinanceEngine.project_def(key)["name"]}
+
+
 ## Chooses the sponsorship deal style: 0 balanced, 1 steady, 2 performance
 ## (see FcTeamBusiness.sponsor_plan). It applies when the season's books are settled.
 func set_sponsor_plan(plan: int) -> bool:
