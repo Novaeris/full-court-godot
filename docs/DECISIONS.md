@@ -147,6 +147,13 @@ Built on the founder's instruction to continue; the following product choices we
 - Only one-for-one swaps between a rebuilding team (gives a 27+ veteran) and a contender (gives a player of 25 or younger), and only in the offseason. Simple, always roster-neutral, and it moves talent from weak teams to strong ones while moving youth the other way, which should slow permanent dynasties without stripping stars at random. Draft picks are not tradeable yet (the draft is a pure function of the standings).
 - A human owner cannot yet propose or accept trades; that needs a UI and a valuation shown to the player.
 
+## D-029 Modes defined (2026-11-16, founder; supersedes the open parts of D-028)
+- **Owner Mode**: the player controls every operation of the franchise; simulated for up to **50 years**; the player **cannot lose**, but may transfer to another franchise "like a job" (job offers depend on their track record). Randomized players.
+- **Career Mode**: the player creates one player and takes them through an RPG-style progression, about **20 years**. Randomized players.
+- **Dynasty Mode**: a **card-collecting** game inspired by NBA 2K MyTeam with **static players made by the founder**; has **paid features**.
+- Art and audio will be produced with AI tools (founder). Platform priority after Windows: **mobile** (Android/iOS), so touch-friendly layouts move earlier in the plan.
+- Consequences: the 50-year target is an M2 requirement (health, performance and save size over 50 seasons); Dynasty Mode is a separate product track (collection, lineups, likely online); legal review must cover loot-box rules, AI-generated assets (rights, store disclosure) and invented names.
+
 ## D-028 Three modes (2026-11-16, founder)
 - The game has three modes: Owner Mode, Career Mode and Dynasty Mode. Owner Mode is built first (current work). Career Mode needs a definition from the founder before any design or code; Dynasty Mode (deep roster/lineup control) comes after Owner Mode. `FcGameState.MODES` currently lists only owner and dynasty; add career when it is defined.
 - Consequence: Dynasty-mode features (e.g. setting lineups and minutes) are not the next priority; Owner Mode keeps getting depth first.

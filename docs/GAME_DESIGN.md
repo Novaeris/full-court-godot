@@ -16,11 +16,11 @@ Player owns a franchise and runs it as a business; delegates basketball work to 
 - Legacy: franchise value and stability over decades.
 Key tradeoff loop: winning raises attendance, sponsors, valuation; but payroll, facilities and operating costs erode profit.
 
-### Career Mode (later; design to be defined by the founder)
-The game has three modes. Career Mode sits alongside Owner and Dynasty Mode and shares the same simulation and league core. Its rules, the role the player takes and what makes it different from Dynasty Mode are not yet described, so nothing is built for it. Open question for the founder: what does the player do in Career Mode?
+### Career Mode (later)
+The player creates a single player and guides them through an RPG-style career of about 20 years (progression, choices, contracts, teams, milestones). Uses randomized players and the same simulation and league core as Owner Mode. Detailed design still to come from the founder.
 
-### Dynasty Mode (later, likely premium)
-Deep multi-decade management: rosters, contracts, cap, free agency, trades, drafts, scouting, development, tactics, chemistry, injuries, history, Hall of Fame. Uses the same core as Owner Mode with more direct permissions.
+### Dynasty Mode (later, with paid features)
+A card-collecting game inspired by NBA 2K MyTeam: collect player cards, build lineups, compete. Players are **static** (hand-made by the founder, not randomized). It is a different kind of product from Owner and Career Mode and will have paid features (to be designed; the project rules still forbid pay-to-win, and any random paid packs need legal review because of loot-box regulation in some regions). It can reuse the game simulation for matches but needs its own collection, lineup and (probably) online systems.
 
 ## Fictional universe
 Original cities, teams, branding, arenas, conferences, rules, players, coaches, executives, rivalries and history. Procedurally generated but coherent. Stable IDs; history persists.
