@@ -30,7 +30,27 @@ Scope (in rough order):
 4. **Staff chemistry and coaching philosophy fit** (the data already exists: staff philosophy, player personality).
 5. **Facilities beyond seats and suites**: practice facility (development speed), medical center (injury recovery),
    each a project like the arena ones *(done 2026-11-16)*.
-6. **Franchise events**: relocation and expansion (saves can grow to 100 teams per D-005), a new arena.
+6. **The owners' meeting** (founder request 2026-11-16: relocation and expansion are in; teams vote on rule changes,
+   expansion and similar things in a part of the offseason). Proposal, for review (nothing built):
+   - *When*: a stage of the offseason after the playoffs and before the draft; 2-5 agenda items per year.
+   - *Agenda types*: **expansion** (add teams to a valid league size, an expansion fee shared among owners, an expansion
+     draft, realignment of conferences and divisions); **relocation** (a struggling AI team, or the player's own team, asks to
+     move to a new city; approval needed); **competition rules** (playoff size and format, draft lottery odds, draft rounds,
+     roster limits, season length); **money rules** (salary cap level and growth, luxury tax, revenue sharing, rookie scale).
+   - *Voting*: one vote per franchise; simple majority for most items, a supermajority (e.g. three quarters) for expansion,
+     relocation and cap-changing rules. Each AI owner votes by self-interest and a personality (what helps their team
+     now: small markets favour revenue sharing, bubble teams favour more playoff spots, contenders dislike talent
+     dilution); the tally shows each team's vote and reason.
+   - *The player's role*: one vote, a read on how each owner leans, and *influence* (from owner reputation and market size)
+     to spend on lobbying or on proposing one item a year; supporting another owner's item can buy support for yours.
+   - *Staging*: (a) meeting with rule tweaks, expansion and relocation, AI voting and a tally; (b) influence, lobbying and
+     player proposals; (c) the details: expansion draft with protected lists, realignment, arena for relocated teams.
+   - *Fits the code*: league rules are already data classes with `validate()`; valid league sizes are known
+     (`FcLeagueStructure`); the schedule builder and standings accept any valid structure; saves can hold 100 teams (D-005).
+     New work: AI voting model, the agenda and tally screen, an expansion-team generator and expansion draft,
+     relocation (city, arena, fan base), save versioning for changed rules and structure.
+   - *Risks*: AI votes could drift the league (every change is checked with the league health tools); saved-structure changes
+     need migrations; one new screen and a lot of tests.
 Done when: a scripted 20-season owner playthrough exercises every lever, stays valid, and the books and league
 health checks stay in range.
 Needs from you: whether relocation/expansion belong in v1.
