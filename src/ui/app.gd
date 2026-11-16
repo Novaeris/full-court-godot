@@ -494,6 +494,30 @@ func _tab_trades() -> Control:
 		lists.append(list)
 		ids_by_list.append(ids)
 	box.add_child(columns)
+	var pick_lists: Array = []
+	var picks_by_list: Array = []
+	var pick_columns := HBoxContainer.new()
+	for side in [[user_id, "Draft picks you give"], [_trade_partner, "Draft picks you get"]]:
+		var col2 := VBoxContainer.new()
+		col2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col2.add_child(FcUiTables.label(side[1], 16, true))
+		var plist := ItemList.new()
+		plist.select_mode = ItemList.SELECT_MULTI
+		plist.custom_minimum_size = Vector2(0, 110)
+		var refs: Array = []
+		for entry in controller.tradable_picks(side[0]):
+			plist.add_item(entry["label"])
+			refs.append([entry["year"], entry["round"], entry["original"]])
+		col2.add_child(plist)
+		pick_columns.add_child(col2)
+		pick_lists.append(plist)
+		picks_by_list.append(refs)
+	box.add_child(pick_columns)
+	var pick_refs := func(index: int) -> Array:
+		var out2: Array = []
+		for i in pick_lists[index].get_selected_items():
+			out2.append(picks_by_list[index][i])
+		return out2
 	var pick := func(index: int) -> Array:
 		var out: Array = []
 		for i in lists[index].get_selected_items():
@@ -501,9 +525,9 @@ func _tab_trades() -> Control:
 		return out
 	var row := HBoxContainer.new()
 	row.add_child(FcUiTables.button("Check the offer", func():
-		_say(controller.propose_trade(_trade_partner, pick.call(0), pick.call(1), true)["reason"])))
+		_say(controller.propose_trade(_trade_partner, pick.call(0), pick.call(1), true, pick_refs.call(0), pick_refs.call(1))["reason"])))
 	row.add_child(FcUiTables.button("Propose trade", func():
-		var r := controller.propose_trade(_trade_partner, pick.call(0), pick.call(1))
+		var r := controller.propose_trade(_trade_partner, pick.call(0), pick.call(1), false, pick_refs.call(0), pick_refs.call(1))
 		if r["accepted"]:
 			show_dashboard()
 		_say(r["reason"])))

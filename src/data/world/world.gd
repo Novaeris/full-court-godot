@@ -43,6 +43,10 @@ var news: Array = []
 ## Career statistics by player id: rows of [year, team id, gp, seconds, points, fgm, fga, tpm, tpa, ftm, fta, oreb, dreb, ast, stl, blk, tov, pf]
 ## (one per regular season). Kept forever, unlike the season's own detailed statistics.
 var careers: Dictionary = {}
+## Draft picks that changed hands: "year:round:original team id" -> owner team id.
+## A pick not listed belongs to the team it was created for. `year` is the year of the
+## season that starts after the draft (the 2027 draft follows the 2026-27 season).
+var pick_owners: Dictionary = {}
 const CAREER_COLUMNS := ["year", "team", "gp", "seconds", "points", "fgm", "fga", "tpm", "tpa", "ftm", "fta", "oreb", "dreb", "ast", "stl", "blk", "tov", "pf"]
 const NEWS_LIMIT := 300
 var finances: FcRepository = FcMemoryRepository.new()
@@ -74,6 +78,30 @@ func league_of_team(team_id: int) -> FcLeague:
 		if l.contains_team(team_id):
 			return l
 	return null
+
+
+static func pick_key(year: int, round_number: int, original_team_id: int) -> String:
+	return "%d:%d:%d" % [year, round_number, original_team_id]
+
+
+## Who owns this draft pick right now.
+func pick_owner(year: int, round_number: int, original_team_id: int) -> int:
+	return int(pick_owners.get(pick_key(year, round_number, original_team_id), original_team_id))
+
+
+func set_pick_owner(year: int, round_number: int, original_team_id: int, owner_team_id: int) -> void:
+	var key := pick_key(year, round_number, original_team_id)
+	if owner_team_id == original_team_id:
+		pick_owners.erase(key)
+	else:
+		pick_owners[key] = owner_team_id
+
+
+## Forgets ownership records of drafts that have been held (through `year`).
+func prune_picks(year: int) -> void:
+	for key in pick_owners.keys():
+		if int(str(key).split(":")[0]) <= year:
+			pick_owners.erase(key)
 
 
 ## Adds a news item (kinds: "injury", "milestone", "champion", "award", "signing", "retirement", "draft", "staff").
@@ -354,6 +382,7 @@ func to_dict() -> Dictionary:
 		"businesses": _dicts_of(businesses),
 		"news": news.duplicate(true),
 		"careers": _careers_dict(),
+		"pick_owners": pick_owners.duplicate(),
 		"finances": _dicts_of(finances),
 	}
 
@@ -384,6 +413,10 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 		_report(w.rules.add(FcLeagueRules.from_dict(d)), "league rules", errors)
 	for d in data.get("seasons", []):
 		_report(w.seasons.add(FcSeason.from_dict(d)), "season", errors)
+	var raw_picks = data.get("pick_owners", {})
+	if raw_picks is Dictionary:
+		for key in raw_picks:
+			w.pick_owners[str(key)] = int(raw_picks[key])
 	var raw_careers: Dictionary = data.get("careers", {})
 	for key in raw_careers:
 		var rows: Array = []

@@ -287,8 +287,14 @@ func draft_complete(ds: Dictionary) -> bool:
 	return int(ds["next"]) > int(ds["total"])
 
 
-## The team whose turn it is.
+## The team whose turn it is (the owner of the pick, which can differ from the team
+## the pick was created for after a pick trade).
 func draft_team_on_clock(ds: Dictionary) -> int:
+	return world.pick_owner(int(ds["year"]), draft_round_on_clock(ds), draft_original_on_clock(ds))
+
+
+## The team this pick was created for (its slot in the order).
+func draft_original_on_clock(ds: Dictionary) -> int:
 	var order: Array = ds["order"]
 	return int(order[(int(ds["next"]) - 1) % order.size()])
 
@@ -328,11 +334,12 @@ func make_pick(ds: Dictionary, league_id: int, prospect_id: int) -> bool:
 	var pick: int = int(ds["next"])
 	var round_number := draft_round_on_clock(ds)
 	var team_id := draft_team_on_clock(ds)
+	var original_id := draft_original_on_clock(ds)
 	var team: FcTeam = world.teams.get_by_id(team_id)
 	var best: FcPlayer = world.players.get_by_id(prospect_id)
 	available.remove_at(index)
 	best.status = FcPlayer.Status.ACTIVE
-	(ds["results"] as Array).append([round_number, pick, team_id, best.id])
+	(ds["results"] as Array).append([round_number, pick, team_id, best.id, original_id])
 	ds["next"] = pick + 1
 	if pick == 1:
 		world.add_news(FcDate.new(new_year, 6, 25), "draft", "%s select %s with the first pick of the draft" % [world.team_display_name(team_id), best.identity.full_name()], team_id)
@@ -358,6 +365,7 @@ func finish_draft(ds: Dictionary, finished: FcSeason) -> int:
 	for pid in ds["available"]:
 		world.players.get_by_id(int(pid)).status = FcPlayer.Status.ACTIVE
 	ds["available"] = []
+	world.prune_picks(int(ds["year"]))
 	finished.draft = (ds["results"] as Array).duplicate(true)
 	return finished.draft.size()
 

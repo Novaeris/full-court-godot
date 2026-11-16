@@ -10,6 +10,8 @@ extends RefCounted
 
 ## The AI wants to come out this much ahead (a fraction of what it gives up).
 const AI_PROFIT := 0.10
+## How many drafts ahead picks can be traded.
+const PICK_YEARS := 3
 
 var world: FcWorld
 var trades: FcTrades
@@ -22,7 +24,7 @@ func _init(game_world: FcWorld) -> void:
 
 ## Result: {"accepted": bool, "reason": String}. Nothing changes unless accepted
 ## and `execute` is true.
-func propose(league_id: int, year: int, user_team_id: int, ai_team_id: int, give_ids: Array, get_ids: Array, ai_contending: bool, execute: bool = true) -> Dictionary:
+func propose(league_id: int, year: int, user_team_id: int, ai_team_id: int, give_ids: Array, get_ids: Array, ai_contending: bool, execute: bool = true, give_picks: Array = [], get_picks: Array = [], first_pick_year: int = 0) -> Dictionary:
 	var rules := world.rules_of_league(league_id)
 	var user_team: FcTeam = world.teams.get_by_id(user_team_id)
 	var ai_team: FcTeam = world.teams.get_by_id(ai_team_id)
@@ -31,8 +33,14 @@ func propose(league_id: int, year: int, user_team_id: int, ai_team_id: int, give
 	var league: FcLeague = world.leagues.get_by_id(league_id)
 	if not league.contains_team(ai_team_id):
 		return _no("That team is not in your league.")
-	if give_ids.is_empty() and get_ids.is_empty():
-		return _no("Pick at least one player.")
+	if give_ids.is_empty() and get_ids.is_empty() and give_picks.is_empty() and get_picks.is_empty():
+		return _no("Pick at least one player or draft pick.")
+	for pick in give_picks:
+		if not _pick_ok(pick, user_team_id, first_pick_year):
+			return _no("A pick you offered is not yours to trade.")
+	for pick in get_picks:
+		if not _pick_ok(pick, ai_team_id, first_pick_year):
+			return _no("A pick you asked for does not belong to that team.")
 	var give_salary := 0
 	var get_salary := 0
 	for pid in give_ids:
@@ -61,13 +69,18 @@ func propose(league_id: int, year: int, user_team_id: int, ai_team_id: int, give
 	var ai_check := rules.cap.check_trade(world.payroll_of_team(ai_team_id, year), give_salary, get_salary)
 	if not ai_check.allowed:
 		return _no("%s: %s." % [world.team_display_name(ai_team_id), ai_check.reason])
-	var received := _package_value(give_ids, year, ai_contending)
-	var given := _package_value(get_ids, year, ai_contending)
+	var strengths := _strength_fractions(league)
+	var received := _package_value(give_ids, year, ai_contending) + _picks_value(give_picks, first_pick_year, strengths, ai_contending)
+	var given := _package_value(get_ids, year, ai_contending) + _picks_value(get_picks, first_pick_year, strengths, ai_contending)
 	if received < given * (1.0 + AI_PROFIT) + 1.0:
 		return _no("%s turned the offer down: it does not think it gets enough back." % world.team_display_name(ai_team_id))
 	if execute:
 		_move(give_ids, user_team, ai_team, ai_team_id)
 		_move(get_ids, ai_team, user_team, user_team_id)
+		for pick in give_picks:
+			world.set_pick_owner(pick[0], pick[1], pick[2], ai_team_id)
+		for pick in get_picks:
+			world.set_pick_owner(pick[0], pick[1], pick[2], user_team_id)
 		world.add_news(FcDate.new(year, 7, 3), "signing", "%s and %s completed a trade" % [world.team_display_name(user_team_id), world.team_display_name(ai_team_id)], user_team_id)
 	return {"accepted": true, "reason": "Deal accepted."}
 
@@ -79,6 +92,52 @@ func _package_value(ids: Array, year: int, contending: bool) -> float:
 		var p: FcPlayer = world.players.get_by_id(pid)
 		var v := trades.value_of(p, year, contending) - 40.0
 		total += pow(maxf(v, 0.0), 1.6)
+	return total
+
+
+## A pick is [year, round, original team id].
+func _pick_ok(pick: Array, owner_id: int, first_pick_year: int) -> bool:
+	if pick.size() != 3 or first_pick_year <= 0:
+		return false
+	return pick[0] >= first_pick_year and pick[0] < first_pick_year + PICK_YEARS \
+		and pick[1] >= 1 and pick[1] <= FcOffseason.DRAFT_ROUNDS \
+		and world.pick_owner(pick[0], pick[1], pick[2]) == owner_id
+
+
+## Team id -> 0 (weakest team) .. 1 (strongest), by the average rating of its best eight players.
+func _strength_fractions(league: FcLeague) -> Dictionary:
+	var ratings := FcPlayerRatings.load_default()
+	var scored: Array = []
+	for tid in league.all_team_ids():
+		var values: Array = []
+		for pid in world.teams.get_by_id(tid).roster.player_ids:
+			values.append(ratings.overall(world.players.get_by_id(pid)))
+		values.sort()
+		values.reverse()
+		var top := values.slice(0, 8)
+		var total := 0.0
+		for v in top:
+			total += v
+		scored.append([total / maxf(1.0, top.size()), tid])
+	scored.sort()
+	var out := {}
+	for i in scored.size():
+		out[scored[i][1]] = float(i) / maxf(1.0, scored.size() - 1.0)
+	return out
+
+
+## What the AI thinks a set of picks is worth, in the same units as _package_value. A pick is
+## worth more the weaker its original team is expected to be, and a first-round pick of
+## a bad team is worth about as much as a good young player. Picks further away are
+## less certain (pulled toward the middle of the order) and slightly discounted.
+## Contenders value picks less, rebuilding teams more.
+func _picks_value(picks: Array, first_pick_year: int, strengths: Dictionary, contending: bool) -> float:
+	var total := 0.0
+	for pick in picks:
+		var ahead: int = pick[0] - first_pick_year
+		var f: float = lerpf(float(strengths.get(pick[2], 0.5)), 0.5, minf(0.6, 0.25 * ahead))
+		var base := 40.0 + 140.0 * (1.0 - f) if pick[1] == 1 else 4.0 + 14.0 * (1.0 - f)
+		total += base * pow(0.92, ahead) * (0.85 if contending else 1.15)
 	return total
 
 

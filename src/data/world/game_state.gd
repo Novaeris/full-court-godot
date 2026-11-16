@@ -93,7 +93,7 @@ static func _clean_draft_state(raw: Dictionary) -> Dictionary:
 		workouts.append(int(w))
 	var results: Array = []
 	for r in raw.get("results", []):
-		results.append([int(r[0]), int(r[1]), int(r[2]), int(r[3])])
+		results.append([int(r[0]), int(r[1]), int(r[2]), int(r[3]), int(r[4]) if r.size() > 4 else int(r[2])])
 	return {"year": int(raw.get("year", 0)), "order": order, "total": int(raw.get("total", 0)),
 		"next": int(raw.get("next", 1)), "available": available, "results": results, "workouts": workouts}
 

@@ -216,13 +216,33 @@ func is_contending(team_id: int) -> bool:
 	return ranking.find(team_id) < maxi(1, floori(ranking.size() / 3.0))
 
 
+## The first draft year whose picks can still be traded: the next draft, or the one after
+## it once this offseason's draft has been held. Three drafts are tradable.
+func first_tradable_pick_year() -> int:
+	return state.current_season + (2 if state.offseason_stage >= 1 else 1)
+
+
+## Draft picks a team owns that can be traded: [{"year", "round", "original" (team id), "label"}].
+func tradable_picks(team_id: int) -> Array:
+	var w := state.world
+	var out: Array = []
+	var first := first_tradable_pick_year()
+	for year in range(first, first + FcTradeDesk.PICK_YEARS):
+		for round_number in range(1, FcOffseason.DRAFT_ROUNDS + 1):
+			for tid in w.leagues.get_by_id(league_id).all_team_ids():
+				if w.pick_owner(year, round_number, tid) == team_id:
+					out.append({"year": year, "round": round_number, "original": tid,
+						"label": "%d round %d%s" % [year, round_number, "" if tid == team_id else " (from %s)" % w.team_display_name(tid)]})
+	return out
+
+
 ## Proposes a trade from the user's team. `preview` true only checks it.
 ## Returns {"accepted": bool, "reason": String}.
-func propose_trade(ai_team_id: int, give_ids: Array, get_ids: Array, preview: bool = false) -> Dictionary:
+func propose_trade(ai_team_id: int, give_ids: Array, get_ids: Array, preview: bool = false, give_picks: Array = [], get_picks: Array = []) -> Dictionary:
 	if state.offseason_stage == 2:
 		return {"accepted": false, "reason": "Finish the draft first."}
 	var desk := FcTradeDesk.new(state.world)
-	return desk.propose(league_id, contract_year(), state.user_team_id, ai_team_id, give_ids, get_ids, is_contending(ai_team_id), not preview)
+	return desk.propose(league_id, contract_year(), state.user_team_id, ai_team_id, give_ids, get_ids, is_contending(ai_team_id), not preview, give_picks, get_picks, first_tradable_pick_year())
 
 
 # --- the draft (Owner Mode) -----------------------------------------------------------------
@@ -432,7 +452,8 @@ func latest_draft_report() -> Dictionary:
 	var rules := state.world.rules_of_league(league_id)
 	var rows: Array = []
 	for pick in latest.draft:
-		var record_pick: int = record_order.find(pick[2]) + 1 + (pick[0] - 1) * team_count
+		var original: int = pick[4] if pick.size() > 4 else pick[2]
+		var record_pick: int = record_order.find(original) + 1 + (pick[0] - 1) * team_count
 		rows.append({"round": pick[0], "pick": pick[1], "team": pick[2], "player": pick[3], "record_pick": record_pick, "moved": record_pick - pick[1]})
 	return {"year": latest.year, "lottery": rules.draft.lottery_teams > 0, "rows": rows}
 
