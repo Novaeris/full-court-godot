@@ -548,9 +548,9 @@ func _tab_draft() -> Control:
 		rank += 1
 		var p: FcPlayer = entry["player"]
 		var r: Dictionary = entry["report"]
-		rows2.append([rank, p.identity.full_name(), FcPosition.abbreviation(p.primary_position), entry["age"], "%d cm" % p.physical.height_cm, "%d-%d" % [r["ovr_low"], r["ovr_high"]], "%d-%d" % [r["pot_low"], r["pot_high"]], p.identity.country])
+		rows2.append([rank, p.identity.full_name(), FcPosition.abbreviation(p.primary_position), entry["age"], "%d cm" % p.physical.height_cm, "%d-%d" % [r["ovr_low"], r["ovr_high"]], "%d-%d" % [r["pot_low"], r["pot_high"]], r["character"] if r["worked_out"] else "", p.identity.country])
 		ids.append(p.id)
-	var table := FcUiTables.table(["#", "Prospect", "Pos", "Age", "Height", "Overall", "Potential", "From"], rows2, [40, 0, 45, 45, 70, 70, 80, 110])
+	var table := FcUiTables.table(["#", "Prospect", "Pos", "Age", "Height", "Overall", "Potential", "Worked out", "From"], rows2, [40, 0, 45, 45, 70, 70, 80, 130, 110])
 	left.add_child(table)
 	var buttons := HBoxContainer.new()
 	buttons.add_child(FcUiTables.button("Draft selected prospect", func():
@@ -561,6 +561,14 @@ func _tab_draft() -> Control:
 		var r2 := controller.user_draft_pick(ids[item.get_index()])
 		_say(r2["reason"])
 		_after_draft_action()))
+	buttons.add_child(FcUiTables.button("Invite selected to a workout (%d left)" % controller.draft_workouts_left(), func():
+		var item := table.get_selected()
+		if item == null:
+			_say("Select a prospect first.")
+			return
+		var r4 := controller.invite_to_workout(ids[item.get_index()])
+		show_dashboard()
+		_say(r4["reason"])))
 	buttons.add_child(FcUiTables.button("Let my staff pick", func():
 		var r3 := controller.draft_staff_pick()
 		_say(r3["reason"])

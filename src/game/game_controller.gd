@@ -259,9 +259,32 @@ func draft_board() -> Array:
 	var out: Array = []
 	for pid in ds.get("available", []):
 		var p: FcPlayer = state.world.players.get_by_id(int(pid))
-		out.append({"player": p, "age": p.age_on(FcDate.new(int(ds["year"]), 7, 1)), "report": off.scouting_report(state.user_team_id, p, int(ds["year"]))})
+		var worked_out: bool = (ds.get("workouts", []) as Array).has(p.id)
+		out.append({"player": p, "age": p.age_on(FcDate.new(int(ds["year"]), 7, 1)), "report": off.scouting_report(state.user_team_id, p, int(ds["year"]), worked_out)})
 	out.sort_custom(func(a, b): return a["report"]["value"] > b["report"]["value"] if a["report"]["value"] != b["report"]["value"] else a["player"].id < b["player"].id)
 	return out
+
+
+## How many private workouts the owner can still hold.
+func draft_workouts_left() -> int:
+	return FcOffseason.WORKOUT_SLOTS - (state.draft_state.get("workouts", []) as Array).size()
+
+
+## Invites a prospect for a private workout: his report becomes much sharper and shows a
+## note on his character. A few slots only (FcOffseason.WORKOUT_SLOTS) for the whole draft.
+## Returns {"ok": bool, "reason": String}.
+func invite_to_workout(prospect_id: int) -> Dictionary:
+	var ds := state.draft_state
+	if ds.is_empty():
+		return {"ok": false, "reason": "There is no draft going on."}
+	if not (ds["available"] as Array).has(prospect_id):
+		return {"ok": false, "reason": "That prospect is not available."}
+	if (ds["workouts"] as Array).has(prospect_id):
+		return {"ok": false, "reason": "He has already worked out for you."}
+	if draft_workouts_left() <= 0:
+		return {"ok": false, "reason": "You have used all %d workouts." % FcOffseason.WORKOUT_SLOTS}
+	(ds["workouts"] as Array).append(prospect_id)
+	return {"ok": true, "reason": "%s worked out for you. Check the board." % state.world.players.get_by_id(prospect_id).identity.full_name()}
 
 
 ## Picks so far: [[round, pick, team id, player id], ...].

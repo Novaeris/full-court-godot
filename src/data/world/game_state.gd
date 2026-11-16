@@ -88,11 +88,14 @@ static func _clean_draft_state(raw: Dictionary) -> Dictionary:
 	var available: Array = []
 	for p in raw.get("available", []):
 		available.append(int(p))
+	var workouts: Array = []
+	for w in raw.get("workouts", []):
+		workouts.append(int(w))
 	var results: Array = []
 	for r in raw.get("results", []):
 		results.append([int(r[0]), int(r[1]), int(r[2]), int(r[3])])
 	return {"year": int(raw.get("year", 0)), "order": order, "total": int(raw.get("total", 0)),
-		"next": int(raw.get("next", 1)), "available": available, "results": results}
+		"next": int(raw.get("next", 1)), "available": available, "results": results, "workouts": workouts}
 
 
 ## Problems found while loading are appended to `errors`.

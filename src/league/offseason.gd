@@ -280,7 +280,7 @@ func prepare_draft(league_id: int, finished: FcSeason, new_year: int, rng: FcRng
 	var available: Array = []
 	for p in prospects:
 		available.append(p.id)
-	return {"year": new_year, "order": order, "total": total_picks, "next": 1, "available": available, "results": []}
+	return {"year": new_year, "order": order, "total": total_picks, "next": 1, "available": available, "results": [], "workouts": []}
 
 
 func draft_complete(ds: Dictionary) -> bool:
@@ -376,10 +376,16 @@ func run_draft(league_id: int, finished: FcSeason, new_year: int, rng: FcRng) ->
 ## reports. The error is fixed for a team and prospect (reproducible, so the board
 ## does not change when it is redrawn). {"ovr", "ovr_low", "ovr_high", "pot", "pot_low",
 ## "pot_high", "value"}.
-func scouting_report(team_id: int, prospect: FcPlayer, year: int) -> Dictionary:
+func scouting_report(team_id: int, prospect: FcPlayer, year: int, worked_out: bool = false) -> Dictionary:
 	var sd := maxf(SCOUTING_MIN_SD, draft_noise(team_id))
 	var pot_sd := sd * POTENTIAL_UNCERTAINTY
-	var noise := FcRng.new(hash("scout:%d:%d" % [team_id, prospect.id]))
+	var seed_text := "scout:%d:%d" % [team_id, prospect.id]
+	if worked_out:
+		# a private workout gives a much clearer (and independent) look
+		sd = maxf(WORKOUT_MIN_SD, sd * WORKOUT_SHARPNESS)
+		pot_sd = sd * WORKOUT_POTENTIAL_UNCERTAINTY
+		seed_text = "workout:%d:%d" % [team_id, prospect.id]
+	var noise := FcRng.new(hash(seed_text))
 	var half := ceili(1.28 * sd)
 	var pot_half := ceili(1.28 * pot_sd)
 	var ovr := clampi(roundi(ratings.overall(prospect) + noise.gaussian(0.0, sd)), 1, 99)
@@ -388,7 +394,32 @@ func scouting_report(team_id: int, prospect: FcPlayer, year: int) -> Dictionary:
 		"ovr": ovr, "ovr_low": maxi(1, ovr - half), "ovr_high": mini(99, ovr + half),
 		"pot": pot, "pot_low": maxi(1, pot - pot_half), "pot_high": mini(99, pot + pot_half),
 		"value": market.value(prospect, _age(prospect, year)) + noise.gaussian(0.0, sd),
+		"worked_out": worked_out, "character": character_note(prospect),
 	}
+
+
+## Private workouts: the owner may invite a few prospects; their reports are much sharper
+## and show a note on their character.
+const WORKOUT_SLOTS := 5
+const WORKOUT_SHARPNESS := 0.4
+const WORKOUT_MIN_SD := 1.0
+const WORKOUT_POTENTIAL_UNCERTAINTY := 1.2
+
+
+## The personality trait this prospect stands out for ("Very high Work Ethic").
+func character_note(prospect: FcPlayer) -> String:
+	var catalog: FcAttributeCatalog = world.definitions.personality
+	var best_key := ""
+	var best_gap := -1
+	for key in catalog.keys():
+		var gap := absi(prospect.personality.get_value(key) - 50)
+		if gap > best_gap:
+			best_gap = gap
+			best_key = key
+	if best_key == "":
+		return ""
+	var level := prospect.personality.get_value(best_key)
+	return "%s %s" % ["High" if level >= 50 else "Low", catalog.get_def(best_key).display_name]
 
 
 ## How far off a team's view of a prospect can be (standard deviation in value

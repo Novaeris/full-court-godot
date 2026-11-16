@@ -145,3 +145,42 @@ func test_draft_state_defaults_in_old_saves() -> void:
 	var old := g.to_dict()
 	old.erase("draft_state")
 	assert_true(FcGameState.from_dict(old, FcDefinitionSet.load_default()).draft_state.is_empty())
+
+
+func test_workouts_sharpen_a_prospect_report() -> void:
+	var g := _game(57)
+	g.begin_offseason()
+	assert_eq(g.draft_workouts_left(), FcOffseason.WORKOUT_SLOTS)
+	var target: FcPlayer = g.draft_board()[2]["player"]
+	var before := {}
+	for entry in g.draft_board():
+		if entry["player"].id == target.id:
+			before = entry["report"]
+	var r := g.invite_to_workout(target.id)
+	assert_true(r["ok"], r["reason"])
+	assert_eq(g.draft_workouts_left(), FcOffseason.WORKOUT_SLOTS - 1)
+	var after := {}
+	for entry in g.draft_board():
+		if entry["player"].id == target.id:
+			after = entry["report"]
+	assert_true(after["worked_out"] and not before["worked_out"])
+	assert_true(after["ovr_high"] - after["ovr_low"] < before["ovr_high"] - before["ovr_low"], "the range is narrower after a workout")
+	assert_true(after["character"] != "", "and a character note appears")
+	assert_true(not g.invite_to_workout(target.id)["ok"], "no second workout for the same player")
+
+
+func test_workout_slots_are_limited_and_saved() -> void:
+	var g := _game(58)
+	g.begin_offseason()
+	var board := g.draft_board()
+	for i in FcOffseason.WORKOUT_SLOTS:
+		assert_true(g.invite_to_workout(board[i]["player"].id)["ok"])
+	assert_true(not g.invite_to_workout(board[FcOffseason.WORKOUT_SLOTS]["player"].id)["ok"], "only a few workouts")
+	var manager := FcSaveManager.new("user://test_saves_workout")
+	assert_true(g.autosave(manager).is_ok())
+	var loaded := manager.load_slot(FcSaveManager.AUTOSAVE_SLOT, FcDefinitionSet.load_default())
+	assert_true(loaded.is_ok(), loaded.message)
+	var again := FcGameController.resume(loaded.state)
+	assert_eq(again.draft_workouts_left(), 0, "the workouts survive saving")
+	manager.delete_slot(FcSaveManager.AUTOSAVE_SLOT)
+	DirAccess.remove_absolute("user://test_saves_workout")
