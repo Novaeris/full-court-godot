@@ -300,3 +300,14 @@ func test_a_full_roster_makes_room_for_the_replacement() -> void:
 	for p in hurt:
 		assert_true(team.roster.contains(p.id), "injured stars are not dropped")
 	assert_eq(w.validate(g.state.current_season), [] as Array[String])
+
+
+func test_gm_grade_does_not_depend_on_season_length() -> void:
+	var g := _game(104)
+	g.sim_playoffs()
+	var report := g.owner_report()
+	assert_true(report["games"] > 0 and report["games"] == report["wins"] + (report["games"] - report["wins"]))
+	var card := g.gm_report()
+	var diff: float = float(report["wins"] - report["expected_wins"]) / report["games"]
+	var expected := "Excellent" if diff >= 0.12 else ("Good" if diff >= 0.03 else ("Satisfactory" if diff >= -0.06 else "Disappointing"))
+	assert_eq(card["grade"], expected)

@@ -381,3 +381,16 @@ func test_league_finances_compare_every_team() -> void:
 	for r in rows:
 		total += r["profit"]
 	assert_true(rows[0]["profit_rank"] == 1 and total != 0 or total == 0)
+
+
+func test_suggested_ticket_price_follows_demand() -> void:
+	var g := _game(44)
+	var before: int = g.suggested_ticket_price()
+	assert_true(before > 0)
+	assert_true(g.set_ticket_price(before), "the suggestion is always an allowed price")
+	g.business().fan_interest = 95
+	g.business().brand = 90
+	assert_true(g.suggested_ticket_price() >= before, "more fan interest supports a higher price")
+	g.business().fan_interest = 10
+	g.business().brand = 10
+	assert_true(g.suggested_ticket_price() <= before, "less interest means a lower price")

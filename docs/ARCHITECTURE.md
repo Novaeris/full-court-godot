@@ -148,6 +148,11 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 - A whole 30-team, 80-game season plus playoffs takes about 13 seconds; a 1,230-game season is stored in about 100 KB.
 - Rosters are read when an engine is created; change rosters between seasons.
 
+## Playthrough tool and what it found
+- `tools/ui_playthrough.ps1` (`ui_playthrough.gd`) plays Owner Mode through the real UI code for several seasons (`seasons=`, `teams=`, `seed=`, `reprice=1`): every tab builds, loans, arena projects, trade checks, extensions, the interactive draft (workouts and a pick), the free-agency window, GM delegation (alternating by season) and save/load in the middle of the draft and the window, validating the state after each step and printing results per season (record, profit and rank, payroll, approval, GM grade). Exit code 1 if anything fails.
+- Runs on 30 teams (3 and 5 seasons) and 12 teams (4 seasons) found no crashes or invalid states. It did find: (1) the owner's ticket price never changed while the AI reprices every year, so a smaller-market owner fell to 28th of 30 in profit; fixed with a suggested price (`suggested_ticket_price`, "Use suggestion" button, what the AI charges); (2) the GM grade used absolute wins so short seasons graded too kindly; it now uses the share of games.
+- A first-season loss for a small-market owner with an above-average payroll is normal in this model (it reached profit rank 14 of 30 by season 3 and 62 wins).
+
 ## League finance comparison (Owner Mode)
 - `FcGameController.league_finances()` lists every team's last settled books (wins, revenue, profit, payroll, ticket price, attendance, valuation, profit and revenue rank), best profit first; the Finances tab shows it beside the owner's own seasons so decisions can be judged against the league.
 

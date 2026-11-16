@@ -990,7 +990,13 @@ func _tab_finances() -> Control:
 		row.add_child(FcUiTables.button("Invest in arena (+10)", func():
 			_say("Arena improved." if controller.invest_in_facilities(10) else "Not enough cash for that.")
 			show_dashboard()))
+		row.add_child(FcUiTables.label("   Suggested $%d" % controller.suggested_ticket_price()))
+		row.add_child(FcUiTables.button("Use suggestion", func():
+			price.value = controller.suggested_ticket_price()
+			var ok2 := controller.set_ticket_price(int(price.value))
+			_say("Ticket price set to the suggestion." if ok2 else "That price is not allowed.")))
 		box.add_child(row)
+		box.add_child(FcUiTables.label("  The suggestion is the price that just fills your arena today. Fan interest and brand change as you win or lose, so check it each season; AI teams reprice every year."))
 		var loans := HBoxContainer.new()
 		loans.add_child(FcUiTables.label("Sponsorship deal:"))
 		var plan := OptionButton.new()

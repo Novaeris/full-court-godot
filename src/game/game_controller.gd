@@ -465,8 +465,9 @@ func gm_report() -> Dictionary:
 	var report := owner_report()
 	if report.is_empty():
 		return {}
-	var diff: int = report["wins"] - report["expected_wins"]
-	var grade := "Excellent" if diff >= 6 else ("Good" if diff >= 1 else ("Satisfactory" if diff >= -4 else "Disappointing"))
+	# graded by the share of games won above the expectation, so season length does not matter
+	var diff: float = float(report["wins"] - report["expected_wins"]) / maxf(1.0, report["games"])
+	var grade := "Excellent" if diff >= 0.12 else ("Good" if diff >= 0.03 else ("Satisfactory" if diff >= -0.06 else "Disappointing"))
 	return {"grade": grade, "wins": report["wins"], "expected_wins": report["expected_wins"],
 		"payroll": state.world.payroll_of_team(state.user_team_id, report["year"]), "limit": gm_payroll_limit()}
 
@@ -852,6 +853,16 @@ func start_arena_project(key: String) -> Dictionary:
 	return {"ok": true, "reason": "Project started: %s." % FcFinanceEngine.project_def(key)["name"]}
 
 
+## The ticket price that just fills the arena at today's fan interest, brand and arena
+## quality (what the AI teams charge). A higher price earns more per fan but empties seats.
+func suggested_ticket_price() -> int:
+	var w := state.world
+	var team: FcTeam = w.teams.get_by_id(state.user_team_id)
+	var finance := FcFinanceEngine.new(w)
+	var scale := finance.price_scale_for(w.rules_of_league(league_id), w.leagues.get_by_id(league_id))
+	return finance.best_price(business(), w.cities.get_by_id(team.city_id), w.arenas.get_by_id(team.arena_id), scale)
+
+
 ## Concession prices as a percent of normal (70-150).
 func set_concession_price(percent: int) -> bool:
 	if percent < 70 or percent > 150:
@@ -1015,7 +1026,7 @@ func owner_report() -> Dictionary:
 	return {
 		"year": year, "profit": rec.profit(), "revenue": rec.total_revenue(), "valuation": rec.valuation_end,
 		"valuation_change": valuation_change, "cash": rec.cash_end, "debt": rec.debt_end,
-		"wins": rec.wins, "expected_wins": roundi(expected), "playoff_rounds_won": rec.playoff_rounds_won,
+		"wins": rec.wins, "games": games, "expected_wins": roundi(expected), "playoff_rounds_won": rec.playoff_rounds_won,
 		"approval": clampi(roundi(approval), 0, 100),
 	}
 
