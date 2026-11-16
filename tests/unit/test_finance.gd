@@ -346,3 +346,51 @@ func test_a_team_without_a_business_executive_does_worse() -> void:
 	var without := fin.executive_skill(1, "marketing")
 	assert_eq(without, float(fin.k["no_executive_skill"]))
 	assert_true(without < with_exec or with_exec <= without)
+
+
+func test_concession_prices_have_a_sweet_spot() -> void:
+	var fin := FcFinanceEngine.new(_played()["world"])
+	assert_eq(fin.concession_factor(100), 1.0, "normal prices are the baseline")
+	assert_true(fin.concession_factor(120) > fin.concession_factor(100), "somewhat higher prices earn more per fan")
+	assert_true(fin.concession_factor(150) < fin.concession_factor(130), "but gouging earns less")
+	assert_true(fin.concession_factor(70) < fin.concession_factor(100), "and giveaways do not pay")
+
+
+func test_merchandise_tiers_trade_sales_for_stock_costs() -> void:
+	var world := _build_world()
+	var records := []
+	for tier in 3:
+		var w := _build_world()
+		w.businesses.get_by_id(1).merch_tier = tier
+		var rng := FcRng.new(3)
+		var engine := FcSeasonEngine.for_league(w, 1)
+		var season := engine.start_season(1, 2026, FcDate.new(2026, 10, 20), rng.fork("s"))
+		engine.play_full_season(season, rng.fork("p"))
+		records.append(FcFinanceEngine.new(w).record_of(1, 2026))
+	assert_true(records[0].revenue["merchandise"] < records[1].revenue["merchandise"] and records[1].revenue["merchandise"] < records[2].revenue["merchandise"], "premium sells more")
+	assert_true(records[0].expenses["merchandise_stock"] < records[1].expenses["merchandise_stock"] and records[1].expenses["merchandise_stock"] < records[2].expenses["merchandise_stock"], "and costs more stock")
+	assert_true(world != null)
+
+
+func test_shop_settings_are_saved_and_validated() -> void:
+	var b := FcTeamBusiness.new(2)
+	b.concession_price_pct = 125
+	b.merch_tier = 2
+	var back := FcTeamBusiness.from_dict(JSON.parse_string(JSON.stringify(b.to_dict())))
+	assert_eq(back.concession_price_pct, 125)
+	assert_eq(back.merch_tier, 2)
+	var old := FcTeamBusiness.from_dict({"id": 2})
+	assert_eq(old.concession_price_pct, 100)
+	assert_eq(old.merch_tier, 1)
+
+
+func test_premium_merchandise_only_pays_for_a_strong_brand() -> void:
+	var fin := FcFinanceEngine.new(_played()["world"])
+	var b := FcTeamBusiness.new(1)
+	var net := func(tier: int, brand: int) -> float:
+		b.merch_tier = tier
+		b.brand = brand
+		return fin.merch_multiplier(b) * (1.0 - float(fin.k["merch_cost_shares"][tier]))
+	assert_true(net.call(2, 85) > net.call(1, 85), "a strong brand profits from premium goods")
+	assert_true(net.call(2, 40) < net.call(1, 40), "a weak brand does not")
+	assert_true(net.call(0, 50) < net.call(1, 50), "limited stock sells less than it saves")

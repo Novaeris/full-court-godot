@@ -356,3 +356,11 @@ func test_offseason_window_survives_saving() -> void:
 	assert_eq(again.state.current_season, 2027)
 	manager.delete_slot(FcSaveManager.AUTOSAVE_SLOT)
 	DirAccess.remove_absolute("user://test_saves_window")
+
+
+func test_shop_setters_validate() -> void:
+	var g := _game(39)
+	assert_true(g.set_concession_price(120) and g.business().concession_price_pct == 120)
+	assert_true(not g.set_concession_price(60) and not g.set_concession_price(200))
+	assert_true(g.set_merch_tier(2) and g.business().merch_tier == 2)
+	assert_true(not g.set_merch_tier(3))

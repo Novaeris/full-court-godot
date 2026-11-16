@@ -852,6 +852,22 @@ func start_arena_project(key: String) -> Dictionary:
 	return {"ok": true, "reason": "Project started: %s." % FcFinanceEngine.project_def(key)["name"]}
 
 
+## Concession prices as a percent of normal (70-150).
+func set_concession_price(percent: int) -> bool:
+	if percent < 70 or percent > 150:
+		return false
+	business().concession_price_pct = percent
+	return true
+
+
+## Merchandise range: 0 limited, 1 standard, 2 premium.
+func set_merch_tier(tier: int) -> bool:
+	if tier < 0 or tier > 2:
+		return false
+	business().merch_tier = tier
+	return true
+
+
 ## Chooses the sponsorship deal style: 0 balanced, 1 steady, 2 performance
 ## (see FcTeamBusiness.sponsor_plan). It applies when the season's books are settled.
 func set_sponsor_plan(plan: int) -> bool:

@@ -6,7 +6,7 @@ const SCHEMA_VERSION := 1
 const REVENUE_KEYS := ["tickets", "playoffs", "concessions", "merchandise", "sponsorship",
 	"broadcasting", "arena_events", "tax_share", "revenue_sharing"]
 const EXPENSE_KEYS := ["payroll", "luxury_tax", "staff", "arena_operations", "marketing",
-	"travel", "administration", "facilities", "interest", "revenue_sharing"]
+	"travel", "administration", "facilities", "interest", "revenue_sharing", "merchandise_stock"]
 
 var id: int
 var team_id: int = 0

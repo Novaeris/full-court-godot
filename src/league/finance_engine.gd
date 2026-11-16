@@ -95,6 +95,23 @@ func executive_skill(team_id: int, skill: String) -> float:
 	return total / count if count > 0 else float(k["no_executive_skill"])
 
 
+## Spending per fan at a concession price level (percent): price times the share of
+## spending that survives the higher price. Peaks above the normal price, but the
+## interest penalty (see settle) makes the best choice depend on the team.
+func concession_factor(price_pct: int) -> float:
+	var level := price_pct / 100.0
+	return level * clampf(1.0 - float(k["concession_elasticity"]) * (level - 1.0), 0.2, 1.4)
+
+
+## Merchandise sales multiplier of a range. Premium goods only sell well for a strong brand
+## (0.9 + 0.5 x brand/100, so about 1.15 at brand 50 and 1.3 at brand 80) and cost much more
+## stock; limited is cheap but sells less. For a weak brand standard is the best range.
+func merch_multiplier(business: FcTeamBusiness) -> float:
+	if business.merch_tier == 2:
+		return float(k["merch_premium_base"]) + float(k["merch_premium_brand_slope"]) * business.brand / 100.0
+	return float(k["merch_revenue_multipliers"][business.merch_tier])
+
+
 static func load_constants() -> Dictionary:
 	var file := FileAccess.open("res://data/simulation/finance.json", FileAccess.READ)
 	var parsed = FcChecks.parse_json(file.get_as_text()) if file != null else null
@@ -250,9 +267,10 @@ func settle(league_id: int, season: FcSeason, human_teams: Array[int] = []) -> A
 
 		rec.revenue["tickets"] = fans * business.ticket_price * home_games
 		rec.revenue["playoffs"] = roundi(fans * business.ticket_price * float(k["playoff_ticket_premium"]) * po_games \
-			+ fans * float(k["concessions_per_head"]) * price_scale * fac_factor * po_games)
-		rec.revenue["concessions"] = roundi(fans * float(k["concessions_per_head"]) * price_scale * fac_factor * home_games)
-		rec.revenue["merchandise"] = roundi(float(k["merchandise_base"]) * scale * pow(business.brand / 50.0, 1.2) * m)
+			+ fans * float(k["concessions_per_head"]) * price_scale * fac_factor * po_games * concession_factor(business.concession_price_pct))
+		rec.revenue["concessions"] = roundi(fans * float(k["concessions_per_head"]) * price_scale * fac_factor * home_games * concession_factor(business.concession_price_pct))
+		rec.revenue["merchandise"] = roundi(float(k["merchandise_base"]) * scale * pow(business.brand / 50.0, 1.2) * m * merch_multiplier(business))
+		rec.expenses["merchandise_stock"] = roundi(rec.revenue["merchandise"] * float(k["merch_cost_shares"][business.merch_tier]))
 		var plan_factor := 1.0 + 0.15 * success
 		if business.sponsor_plan == 1:
 			plan_factor = float(k["sponsor_steady_multiplier"])
@@ -297,7 +315,8 @@ func settle(league_id: int, season: FcSeason, human_teams: Array[int] = []) -> A
 		var win_pct := standings.win_pct(tid)
 		var star := clampf((_best_overall(tid) - 50.0) / 40.0, 0.0, 1.0)
 		var interest_target := 25.0 + 55.0 * pow(win_pct, 0.9) + 12.0 * success + 8.0 * star \
-			+ float(k["executive_interest_effect"]) * (executive_skill(tid, "community_relations") - float(k["executive_neutral_skill"])) / 50.0
+			+ float(k["executive_interest_effect"]) * (executive_skill(tid, "community_relations") - float(k["executive_neutral_skill"])) / 50.0 \
+			- float(k["concession_interest_effect"]) * (business.concession_price_pct / 100.0 - 1.0)
 		business.fan_interest = clampi(roundi(business.fan_interest + float(k["interest_catchup"]) * (interest_target - business.fan_interest)), 5, 100)
 		var marketing_effect := clampf(float(business.marketing_budget) / (12000000.0 * scale) * (1.0 + float(k["executive_marketing_effect"]) * (executive_skill(tid, "marketing") - float(k["executive_neutral_skill"])) / 50.0), 0.0, 1.0)
 		var brand_target := 15.0 + 0.55 * business.fan_interest + 20.0 * marketing_effect + (8.0 if season.champion_id == tid else 0.0)

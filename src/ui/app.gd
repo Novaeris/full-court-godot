@@ -1019,6 +1019,25 @@ func _tab_finances() -> Control:
 				show_dashboard()))
 		loans.add_child(FcUiTables.label("   Borrowing limit %s" % FcUiTables.money(controller.loan_limit())))
 		box.add_child(loans)
+		var shop := HBoxContainer.new()
+		shop.add_child(FcUiTables.label("Concession prices %"))
+		var concessions := SpinBox.new()
+		concessions.min_value = 70
+		concessions.max_value = 150
+		concessions.step = 5
+		concessions.value = b.concession_price_pct
+		shop.add_child(concessions)
+		shop.add_child(FcUiTables.label("   Merchandise range"))
+		var merch := OptionButton.new()
+		for name in FcTeamBusiness.MERCH_TIERS:
+			merch.add_item(name)
+		merch.selected = b.merch_tier
+		shop.add_child(merch)
+		shop.add_child(FcUiTables.button("Apply shop settings", func():
+			controller.set_concession_price(int(concessions.value))
+			controller.set_merch_tier(merch.selected)
+			_say("Shop settings updated. Higher concession prices earn more per fan but cost fan interest; a premium range sells more but costs more stock.")))
+		box.add_child(shop)
 		var build := HBoxContainer.new()
 		build.add_child(FcUiTables.label("Arena project:"))
 		var options := controller.arena_project_options()
