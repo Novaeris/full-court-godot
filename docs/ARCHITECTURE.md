@@ -148,6 +148,9 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 - A whole 30-team, 80-game season plus playoffs takes about 13 seconds; a 1,230-game season is stored in about 100 KB.
 - Rosters are read when an engine is created; change rosters between seasons.
 
+## League finance comparison (Owner Mode)
+- `FcGameController.league_finances()` lists every team's last settled books (wins, revenue, profit, payroll, ticket price, attendance, valuation, profit and revenue rank), best profit first; the Finances tab shows it beside the owner's own seasons so decisions can be judged against the league.
+
 ## Concessions and merchandise (Owner Mode)
 - `FcTeamBusiness.concession_price_pct` (70-150, default 100): spending per fan is price x (1 - 0.6 x (level - 1)), so it peaks around 133% of the normal price, but each +10% costs about 0.8 points of fan interest, so the best price depends on how much the team needs its crowd. `merch_tier`: limited (x0.85 sales, 2% stock cost), standard (x1.0, 12%) and premium (sales x(0.9 + 0.5 x brand), 25% stock cost), so premium only pays for a strong brand; the stock cost is its own expense line (`merchandise_stock`). Defaults reproduce the earlier league economics (standard is the AI teams' range; the merchandise base was raised to offset the new 12% stock cost). Finances tab: "Apply shop settings".
 

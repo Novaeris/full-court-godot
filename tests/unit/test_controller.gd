@@ -364,3 +364,20 @@ func test_shop_setters_validate() -> void:
 	assert_true(not g.set_concession_price(60) and not g.set_concession_price(200))
 	assert_true(g.set_merch_tier(2) and g.business().merch_tier == 2)
 	assert_true(not g.set_merch_tier(3))
+
+
+func test_league_finances_compare_every_team() -> void:
+	var g := _game(43)
+	assert_true(g.league_finances().is_empty(), "nothing before a season is settled")
+	g.sim_playoffs()
+	var rows := g.league_finances()
+	assert_eq(rows.size(), 8)
+	for i in range(1, rows.size()):
+		assert_true(rows[i - 1]["profit"] >= rows[i]["profit"], "best profit first")
+	var ranks := rows.map(func(r): return r["revenue_rank"])
+	ranks.sort()
+	assert_eq(ranks, [1, 2, 3, 4, 5, 6, 7, 8])
+	var total := 0
+	for r in rows:
+		total += r["profit"]
+	assert_true(rows[0]["profit_rank"] == 1 and total != 0 or total == 0)

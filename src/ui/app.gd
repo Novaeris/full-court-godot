@@ -1065,7 +1065,25 @@ func _tab_finances() -> Control:
 	for r in years:
 		rows.append(["%d-%02d" % [r.year, (r.year + 1) % 100], r.wins, FcUiTables.money(r.total_revenue()), FcUiTables.money(r.total_expenses()), FcUiTables.money(r.profit()),
 			r.average_attendance, "$%d" % r.ticket_price, FcUiTables.money(r.valuation_end)])
-	box.add_child(FcUiTables.table(["Season", "Wins", "Revenue", "Expenses", "Profit", "Attendance", "Ticket", "Value"], rows))
+	var books := HBoxContainer.new()
+	books.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var mine := VBoxContainer.new()
+	mine.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mine.add_child(FcUiTables.label("Your seasons", 16, true))
+	mine.add_child(FcUiTables.table(["Season", "Wins", "Revenue", "Expenses", "Profit", "Attendance", "Ticket", "Value"], rows))
+	books.add_child(mine)
+	var league_books := controller.league_finances()
+	if not league_books.is_empty():
+		var compare := VBoxContainer.new()
+		compare.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		compare.size_flags_stretch_ratio = 1.0
+		compare.add_child(FcUiTables.label("How you compare (last season, * = you)", 16, true))
+		var compare_rows: Array = []
+		for entry in league_books:
+			compare_rows.append(["%s%s" % ["* " if entry["team"] == b.id else "", entry["name"]], entry["wins"], FcUiTables.money(entry["revenue"]), FcUiTables.money(entry["profit"]), FcUiTables.money(entry["payroll"]), "$%d" % entry["price"], entry["attendance"]])
+		compare.add_child(FcUiTables.table(["Team", "Wins", "Revenue", "Profit", "Payroll", "Ticket", "Fans"], compare_rows, [150, 40, 72, 72, 72, 52, 48]))
+		books.add_child(compare)
+	box.add_child(books)
 	return box
 
 

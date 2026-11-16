@@ -1020,6 +1020,29 @@ func owner_report() -> Dictionary:
 	}
 
 
+## Every team's books for the last settled season, best profit first, for comparison:
+## [{"team", "name", "wins", "revenue", "profit", "payroll", "price", "attendance", "valuation", "profit_rank", "revenue_rank"}].
+func league_finances() -> Array:
+	var w := state.world
+	var finance := FcFinanceEngine.new(w)
+	var year := state.current_season if season().status == FcSeason.Status.COMPLETE else state.current_season - 1
+	var rows: Array = []
+	for tid in w.leagues.get_by_id(league_id).all_team_ids():
+		var rec := finance.record_of(tid, year)
+		if rec == null:
+			return []
+		rows.append({"team": tid, "name": w.team_display_name(tid), "wins": rec.wins, "revenue": rec.total_revenue(), "profit": rec.profit(),
+			"payroll": rec.expenses["payroll"], "price": rec.ticket_price, "attendance": rec.average_attendance, "valuation": rec.valuation_end})
+	rows.sort_custom(func(a, b): return a["profit"] > b["profit"] if a["profit"] != b["profit"] else a["team"] < b["team"])
+	for i in rows.size():
+		rows[i]["profit_rank"] = i + 1
+	var by_revenue := rows.duplicate()
+	by_revenue.sort_custom(func(a, b): return a["revenue"] > b["revenue"] if a["revenue"] != b["revenue"] else a["team"] < b["team"])
+	for i in by_revenue.size():
+		by_revenue[i]["revenue_rank"] = i + 1
+	return rows
+
+
 # --- saving ---------------------------------------------------------------------------------
 
 func autosave(manager: FcSaveManager) -> FcSaveResult:
