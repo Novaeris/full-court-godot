@@ -356,12 +356,15 @@ func on_sim_playoffs() -> void:
 func on_next_season() -> void:
 	if controller.state.mode == FcGameState.MODE_OWNER and controller.state.offseason_stage == 0 and controller.phase() != FcGameController.PHASE_PLAYOFFS and controller.phase() != FcGameController.PHASE_REGULAR and not _confirm_next_season:
 		var leaving := controller.expiring_players().filter(func(e): return not e["agreed"])
-		if not leaving.is_empty():
+		var leaving_staff := controller.expiring_staff().filter(func(e): return not e["agreed"])
+		if not leaving.is_empty() or not leaving_staff.is_empty():
 			var names: Array[String] = []
 			for e in leaving:
 				names.append(e["player"].identity.full_name())
+			for e in leaving_staff:
+				names.append("%s (%s)" % [e["member"].identity.full_name(), FcStaffRole.display_name(e["role"])])
 			_confirm_next_season = true
-			_say("These players' contracts end and they will LEAVE unless you extend them (Roster tab): %s. Press Start Next Season again to let them go." % ", ".join(names))
+			_say("These contracts end and they will LEAVE unless you extend them (players on the Roster tab, staff on the Staff tab): %s. Press Start Next Season again to let them go." % ", ".join(names))
 			return
 	_confirm_next_season = false
 	if controller.state.mode == FcGameState.MODE_OWNER and controller.state.offseason_stage == 0:
@@ -1112,10 +1115,14 @@ func _tab_staff() -> Control:
 			box.add_child(FcUiTables.label("%s (talent evaluation %d, negotiation %d). A sharper eye means better re-signing, drafting and signings; leave an area unticked to decide it yourself." % [gm["name"], gm["talent_evaluation"], gm["negotiation"]]))
 			var checks := HBoxContainer.new()
 			for entry in [["contracts", "Re-sign my players"], ["draft", "Run the draft"], ["free_agency", "Sign free agents"], ["trades", "Make trades"], ["injuries", "Replace injured players"]]:
-				var check := CheckBox.new()
-				check.text = entry[1]
+				var check := Button.new()
+				check.toggle_mode = true
 				check.button_pressed = controller.delegation_on(entry[0])
-				check.toggled.connect(func(on): controller.set_delegation(entry[0], on))
+				var title: String = entry[1]
+				check.text = ("[x] " if check.button_pressed else "[ ] ") + title
+				check.toggled.connect(func(on):
+					controller.set_delegation(entry[0], on)
+					check.text = ("[x] " if on else "[ ] ") + title)
 				checks.add_child(check)
 			box.add_child(checks)
 			var direction_row := HBoxContainer.new()
@@ -1151,7 +1158,7 @@ func _tab_staff() -> Control:
 				_say("Fired.")
 			show_dashboard()))
 		var role_picker := OptionButton.new()
-		for role in [FcStaffRole.Id.GENERAL_MANAGER, FcStaffRole.Id.HEAD_COACH, FcStaffRole.Id.ASSISTANT_COACH, FcStaffRole.Id.SCOUT]:
+		for role in [FcStaffRole.Id.GENERAL_MANAGER, FcStaffRole.Id.HEAD_COACH, FcStaffRole.Id.ASSISTANT_COACH, FcStaffRole.Id.SCOUT, FcStaffRole.Id.MEDICAL, FcStaffRole.Id.BUSINESS_EXECUTIVE]:
 			role_picker.add_item(FcStaffRole.display_name(role))
 			role_picker.set_item_metadata(role_picker.item_count - 1, role)
 		var person_picker := OptionButton.new()
@@ -1165,13 +1172,57 @@ func _tab_staff() -> Control:
 		fill.call()
 		row.add_child(role_picker)
 		row.add_child(person_picker)
-		row.add_child(FcUiTables.button("Hire (3 years)", func():
+		var hire_salary := SpinBox.new()
+		hire_salary.min_value = 0.05
+		hire_salary.max_value = 30
+		hire_salary.step = 0.05
+		var hire_years := SpinBox.new()
+		hire_years.min_value = 1
+		hire_years.max_value = 5
+		hire_years.value = 3
+		var sync_offer := func(_i = 0):
+			if person_picker.item_count > 0:
+				hire_salary.value = controller.asking_salary(person_picker.get_item_metadata(person_picker.selected)) / 1e6
+		person_picker.item_selected.connect(sync_offer)
+		role_picker.item_selected.connect(func(_i): sync_offer.call())
+		sync_offer.call()
+		row.add_child(FcUiTables.label("$M"))
+		row.add_child(hire_salary)
+		row.add_child(FcUiTables.label("years"))
+		row.add_child(hire_years)
+		row.add_child(FcUiTables.button("Hire", func():
 			if person_picker.item_count == 0:
 				return
-			var error := controller.hire_staff(person_picker.get_item_metadata(person_picker.selected), role_picker.get_item_metadata(role_picker.selected), 3)
+			var error := controller.hire_staff(person_picker.get_item_metadata(person_picker.selected), role_picker.get_item_metadata(role_picker.selected), int(hire_years.value), roundi(hire_salary.value * 1e6))
 			_say("Hired." if error == "" else error)
-			show_dashboard()))
+			if error == "":
+				show_dashboard()))
 		box.add_child(row)
+		var extend_row := HBoxContainer.new()
+		extend_row.add_child(FcUiTables.label("Contract extension for the selected staff member: $M"))
+		var ext_pay := SpinBox.new()
+		ext_pay.min_value = 0.05
+		ext_pay.max_value = 30
+		ext_pay.step = 0.05
+		var ext_len := SpinBox.new()
+		ext_len.min_value = 1
+		ext_len.max_value = 5
+		ext_len.value = 3
+		table.item_selected.connect(func():
+			var picked := table.get_selected()
+			if picked != null:
+				ext_pay.value = controller.asking_salary(ids[picked.get_index()]) / 1e6)
+		extend_row.add_child(ext_pay)
+		extend_row.add_child(FcUiTables.label("years"))
+		extend_row.add_child(ext_len)
+		extend_row.add_child(FcUiTables.button("Extend staff contract", func():
+			var item2 := table.get_selected()
+			if item2 == null:
+				_say("Select a staff member first.")
+				return
+			var r := controller.extend_staff(ids[item2.get_index()], roundi(ext_pay.value * 1e6), int(ext_len.value))
+			_say(r["reason"])))
+		box.add_child(extend_row)
 	return box
 
 

@@ -168,6 +168,8 @@ func generate(seed_value: int) -> FcWorld:
 		_fill_roster(world, team, team_rng.fork("players"), used_names, reference, country, cap)
 		_hire_staff(world, team, team_rng.fork("staff"), used_names, reference, country)
 
+	_generate_free_staff(world, root.fork("free_staff"), used_names, config.start_season)
+
 	var league := _build_league(world, teams, entries)
 	world.leagues.add(league)
 	var league_rules := config.build_rules(league)
@@ -428,6 +430,15 @@ func _hire_staff(world: FcWorld, team: FcTeam, rng: FcRng, used_names: Dictionar
 			var member := _staff.generate(rng, world.ids.next_id(FcWorld.KIND_STAFF), int(job[0]), level, reference, used_names, origin)
 			world.staff.add(member)
 			world.staff_contracts.add(_staff_contract(world, rng, member, team.id, int(job[0])))
+
+
+## Unemployed staff the owner can hire from the start (a few per role, of average quality).
+func _generate_free_staff(world: FcWorld, rng: FcRng, used_names: Dictionary, year: int) -> void:
+	for role in [FcStaffRole.Id.GENERAL_MANAGER, FcStaffRole.Id.HEAD_COACH, FcStaffRole.Id.ASSISTANT_COACH, FcStaffRole.Id.SCOUT, FcStaffRole.Id.MEDICAL, FcStaffRole.Id.BUSINESS_EXECUTIVE]:
+		for i in config.free_staff_per_role:
+			var level := clampf(rng.gaussian(50.0, 11.0), 30.0, 80.0)
+			var origin := _names.pick_origin(rng, "", 0.0)
+			world.staff.add(_staff.generate(rng, world.ids.next_id(FcWorld.KIND_STAFF), role, level, FcDate.new(year, 7, 1), used_names, origin))
 
 
 func _staff_contract(world: FcWorld, rng: FcRng, member: FcStaffMember, team_id: int, role: int) -> FcStaffContract:

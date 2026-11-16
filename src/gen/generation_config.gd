@@ -43,6 +43,9 @@ var roster_size: int = 15
 var roster_min: int = 13
 var roster_max: int = 15
 var free_agent_count: int = 60
+## Unemployed staff per role (general manager, head coach, assistant, scout, medical, business
+## executive) who can be hired at the start.
+var free_staff_per_role: int = 3
 var assistant_coaches: int = 3
 var scouts: int = 3
 var medical_staff: int = 1
@@ -104,6 +107,7 @@ static func load_default(data: FcGenerationData) -> FcGenerationConfig:
 	c.roster_min = int(d.get("roster_min", c.roster_min))
 	c.roster_max = int(d.get("roster_max", c.roster_max))
 	c.free_agent_count = int(d.get("free_agent_count", c.free_agent_count))
+	c.free_staff_per_role = int(d.get("free_staff_per_role", c.free_staff_per_role))
 	c.assistant_coaches = int(d.get("assistant_coaches", c.assistant_coaches))
 	c.scouts = int(d.get("scouts", c.scouts))
 	c.medical_staff = int(d.get("medical_staff", c.medical_staff))

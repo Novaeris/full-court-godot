@@ -26,6 +26,9 @@ var human_team_ids: Array[int] = []
 var agreed_re_signs: Array[int] = []
 ## The agreed terms: player id -> [first-year salary, years] (missing = the asking price).
 var agreed_terms: Dictionary = {}
+## Staff of a human-run team the owner agreed to keep: staff id -> [first-year salary, years]. Without an
+## agreement their contract is not renewed (the owner was warned) and the vacancy is filled.
+var agreed_staff_terms: Dictionary = {}
 ## Teams a human runs by hand: AI free agency skips them (fill_rosters still keeps rosters legal).
 var manual_free_agency_team_ids: Array[int] = []
 var world: FcWorld
@@ -616,7 +619,13 @@ func staff_rollover(league_id: int, finished_year: int, new_year: int, rng: FcRn
 		if c.status == FcContract.Status.ACTIVE and c.end_season() <= finished_year:
 			var m: FcStaffMember = world.staff.get_by_id(c.staff_id)
 			c.status = FcContract.Status.EXPIRED
-			if m != null and m.status == FcStaffMember.Status.ACTIVE and rng.chance(0.7):
+			var human := human_team_ids.has(c.team_id)
+			if human and m != null and m.status == FcStaffMember.Status.ACTIVE and agreed_staff_terms.has(c.staff_id):
+				var terms: Array = agreed_staff_terms[c.staff_id]
+				world.staff_contracts.add(_staff_contract_with_terms(c.staff_id, c.team_id, c.role, int(terms[0]), int(terms[1]), new_year, today))
+				renewed += 1
+				_staff_news(today, c.team_id, "%s, your %s, signed the new contract you agreed." % [m.identity.full_name(), FcStaffRole.display_name(c.role)])
+			elif not human and m != null and m.status == FcStaffMember.Status.ACTIVE and rng.chance(0.7):
 				world.staff_contracts.add(_staff_contract(c.staff_id, c.team_id, c.role, m.reputation, new_year, rng, staff_gen, today))
 				renewed += 1
 				_staff_news(today, c.team_id, "%s, your %s, signed a new contract." % [m.identity.full_name(), FcStaffRole.display_name(c.role)])
@@ -653,6 +662,17 @@ func _names_taken_staff() -> Dictionary:
 	for p in world.players.all():
 		taken[p.identity.full_name()] = true
 	return taken
+
+
+func _staff_contract_with_terms(staff_id: int, team_id: int, role: int, salary: int, years: int, new_year: int, today: FcDate) -> FcStaffContract:
+	var c := FcStaffContract.new(world.ids.next_id(FcWorld.KIND_STAFF_CONTRACT))
+	c.staff_id = staff_id
+	c.team_id = team_id
+	c.role = role
+	c.signed_on = today
+	for i in years:
+		c.years.append(FcContractYear.new(new_year + i, roundi(salary * pow(1.04, i) / 10000.0) * 10000))
+	return c
 
 
 func _staff_contract(staff_id: int, team_id: int, role: int, reputation: int, new_year: int, rng: FcRng, staff_gen: FcStaffGenerator, today: FcDate) -> FcStaffContract:

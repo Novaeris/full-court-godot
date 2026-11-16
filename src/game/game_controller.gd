@@ -124,6 +124,7 @@ func start_next_season() -> Dictionary:
 	var offseason := _new_offseason()
 	report.merge(offseason.run_second_half(league_id, finished, state.rng))
 	state.offseason_stage = 0
+	state.agreed_staff_terms.clear()
 	state.current_season = finished.year + 1
 	state.current_date = FcDate.new(state.current_season, 7, 1)
 	_prepare_engine()
@@ -137,6 +138,7 @@ func _new_offseason() -> FcOffseason:
 	offseason.human_team_ids = [state.user_team_id] as Array[int] if state.mode == FcGameState.MODE_OWNER else ([] as Array[int])
 	offseason.agreed_re_signs = state.agreed_extensions.duplicate()
 	offseason.agreed_terms = state.agreed_terms.duplicate(true)
+	offseason.agreed_staff_terms = state.agreed_staff_terms.duplicate(true)
 	if state.mode == FcGameState.MODE_OWNER and not state.delegation["free_agency"]:
 		offseason.manual_free_agency_team_ids = [state.user_team_id] as Array[int]
 	return offseason
@@ -331,11 +333,19 @@ func _gm_value(p: FcPlayer, age: int, market: FcPlayerMarket) -> float:
 ## Re-signing by the GM: he keeps players he believes are worth at least the keep line
 ## (value points), at their asking price, as far as the cap allows.
 const GM_KEEP_VALUE := 50.0
+## Staff with at least this reputation are kept when the GM handles contracts.
+const GM_KEEP_STAFF_REPUTATION := 40
 const GM_FREE_AGENT_VALUE := 52.0
 const GM_MAX_SIGNINGS := 3
 
 
 func _gm_re_sign_players() -> void:
+	for entry in expiring_staff():
+		if entry["agreed"] or entry["member"].reputation < GM_KEEP_STAFF_REPUTATION:
+			continue
+		var kept := extend_staff(entry["member"].id)
+		if kept["ok"]:
+			_gm_log.append("Your general manager kept %s (%s)." % [entry["member"].identity.full_name(), FcStaffRole.display_name(entry["role"])])
 	var market := FcPlayerMarket.new(FcPlayerRatings.load_default())
 	for entry in expiring_players():
 		if entry["agreed"]:
@@ -975,9 +985,24 @@ func fire_staff(staff_id: int) -> bool:
 	return true
 
 
+## Staff want a little less than their asking salary at most (STAFF_FLEXIBILITY) and like
+## longer security (STAFF_SECURITY_PER_YEAR less per year above 3 years, more per year below).
+const STAFF_FLEXIBILITY := 0.06
+const STAFF_SECURITY_PER_YEAR := 0.025
+
+
+## The least first-year salary this person accepts for a contract of `years`
+## (staff re-signing with the owner's team give an extra 3% discount).
+func staff_minimum_acceptable(staff_id: int, years: int, own_team: bool = false) -> int:
+	var flex := STAFF_FLEXIBILITY + (0.03 if own_team else 0.0)
+	var factor := 1.0 - STAFF_SECURITY_PER_YEAR * clampi(years - 3, -2, 2)
+	return int(ceil(asking_salary(staff_id) * (1.0 - flex) * factor / 10000.0)) * 10000
+
+
 ## Hires an unemployed staff member for the user's team. Unique roles (general
-## manager, head coach) must be vacant. Returns an empty string on success or the reason.
-func hire_staff(staff_id: int, role: int, years: int) -> String:
+## manager, head coach) must be vacant. With no salary given he gets his asking salary; a lower
+## offer works if he is flexible enough. Returns an empty string on success or the reason.
+func hire_staff(staff_id: int, role: int, years: int, salary_offered: int = -1) -> String:
 	var w := state.world
 	var m: FcStaffMember = w.staff.get_by_id(staff_id)
 	if m == null or m.status != FcStaffMember.Status.ACTIVE:
@@ -986,17 +1011,53 @@ func hire_staff(staff_id: int, role: int, years: int) -> String:
 		return "that person already has a job"
 	if FcStaffRole.is_unique_per_team(role) and w.staff_in_role(state.user_team_id, role) != null:
 		return "the team already has a %s; fire him first" % FcStaffRole.display_name(role)
-	var salary := asking_salary(staff_id)
+	var length := clampi(years, 1, 5)
+	var salary := salary_offered if salary_offered > 0 else asking_salary(staff_id)
+	var required := staff_minimum_acceptable(staff_id, length)
+	if salary < required:
+		return "%s wants at least %s a year for %d years" % [m.identity.full_name(), "$%.2fM" % (required / 1e6), length]
 	var c := FcStaffContract.new(w.ids.next_id(FcWorld.KIND_STAFF_CONTRACT))
 	c.staff_id = staff_id
 	c.team_id = state.user_team_id
 	c.role = role
 	c.signed_on = state.current_date
-	for i in clampi(years, 1, 5):
+	for i in length:
 		c.years.append(FcContractYear.new(state.current_season + i, roundi(salary * pow(1.04, i) / 10000.0) * 10000))
 	w.staff_contracts.add(c)
 	engine.refresh_teams()
 	return ""
+
+
+## The user's staff whose contract ends with this season:
+## [{"member", "role", "ask", "agreed" (bool)}]. In Owner Mode they leave unless agreed with extend_staff().
+func expiring_staff() -> Array:
+	var w := state.world
+	var out: Array = []
+	for sc in w.staff_contracts_of_team(state.user_team_id):
+		if sc.end_season() <= state.current_season:
+			out.append({"member": w.staff.get_by_id(sc.staff_id), "role": sc.role, "ask": asking_salary(sc.staff_id), "agreed": state.agreed_staff_terms.has(sc.staff_id)})
+	return out
+
+
+## Agrees to keep a staff member whose contract ends this season; the new contract starts
+## next season on the agreed terms. Returns {"ok": bool, "reason": String, "required": int}.
+func extend_staff(staff_id: int, salary_offered: int = -1, years_offered: int = -1) -> Dictionary:
+	var w := state.world
+	var c := w.active_staff_contract_of(staff_id)
+	if c == null or c.team_id != state.user_team_id:
+		return {"ok": false, "reason": "He does not work for you."}
+	if c.end_season() > state.current_season:
+		return {"ok": false, "reason": "Only staff in the last year of their contract can be extended."}
+	if state.agreed_staff_terms.has(staff_id):
+		return {"ok": false, "reason": "He has already agreed to stay."}
+	var m: FcStaffMember = w.staff.get_by_id(staff_id)
+	var years := clampi(years_offered if years_offered > 0 else 3, 1, 5)
+	var salary := salary_offered if salary_offered > 0 else asking_salary(staff_id)
+	var required := staff_minimum_acceptable(staff_id, years, true)
+	if salary < required:
+		return {"ok": false, "required": required, "reason": "%s wants at least %s a year for %d years." % [m.identity.full_name(), "$%.2fM" % (required / 1e6), years]}
+	state.agreed_staff_terms[staff_id] = [salary, years]
+	return {"ok": true, "reason": "%s agreed to stay for %d years at %s a year." % [m.identity.full_name(), years, "$%.2fM" % (salary / 1e6)]}
 
 
 ## How the owner is doing: {"profit", "valuation", "valuation_change", "cash", "debt",

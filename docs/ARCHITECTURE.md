@@ -148,6 +148,12 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 - A whole 30-team, 80-game season plus playoffs takes about 13 seconds; a 1,230-game season is stored in about 100 KB.
 - Rosters are read when an engine is created; change rosters between seasons.
 
+## Staff negotiation (Owner Mode)
+- Hiring takes terms: `hire_staff(id, role, years, salary)`; staff accept up to 6% below their asking salary, more security (years above 3) lowers the price 2.5% per year and fewer years raise it (`staff_minimum_acceptable`); a refusal says the least he would take. The Staff tab has salary and years fields (defaulting to the asking salary) and the hire list now includes medical staff and business executives.
+- Staff contracts ending this season (`expiring_staff`) are kept only if the owner agrees terms with `extend_staff` (3% extra discount for re-signing); agreements are saved in `FcGameState.agreed_staff_terms` and used by `FcOffseason.staff_rollover`; unagreed staff of a human-run team leave and the vacancy is filled, as with players (the start-offseason warning now lists staff too). With "Re-sign my players" delegated, the GM keeps staff with reputation 40+.
+- New leagues start with 3 unemployed staff per role (`free_staff_per_role`) so there is someone to hire from day one; before this the hiring pool was empty until contracts ended.
+- UI: the delegation tick boxes are now toggle buttons labelled [x] / [ ] because the theme drew no visible box.
+
 ## Playthrough tool and what it found
 - `tools/ui_playthrough.ps1` (`ui_playthrough.gd`) plays Owner Mode through the real UI code for several seasons (`seasons=`, `teams=`, `seed=`, `reprice=1`): every tab builds, loans, arena projects, trade checks, extensions, the interactive draft (workouts and a pick), the free-agency window, GM delegation (alternating by season) and save/load in the middle of the draft and the window, validating the state after each step and printing results per season (record, profit and rank, payroll, approval, GM grade). Exit code 1 if anything fails.
 - Runs on 30 teams (3 and 5 seasons) and 12 teams (4 seasons) found no crashes or invalid states. It did find: (1) the owner's ticket price never changed while the AI reprices every year, so a smaller-market owner fell to 28th of 30 in profit; fixed with a suggested price (`suggested_ticket_price`, "Use suggestion" button, what the AI charges); (2) the GM grade used absolute wins so short seasons graded too kindly; it now uses the share of games.
