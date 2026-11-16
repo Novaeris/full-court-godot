@@ -13,6 +13,7 @@ const AREA_CHOICES := [
 ]
 const CAP_CHOICES := [["Soft cap with hard limit (recommended)", "soft_cap_with_hard_limit"], ["Hard cap", "hard_cap"], ["No cap (luxury tax only)", "no_cap"]]
 const ERA_CHOICES := [["Mid 2010s (default)", "mid_2010s"], ["Early 2010s: slower, mid-range", "early_2010s"], ["Late 2010s: fast, three-point heavy", "late_2010s"]]
+const GAMES_CHOICES := [["Short: about 40 games", 40], ["Medium: about 60 games", 60], ["Standard: about 80 games (default)", 80], ["Long: about 100 games", 100]]
 const TAB_NAMES := ["Overview", "Standings", "Schedule", "Roster", "Finances", "Staff", "Market", "Trades", "History", "News", "League"]
 
 var controller: FcGameController
@@ -153,6 +154,9 @@ func show_new_league() -> void:
 	_form["structure"] = _options(grid, "Conferences and divisions", [])
 	_form["cap"] = _options(grid, "Salary cap", CAP_CHOICES.map(func(a): return a[0]))
 	_form["era"] = _options(grid, "Style of play", ERA_CHOICES.map(func(a): return a[0]))
+	_form["games"] = _options(grid, "Season length (30-team league)", GAMES_CHOICES.map(func(a): return a[0]))
+	_form["games"].selected = 2
+	_form["lottery"] = _options(grid, "Draft lottery", ["On (worst teams are favoured but not guaranteed)", "Off (worst record picks first)"])
 	_form["mode"] = _options(grid, "Game mode", ["Owner Mode", "Dynasty Mode"])
 	_form["seed"] = _line_edit(grid, "Random seed (same seed = same league)", str(randi() % 100000))
 	(_form["teams"] as OptionButton).item_selected.connect(func(_i): _fill_structures())
@@ -207,6 +211,8 @@ func on_create_league(overrides: Dictionary = {}) -> bool:
 		cfg.divisions_per_conference = structure["divisions_per_conference"]
 		cfg.cap_preset = CAP_CHOICES[(_form["cap"] as OptionButton).selected][1]
 		cfg.sim_era = ERA_CHOICES[(_form["era"] as OptionButton).selected][1]
+		cfg.target_games = GAMES_CHOICES[(_form["games"] as OptionButton).selected][1]
+		cfg.draft_lottery = (_form["lottery"] as OptionButton).selected == 0
 	else:
 		cfg.areas = _to_strings(overrides.get("areas", cfg.areas))
 		cfg.team_count = int(overrides.get("teams", cfg.team_count))
@@ -498,6 +504,8 @@ func _tab_market() -> Control:
 	right.add_child(FcUiTables.label("Latest draft (first round)", 18, true))
 	var report := controller.latest_draft_report()
 	var draft_rows: Array = []
+	if report.is_empty():
+		right.add_child(FcUiTables.label("No draft has been held yet. The first one takes place after the season."))
 	if not report.is_empty():
 		for entry in report["rows"]:
 			if entry["round"] != 1:
@@ -536,6 +544,11 @@ func _tab_overview() -> Control:
 			FcUiTables.money(report["profit"]), FcUiTables.money(report["revenue"]), FcUiTables.money(report["valuation"]),
 			FcUiTables.money(report["valuation_change"]), FcUiTables.money(report["cash"]), FcUiTables.money(report["debt"])]))
 		box.add_child(FcUiTables.label("Wins %d (expected about %d)    Owner approval: %d / 100" % [report["wins"], report["expected_wins"], report["approval"]]))
+	var news: Array = controller.state.world.news
+	if not news.is_empty():
+		box.add_child(FcUiTables.label("Latest news", 18, true))
+		for i in range(news.size() - 1, maxi(-1, news.size() - 7), -1):
+			box.add_child(FcUiTables.label("  %s  %s" % [news[i]["date"], news[i]["text"]]))
 	var rules := controller.state.world.rules_of_league(controller.league_id)
 	box.add_child(FcUiTables.label("League rules", 18, true))
 	for line in rules.playoffs.describe(controller.state.world.leagues.get_by_id(controller.league_id)):
@@ -585,7 +598,7 @@ func _tab_schedule() -> Control:
 			var theirs := g.away_score if home else g.home_score
 			result = "%s %d-%d%s" % ["W" if mine > theirs else "L", mine, theirs, " (OT)" if g.overtimes > 0 else ""]
 		rows.append([s.date_of_day(g.day).to_iso(), "Playoffs" if g.series > 0 else "", "vs" if home else "at", _team_name(opp), result])
-	var table := FcUiTables.table(["Date", "", "", "Opponent", "Result"], rows, [0, 70, 40, 260, 120])
+	var table := FcUiTables.table(["Date", "Round", "", "Opponent", "Result"], rows, [110, 80, 40, 0, 140])
 	table.set_meta("keys", keys)
 	var box := VBoxContainer.new()
 	box.add_child(table)

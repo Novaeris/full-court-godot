@@ -248,3 +248,12 @@ func test_market_tab_has_a_sign_button_and_signing_works() -> void:
 	assert_true(app.controller.release_player(mine.roster.player_ids[mine.roster.size() - 1])["released"])
 	var r := app.controller.sign_free_agent(target.id)
 	assert_true(r["signed"], r["reason"])
+
+
+func test_table_alignment_follows_the_content() -> void:
+	var tree := FcUiTables.table(["Team", "Pct", "Salary", "Note"], [["Hawks", "0.533", "$29.4M", "good"], ["Owls", "0.467", "$2.0M", "bad"]])
+	assert_eq(tree.get_column_title_alignment(0), HORIZONTAL_ALIGNMENT_LEFT, "names are left-aligned")
+	assert_eq(tree.get_column_title_alignment(1), HORIZONTAL_ALIGNMENT_RIGHT, "numbers are right-aligned")
+	assert_eq(tree.get_column_title_alignment(2), HORIZONTAL_ALIGNMENT_RIGHT, "money is right-aligned")
+	assert_eq(tree.get_column_title_alignment(3), HORIZONTAL_ALIGNMENT_LEFT, "words are left-aligned")
+	tree.free()

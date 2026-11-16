@@ -138,7 +138,15 @@ func initial_business(team: FcTeam, scale: float, price_scale: float = -1.0) -> 
 	b.marketing_budget = roundi(float(k["default_marketing"]) * scale)
 	b.ticket_price = best_price(b, city, arena, scale if price_scale < 0.0 else price_scale)
 	b.cash = roundi(float(k["starting_cash"]) * scale)
+	b.valuation = estimated_valuation(b, scale)
 	return b
+
+
+## What a franchise is worth before it has played a season: a typical team's revenue
+## (about 1.9 times the cap) times the same revenue multiple the books use later.
+func estimated_valuation(business: FcTeamBusiness, scale: float) -> int:
+	var revenue := 1.9 * float(k["reference_cap"]) * scale
+	return roundi(revenue * (float(k["valuation_revenue_multiple"]) + float(k["valuation_brand_multiple"]) * business.brand / 100.0))
 
 
 # --- owner actions ----------------------------------------------------------------

@@ -244,3 +244,12 @@ func test_suites_raise_event_income_and_need_cash() -> void:
 	assert_true(g.start_arena_project("luxury_suites")["ok"])
 	g.sim_playoffs()
 	assert_eq(g.business().suites_level, 1, "suites take one season")
+
+
+func test_new_game_has_a_valuation_and_a_borrowing_limit() -> void:
+	var g := _game(35)
+	assert_true(g.business().valuation > 0, "a franchise has a value before its first season")
+	assert_true(g.loan_limit() > 0)
+	assert_true(g.borrow(1000000)["ok"], "loans work in the first season")
+	g.business().valuation = 0   # an old save
+	assert_true(g.loan_limit() > 0, "old saves fall back to an estimate")

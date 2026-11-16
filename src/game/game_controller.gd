@@ -339,7 +339,12 @@ func set_sponsor_plan(plan: int) -> bool:
 
 ## The most the owner may owe in total: a share of the franchise's value.
 func loan_limit() -> int:
-	return roundi(business().valuation * float(FcFinanceEngine.load_constants()["loan_limit_share"]))
+	var b := business()
+	var value := b.valuation
+	if value <= 0:   # saves made before valuations were set at the start
+		var finance := FcFinanceEngine.new(state.world)
+		value = finance.estimated_valuation(b, finance.scale_for(state.world.rules_of_league(league_id)))
+	return roundi(value * float(FcFinanceEngine.load_constants()["loan_limit_share"]))
 
 
 ## Borrows money (it becomes debt, which costs interest every season).

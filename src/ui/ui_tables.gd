@@ -20,16 +20,47 @@ static func table(columns: Array, rows: Array, widths: Array = []) -> Tree:
 		tree.set_column_expand(i, not fixed)
 		if fixed:
 			tree.set_column_custom_minimum_width(i, int(widths[i]))
-		if i > 0:
+		if _is_numeric_column(i, rows):
 			tree.set_column_title_alignment(i, HORIZONTAL_ALIGNMENT_RIGHT)
+		else:
+			tree.set_column_title_alignment(i, HORIZONTAL_ALIGNMENT_LEFT)
 	var root := tree.create_item()
 	for row in rows:
 		var item := tree.create_item(root)
 		for i in columns.size():
 			item.set_text(i, str(row[i]) if i < row.size() else "")
-			if i > 0:
+			if _is_numeric_column(i, rows):
 				item.set_text_alignment(i, HORIZONTAL_ALIGNMENT_RIGHT)
 	return tree
+
+
+## Numbers (and money, percentages, ratios such as 0.533) read best right-aligned;
+## names and sentences read best left-aligned. A column counts as numeric when every
+## filled cell looks like a number. An empty table keeps column 0 left and the rest right.
+static func _is_numeric_column(column: int, rows: Array) -> bool:
+	if rows.is_empty():
+		return column > 0
+	var seen := false
+	for row in rows:
+		if column >= row.size():
+			continue
+		var cell := str(row[column]).strip_edges()
+		if cell == "":
+			continue
+		seen = true
+		if _numeric_pattern().search(cell) == null:
+			return false
+	return seen
+
+
+static var _numeric_regex: RegEx = null
+
+
+static func _numeric_pattern() -> RegEx:
+	if _numeric_regex == null:
+		_numeric_regex = RegEx.new()
+		_numeric_regex.compile("^[-+$]?[\\d.,]+[MKB%]?$")
+	return _numeric_regex
 
 
 static func money(dollars: int) -> String:
