@@ -5,7 +5,7 @@ Nothing has been pushed anywhere: the repository is local only (no remote).
 
 ## 2026-11-16 hand-off: where Owner Mode stands
 
-**474 automated tests pass** (`./tools/run_tests.ps1`), plus two long checks that drive the real UI:
+**480 automated tests pass** (`./tools/run_tests.ps1`), plus two long checks that drive the real UI:
 `./tools/click_test.ps1` (54 simulated mouse clicks through a whole season and offseason) and
 `./tools/ui_playthrough.ps1 seasons=3 teams=30` (many owner features over several seasons, saving and loading
 mid-draft). Everything is committed locally; nothing is published.
@@ -29,7 +29,7 @@ mid-draft). Everything is committed locally; nothing is published.
 ### Known gaps (also see the older list below)
 - Overtime games are about 2.6% (real about 5-6%); one fix was tried and reverted.
 - The UI is plain: tables and buttons, no theme polish, no mobile layout, only checked at 1280x800. Some columns are tight at that size.
-- No named multi-year sponsor contracts; no staff chemistry; the AI never proposes trades to you; no ticket pricing by game type.
+-  no staff chemistry; the AI never proposes trades to you; no ticket pricing by game type.
 - A small-market owner who starts with a high payroll loses money in season 1 (valid challenge, recovered by season 3 in testing).
 - Dynasty Mode (lineups and minutes control) and Career Mode are not built.
 

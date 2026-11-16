@@ -394,3 +394,82 @@ func test_premium_merchandise_only_pays_for_a_strong_brand() -> void:
 	assert_true(net.call(2, 85) > net.call(1, 85), "a strong brand profits from premium goods")
 	assert_true(net.call(2, 40) < net.call(1, 40), "a weak brand does not")
 	assert_true(net.call(0, 50) < net.call(1, 50), "limited stock sells less than it saves")
+
+
+func _sponsor_world() -> FcWorld:
+	return _build_world()
+
+
+func test_sponsor_offers_are_stable_distinct_and_priced_from_the_market() -> void:
+	var world := _sponsor_world()
+	var fin := FcFinanceEngine.new(world)
+	var scale := fin.scale_for(world.rules_of_league(1))
+	var a := fin.sponsor_offers(1, 2027, scale)
+	var b := fin.sponsor_offers(1, 2027, scale)
+	assert_eq(a, b, "the same offers every time you look")
+	assert_eq(a.size(), 3)
+	var names := {}
+	for o in a:
+		assert_true(not names.has(o["sponsor"]), "no sponsor twice")
+		names[o["sponsor"]] = true
+		assert_true(o["years"] >= 1 and o["years"] <= 5 and o["amount"] > 0)
+	assert_true(fin.sponsor_offers(1, 2028, scale) != a, "new offers each year")
+	var team: FcTeam = world.teams.get_by_id(1)
+	var slot := fin.sponsorship_baseline(1, world.businesses.get_by_id(1), world.cities.get_by_id(team.city_id), scale) * float(fin.k["sponsor_slot_share"])
+	for o in a:
+		assert_between(float(o["amount"]), slot * 0.75, slot * 1.20, "priced around a share of the open-market income")
+
+
+func test_signing_sponsors_has_two_slots_and_no_repeats() -> void:
+	var world := _sponsor_world()
+	var fin := FcFinanceEngine.new(world)
+	var scale := fin.scale_for(world.rules_of_league(1))
+	var business: FcTeamBusiness = world.businesses.get_by_id(1)
+	var offers := fin.sponsor_offers(1, 2027, scale)
+	assert_eq(fin.sign_sponsor(business, offers[0]), "")
+	assert_true(fin.sign_sponsor(business, offers[0]) != "", "not the same sponsor twice")
+	assert_eq(fin.sign_sponsor(business, offers[1]), "")
+	assert_true(fin.sign_sponsor(business, offers[2]) != "", "only two slots")
+	assert_eq(fin.sponsor_offers(1, 2027, scale).size(), 3, "offers keep coming (the signed names are skipped)")
+
+
+func test_sponsor_contracts_pay_fixed_money_bonuses_and_expire() -> void:
+	var results := {}
+	for deals in [0, 2]:
+		var world := _build_world()
+		var fin := FcFinanceEngine.new(world)
+		var scale := fin.scale_for(world.rules_of_league(1))
+		if deals > 0:
+			var business: FcTeamBusiness = world.businesses.get_by_id(1)
+			business.sponsor_deals = [
+				{"sponsor": "Test One", "amount": 9000000, "bonus": 1000000, "years_left": 1},
+				{"sponsor": "Test Two", "amount": 7000000, "bonus": 0, "years_left": 2},
+			]
+		var rng := FcRng.new(3)
+		var engine := FcSeasonEngine.for_league(world, 1)
+		var season := engine.start_season(1, 2026, FcDate.new(2026, 10, 20), rng.fork("s"))
+		engine.play_full_season(season, rng.fork("p"))
+		var rec := fin.record_of(1, 2026)
+		results[deals] = {"revenue": rec.revenue["sponsorship"], "rounds": rec.playoff_rounds_won, "business": world.businesses.get_by_id(1), "scale": scale}
+	assert_true(results[2]["revenue"] != results[0]["revenue"], "contracts change the sponsorship income")
+	var business: FcTeamBusiness = results[2]["business"]
+	assert_eq(business.sponsor_deals.size(), 1, "the one-year deal ended")
+	assert_eq(business.sponsor_deals[0]["sponsor"], "Test Two")
+	assert_eq(business.sponsor_deals[0]["years_left"], 1)
+
+
+func test_no_contracts_means_the_old_sponsorship_income() -> void:
+	var played := _played()
+	var world: FcWorld = played["world"]
+	var fin := FcFinanceEngine.new(world)
+	var rec := fin.record_of(1, 2026)
+	var business: FcTeamBusiness = world.businesses.get_by_id(1)
+	assert_true(business.sponsor_deals.is_empty() and rec.revenue["sponsorship"] > 0)
+
+
+func test_sponsor_deals_are_saved() -> void:
+	var b := FcTeamBusiness.new(2)
+	b.sponsor_deals = [{"sponsor": "Halcyon Energy", "amount": 8000000, "bonus": 800000, "years_left": 3}]
+	var back := FcTeamBusiness.from_dict(JSON.parse_string(JSON.stringify(b.to_dict())))
+	assert_eq(back.sponsor_deals, b.sponsor_deals)
+	assert_eq(FcTeamBusiness.from_dict({"id": 2}).sponsor_deals, [])

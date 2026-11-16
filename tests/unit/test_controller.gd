@@ -394,3 +394,15 @@ func test_suggested_ticket_price_follows_demand() -> void:
 	g.business().fan_interest = 10
 	g.business().brand = 10
 	assert_true(g.suggested_ticket_price() <= before, "less interest means a lower price")
+
+
+func test_the_owner_can_sign_a_sponsor_through_the_controller() -> void:
+	var g := _game(45)
+	var offers := g.sponsor_offers()
+	assert_eq(offers.size(), 3)
+	var r := g.accept_sponsor(offers[0]["sponsor"])
+	assert_true(r["ok"], r["reason"])
+	assert_eq(g.business().sponsor_deals.size(), 1)
+	assert_true(g.accept_sponsor(g.sponsor_offers()[0]["sponsor"])["ok"])
+	assert_eq(g.sponsor_offers().size(), 0, "both slots taken: no more offers")
+	assert_true(not g.accept_sponsor("Nobody Inc")["ok"])

@@ -889,6 +889,27 @@ func set_merch_tier(tier: int) -> bool:
 	return true
 
 
+## Sponsorship offers for the coming season (see FcFinanceEngine.sponsor_offers); empty while
+## both slots are taken.
+func sponsor_offers() -> Array:
+	var finance := FcFinanceEngine.new(state.world)
+	if business().sponsor_deals.size() >= int(finance.k["sponsor_max_deals"]):
+		return []
+	return finance.sponsor_offers(state.user_team_id, contract_year(), finance.scale_for(state.world.rules_of_league(league_id)))
+
+
+## Signs the offer with this sponsor name. Returns {"ok": bool, "reason": String}.
+func accept_sponsor(sponsor: String) -> Dictionary:
+	for offer in sponsor_offers():
+		if offer["sponsor"] == sponsor:
+			var finance := FcFinanceEngine.new(state.world)
+			var problem := finance.sign_sponsor(business(), offer)
+			if problem != "":
+				return {"ok": false, "reason": problem}
+			return {"ok": true, "reason": "Signed %s for %d year%s: %s a year%s." % [sponsor, offer["years"], "" if offer["years"] == 1 else "s", "$%.1fM" % (offer["amount"] / 1e6), " plus $%.1fM per playoff round won" % (offer["bonus"] / 1e6) if offer["bonus"] > 0 else ""]}
+	return {"ok": false, "reason": "That offer is no longer available."}
+
+
 ## Chooses the sponsorship deal style: 0 balanced, 1 steady, 2 performance
 ## (see FcTeamBusiness.sponsor_plan). It applies when the season's books are settled.
 func set_sponsor_plan(plan: int) -> bool:

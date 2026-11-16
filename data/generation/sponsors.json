@@ -1,0 +1,13 @@
+{
+	"schema": 1,
+	"note": "Original (invented) company names for sponsorship offers. Any resemblance to real companies is unintended; check before a commercial release. Add or change names freely.",
+	"names": [
+		"Halcyon Energy", "Meridian Savings", "Brightwater Foods", "Cobalt Telecom", "Aurelia Air", "Northgate Motors",
+		"Lumina Electric", "Redwood Insurance", "Seabright Cruises", "Ironvale Steel", "Pinecrest Outfitters", "Quartz Mobile",
+		"Solace Hotels", "Tidewater Beverages", "Vantage Credit Union", "Wildflower Organics", "Zephyr Airlines", "Alder & Finch Law",
+		"Beacon Health", "Crescent Software", "Driftwood Coffee", "Emberline Gas", "Fairhaven Homes", "Granite Peak Bank",
+		"Harbor Light Shipping", "Indigo Streaming", "Juniper Pharmacy", "Kestrel Logistics", "Lakeshore Brewing", "Maple Ridge Dairy",
+		"Nimbus Cloud", "Oakmont Realty", "Polar Star Appliances", "Quill Publishing", "Riverbend Water", "Summit Sports Drinks",
+		"Terra Nova Mining", "Union Square Eats", "Verdant Landscaping", "Westbrook Tires"
+	]
+}

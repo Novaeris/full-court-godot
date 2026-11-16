@@ -112,6 +112,73 @@ func merch_multiplier(business: FcTeamBusiness) -> float:
 	return float(k["merch_revenue_multipliers"][business.merch_tier])
 
 
+## The open-market sponsorship income of a team before success and style adjustments:
+## it grows with brand, market size and a good business executive.
+func sponsorship_baseline(team_id: int, business: FcTeamBusiness, city: FcCity, scale: float) -> float:
+	return float(k["sponsorship_base"]) * scale * (0.5 + business.brand / 100.0) * pow(market_factor(city), 0.8) \
+		* (1.0 + float(k["executive_sponsorship_effect"]) * (executive_skill(team_id, "marketing") - float(k["executive_neutral_skill"])) / 50.0)
+
+
+static func sponsor_names() -> Array:
+	var file := FileAccess.open("res://data/generation/sponsors.json", FileAccess.READ)
+	var parsed = FcChecks.parse_json(file.get_as_text()) if file != null else null
+	return parsed["names"] if parsed is Dictionary and parsed.has("names") else ["Local Sponsor"]
+
+
+## Sponsorship offers for a team in a year (the same every time you ask, so nothing needs saving):
+## [{"sponsor", "amount" a year, "bonus" per playoff round, "years"}]. Sponsors the team already
+## has are left out. A fixed deal pays slightly above or below the open market; a bonus deal
+## pays less up front and more for playoff success; longer deals pay a little more.
+func sponsor_offers(team_id: int, year: int, scale: float) -> Array:
+	var team: FcTeam = world.teams.get_by_id(team_id)
+	var business: FcTeamBusiness = world.businesses.get_by_id(team_id)
+	var city: FcCity = world.cities.get_by_id(team.city_id)
+	var rng := FcRng.new(hash("sponsors:%d:%d" % [team_id, year]))
+	var names := sponsor_names()
+	var taken := {}
+	for deal in business.sponsor_deals:
+		taken[deal["sponsor"]] = true
+	var slot := sponsorship_baseline(team_id, business, city, scale) * float(k["sponsor_slot_share"])
+	var offers: Array = []
+	var tries := 0
+	while offers.size() < int(k["sponsor_offer_count"]) and tries < 40:
+		tries += 1
+		var name: String = names[rng.range_int(0, names.size() - 1)]
+		if taken.has(name):
+			continue
+		taken[name] = true
+		var years := rng.range_int(1, 5)
+		var longer := 1.0 + 0.02 * (years - 3)
+		var bonus_deal := rng.chance(0.4)
+		var amount := slot * (rng.range_float(0.80, 0.90) if bonus_deal else rng.range_float(0.95, 1.10)) * longer
+		var bonus := slot * float(k["sponsor_bonus_share"]) if bonus_deal else 0.0
+		offers.append({"sponsor": name, "amount": roundi(amount / 10000.0) * 10000, "bonus": roundi(bonus / 10000.0) * 10000, "years": years})
+	return offers
+
+
+## Signs one of the offers if a sponsorship slot is free. Returns "" or the reason it cannot.
+func sign_sponsor(business: FcTeamBusiness, offer: Dictionary) -> String:
+	if business.sponsor_deals.size() >= int(k["sponsor_max_deals"]):
+		return "Both sponsorship slots are taken. Wait for a deal to run out."
+	for deal in business.sponsor_deals:
+		if deal["sponsor"] == offer["sponsor"]:
+			return "You already have a deal with %s." % offer["sponsor"]
+	business.sponsor_deals.append({"sponsor": offer["sponsor"], "amount": int(offer["amount"]), "bonus": int(offer["bonus"]), "years_left": int(offer["years"])})
+	return ""
+
+
+## One season of every sponsorship deal is over: those that ran out end.
+func _advance_sponsor_deals(business: FcTeamBusiness, team_id: int, year: int) -> void:
+	var remaining: Array = []
+	for deal in business.sponsor_deals:
+		deal["years_left"] = int(deal["years_left"]) - 1
+		if deal["years_left"] > 0:
+			remaining.append(deal)
+		else:
+			world.add_news(FcDate.new(year + 1, 6, 1), "staff", "%s's sponsorship deal with %s ended." % [world.team_display_name(team_id), deal["sponsor"]], team_id)
+	business.sponsor_deals = remaining
+
+
 static func load_constants() -> Dictionary:
 	var file := FileAccess.open("res://data/simulation/finance.json", FileAccess.READ)
 	var parsed = FcChecks.parse_json(file.get_as_text()) if file != null else null
@@ -276,7 +343,12 @@ func settle(league_id: int, season: FcSeason, human_teams: Array[int] = []) -> A
 			plan_factor = float(k["sponsor_steady_multiplier"])
 		elif business.sponsor_plan == 2:
 			plan_factor = float(k["sponsor_performance_base"]) + float(k["sponsor_performance_win_weight"]) * standings.win_pct(tid) + float(k["sponsor_performance_playoff_weight"]) * success
-		rec.revenue["sponsorship"] = roundi(float(k["sponsorship_base"]) * scale * (0.5 + business.brand / 100.0) * pow(m, 0.8) * plan_factor * (1.0 + float(k["executive_sponsorship_effect"]) * (executive_skill(tid, "marketing") - float(k["executive_neutral_skill"])) / 50.0))
+		var floating_sponsorship := sponsorship_baseline(tid, business, city, scale) * plan_factor
+		var covered := minf(1.0, business.sponsor_deals.size() * float(k["sponsor_slot_share"]))
+		var deal_income := 0.0
+		for deal in business.sponsor_deals:
+			deal_income += float(deal["amount"]) + float(deal["bonus"]) * rec.playoff_rounds_won
+		rec.revenue["sponsorship"] = roundi(floating_sponsorship * (1.0 - covered) + deal_income)
 		rec.revenue["broadcasting"] = roundi(float(k["broadcasting_per_team"]) * scale)
 		rec.revenue["arena_events"] = roundi(float(k["arena_events_base"]) * scale * city.economy_index / 100.0 * arena.capacity / float(k["reference_capacity"]) * (1.0 + float(load_arena_projects().get("suite_event_bonus", 0.2)) * business.suites_level))
 		rec.revenue["tax_share"] = int(shared["payouts"].get(tid, 0))
@@ -329,6 +401,7 @@ func settle(league_id: int, season: FcSeason, human_teams: Array[int] = []) -> A
 		rec.cash_end = business.cash
 		rec.debt_end = business.debt
 		advance_projects(business, arena, tid, year)
+		_advance_sponsor_deals(business, tid, year)
 		rec.valuation_end = business.valuation
 		world.finances.add(rec)
 		records.append(rec)

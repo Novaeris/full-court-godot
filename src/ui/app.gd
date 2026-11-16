@@ -1028,6 +1028,24 @@ func _tab_finances() -> Control:
 				show_dashboard()))
 		loans.add_child(FcUiTables.label("   Borrowing limit %s" % FcUiTables.money(controller.loan_limit())))
 		box.add_child(loans)
+		var sponsors := HBoxContainer.new()
+		sponsors.add_child(FcUiTables.label("Sponsors:"))
+		var deal_texts: Array[String] = []
+		for deal in b.sponsor_deals:
+			deal_texts.append("%s %s/yr%s, %d yr left" % [deal["sponsor"], FcUiTables.money(deal["amount"]), " + %s per playoff round" % FcUiTables.money(deal["bonus"]) if deal["bonus"] > 0 else "", deal["years_left"]])
+		sponsors.add_child(FcUiTables.label(", ".join(deal_texts) if not deal_texts.is_empty() else "none yet (open-market income)"))
+		var offers := controller.sponsor_offers()
+		if not offers.is_empty():
+			var offer_pick := OptionButton.new()
+			for o in offers:
+				offer_pick.add_item("%s: %s/yr x %d%s" % [o["sponsor"], FcUiTables.money(o["amount"]), o["years"], " + %s per playoff round" % FcUiTables.money(o["bonus"]) if o["bonus"] > 0 else ""])
+			sponsors.add_child(offer_pick)
+			sponsors.add_child(FcUiTables.button("Sign sponsor deal", func():
+				var r5 := controller.accept_sponsor(offers[offer_pick.selected]["sponsor"])
+				_say(r5["reason"])
+				if r5["ok"]:
+					show_dashboard()))
+		box.add_child(sponsors)
 		var shop := HBoxContainer.new()
 		shop.add_child(FcUiTables.label("Concession prices %"))
 		var concessions := SpinBox.new()
