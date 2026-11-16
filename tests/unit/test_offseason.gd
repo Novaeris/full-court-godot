@@ -228,3 +228,27 @@ func test_every_team_keeps_its_staff_through_the_years() -> void:
 	for report in r["reports"]:
 		assert_true(report["staff_hired"] >= 0 and report.has("staff_renewed"))
 	assert_true((r["reports"] as Array).any(func(rep): return rep["staff_renewed"] + rep["staff_hired"] > 0), "some staff contracts were renewed or refilled")
+
+
+func test_scouts_reduce_draft_noise() -> void:
+	var data := FcGenerationData.load_default()
+	var cfg := FcGenerationConfig.load_default(data)
+	cfg.team_count = 8
+	cfg.conference_count = 2
+	cfg.divisions_per_conference = 1
+	cfg.roster_size = 13
+	cfg.free_agent_count = 5
+	cfg.scouts = 2
+	var world := FcWorldGenerator.new(data, FcDefinitionSet.load_default(), cfg).generate(90)
+	var off := FcOffseason.new(world)
+	var scouts := world.staff_contracts_of_team(1, FcStaffRole.Id.SCOUT)
+	assert_eq(scouts.size(), 2)
+	for sc in scouts:
+		world.staff.get_by_id(sc.staff_id).skills.set_clamped("scouting_accuracy", 0)
+	var untrained := off.draft_noise(1)
+	for sc in scouts:
+		world.staff.get_by_id(sc.staff_id).skills.set_clamped("scouting_accuracy", 100)
+	var trained := off.draft_noise(1)
+	assert_true(trained < untrained, "great scouts sharpen the view (%f < %f)" % [trained, untrained])
+	assert_true(untrained - trained <= FcOffseason.SCOUT_NOISE_MAX + 0.001)
+	assert_true(trained >= 0.5)

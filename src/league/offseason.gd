@@ -235,8 +235,7 @@ func run_draft(league_id: int, finished: FcSeason, new_year: int, rng: FcRng) ->
 		for team_id in order:
 			pick += 1
 			var team: FcTeam = world.teams.get_by_id(team_id)
-			var gm := world.staff_in_role(team_id, FcStaffRole.Id.GENERAL_MANAGER)
-			var noise := 6.0 - (gm.skills.get_value("talent_evaluation") / 20.0 if gm != null else 2.5)
+			var noise := draft_noise(team_id)
 			var best: FcPlayer = null
 			var best_score := -INF
 			for p in available:
@@ -267,6 +266,27 @@ func run_draft(league_id: int, finished: FcSeason, new_year: int, rng: FcRng) ->
 		p.status = FcPlayer.Status.ACTIVE   # undrafted: free agents
 	finished.draft = results
 	return results.size()
+
+
+## How far off a team's view of a prospect can be (standard deviation in value
+## points). A good GM helps, and so do scouts: every 100 points of scouting
+## accuracy across a team's scouts removes SCOUT_NOISE_PER_100, up to
+## SCOUT_NOISE_MAX. Never below 0.5.
+const BASE_NOISE := 6.0
+const SCOUT_NOISE_PER_100 := 1.2
+const SCOUT_NOISE_MAX := 3.0
+
+
+func draft_noise(team_id: int) -> float:
+	var gm := world.staff_in_role(team_id, FcStaffRole.Id.GENERAL_MANAGER)
+	var noise := BASE_NOISE - (gm.skills.get_value("talent_evaluation") / 20.0 if gm != null else 2.5)
+	var accuracy := 0.0
+	for sc in world.staff_contracts_of_team(team_id, FcStaffRole.Id.SCOUT):
+		var scout: FcStaffMember = world.staff.get_by_id(sc.staff_id)
+		if scout != null:
+			accuracy += scout.skills.get_value("scouting_accuracy")
+	noise -= minf(SCOUT_NOISE_MAX, accuracy / 100.0 * SCOUT_NOISE_PER_100)
+	return maxf(0.5, noise)
 
 
 func _make_prospects(count: int, new_year: int, rng: FcRng) -> Array[FcPlayer]:
