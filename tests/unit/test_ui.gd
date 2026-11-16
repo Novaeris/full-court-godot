@@ -220,3 +220,12 @@ func test_trades_tab_builds_and_a_trade_can_be_proposed() -> void:
 	var other := 1 if app.controller.state.user_team_id != 1 else 2
 	var r := app.controller.propose_trade(other, [], [], true)
 	assert_true(not r["accepted"])
+
+
+func test_history_tab_builds() -> void:
+	_start_small_game()
+	app.on_advance(10)
+	var tab := app.build_tab("History")
+	assert_true(tab is HBoxContainer and tab.get_child_count() == 2)
+	assert_true(not _trees(tab).is_empty())
+	tab.free()

@@ -13,7 +13,7 @@ const AREA_CHOICES := [
 ]
 const CAP_CHOICES := [["Soft cap with hard limit (recommended)", "soft_cap_with_hard_limit"], ["Hard cap", "hard_cap"], ["No cap (luxury tax only)", "no_cap"]]
 const ERA_CHOICES := [["Mid 2010s (default)", "mid_2010s"], ["Early 2010s: slower, mid-range", "early_2010s"], ["Late 2010s: fast, three-point heavy", "late_2010s"]]
-const TAB_NAMES := ["Overview", "Standings", "Schedule", "Roster", "Finances", "Staff", "Market", "Trades", "News", "League"]
+const TAB_NAMES := ["Overview", "Standings", "Schedule", "Roster", "Finances", "Staff", "Market", "Trades", "History", "News", "League"]
 
 var controller: FcGameController
 var saves := FcSaveManager.new()
@@ -365,11 +365,41 @@ func build_tab(tab_name: String) -> Control:
 		"Staff": return _tab_staff()
 		"Market": return _tab_market()
 		"Trades": return _tab_trades()
+		"History": return _tab_history()
 		"News": return _tab_news()
 	return _tab_league()
 
 
 # --- tabs ----------------------------------------------------------------------------------
+
+## The Hall of Fame and single-season records.
+func _tab_history() -> Control:
+	var w := controller.state.world
+	var records := FcRecords.new(w, controller.league_id)
+	var box := HBoxContainer.new()
+	var left := VBoxContainer.new()
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left.add_child(FcUiTables.label("Hall of Fame", 18, true))
+	var hof_rows: Array = []
+	for entry in records.hall_of_fame(controller.state.current_season):
+		var h := records.honours_of(entry[1])
+		var t := w.career_totals(entry[1])
+		hof_rows.append([w.player_name(entry[1]), entry[2], t["seasons"], t["points"], h["mvp"], h["titles"], roundi(entry[0])])
+	if hof_rows.is_empty():
+		left.add_child(FcUiTables.label("Nobody has been inducted yet. Retired stars are eligible %d seasons after their last game." % FcRecords.EXPERIENCE_WAIT))
+	left.add_child(FcUiTables.table(["Player", "Inducted", "Seasons", "Points", "MVPs", "Titles", "Score"], hof_rows, [0, 70, 70, 70, 50, 50, 50]))
+	box.add_child(left)
+	var right := VBoxContainer.new()
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for entry in [["points", "Points"], ["rebounds", "Rebounds"], ["ast", "Assists"]]:
+		right.add_child(FcUiTables.label("Best single seasons: %s" % entry[1].to_lower(), 16, true))
+		var rows: Array = []
+		for rec in records.single_season_records(entry[0], 5):
+			rows.append([w.player_name(rec[1]), "%d-%02d" % [rec[2], (rec[2] + 1) % 100], rec[0]])
+		right.add_child(FcUiTables.table(["Player", "Season", entry[1]], rows, [0, 80, 80]))
+	box.add_child(right)
+	return box
+
 
 ## Propose a trade: pick a partner, select players on both sides, check or propose.
 func _tab_trades() -> Control:

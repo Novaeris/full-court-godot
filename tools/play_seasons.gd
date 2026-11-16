@@ -74,6 +74,15 @@ func _initialize() -> void:
 		if p.status == FcPlayer.Status.RETIRED:
 			retired += 1
 	print("Players in the database: %d (%d retired). Played in %.0f s." % [world.players.count(), retired, seconds])
+	var records := FcRecords.new(world, 1)
+	var hof := records.hall_of_fame(year + 1)
+	print("Hall of Fame: %d members (best scores: %s)" % [hof.size(), ", ".join(hof.slice(0, 3).map(func(h): return "%s %.0f" % [world.player_name(h[1]), h[0]]))])
+	var best := records.single_season_records("points", 1)
+	if not best.is_empty():
+		print("Best scoring season: %s, %d points in %d" % [world.player_name(best[0][1]), best[0][0], best[0][2]])
+	var career_best := world.career_leaders("points", 1)
+	if not career_best.is_empty():
+		print("Top career scorer: %s, %d points (best Hall of Fame score so far among all players: %.0f)" % [world.player_name(career_best[0]), world.career_totals(career_best[0])["points"], records.score_of(career_best[0])])
 	quit(0)
 
 

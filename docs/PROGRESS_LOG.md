@@ -5,7 +5,7 @@ Nothing has been pushed anywhere: the repository is local only (no remote).
 
 ## 2026-11-15, autonomous stretch (founder away)
 
-State at the end of this stretch: **380 automated tests pass**, everything committed locally.
+State at the end of this stretch: **385 automated tests pass**, everything committed locally.
 Run the tests with `./tools/run_tests.ps1`.
 
 ### Built since the founder left
@@ -36,6 +36,7 @@ Era presets and star usage; league balance (team spread tightened); no draft lot
 - Overtime games are about 2% (real about 5-6%): end-of-game fouling and timeouts are not modeled.
 - Market tab (free agents + latest draft) is read-only; no signing or draft interaction yet.
 - Human trades work (Trades tab, one-for-many swaps under the cap rules); the AI never proposes trades to the user.
+- Hall of Fame and record book exist (History tab); a records page for team records and retired numbers is not built.
 - Not built: draft pick trading, scouting uncertainty, draft lottery, awards beyond MVP/leaders/All-League/Finals MVP, Hall of Fame, records book, sponsorship contracts, loans, arena renovation projects, staff chemistry, Dynasty-mode roster control, mobile layouts, exports.
 
 ### How to continue

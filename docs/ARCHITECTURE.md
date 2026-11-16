@@ -148,6 +148,9 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 - A whole 30-team, 80-game season plus playoffs takes about 13 seconds; a 1,230-game season is stored in about 100 KB.
 - Rosters are read when an engine is created; change rosters between seasons.
 
+## Records and the Hall of Fame
+- `FcRecords` (src/league/records.gd) computes the Hall of Fame and single-season records from career rows plus each season's champion and awards (which survive archiving). Nothing extra is saved. Retired players are eligible 2 seasons after their last game and inducted at a score of 60 (production plus MVPs, finals MVPs, titles, first-team selections, scoring titles). In a 12-season 16-team run about 4% of retired players were inducted. The History tab shows it.
+
 ## Scouting and the draft
 - Each team judges prospects with some error (`FcOffseason.draft_noise`): a base of 6 value points, reduced by the general manager's talent evaluation, and by its scouts' scouting accuracy (up to 3 points for the best staffs). Better-staffed teams draft more accurately. The human owner does not pick yet (the draft is automatic), so scouting currently helps the user's team through this noise only; a pre-draft prospect list with scouted ranges is future work.
 
