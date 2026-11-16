@@ -169,6 +169,105 @@ func propose_trade(ai_team_id: int, give_ids: Array, get_ids: Array, preview: bo
 	return desk.propose(league_id, state.current_season, state.user_team_id, ai_team_id, give_ids, get_ids, is_contending(ai_team_id), not preview)
 
 
+# --- free agents -------------------------------------------------------------------------
+
+## Free agents (best first by market value): [{"player", "age", "ask", "years"}, ...].
+func free_agent_market(limit: int = 30) -> Array:
+	var w := state.world
+	var rules := w.rules_of_league(league_id)
+	var market := FcPlayerMarket.new(FcPlayerRatings.load_default())
+	var year := state.current_season
+	var out: Array = []
+	for p in w.players.all():
+		if p.status == FcPlayer.Status.ACTIVE and w.team_of_player(p.id) == null:
+			var age: int = p.age_on(FcDate.new(year, 7, 1))
+			out.append({"player": p, "age": age, "value": market.value(p, age), "ask": market.asking_salary(p, age, rules.cap), "years": market.desired_years(age, rules.cap)})
+	out.sort_custom(func(a, b): return a["value"] > b["value"] if a["value"] != b["value"] else a["player"].id < b["player"].id)
+	return out.slice(0, limit)
+
+
+## Signs a free agent for the user's team at his asking price. The cheapest legal
+## route is used: cap space, then the minimum contract (only for players asking
+## close to the minimum), then the mid-level exception (once a season).
+## Returns {"signed": bool, "reason": String}.
+func sign_free_agent(player_id: int) -> Dictionary:
+	var w := state.world
+	var team: FcTeam = w.teams.get_by_id(state.user_team_id)
+	var p: FcPlayer = w.players.get_by_id(player_id)
+	if p == null or p.status != FcPlayer.Status.ACTIVE or w.team_of_player(player_id) != null:
+		return {"signed": false, "reason": "That player is not a free agent."}
+	var rules := w.rules_of_league(league_id)
+	if team.roster.size() >= rules.roster_max:
+		return {"signed": false, "reason": "Your roster is full (%d players). Trade or release someone first." % rules.roster_max}
+	var year := state.current_season
+	var market := FcPlayerMarket.new(FcPlayerRatings.load_default())
+	var age: int = p.age_on(FcDate.new(year, 7, 1))
+	var ask := market.asking_salary(p, age, rules.cap)
+	var payroll := w.payroll_of_team(team.id, year)
+	var offer := ask
+	var kind := -1
+	var use_mle := false
+	var last_reason := ""
+	var check := rules.cap.check_signing(payroll, ask, FcCapRules.SigningKind.CAP_SPACE)
+	if check.allowed:
+		kind = FcCapRules.SigningKind.CAP_SPACE
+	else:
+		last_reason = check.reason
+		if ask <= int(rules.cap.min_player_salary * 1.35):
+			offer = rules.cap.min_player_salary
+			var min_check := rules.cap.check_signing(payroll, offer, FcCapRules.SigningKind.MINIMUM)
+			if min_check.allowed:
+				kind = FcCapRules.SigningKind.MINIMUM
+			else:
+				last_reason = min_check.reason
+		if kind < 0:
+			var mle := rules.cap.check_signing(payroll, ask, FcCapRules.SigningKind.MID_LEVEL)
+			if business().mid_level_used_season == year:
+				last_reason = "your mid-level exception is already used this season"
+			elif mle.allowed:
+				kind = FcCapRules.SigningKind.MID_LEVEL
+				use_mle = true
+			else:
+				last_reason = mle.reason
+	if kind < 0:
+		return {"signed": false, "reason": "%s asks %s a year, and you cannot sign him: %s." % [p.identity.full_name(), "$%.1fM" % (ask / 1e6), last_reason]}
+	var today := state.current_date
+	var c := FcPlayerMarket.make_contract(w.ids.next_id(FcWorld.KIND_CONTRACT), p.id, team.id, year, market.desired_years(age, rules.cap), offer, rules.cap, today)
+	w.contracts.add(c)
+	team.roster.add(p.id)
+	if use_mle:
+		business().mid_level_used_season = year
+	w.add_news(today, "signing", "%s sign %s" % [w.team_display_name(team.id), p.identity.full_name()], team.id)
+	return {"signed": true, "reason": "Signed %s for %s a year over %d years." % [p.identity.full_name(), "$%.1fM" % (offer / 1e6), c.length()]}
+
+
+## Releases a player from the user's team. The team pays half of his current
+## salary as a one-time buyout (from cash, any shortfall becomes debt), so dumping a
+## bad contract is not free. The player becomes a free agent.
+## Returns {"released": bool, "reason": String}.
+func release_player(player_id: int) -> Dictionary:
+	var w := state.world
+	var team: FcTeam = w.teams.get_by_id(state.user_team_id)
+	var rules := w.rules_of_league(league_id)
+	if not team.roster.contains(player_id):
+		return {"released": false, "reason": "That player is not on your roster."}
+	if team.roster.size() <= rules.roster_min:
+		return {"released": false, "reason": "You must keep at least %d players." % rules.roster_min}
+	var c := w.active_contract_of(player_id)
+	var cost := 0
+	if c != null:
+		cost = c.salary_for(state.current_season) / 2
+		c.status = FcContract.Status.TERMINATED
+	team.roster.remove(player_id)
+	var b := business()
+	var paid := mini(b.cash, cost)
+	b.cash -= paid
+	b.debt += cost - paid
+	var name := w.player_name(player_id)
+	w.add_news(state.current_date, "signing", "%s release %s" % [w.team_display_name(team.id), name], team.id)
+	return {"released": true, "reason": "Released %s. Buyout cost: $%.1fM." % [name, cost / 1e6]}
+
+
 # --- owner decisions --------------------------------------------------------------------
 
 func business() -> FcTeamBusiness:

@@ -148,6 +148,9 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 - A whole 30-team, 80-game season plus playoffs takes about 13 seconds; a 1,230-game season is stored in about 100 KB.
 - Rosters are read when an engine is created; change rosters between seasons.
 
+## Signing and releasing (human owner)
+- `FcGameController.free_agent_market()` lists free agents with their asking salary and years; `sign_free_agent(id)` signs one at his asking price using the cheapest legal route (cap space, then the minimum contract for players asking close to it, then the mid-level exception once per season, tracked in `FcTeamBusiness.mid_level_used_season`). `release_player(id)` waives a player for a buyout of half his current salary (from cash, shortfall becomes debt). The Market and Roster tabs have buttons for both. Signing and releasing are possible during the season; the offseason runs automatically.
+
 ## Records and the Hall of Fame
 - `FcRecords` (src/league/records.gd) computes the Hall of Fame and single-season records from career rows plus each season's champion and awards (which survive archiving). Nothing extra is saved. Retired players are eligible 2 seasons after their last game and inducted at a score of 60 (production plus MVPs, finals MVPs, titles, first-team selections, scoring titles). In a 12-season 16-team run about 4% of retired players were inducted. The History tab shows it.
 

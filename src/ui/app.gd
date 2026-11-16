@@ -474,16 +474,24 @@ func _tab_market() -> Control:
 	var left := VBoxContainer.new()
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_child(FcUiTables.label("Best free agents", 18, true))
-	var agents: Array = []
-	for p in w.players.all():
-		if p.status == FcPlayer.Status.ACTIVE and w.team_of_player(p.id) == null:
-			agents.append([roundi(ratings.overall(p)), p])
-	agents.sort_custom(func(a, b): return a[0] > b[0] if a[0] != b[0] else a[1].id < b[1].id)
+	var agents := controller.free_agent_market(20)
 	var rows: Array = []
-	for entry in agents.slice(0, 20):
-		var p: FcPlayer = entry[1]
-		rows.append([p.identity.full_name(), FcPosition.abbreviation(p.primary_position), p.age_on(FcDate.new(year, 7, 1)), entry[0], p.development.potential])
-	left.add_child(FcUiTables.table(["Player", "Pos", "Age", "Ovr", "Pot"], rows, [0, 50, 50, 50, 50]))
+	var agent_ids: Array[int] = []
+	for entry in agents:
+		var p: FcPlayer = entry["player"]
+		rows.append([p.identity.full_name(), FcPosition.abbreviation(p.primary_position), entry["age"], roundi(ratings.overall(p)), p.development.potential, FcUiTables.money(entry["ask"]), entry["years"]])
+		agent_ids.append(p.id)
+	var fa_table := FcUiTables.table(["Player", "Pos", "Age", "Ovr", "Pot", "Asks", "Years"], rows, [0, 50, 50, 50, 50, 90, 50])
+	left.add_child(fa_table)
+	left.add_child(FcUiTables.button("Sign selected free agent", func():
+		var item := fa_table.get_selected()
+		if item == null:
+			_say("Select a free agent first.")
+			return
+		var r := controller.sign_free_agent(agent_ids[item.get_index()])
+		if r["signed"]:
+			show_dashboard()
+		_say(r["reason"])))
 	box.add_child(left)
 	var right := VBoxContainer.new()
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -690,6 +698,15 @@ func _tab_roster() -> Control:
 	var box := VBoxContainer.new()
 	box.add_child(table)
 	var row := HBoxContainer.new()
+	row.add_child(FcUiTables.button("Release selected player (pay half his salary)", func():
+		var item := table.get_selected()
+		if item == null:
+			_say("Select a player first.")
+			return
+		var r := controller.release_player(ids[item.get_index()])
+		if r["released"]:
+			show_dashboard()
+		_say(r["reason"])))
 	row.add_child(FcUiTables.button("Player profile of selected player", func():
 		var item := table.get_selected()
 		if item == null:

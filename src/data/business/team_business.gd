@@ -21,6 +21,8 @@ var brand: int = 50
 var cash: int = 40000000
 var debt: int = 0
 var valuation: int = 0
+## Season in which the mid-level exception was last used (0 = never); it can be used once a season.
+var mid_level_used_season: int = 0
 
 
 func _init(team_id: int = 0) -> void:
@@ -49,7 +51,7 @@ func to_dict() -> Dictionary:
 	return {
 		"schema": SCHEMA_VERSION, "id": id, "ticket_price": ticket_price,
 		"marketing_budget": marketing_budget, "facilities_level": facilities_level,
-		"fan_interest": fan_interest, "brand": brand, "cash": cash, "debt": debt, "valuation": valuation,
+		"fan_interest": fan_interest, "brand": brand, "cash": cash, "debt": debt, "valuation": valuation, "mid_level_used_season": mid_level_used_season,
 	}
 
 
@@ -63,4 +65,5 @@ static func from_dict(d: Dictionary) -> FcTeamBusiness:
 	b.cash = int(d.get("cash", b.cash))
 	b.debt = int(d.get("debt", b.debt))
 	b.valuation = int(d.get("valuation", b.valuation))
+	b.mid_level_used_season = int(d.get("mid_level_used_season", 0))
 	return b

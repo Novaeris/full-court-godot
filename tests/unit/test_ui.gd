@@ -229,3 +229,22 @@ func test_history_tab_builds() -> void:
 	assert_true(tab is HBoxContainer and tab.get_child_count() == 2)
 	assert_true(not _trees(tab).is_empty())
 	tab.free()
+
+
+func test_market_tab_has_a_sign_button_and_signing_works() -> void:
+	_start_small_game()
+	var tab := app.build_tab("Market")
+	var found := false
+	var stack: Array = [tab]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		if n is Button and n.text == "Sign selected free agent":
+			found = true
+		stack.append_array(n.get_children())
+	assert_true(found)
+	tab.free()
+	var target: FcPlayer = app.controller.free_agent_market(50).back()["player"]
+	var mine: FcTeam = app.controller.state.world.teams.get_by_id(app.controller.state.user_team_id)
+	assert_true(app.controller.release_player(mine.roster.player_ids[mine.roster.size() - 1])["released"])
+	var r := app.controller.sign_free_agent(target.id)
+	assert_true(r["signed"], r["reason"])
