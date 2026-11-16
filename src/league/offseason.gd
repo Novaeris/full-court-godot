@@ -308,14 +308,15 @@ func draft_round_on_clock(ds: Dictionary) -> int:
 ## Which prospect a team's staff would pick right now (the AI's choice, also used
 ## to "let the staff pick" for a human). Each team sees prospects with its own
 ## error (see draft_noise); the noise is reproducible from the pick number.
-func ai_draft_choice(ds: Dictionary, team_id: int, rng: FcRng) -> int:
+## `emphasis` > 0 favours potential over current ability (a rebuilding direction), < 0 the opposite.
+func ai_draft_choice(ds: Dictionary, team_id: int, rng: FcRng, emphasis: float = 0.0) -> int:
 	var pick_rng := rng.fork("pick%d" % int(ds["next"]))
 	var noise := maxf(0.5, draft_noise(team_id))
 	var best := 0
 	var best_score := -INF
 	for pid in ds["available"]:
 		var p: FcPlayer = world.players.get_by_id(int(pid))
-		var score := market.value(p, _age(p, int(ds["year"]))) + pick_rng.gaussian(0.0, noise)
+		var score := market.value(p, _age(p, int(ds["year"]))) + pick_rng.gaussian(0.0, noise) + emphasis * (p.development.potential - ratings.overall(p))
 		if score > best_score:
 			best_score = score
 			best = int(pid)

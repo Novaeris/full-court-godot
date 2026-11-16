@@ -26,8 +26,14 @@ var agreed_extensions: Array[int] = []
 var agreed_terms: Dictionary = {}
 ## What the owner lets the general manager handle (Owner Mode): "contracts" (re-signing),
 ## "draft", "free_agency". Off = the owner decides. Missing in older saves = all off.
-var delegation: Dictionary = {"contracts": false, "draft": false, "free_agency": false}
-const DELEGATION_KEYS := ["contracts", "draft", "free_agency"]
+var delegation: Dictionary = {"contracts": false, "draft": false, "free_agency": false, "trades": false}
+const DELEGATION_KEYS := ["contracts", "draft", "free_agency", "trades"]
+## The owner's direction for the general manager (Owner Mode): "philosophy" is one of
+## PHILOSOPHIES (win now = value ability today, rebuild = value youth and potential and
+## sell veterans), "budget" one of BUDGETS (how much payroll the GM may commit).
+var direction: Dictionary = {"philosophy": "balanced", "budget": "normal"}
+const PHILOSOPHIES := ["win_now", "balanced", "rebuild"]
+const BUDGETS := ["frugal", "normal", "aggressive"]
 ## 0 = normal; 2 = the owner's draft is under way; 1 = the draft and the rest of the first half are
 ## done and the owner's free-agency window is open (current_season is still the season that just ended).
 var offseason_stage: int = 0
@@ -71,6 +77,7 @@ func to_dict() -> Dictionary:
 		"agreed_extensions": agreed_extensions.duplicate(),
 		"agreed_terms": _terms_for_json(),
 		"delegation": delegation.duplicate(),
+		"direction": direction.duplicate(),
 		"offseason_stage": offseason_stage,
 		"draft_state": draft_state.duplicate(true),
 		"rng": rng.get_state(),
@@ -124,6 +131,12 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 	if raw_delegation is Dictionary:
 		for key in DELEGATION_KEYS:
 			s.delegation[key] = bool(raw_delegation.get(key, false))
+	var raw_direction = data.get("direction", {})
+	if raw_direction is Dictionary:
+		var philosophy := str(raw_direction.get("philosophy", "balanced"))
+		var budget := str(raw_direction.get("budget", "normal"))
+		s.direction["philosophy"] = philosophy if PHILOSOPHIES.has(philosophy) else "balanced"
+		s.direction["budget"] = budget if BUDGETS.has(budget) else "normal"
 	var raw_terms = data.get("agreed_terms", {})
 	if raw_terms is Dictionary:
 		for key in raw_terms:

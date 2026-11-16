@@ -72,6 +72,14 @@ func _value(player: FcPlayer, new_year: int, contending: bool) -> float:
 	return overall * 0.6 + player.development.potential * 0.4 - maxf(0.0, age - 26) * 1.6
 
 
+## One trade attempt between a seller (rebuilding side, gives a veteran) and a buyer (gives
+## a young player and/or picks); used by the general manager for the owner's team.
+## Returns true if a deal was made.
+func attempt(league_id: int, seller_id: int, buyer_id: int, new_year: int, rng: FcRng) -> bool:
+	var league: FcLeague = world.leagues.get_by_id(league_id)
+	return _try_trade(world.rules_of_league(league_id), seller_id, buyer_id, new_year, rng, strength_fractions(league), new_year + 1)
+
+
 ## Team id -> 0 (weakest team) .. 1 (strongest), by the average rating of its best eight players.
 func strength_fractions(league: FcLeague) -> Dictionary:
 	var scored: Array = []

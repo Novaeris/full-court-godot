@@ -1062,13 +1062,35 @@ func _tab_staff() -> Control:
 		else:
 			box.add_child(FcUiTables.label("%s (talent evaluation %d, negotiation %d). A sharper eye means better re-signing, drafting and signings; leave an area unticked to decide it yourself." % [gm["name"], gm["talent_evaluation"], gm["negotiation"]]))
 			var checks := HBoxContainer.new()
-			for entry in [["contracts", "Re-sign my players"], ["draft", "Run the draft"], ["free_agency", "Sign free agents"]]:
-				var check := CheckButton.new()
+			for entry in [["contracts", "Re-sign my players"], ["draft", "Run the draft"], ["free_agency", "Sign free agents"], ["trades", "Make trades"]]:
+				var check := CheckBox.new()
 				check.text = entry[1]
 				check.button_pressed = controller.delegation_on(entry[0])
 				check.toggled.connect(func(on): controller.set_delegation(entry[0], on))
 				checks.add_child(check)
 			box.add_child(checks)
+			var direction_row := HBoxContainer.new()
+			direction_row.add_child(FcUiTables.label("Philosophy:"))
+			var philosophy_pick := OptionButton.new()
+			for name in ["Win now (value today's ability, buy veterans)", "Balanced", "Rebuild (value youth and potential, sell veterans)"]:
+				philosophy_pick.add_item(name)
+			philosophy_pick.selected = FcGameState.PHILOSOPHIES.find(controller.philosophy())
+			direction_row.add_child(philosophy_pick)
+			direction_row.add_child(FcUiTables.label("   Budget:"))
+			var budget_pick := OptionButton.new()
+			for name in ["Frugal (92% of the cap)", "Normal (the cap)", "Aggressive (up to 115%, below the tax line)"]:
+				budget_pick.add_item(name)
+			budget_pick.selected = FcGameState.BUDGETS.find(controller.state.direction["budget"])
+			direction_row.add_child(budget_pick)
+			var apply_direction := func(_i):
+				controller.set_direction(FcGameState.PHILOSOPHIES[philosophy_pick.selected], FcGameState.BUDGETS[budget_pick.selected])
+				_say("Direction set. Your general manager follows it when he re-signs, drafts, trades and signs players (only in the areas ticked above).")
+			philosophy_pick.item_selected.connect(apply_direction)
+			budget_pick.item_selected.connect(apply_direction)
+			box.add_child(direction_row)
+			var card := controller.gm_report()
+			if not card.is_empty():
+				box.add_child(FcUiTables.label("Last season: %s. %d wins (about %d expected), payroll %s against a budget of %s." % [card["grade"], card["wins"], card["expected_wins"], FcUiTables.money(card["payroll"]), FcUiTables.money(card["limit"])]))
 	box.add_child(FcUiTables.label("Your staff", 18, true))
 	var table := FcUiTables.table(["Role", "Name", "Reputation", "Experience", "Salary", "Through"], rows)
 	box.add_child(table)

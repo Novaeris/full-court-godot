@@ -283,11 +283,47 @@ func set_delegation(key: String, on: bool) -> bool:
 	return true
 
 
+## The owner's direction. philosophy: "win_now", "balanced" or "rebuild"; budget: "frugal",
+## "normal" or "aggressive". Returns false for unknown values or outside Owner Mode.
+func set_direction(philosophy: String, budget: String) -> bool:
+	if not FcGameState.PHILOSOPHIES.has(philosophy) or not FcGameState.BUDGETS.has(budget) or state.mode != FcGameState.MODE_OWNER:
+		return false
+	state.direction["philosophy"] = philosophy
+	state.direction["budget"] = budget
+	return true
+
+
+func philosophy() -> String:
+	return state.direction["philosophy"]
+
+
+## The most payroll the GM may commit: a share of the cap by budget (frugal 92%, normal 100%,
+## aggressive 115% but never above the luxury tax line).
+func gm_payroll_limit() -> int:
+	var cap := state.world.rules_of_league(league_id).cap
+	var share: float = {"frugal": 0.92, "normal": 1.0, "aggressive": 1.15}[state.direction["budget"]]
+	var limit := roundi(cap.salary_cap * share)
+	if state.direction["budget"] == "aggressive" and cap.luxury_tax_line > 0:
+		limit = mini(limit, cap.luxury_tax_line)
+	return limit
+
+
+## How strongly the direction tilts choices toward potential (+) or the present (-).
+func _philosophy_emphasis() -> float:
+	return {"win_now": -0.3, "balanced": 0.0, "rebuild": 0.3}[state.direction["philosophy"]]
+
+
 ## How the GM sees a player's worth: the market value plus an error that shrinks with the
 ## GM's (and scouts') talent evaluation, the same for the same player every time.
 func _gm_value(p: FcPlayer, age: int, market: FcPlayerMarket) -> float:
 	var noise := FcRng.new(hash("gm:%d:%d" % [state.user_team_id, p.id])).gaussian(0.0, maxf(0.5, _off().draft_noise(state.user_team_id)))
-	return market.value(p, age) + noise
+	var value := market.value(p, age) + noise
+	match state.direction["philosophy"]:
+		"win_now":
+			value -= 0.2 * (p.development.potential - FcPlayerRatings.load_default().overall(p))
+		"rebuild":
+			value += 0.25 * (p.development.potential - FcPlayerRatings.load_default().overall(p)) - 0.8 * maxf(0.0, age - 27)
+	return value
 
 
 ## Re-signing by the GM: he keeps players he believes are worth at least the keep line
@@ -305,9 +341,58 @@ func _gm_re_sign_players() -> void:
 		var p: FcPlayer = entry["player"]
 		if _gm_value(p, entry["age"], market) < GM_KEEP_VALUE:
 			continue
+		if entry["ask"] + state.world.payroll_of_team(state.user_team_id, state.current_season + 1) > gm_payroll_limit():
+			_gm_log.append("Your general manager let %s go: his price does not fit your budget." % p.identity.full_name())
+			continue
 		var r := extend_contract(p.id)
 		if r["ok"]:
 			_gm_log.append("Your general manager agreed new terms with %s." % p.identity.full_name())
+
+
+## Trades by the GM, up to GM_MAX_TRADES, following the owner's direction: a rebuilding
+## team sells its veterans to contenders for young players and picks, a win-now team buys
+## veterans from the weakest teams; a balanced team makes no trades.
+const GM_MAX_TRADES := 2
+
+
+func _gm_trades() -> void:
+	var philosophy := str(state.direction["philosophy"])
+	if philosophy == "balanced":
+		return
+	var finished := season()
+	var league: FcLeague = state.world.leagues.get_by_id(league_id)
+	var ranking := FcStandings.compute(league, finished.games).league_ranking()   # best first
+	var third := maxi(1, floori(ranking.size() / 3.0))
+	var partners: Array[int] = []
+	var pool: Array[int] = ranking.slice(0, third) if philosophy == "rebuild" else ranking.slice(ranking.size() - third)
+	for tid in pool:
+		if tid != state.user_team_id:
+			partners.append(tid)
+	var trades := FcTrades.new(state.world)
+	var rng := state.rng.fork("gmtrades")
+	var made := 0
+	for attempt in partners.size() * 2:
+		if made >= GM_MAX_TRADES or partners.is_empty():
+			break
+		var partner: int = partners[rng.range_int(0, partners.size() - 1)]
+		var seller := state.user_team_id if philosophy == "rebuild" else partner
+		var buyer := partner if philosophy == "rebuild" else state.user_team_id
+		var news_before := state.world.news.size()
+		if trades.attempt(league_id, seller, buyer, finished.year + 1, rng):
+			made += 1
+			_gm_log.append("Your general manager made a trade: %s." % state.world.news[state.world.news.size() - 1]["text"] if state.world.news.size() > news_before else "Your general manager made a trade.")
+
+
+## A report card on the general manager for the last finished season.
+## {"grade", "wins", "expected_wins", "payroll", "limit"} or {} before a season is played.
+func gm_report() -> Dictionary:
+	var report := owner_report()
+	if report.is_empty():
+		return {}
+	var diff: int = report["wins"] - report["expected_wins"]
+	var grade := "Excellent" if diff >= 6 else ("Good" if diff >= 1 else ("Satisfactory" if diff >= -4 else "Disappointing"))
+	return {"grade": grade, "wins": report["wins"], "expected_wins": report["expected_wins"],
+		"payroll": state.world.payroll_of_team(state.user_team_id, report["year"]), "limit": gm_payroll_limit()}
 
 
 ## Free agency by the GM: signs up to GM_MAX_SIGNINGS free agents he rates as real
@@ -326,6 +411,14 @@ func _gm_sign_free_agents() -> void:
 			break
 		if pair[0] < GM_FREE_AGENT_VALUE:
 			break
+		if state.direction["philosophy"] == "rebuild" and pair[1].age_on(FcDate.new(contract_year(), 7, 1)) > 29:
+			continue   # a rebuilding team does not sign older players
+		var wanted: int = 0
+		for entry in free_agent_market(40):
+			if entry["player"].id == pair[1].id:
+				wanted = entry["ask"]
+		if state.world.payroll_of_team(team.id, contract_year()) + wanted > gm_payroll_limit():
+			continue
 		var r := sign_free_agent(pair[1].id)
 		if r["signed"]:
 			signed += 1
@@ -418,7 +511,7 @@ func draft_staff_pick() -> Dictionary:
 	var status := draft_status()
 	if status.is_empty() or status["complete"] or not status["user_on_clock"]:
 		return {"ok": false, "reason": "It is not your turn to pick."}
-	var choice := _off().ai_draft_choice(state.draft_state, state.user_team_id, _draft_rng())
+	var choice := _off().ai_draft_choice(state.draft_state, state.user_team_id, _draft_rng(), _philosophy_emphasis())
 	return user_draft_pick(choice)
 
 
@@ -427,7 +520,7 @@ func draft_auto_rest() -> void:
 	var off := _off()
 	while not off.draft_complete(state.draft_state):
 		var team := off.draft_team_on_clock(state.draft_state)
-		off.make_pick(state.draft_state, league_id, off.ai_draft_choice(state.draft_state, team, _draft_rng()))
+		off.make_pick(state.draft_state, league_id, off.ai_draft_choice(state.draft_state, team, _draft_rng(), _philosophy_emphasis() if team == state.user_team_id else 0.0))
 	_draft_finish()
 
 
@@ -451,6 +544,8 @@ func _draft_finish() -> void:
 	_report_so_far.merge(off.run_after_draft(league_id, finished, state.rng))
 	state.draft_state = {}
 	state.offseason_stage = 1
+	if state.mode == FcGameState.MODE_OWNER and state.delegation["trades"]:
+		_gm_trades()
 	if state.mode == FcGameState.MODE_OWNER and state.delegation["free_agency"]:
 		_gm_sign_free_agents()
 
