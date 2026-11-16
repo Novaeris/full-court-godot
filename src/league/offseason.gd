@@ -75,6 +75,7 @@ func run_before_draft(league_id: int, finished: FcSeason, rng: FcRng) -> Diction
 	for s in world.seasons.all():
 		if s.league_id == league_id and s.year <= finished.year - 2:
 			s.archive()
+	world.prune_old_contracts(new_year)
 	report.merge(progress_and_retire(league_id, finished.year, new_year, rng.fork("progress")))
 	report.merge(expire_contracts(league_id, finished.year))
 	report["re_signed"] = re_sign(league_id, new_year, rng.fork("resign"))
@@ -91,6 +92,7 @@ func run_second_half(league_id: int, finished: FcSeason, rng: FcRng) -> Dictiona
 	var new_year := finished.year + 1
 	var report := {}
 	report["signed"] = free_agency(league_id, new_year, rng.fork("market"))
+	report["forced_cuts"] = enforce_hard_limit(league_id, new_year)
 	report.merge(fill_rosters(league_id, new_year, rng.fork("fill")))
 	report.merge(staff_rollover(league_id, finished.year, new_year, rng.fork("staff")))
 	return report
@@ -686,6 +688,40 @@ func _staff_contract(staff_id: int, team_id: int, role: int, reputation: int, ne
 	for i in years:
 		c.years.append(FcContractYear.new(new_year + i, roundi(salary * pow(1.04, i) / 10000.0) * 10000))
 	return c
+
+
+## Contracts have built-in raises, so a team that signed up to the league's hard limit can be
+## over it a year later without signing anyone. The league makes such a team release players
+## (worst value for the money first) until it is back under the limit (the roster may dip a
+## little below the minimum; the league refills it with minimum contracts if the limit allows); teams run by a human are
+## told in the news. Returns the number of players released.
+func enforce_hard_limit(league_id: int, new_year: int) -> int:
+	var rules := _rules(league_id)
+	var limit := rules.cap.effective_limit()
+	if limit <= 0:
+		return 0
+	var cuts := 0
+	for team_id in _league(league_id).all_team_ids():
+		var team: FcTeam = world.teams.get_by_id(team_id)
+		while payroll(team_id, new_year) > limit and team.roster.size() > rules.roster_min - 2:
+			var victim := 0
+			var worst_ratio := -INF
+			for pid in team.roster.player_ids:
+				var c := world.active_contract_of(pid)
+				if c == null:
+					continue
+				var p: FcPlayer = world.players.get_by_id(pid)
+				var ratio := float(c.cap_hit_for(new_year)) / maxf(1.0, market.value(p, _age(p, new_year)))
+				if ratio > worst_ratio:
+					worst_ratio = ratio
+					victim = pid
+			if victim == 0:
+				break
+			team.roster.remove(victim)
+			_terminate_contract(victim, FcContract.Status.TERMINATED)
+			cuts += 1
+			_staff_news(FcDate.new(new_year, 7, 3), team_id, "%s was released: the team was over the league's hard limit on payroll." % world.player_name(victim))
+	return cuts
 
 
 ## Releases the team's lowest-value player (his contract is terminated).

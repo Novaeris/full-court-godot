@@ -64,6 +64,23 @@ func team_of_player(player_id: int) -> FcTeam:
 	return null
 
 
+## Forgets contracts (players and staff) that ended or were terminated more than two seasons
+## before `year`: nothing needs them (careers and history are stored separately), and keeping
+## them forever makes every contract lookup slower, so a 50-season league would crawl.
+## Returns how many were removed.
+func prune_old_contracts(year: int) -> int:
+	var removed := 0
+	for c in contracts.all():
+		if c.status != FcContract.Status.ACTIVE and c.end_season() < year - 2:
+			contracts.remove(c.id)
+			removed += 1
+	for sc in staff_contracts.all():
+		if sc.status != FcContract.Status.ACTIVE and sc.end_season() < year - 2:
+			staff_contracts.remove(sc.id)
+			removed += 1
+	return removed
+
+
 ## The player's ACTIVE contract, or null.
 func active_contract_of(player_id: int) -> FcContract:
 	for c in contracts.all():

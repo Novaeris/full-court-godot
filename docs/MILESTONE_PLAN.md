@@ -41,7 +41,7 @@ Scope: league talent and age drift, dynasties, finance drift (inflation, cap gro
 league expansion effects, save size and load time over 30 seasons, performance (seconds per season).
 Done when: a 50-season, 30-team run passes the health tools: several champions, stable talent and ages, no team
 permanently broke or permanently rich, saves under an agreed size, a season under an agreed time.
-A 50-season health run was started on 2026-11-16 to see what breaks first (see the progress log).
+A first 50-season run on 2026-11-16 found and fixed two real problems (a payroll integrity break from contract raises, and seasons slowing down as old contracts piled up); the details are in `docs/ARCHITECTURE.md` ("50-season health"). A second run after the fixes is the baseline for M2.
 
 ## M3. Simulation depth (size L)
 Goal: games feel like real basketball at the level a manager can notice.

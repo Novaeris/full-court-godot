@@ -252,3 +252,40 @@ func test_scouts_reduce_draft_noise() -> void:
 	assert_true(trained < untrained, "great scouts sharpen the view (%f < %f)" % [trained, untrained])
 	assert_true(untrained - trained <= FcOffseason.SCOUT_NOISE_MAX + 0.001)
 	assert_true(trained >= 0.5)
+
+
+func test_a_team_over_the_hard_limit_must_release_players() -> void:
+	var world := _build_world(91)
+	var rules := world.rules_of_league(1)
+	var off := FcOffseason.new(world)
+	off.human_team_ids = [1] as Array[int]
+	var limit := rules.cap.effective_limit()
+	# push team 1 over the limit with raises that kick in next year
+	for pid in world.teams.get_by_id(1).roster.player_ids:
+		var c := world.active_contract_of(pid)
+		for y in c.years:
+			y.salary = int(limit / 8.0)
+	assert_true(world.payroll_of_team(1, 2026) > limit, "the setup is over the limit")
+	var size: int = world.teams.get_by_id(1).roster.size()
+	var cuts := off.enforce_hard_limit(1, 2026)
+	assert_true(cuts > 0)
+	assert_true(world.payroll_of_team(1, 2026) <= limit or world.teams.get_by_id(1).roster.size() <= rules.roster_min - 2, "back under the limit")
+	assert_eq(world.teams.get_by_id(1).roster.size(), size - cuts)
+	assert_true(world.news.any(func(n): return "hard limit" in n["text"] and n["team"] == 1), "the owner's team is told")
+	assert_eq(off.enforce_hard_limit(1, 2026), 0, "nothing more to cut")
+
+
+func test_old_contracts_are_forgotten_so_long_leagues_stay_fast() -> void:
+	var world := _build_world(92)
+	var rng := FcRng.new(3)
+	var counts: Array[int] = []
+	for i in 6:
+		var engine := FcSeasonEngine.for_league(world, 1)
+		var season := engine.start_season(1, 2026 + i, FcDate.new(2026 + i, 10, 20), rng.fork("s%d" % i))
+		engine.play_full_season(season, rng.fork("p%d" % i))
+		FcOffseason.new(world).run(1, season, rng.fork("o%d" % i))
+		counts.append(world.contracts.count())
+		assert_eq(world.validate(2027 + i), [] as Array[String], "year %d" % i)
+	assert_true(counts[5] < counts[2] * 1.6, "the number of contracts stops growing (%s)" % str(counts))
+	for c in world.contracts.all():
+		assert_true(c.status == FcContract.Status.ACTIVE or c.end_season() >= 2032 - 2, "only recent history is kept")

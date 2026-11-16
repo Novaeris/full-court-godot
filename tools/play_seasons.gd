@@ -52,6 +52,8 @@ func _initialize() -> void:
 		var report := FcOffseason.new(world).run(1, season, rng.fork("off%d" % i))
 		year += 1
 		var errors := world.validate(year)
+		for message in errors.slice(0, 3):
+			print("  integrity problem after the %d offseason: %s" % [year, message])
 		health.append({"year": year, "errors": errors.size(), "report": report, "talent": _talent(world, ratings), "age": _age(world, year), "payroll": _payroll(world, year)})
 	var seconds := (Time.get_ticks_msec() - t0) / 1000.0
 
