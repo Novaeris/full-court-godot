@@ -496,20 +496,24 @@ func _tab_market() -> Control:
 	var right := VBoxContainer.new()
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right.add_child(FcUiTables.label("Latest draft (first round)", 18, true))
-	var latest: FcSeason = null
-	for s in w.seasons.all():
-		if s.league_id == controller.league_id and s.draft.size() > 0 and (latest == null or s.year > latest.year):
-			latest = s
+	var report := controller.latest_draft_report()
 	var draft_rows: Array = []
-	if latest != null:
-		for pick in latest.draft:
-			if pick[0] != 1:
+	if not report.is_empty():
+		for entry in report["rows"]:
+			if entry["round"] != 1:
 				continue
-			var p: FcPlayer = w.players.get_by_id(pick[3])
+			var p: FcPlayer = w.players.get_by_id(entry["player"])
 			if p != null:
-				draft_rows.append([pick[1], _team_name(pick[2]), p.identity.full_name(), FcPosition.abbreviation(p.primary_position), roundi(ratings.overall(p)), p.development.potential])
-		right.add_child(FcUiTables.label("After the %d season" % latest.year))
-	right.add_child(FcUiTables.table(["Pick", "Team", "Player", "Pos", "Ovr", "Pot"], draft_rows, [50, 0, 0, 50, 50, 50]))
+				var moved: int = entry["moved"]
+				draft_rows.append([entry["pick"], _team_name(entry["team"]), "%+d" % moved if moved != 0 else "-", p.identity.full_name(), FcPosition.abbreviation(p.primary_position), roundi(ratings.overall(p)), p.development.potential])
+		right.add_child(FcUiTables.label("After the %d season. %s" % [report["year"], "Lottery on: 'Lot.' shows how many places the lottery moved a team up (+) or down (-)." if report["lottery"] else "No lottery: order follows the records."]))
+		var winners: Array[String] = []
+		for entry in report["rows"]:
+			if entry["round"] == 1 and entry["moved"] > 0:
+				winners.append("%s jumped %d place%s to pick %d" % [_team_name(entry["team"]), entry["moved"], "" if entry["moved"] == 1 else "s", entry["pick"]])
+		if not winners.is_empty():
+			right.add_child(FcUiTables.label("Lottery winners: " + "; ".join(winners)))
+	right.add_child(FcUiTables.table(["Pick", "Team", "Lot.", "Player", "Pos", "Ovr", "Pot"], draft_rows, [50, 0, 50, 0, 50, 50, 50]))
 	box.add_child(right)
 	return box
 

@@ -74,3 +74,26 @@ func test_generated_leagues_get_a_lottery_unless_switched_off() -> void:
 	cfg.draft_lottery = false
 	var world2 := FcWorldGenerator.new(data, FcDefinitionSet.load_default(), cfg).generate(3)
 	assert_eq(world2.rules_of_league(1).draft.lottery_teams, 0)
+
+
+func test_latest_draft_report_matches_the_draft() -> void:
+	var data := FcGenerationData.load_default()
+	var cfg := FcGenerationConfig.load_default(data)
+	cfg.team_count = 8
+	cfg.conference_count = 2
+	cfg.divisions_per_conference = 1
+	cfg.roster_size = 13
+	cfg.free_agent_count = 10
+	var g := FcGameController.new_game(FcWorldGenerator.new(data, FcDefinitionSet.load_default(), cfg), 61, FcGameState.MODE_OWNER, 0)
+	assert_true(g.latest_draft_report().is_empty(), "no draft yet")
+	g.start_next_season()
+	var report := g.latest_draft_report()
+	assert_eq(report["year"], 2026)
+	assert_true(report["lottery"])
+	assert_eq(report["rows"].size(), 16)
+	var net := 0
+	for row in report["rows"]:
+		if row["round"] == 1:
+			net += row["moved"]
+			assert_true(row["moved"] >= -g.state.world.rules_of_league(1).draft.lottery_picks, "nobody falls further than the drawn picks")
+	assert_eq(net, 0, "places moved up equal places moved down")

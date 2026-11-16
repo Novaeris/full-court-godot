@@ -169,6 +169,40 @@ func propose_trade(ai_team_id: int, give_ids: Array, get_ids: Array, preview: bo
 	return desk.propose(league_id, state.current_season, state.user_team_id, ai_team_id, give_ids, get_ids, is_contending(ai_team_id), not preview)
 
 
+# --- the draft ------------------------------------------------------------------------------
+
+## The most recent draft of the league, for screens:
+## {"year", "lottery" (bool), "rows": [{"round", "pick", "team", "player", "record_pick", "moved"}]}
+## `record_pick` is where the team would have picked without a lottery and `moved`
+## is record_pick - pick (positive = the lottery moved it up). Empty dictionary if no draft happened yet.
+func latest_draft_report() -> Dictionary:
+	var latest: FcSeason = null
+	for s in state.world.seasons.all():
+		if s.league_id == league_id and s.draft.size() > 0 and (latest == null or s.year > latest.year):
+			latest = s
+	if latest == null:
+		return {}
+	var qualified: Array[int] = []
+	var missed: Array[int] = []
+	for row in latest.final_standings:   # best record first
+		if latest.playoffs != null and latest.playoffs.qualified(row[0]):
+			qualified.append(row[0])
+		else:
+			missed.append(row[0])
+	missed.reverse()
+	qualified.reverse()
+	var record_order: Array[int] = []
+	record_order.append_array(missed)
+	record_order.append_array(qualified)
+	var team_count := record_order.size()
+	var rules := state.world.rules_of_league(league_id)
+	var rows: Array = []
+	for pick in latest.draft:
+		var record_pick: int = record_order.find(pick[2]) + 1 + (pick[0] - 1) * team_count
+		rows.append({"round": pick[0], "pick": pick[1], "team": pick[2], "player": pick[3], "record_pick": record_pick, "moved": record_pick - pick[1]})
+	return {"year": latest.year, "lottery": rules.draft.lottery_teams > 0, "rows": rows}
+
+
 # --- free agents -------------------------------------------------------------------------
 
 ## Free agents (best first by market value): [{"player", "age", "ask", "years"}, ...].
