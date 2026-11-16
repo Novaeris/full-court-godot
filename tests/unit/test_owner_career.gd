@@ -104,3 +104,28 @@ func test_owner_career_is_saved_and_old_saves_start_fresh() -> void:
 	var old := state.to_dict()
 	old.erase("owner_career")
 	assert_eq(FcGameState.from_dict(old, FcDefinitionSet.load_default()).owner_career["reputation"], FcGameState.START_REPUTATION)
+
+
+func test_history_tab_shows_the_ownership_career() -> void:
+	var app := FcApp.new()
+	app.saves = FcSaveManager.new("user://test_saves_career_ui")
+	Engine.get_main_loop().root.add_child(app)
+	app.setup()
+	assert_true(app.on_create_league({"teams": 8, "conferences": 2, "divisions": 1, "free_agents": 10, "seed": "5"}))
+	app.on_start_game(app._pending_state.world.teams.ids()[2])
+	app.on_sim_regular()
+	app.on_sim_playoffs()
+	app.controller.owner_reputation()   # the finished season counts
+	var tab := app.build_tab("History")
+	var text := ""
+	var stack: Array = [tab]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		if n is Label:
+			text += (n as Label).text + "\n"
+		stack.append_array(n.get_children())
+	assert_true("ownership career" in text, "the career section appears after the first season")
+	tab.free()
+	Engine.get_main_loop().root.remove_child(app)
+	app.free()
+	DirAccess.remove_absolute("user://test_saves_career_ui")

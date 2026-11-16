@@ -434,6 +434,17 @@ func _tab_history() -> Control:
 	var box := HBoxContainer.new()
 	var left := VBoxContainer.new()
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if controller.state.mode == FcGameState.MODE_OWNER and not controller.owner_history().is_empty():
+		left.add_child(FcUiTables.label("Your ownership career (reputation %d)" % controller.owner_reputation(), 18, true))
+		var career_rows: Array = []
+		var history: Array = controller.owner_history()
+		for i in range(history.size() - 1, -1, -1):
+			var h: Array = history[i]
+			career_rows.append(["%d-%02d" % [h[0], (h[0] + 1) % 100], _team_name(h[1]), h[3], h[2], "Champions" if h[4] == 1 else ""])
+		var career_table := FcUiTables.table(["Season", "Team", "Wins", "Approval", ""], career_rows, [70, 0, 50, 70, 90])
+		career_table.custom_minimum_size = Vector2(0, 150)
+		career_table.size_flags_vertical = Control.SIZE_FILL
+		left.add_child(career_table)
 	left.add_child(FcUiTables.label("Hall of Fame", 18, true))
 	var hof_rows: Array = []
 	for entry in records.hall_of_fame(controller.state.current_season):
