@@ -154,6 +154,21 @@ func next_user_game() -> FcScheduledGame:
 	return null
 
 
+# --- trades ---------------------------------------------------------------------------------
+
+## Is this AI team in a "win now" mood? The top third of the current standings are.
+func is_contending(team_id: int) -> bool:
+	var ranking := standings().league_ranking()
+	return ranking.find(team_id) < maxi(1, floori(ranking.size() / 3.0))
+
+
+## Proposes a trade from the user's team. `preview` true only checks it.
+## Returns {"accepted": bool, "reason": String}.
+func propose_trade(ai_team_id: int, give_ids: Array, get_ids: Array, preview: bool = false) -> Dictionary:
+	var desk := FcTradeDesk.new(state.world)
+	return desk.propose(league_id, state.current_season, state.user_team_id, ai_team_id, give_ids, get_ids, is_contending(ai_team_id), not preview)
+
+
 # --- owner decisions --------------------------------------------------------------------
 
 func business() -> FcTeamBusiness:

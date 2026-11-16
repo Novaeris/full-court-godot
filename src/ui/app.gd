@@ -13,7 +13,7 @@ const AREA_CHOICES := [
 ]
 const CAP_CHOICES := [["Soft cap with hard limit (recommended)", "soft_cap_with_hard_limit"], ["Hard cap", "hard_cap"], ["No cap (luxury tax only)", "no_cap"]]
 const ERA_CHOICES := [["Mid 2010s (default)", "mid_2010s"], ["Early 2010s: slower, mid-range", "early_2010s"], ["Late 2010s: fast, three-point heavy", "late_2010s"]]
-const TAB_NAMES := ["Overview", "Standings", "Schedule", "Roster", "Finances", "Staff", "Market", "News", "League"]
+const TAB_NAMES := ["Overview", "Standings", "Schedule", "Roster", "Finances", "Staff", "Market", "Trades", "News", "League"]
 
 var controller: FcGameController
 var saves := FcSaveManager.new()
@@ -24,6 +24,8 @@ var _root: VBoxContainer
 var _content: Control
 var _pending_state: FcGameState
 var _tabs: TabContainer
+## The team the user is talking to in the Trades tab (0 = first other team).
+var _trade_partner: int = 0
 var _last_tab := 0
 var _form := {}
 var _message: Label
@@ -362,11 +364,76 @@ func build_tab(tab_name: String) -> Control:
 		"Finances": return _tab_finances()
 		"Staff": return _tab_staff()
 		"Market": return _tab_market()
+		"Trades": return _tab_trades()
 		"News": return _tab_news()
 	return _tab_league()
 
 
 # --- tabs ----------------------------------------------------------------------------------
+
+## Propose a trade: pick a partner, select players on both sides, check or propose.
+func _tab_trades() -> Control:
+	var w := controller.state.world
+	var user_id := controller.state.user_team_id
+	var box := VBoxContainer.new()
+	var others: Array[int] = []
+	for t in w.teams.all():
+		if t.id != user_id and w.leagues.get_by_id(controller.league_id).contains_team(t.id):
+			others.append(t.id)
+	if others.is_empty():
+		box.add_child(FcUiTables.label("There is nobody to trade with."))
+		return box
+	if not _trade_partner in others:
+		_trade_partner = others[0]
+	var picker := OptionButton.new()
+	for tid in others:
+		picker.add_item(_team_name(tid))
+	picker.selected = others.find(_trade_partner)
+	picker.item_selected.connect(func(i):
+		_trade_partner = others[i]
+		show_dashboard())
+	box.add_child(FcUiTables.label("Trade with:", 18, true))
+	box.add_child(picker)
+	var ratings := FcPlayerRatings.load_default()
+	var year := controller.state.current_season
+	var lists: Array = []
+	var ids_by_list: Array = []
+	var columns := HBoxContainer.new()
+	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	for side in [[user_id, "You give"], [_trade_partner, "You get"]]:
+		var col := VBoxContainer.new()
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_child(FcUiTables.label(side[1], 16, true))
+		var list := ItemList.new()
+		list.select_mode = ItemList.SELECT_MULTI
+		list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		var ids: Array[int] = []
+		for pid in w.teams.get_by_id(side[0]).roster.player_ids:
+			var p: FcPlayer = w.players.get_by_id(pid)
+			var c := w.active_contract_of(pid)
+			list.add_item("%s  %s  age %d  ovr %d  %s%s" % [p.identity.full_name(), FcPosition.abbreviation(p.primary_position), p.age_on(FcDate.new(year, 7, 1)), roundi(ratings.overall(p)), FcUiTables.money(c.cap_hit_for(year)) if c != null else "-", "  (no-trade)" if c != null and c.no_trade else ""])
+			ids.append(pid)
+		col.add_child(list)
+		columns.add_child(col)
+		lists.append(list)
+		ids_by_list.append(ids)
+	box.add_child(columns)
+	var pick := func(index: int) -> Array:
+		var out: Array = []
+		for i in lists[index].get_selected_items():
+			out.append(ids_by_list[index][i])
+		return out
+	var row := HBoxContainer.new()
+	row.add_child(FcUiTables.button("Check the offer", func():
+		_say(controller.propose_trade(_trade_partner, pick.call(0), pick.call(1), true)["reason"])))
+	row.add_child(FcUiTables.button("Propose trade", func():
+		var r := controller.propose_trade(_trade_partner, pick.call(0), pick.call(1))
+		if r["accepted"]:
+			show_dashboard()
+		_say(r["reason"])))
+	box.add_child(row)
+	return box
+
 
 ## Free agents (best first) and the most recent draft. Read-only for now.
 func _tab_market() -> Control:

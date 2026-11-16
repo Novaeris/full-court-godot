@@ -48,6 +48,11 @@ func run(league_id: int, finished: FcSeason, new_year: int, rng: FcRng) -> int:
 	return made
 
 
+## Public valuation (also used when a human proposes a trade).
+func value_of(player: FcPlayer, year: int, contending: bool) -> float:
+	return _value(player, year, contending)
+
+
 func _age(player: FcPlayer, new_year: int) -> int:
 	return player.age_on(FcDate.new(new_year, 7, 1))
 

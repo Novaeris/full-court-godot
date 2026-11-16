@@ -89,7 +89,7 @@ func test_every_tab_shows_data() -> void:
 		var tab := app.build_tab(name)
 		assert_true(tab != null, name)
 		var trees := _trees(tab)
-		assert_true(not trees.is_empty() or name == "Overview", "%s has a table" % name)
+		assert_true(not trees.is_empty() or name == "Overview" or name == "Trades", "%s has a table" % name)
 		tab.free()
 	var roster_tab := app.build_tab("Roster")
 	var roster := _trees(roster_tab)[0] as Tree
@@ -210,3 +210,13 @@ func test_market_tab_lists_free_agents_and_draft() -> void:
 	var tab := app.build_tab("Market")
 	assert_true(tab is HBoxContainer and tab.get_child_count() == 2)
 	tab.free()
+
+
+func test_trades_tab_builds_and_a_trade_can_be_proposed() -> void:
+	_start_small_game()
+	var tab := app.build_tab("Trades")
+	assert_true(tab is VBoxContainer and tab.get_child_count() >= 4)
+	tab.free()
+	var other := 1 if app.controller.state.user_team_id != 1 else 2
+	var r := app.controller.propose_trade(other, [], [], true)
+	assert_true(not r["accepted"])

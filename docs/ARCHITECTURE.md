@@ -148,6 +148,9 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 - A whole 30-team, 80-game season plus playoffs takes about 13 seconds; a 1,230-game season is stored in about 100 KB.
 - Rosters are read when an engine is created; change rosters between seasons.
 
+## Human trades
+- `FcTradeDesk` (src/league/trade_desk.gd) evaluates a trade the user proposes through `FcGameController.propose_trade(team, give_ids, get_ids, preview)`. It checks ownership, no-trade clauses, roster limits, the cap trade rule for both teams, then the AI's own valuation (stars weigh more than depth, AI must profit 10%). Nothing moves on refusal or preview. The Trades tab in the UI is built on it. Draft picks are not tradeable yet.
+
 ## Career statistics and archiving
 - `FcWorld.careers` (player id -> rows of 18 numbers, one per regular season: year, team, games, seconds, points, field goals, threes, free throws, rebounds, assists, steals, blocks, turnovers, fouls) is written when a season finishes (`record_career`) and kept forever; `career_totals(player_id)` sums it. This is the base for player pages, records and the Hall of Fame.
 - Seasons older than two years are archived by the offseason (`FcSeason.archive()`): the games, player statistics and stored box scores are dropped; standings, champion, awards, playoff series and draft results stay. An archived season is under a fifth of its original size, so long careers of a league do not make saves grow without bound.
