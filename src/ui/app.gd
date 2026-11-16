@@ -1117,6 +1117,13 @@ func _tab_finances() -> Control:
 		concessions.step = 5
 		concessions.value = b.concession_price_pct
 		shop.add_child(concessions)
+		shop.add_child(FcUiTables.label("   Playoff ticket price %"))
+		var playoff_price := SpinBox.new()
+		playoff_price.min_value = 100
+		playoff_price.max_value = 300
+		playoff_price.step = 10
+		playoff_price.value = b.playoff_premium_pct
+		shop.add_child(playoff_price)
 		shop.add_child(FcUiTables.label("   Merchandise range"))
 		var merch := OptionButton.new()
 		for name in FcTeamBusiness.MERCH_TIERS:
@@ -1125,6 +1132,7 @@ func _tab_finances() -> Control:
 		shop.add_child(merch)
 		shop.add_child(FcUiTables.button("Apply shop settings", func():
 			controller.set_concession_price(int(concessions.value))
+			controller.set_playoff_premium(int(playoff_price.value))
 			controller.set_merch_tier(merch.selected)
 			_say("Shop settings updated. Higher concession prices earn more per fan but cost fan interest; a premium range sells more but costs more stock.")))
 		box.add_child(shop)

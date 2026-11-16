@@ -406,3 +406,9 @@ func test_the_owner_can_sign_a_sponsor_through_the_controller() -> void:
 	assert_true(g.accept_sponsor(g.sponsor_offers()[0]["sponsor"])["ok"])
 	assert_eq(g.sponsor_offers().size(), 0, "both slots taken: no more offers")
 	assert_true(not g.accept_sponsor("Nobody Inc")["ok"])
+
+
+func test_playoff_premium_setter_validates() -> void:
+	var g := _game(46)
+	assert_true(g.set_playoff_premium(200) and g.business().playoff_premium_pct == 200)
+	assert_true(not g.set_playoff_premium(90) and not g.set_playoff_premium(400))

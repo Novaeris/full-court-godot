@@ -473,3 +473,34 @@ func test_sponsor_deals_are_saved() -> void:
 	var back := FcTeamBusiness.from_dict(JSON.parse_string(JSON.stringify(b.to_dict())))
 	assert_eq(back.sponsor_deals, b.sponsor_deals)
 	assert_eq(FcTeamBusiness.from_dict({"id": 2}).sponsor_deals, [])
+
+
+func test_playoff_ticket_premium_trades_price_for_attendance() -> void:
+	var world: FcWorld = _played()["world"]
+	var fin := FcFinanceEngine.new(world)
+	var parts := _parts(world, 1)
+	var city: FcCity = parts[0]
+	var arena: FcArena = parts[1]
+	var business: FcTeamBusiness = parts[2]
+	var scale := fin.price_scale_for(world.rules_of_league(1), world.leagues.get_by_id(1))
+	var previous := fin.playoff_attendance(business, city, arena, scale, 100)
+	var best_revenue := 0.0
+	var best_premium := 0
+	for premium in range(100, 301, 20):
+		var fans := fin.playoff_attendance(business, city, arena, scale, premium)
+		assert_true(fans <= previous, "a higher premium never brings more fans")
+		previous = fans
+		var revenue := fans * premium / 100.0
+		if revenue > best_revenue:
+			best_revenue = revenue
+			best_premium = premium
+	assert_true(best_premium > 100, "a premium over the regular price pays")
+	assert_true(best_premium < 300, "but gouging does not")
+
+
+func test_playoff_premium_is_saved_and_validated() -> void:
+	var b := FcTeamBusiness.new(2)
+	assert_eq(b.playoff_premium_pct, 160, "the league-standard premium by default")
+	b.playoff_premium_pct = 220
+	assert_eq(FcTeamBusiness.from_dict(JSON.parse_string(JSON.stringify(b.to_dict()))).playoff_premium_pct, 220)
+	assert_eq(FcTeamBusiness.from_dict({"id": 2}).playoff_premium_pct, 160)

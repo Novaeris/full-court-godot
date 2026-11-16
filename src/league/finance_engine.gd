@@ -217,6 +217,13 @@ func attendance(business: FcTeamBusiness, city: FcCity, arena: FcArena, scale: f
 	return mini(arena.capacity, roundi(demand(business, city, arena, scale, price)))
 
 
+## Fans at a playoff game when tickets cost `premium_pct` percent of the regular price. Playoff
+## demand is boosted so that the league-standard 160% sells exactly as many as a regular game.
+func playoff_attendance(business: FcTeamBusiness, city: FcCity, arena: FcArena, scale: float, premium_pct: int) -> int:
+	var price := business.ticket_price * premium_pct / 100.0
+	return mini(arena.capacity, roundi(demand(business, city, arena, scale, price) * float(k["playoff_demand_boost"])))
+
+
 ## The price where demand just fills the arena (the best price for revenue).
 func best_price(business: FcTeamBusiness, city: FcCity, arena: FcArena, scale: float) -> int:
 	var reference_price := float(k["reference_ticket_price"]) * scale
@@ -333,8 +340,9 @@ func settle(league_id: int, season: FcSeason, human_teams: Array[int] = []) -> A
 		var success := float(rec.playoff_rounds_won) / maxf(1.0, po.rounds if po != null else 1.0)
 
 		rec.revenue["tickets"] = fans * business.ticket_price * home_games
-		rec.revenue["playoffs"] = roundi(fans * business.ticket_price * float(k["playoff_ticket_premium"]) * po_games \
-			+ fans * float(k["concessions_per_head"]) * price_scale * fac_factor * po_games * concession_factor(business.concession_price_pct))
+		var playoff_fans := playoff_attendance(business, city, arena, price_scale, business.playoff_premium_pct)
+		rec.revenue["playoffs"] = roundi(playoff_fans * business.ticket_price * business.playoff_premium_pct / 100.0 * po_games \
+			+ playoff_fans * float(k["concessions_per_head"]) * price_scale * fac_factor * po_games * concession_factor(business.concession_price_pct))
 		rec.revenue["concessions"] = roundi(fans * float(k["concessions_per_head"]) * price_scale * fac_factor * home_games * concession_factor(business.concession_price_pct))
 		rec.revenue["merchandise"] = roundi(float(k["merchandise_base"]) * scale * pow(business.brand / 50.0, 1.2) * m * merch_multiplier(business))
 		rec.expenses["merchandise_stock"] = roundi(rec.revenue["merchandise"] * float(k["merch_cost_shares"][business.merch_tier]))

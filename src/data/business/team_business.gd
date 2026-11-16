@@ -39,6 +39,10 @@ var sponsor_deals: Array = []
 ## Concession prices as a percent of the normal level (70-150). Higher prices earn more
 ## per fan up to a point but cost fan interest.
 var concession_price_pct: int = 100
+## Playoff ticket prices as a percent of the regular price (100-300; the default 160 is what the
+## league's teams charge). Playoff demand is higher than in the regular season, so a higher
+## premium earns more until the arena stops selling out.
+var playoff_premium_pct: int = 160
 ## Merchandise range: 0 limited, 1 standard (default, also the AI teams), 2 premium: more
 ## sales but a bigger stock cost (see data/simulation/finance.json).
 var merch_tier: int = 1
@@ -73,7 +77,7 @@ func to_dict() -> Dictionary:
 	return {
 		"schema": SCHEMA_VERSION, "id": id, "ticket_price": ticket_price,
 		"marketing_budget": marketing_budget, "facilities_level": facilities_level,
-		"fan_interest": fan_interest, "brand": brand, "cash": cash, "debt": debt, "valuation": valuation, "mid_level_used_season": mid_level_used_season, "sponsor_plan": sponsor_plan, "projects": projects.duplicate(true), "suites_level": suites_level, "sponsor_deals": sponsor_deals.duplicate(true), "concession_price_pct": concession_price_pct, "merch_tier": merch_tier,
+		"fan_interest": fan_interest, "brand": brand, "cash": cash, "debt": debt, "valuation": valuation, "mid_level_used_season": mid_level_used_season, "sponsor_plan": sponsor_plan, "projects": projects.duplicate(true), "suites_level": suites_level, "sponsor_deals": sponsor_deals.duplicate(true), "concession_price_pct": concession_price_pct, "playoff_premium_pct": playoff_premium_pct, "merch_tier": merch_tier,
 	}
 
 
@@ -93,6 +97,7 @@ static func from_dict(d: Dictionary) -> FcTeamBusiness:
 	for deal in d.get("sponsor_deals", []):
 		b.sponsor_deals.append({"sponsor": str(deal["sponsor"]), "amount": int(deal["amount"]), "bonus": int(deal["bonus"]), "years_left": int(deal["years_left"])})
 	b.concession_price_pct = clampi(int(d.get("concession_price_pct", 100)), 70, 150)
+	b.playoff_premium_pct = clampi(int(d.get("playoff_premium_pct", 160)), 100, 300)
 	b.merch_tier = clampi(int(d.get("merch_tier", 1)), 0, 2)
 	for item in d.get("projects", []):
 		b.projects.append({"key": str(item["key"]), "seasons_left": int(item["seasons_left"])})

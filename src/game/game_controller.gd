@@ -1025,6 +1025,14 @@ func set_concession_price(percent: int) -> bool:
 	return true
 
 
+## Playoff ticket prices as a percent of the regular price (100-300).
+func set_playoff_premium(percent: int) -> bool:
+	if percent < 100 or percent > 300:
+		return false
+	business().playoff_premium_pct = percent
+	return true
+
+
 ## Merchandise range: 0 limited, 1 standard, 2 premium.
 func set_merch_tier(tier: int) -> bool:
 	if tier < 0 or tier > 2:

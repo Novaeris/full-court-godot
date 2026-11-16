@@ -10,6 +10,7 @@
 	"facilities_demand_bonus": 0.15,
 	"home_games_per_season": 40,
 	"playoff_ticket_premium": 1.6,
+	"playoff_demand_boost": 1.842,
 	"concessions_per_head": 22,
 	"merchandise_base": 31800000,
 	"concession_elasticity": 0.6,

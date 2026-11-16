@@ -76,6 +76,20 @@ func _initialize() -> void:
 		if p.status == FcPlayer.Status.RETIRED:
 			retired += 1
 	print("Players in the database: %d (%d retired). Played in %.0f s." % [world.players.count(), retired, seconds])
+	# how big is the save after all those seasons, and how long does it take to write and read?
+	var state := FcGameState.new(world, rng)
+	state.user_team_id = world.teams.ids()[0]
+	state.current_season = year
+	var manager := FcSaveManager.new("user://health_saves")
+	var t_save := Time.get_ticks_msec()
+	var saved := manager.save("health", state, "health check")
+	var save_ms := Time.get_ticks_msec() - t_save
+	var file := FileAccess.open(manager._path("health"), FileAccess.READ)
+	var size_mb := (file.get_length() / 1048576.0) if file != null else 0.0
+	var t_load := Time.get_ticks_msec()
+	var loaded := manager.load_slot("health", FcDefinitionSet.load_default())
+	print("Save after %d seasons: %s, %.1f MB, written in %.1f s, loaded in %.1f s (%s)" % [seasons, "ok" if saved.is_ok() else "FAILED", size_mb, save_ms / 1000.0, (Time.get_ticks_msec() - t_load) / 1000.0, "ok" if loaded.is_ok() else loaded.message])
+	manager.delete_slot("health")
 	var records := FcRecords.new(world, 1)
 	var hof := records.hall_of_fame(year + 1)
 	print("Hall of Fame: %d members (best scores: %s)" % [hof.size(), ", ".join(hof.slice(0, 3).map(func(h): return "%s %.0f" % [world.player_name(h[1]), h[0]]))])
