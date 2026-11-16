@@ -24,6 +24,10 @@ var current_date: FcDate = FcDate.new(2026, 7, 1)
 var agreed_extensions: Array[int] = []
 ## Terms agreed with those players: player id -> [first-year salary, years].
 var agreed_terms: Dictionary = {}
+## What the owner lets the general manager handle (Owner Mode): "contracts" (re-signing),
+## "draft", "free_agency". Off = the owner decides. Missing in older saves = all off.
+var delegation: Dictionary = {"contracts": false, "draft": false, "free_agency": false}
+const DELEGATION_KEYS := ["contracts", "draft", "free_agency"]
 ## 0 = normal; 2 = the owner's draft is under way; 1 = the draft and the rest of the first half are
 ## done and the owner's free-agency window is open (current_season is still the season that just ended).
 var offseason_stage: int = 0
@@ -66,6 +70,7 @@ func to_dict() -> Dictionary:
 		"current_date": current_date.to_iso(),
 		"agreed_extensions": agreed_extensions.duplicate(),
 		"agreed_terms": _terms_for_json(),
+		"delegation": delegation.duplicate(),
 		"offseason_stage": offseason_stage,
 		"draft_state": draft_state.duplicate(true),
 		"rng": rng.get_state(),
@@ -115,6 +120,10 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 	var raw_draft = data.get("draft_state", {})
 	if raw_draft is Dictionary and not raw_draft.is_empty():
 		s.draft_state = _clean_draft_state(raw_draft)
+	var raw_delegation = data.get("delegation", {})
+	if raw_delegation is Dictionary:
+		for key in DELEGATION_KEYS:
+			s.delegation[key] = bool(raw_delegation.get(key, false))
 	var raw_terms = data.get("agreed_terms", {})
 	if raw_terms is Dictionary:
 		for key in raw_terms:

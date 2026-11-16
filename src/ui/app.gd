@@ -369,7 +369,13 @@ func on_next_season() -> void:
 		controller.autosave(saves)
 		_last_tab = FcApp.TAB_NAMES.find("Draft")
 		show_dashboard()
-		_say("Offseason: %d players retired, %d re-signed. The draft has begun: scout the board on the Draft tab and pick when it is your turn." % [first["retired"], first["re_signed"]])
+		var gm_notes := " ".join(controller.gm_log())
+		if controller.phase() == FcGameController.PHASE_DRAFT:
+			_say("Offseason: %d players retired. The draft has begun: scout the board on the Draft tab and pick when it is your turn. %s" % [first["retired"], gm_notes])
+		else:
+			_last_tab = FcApp.TAB_NAMES.find("Market")
+			show_dashboard()
+			_say("Offseason: %d players retired. The draft is done and the free-agency window is open. %s" % [first["retired"], gm_notes])
 		return
 	var report := controller.start_next_season()
 	controller.autosave(saves)
@@ -1048,6 +1054,21 @@ func _tab_staff() -> Control:
 		var m: FcStaffMember = w.staff.get_by_id(sc.staff_id)
 		rows.append([FcStaffRole.display_name(sc.role), m.identity.full_name(), m.reputation, m.experience_years, FcUiTables.money(sc.salary_for(controller.state.current_season)), sc.end_season()])
 		ids.append(m.id)
+	if controller.state.mode == FcGameState.MODE_OWNER:
+		box.add_child(FcUiTables.label("Front office: what your general manager handles", 18, true))
+		var gm := controller.gm_summary()
+		if gm.is_empty():
+			box.add_child(FcUiTables.label("You have no general manager, so you decide everything yourself. Hire one below."))
+		else:
+			box.add_child(FcUiTables.label("%s (talent evaluation %d, negotiation %d). A sharper eye means better re-signing, drafting and signings; leave an area unticked to decide it yourself." % [gm["name"], gm["talent_evaluation"], gm["negotiation"]]))
+			var checks := HBoxContainer.new()
+			for entry in [["contracts", "Re-sign my players"], ["draft", "Run the draft"], ["free_agency", "Sign free agents"]]:
+				var check := CheckButton.new()
+				check.text = entry[1]
+				check.button_pressed = controller.delegation_on(entry[0])
+				check.toggled.connect(func(on): controller.set_delegation(entry[0], on))
+				checks.add_child(check)
+			box.add_child(checks)
 	box.add_child(FcUiTables.label("Your staff", 18, true))
 	var table := FcUiTables.table(["Role", "Name", "Reputation", "Experience", "Salary", "Through"], rows)
 	box.add_child(table)

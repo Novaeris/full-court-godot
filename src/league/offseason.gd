@@ -26,6 +26,8 @@ var human_team_ids: Array[int] = []
 var agreed_re_signs: Array[int] = []
 ## The agreed terms: player id -> [first-year salary, years] (missing = the asking price).
 var agreed_terms: Dictionary = {}
+## Teams a human runs by hand: AI free agency skips them (fill_rosters still keeps rosters legal).
+var manual_free_agency_team_ids: Array[int] = []
 var world: FcWorld
 var ratings := FcPlayerRatings.load_default()
 var market: FcPlayerMarket
@@ -505,7 +507,7 @@ func free_agency(league_id: int, new_year: int, rng: FcRng) -> int:
 		var signed_this_round := 0
 		for team_id in order:
 			var team: FcTeam = world.teams.get_by_id(team_id)
-			if team.roster.size() >= rules.roster_max - 1:
+			if manual_free_agency_team_ids.has(team_id) or team.roster.size() >= rules.roster_max - 1:
 				continue
 			var spent := payroll(team_id, new_year)
 			for p in pool:

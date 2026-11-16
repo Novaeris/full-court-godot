@@ -135,6 +135,8 @@ func _new_offseason() -> FcOffseason:
 	offseason.human_team_ids = [state.user_team_id] as Array[int] if state.mode == FcGameState.MODE_OWNER else ([] as Array[int])
 	offseason.agreed_re_signs = state.agreed_extensions.duplicate()
 	offseason.agreed_terms = state.agreed_terms.duplicate(true)
+	if state.mode == FcGameState.MODE_OWNER and not state.delegation["free_agency"]:
+		offseason.manual_free_agency_team_ids = [state.user_team_id] as Array[int]
 	return offseason
 
 
@@ -146,6 +148,9 @@ func _new_offseason() -> FcOffseason:
 func begin_offseason() -> Dictionary:
 	sim_playoffs()
 	var finished := season()
+	_gm_log = []
+	if state.mode == FcGameState.MODE_OWNER and state.delegation["contracts"]:
+		_gm_re_sign_players()
 	var offseason := _new_offseason()
 	if state.mode != FcGameState.MODE_OWNER:
 		var all := offseason.run_first_half(league_id, finished, state.rng)
@@ -160,6 +165,9 @@ func begin_offseason() -> Dictionary:
 	state.draft_state = offseason.prepare_draft(league_id, finished, finished.year + 1, state.rng.fork("draft"))
 	state.offseason_stage = 2
 	_draft_advance_to_user()
+	if state.delegation["draft"] and state.offseason_stage == 2:
+		_gm_log.append("Your general manager ran the draft.")
+		draft_auto_rest()
 	return report
 
 
@@ -246,6 +254,83 @@ func propose_trade(ai_team_id: int, give_ids: Array, get_ids: Array, preview: bo
 
 
 # --- the draft (Owner Mode) -----------------------------------------------------------------
+
+## What the general manager did for the owner this offseason (shown in the UI).
+var _gm_log: Array[String] = []
+
+
+## The general manager's talent evaluation (0-100) and name, or {} if there is no GM.
+func gm_summary() -> Dictionary:
+	var gm := state.world.staff_in_role(state.user_team_id, FcStaffRole.Id.GENERAL_MANAGER)
+	if gm == null:
+		return {}
+	return {"name": gm.identity.full_name(), "talent_evaluation": gm.skills.get_value("talent_evaluation"), "negotiation": gm.skills.get_value("negotiation")}
+
+
+func gm_log() -> Array[String]:
+	return _gm_log
+
+
+func delegation_on(key: String) -> bool:
+	return bool(state.delegation.get(key, false))
+
+
+## Lets the general manager handle one area ("contracts", "draft" or "free_agency") or takes it back.
+func set_delegation(key: String, on: bool) -> bool:
+	if not FcGameState.DELEGATION_KEYS.has(key) or state.mode != FcGameState.MODE_OWNER:
+		return false
+	state.delegation[key] = on
+	return true
+
+
+## How the GM sees a player's worth: the market value plus an error that shrinks with the
+## GM's (and scouts') talent evaluation, the same for the same player every time.
+func _gm_value(p: FcPlayer, age: int, market: FcPlayerMarket) -> float:
+	var noise := FcRng.new(hash("gm:%d:%d" % [state.user_team_id, p.id])).gaussian(0.0, maxf(0.5, _off().draft_noise(state.user_team_id)))
+	return market.value(p, age) + noise
+
+
+## Re-signing by the GM: he keeps players he believes are worth at least the keep line
+## (value points), at their asking price, as far as the cap allows.
+const GM_KEEP_VALUE := 50.0
+const GM_FREE_AGENT_VALUE := 52.0
+const GM_MAX_SIGNINGS := 3
+
+
+func _gm_re_sign_players() -> void:
+	var market := FcPlayerMarket.new(FcPlayerRatings.load_default())
+	for entry in expiring_players():
+		if entry["agreed"]:
+			continue
+		var p: FcPlayer = entry["player"]
+		if _gm_value(p, entry["age"], market) < GM_KEEP_VALUE:
+			continue
+		var r := extend_contract(p.id)
+		if r["ok"]:
+			_gm_log.append("Your general manager agreed new terms with %s." % p.identity.full_name())
+
+
+## Free agency by the GM: signs up to GM_MAX_SIGNINGS free agents he rates as real
+## improvements (at their asking price), while there is roster space and cap room.
+func _gm_sign_free_agents() -> void:
+	var market := FcPlayerMarket.new(FcPlayerRatings.load_default())
+	var team: FcTeam = state.world.teams.get_by_id(state.user_team_id)
+	var rules := state.world.rules_of_league(league_id)
+	var signed := 0
+	var ranked: Array = []
+	for entry in free_agent_market(40):
+		ranked.append([_gm_value(entry["player"], entry["age"], market), entry["player"]])
+	ranked.sort_custom(func(a, b): return a[0] > b[0])
+	for pair in ranked:
+		if signed >= GM_MAX_SIGNINGS or team.roster.size() >= rules.roster_max - 1:
+			break
+		if pair[0] < GM_FREE_AGENT_VALUE:
+			break
+		var r := sign_free_agent(pair[1].id)
+		if r["signed"]:
+			signed += 1
+			_gm_log.append("Your general manager signed %s." % pair[1].identity.full_name())
+
 
 ## What the first half of this offseason did (counts), reported when the season starts.
 var _report_so_far: Dictionary = {}
@@ -366,6 +451,8 @@ func _draft_finish() -> void:
 	_report_so_far.merge(off.run_after_draft(league_id, finished, state.rng))
 	state.draft_state = {}
 	state.offseason_stage = 1
+	if state.mode == FcGameState.MODE_OWNER and state.delegation["free_agency"]:
+		_gm_sign_free_agents()
 
 
 # --- contracts ending -----------------------------------------------------------------------
