@@ -123,7 +123,10 @@ func test_clicking_through_a_whole_season_and_into_the_next() -> void:
 	if app.controller.state.current_season == 2026 and app.controller.state.offseason_stage == 0:
 		assert_true("LEAVE" in app._message.text, "the first press warns about players whose contracts end")
 		app.on_next_season()
-	assert_eq(app.controller.phase(), FcGameController.PHASE_OFFSEASON, "the owner gets a free agency window")
+	assert_eq(app.controller.phase(), FcGameController.PHASE_DRAFT, "the owner gets the draft")
+	assert_true("Draft tab" in app._message.text)
+	app.on_draft_auto()
+	assert_eq(app.controller.phase(), FcGameController.PHASE_OFFSEASON, "then a free agency window")
 	assert_true("Market tab" in app._message.text)
 	app.on_next_season()
 	assert_eq(app.controller.state.current_season, 2027)

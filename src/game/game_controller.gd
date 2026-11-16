@@ -16,6 +16,8 @@ const PHASE_COMPLETE := "season_complete"
 ## Owner Mode only: the draft and re-signing are done and the owner may sign free agents
 ## before the AI teams do (see begin_offseason / start_next_season).
 const PHASE_OFFSEASON := "offseason"
+## Owner Mode only: the draft is under way and the owner picks for their team.
+const PHASE_DRAFT := "draft"
 const SEASON_START_MONTH := 10
 const SEASON_START_DAY := 20
 
@@ -62,7 +64,10 @@ func phase() -> String:
 		FcSeason.Status.PLAYOFFS:
 			return PHASE_PLAYOFFS
 		FcSeason.Status.COMPLETE:
-			return PHASE_OFFSEASON if state.offseason_stage == 1 else PHASE_COMPLETE
+			match state.offseason_stage:
+				1: return PHASE_OFFSEASON
+				2: return PHASE_DRAFT
+			return PHASE_COMPLETE
 	return PHASE_REGULAR
 
 
@@ -107,9 +112,12 @@ func sim_playoffs() -> void:
 ## contracts, draft, free agency, staff) and starts the next season.
 ## Returns the offseason report.
 func start_next_season() -> Dictionary:
-	var report := {}
 	if state.offseason_stage == 0:
-		report = begin_offseason()
+		begin_offseason()
+	if state.offseason_stage == 2:
+		draft_auto_rest()   # the owner did not finish the draft: the staff picks for them
+	var report := _report_so_far.duplicate()
+	_report_so_far = {}
 	var finished := season()
 	var offseason := _new_offseason()
 	report.merge(offseason.run_second_half(league_id, finished, state.rng))
@@ -138,17 +146,24 @@ func begin_offseason() -> Dictionary:
 	sim_playoffs()
 	var finished := season()
 	var offseason := _new_offseason()
-	var report := offseason.run_first_half(league_id, finished, state.rng)
+	if state.mode != FcGameState.MODE_OWNER:
+		var all := offseason.run_first_half(league_id, finished, state.rng)
+		state.agreed_extensions.clear()
+		_report_so_far = all.duplicate()
+		return all
+	var report := offseason.run_before_draft(league_id, finished, state.rng)
+	_report_so_far = report.duplicate()
 	state.agreed_extensions.clear()
-	if state.mode == FcGameState.MODE_OWNER:
-		state.offseason_stage = 1
+	state.draft_state = offseason.prepare_draft(league_id, finished, finished.year + 1, state.rng.fork("draft"))
+	state.offseason_stage = 2
+	_draft_advance_to_user()
 	return report
 
 
 ## The season whose contracts and ages count right now: the next season during the
 ## owner's offseason window, otherwise the current one.
 func contract_year() -> int:
-	return state.current_season + (1 if state.offseason_stage == 1 else 0)
+	return state.current_season + (1 if state.offseason_stage >= 1 else 0)
 
 
 func _update_date() -> void:
@@ -201,8 +216,110 @@ func is_contending(team_id: int) -> bool:
 ## Proposes a trade from the user's team. `preview` true only checks it.
 ## Returns {"accepted": bool, "reason": String}.
 func propose_trade(ai_team_id: int, give_ids: Array, get_ids: Array, preview: bool = false) -> Dictionary:
+	if state.offseason_stage == 2:
+		return {"accepted": false, "reason": "Finish the draft first."}
 	var desk := FcTradeDesk.new(state.world)
 	return desk.propose(league_id, contract_year(), state.user_team_id, ai_team_id, give_ids, get_ids, is_contending(ai_team_id), not preview)
+
+
+# --- the draft (Owner Mode) -----------------------------------------------------------------
+
+## What the first half of this offseason did (counts), reported when the season starts.
+var _report_so_far: Dictionary = {}
+
+
+func _draft_rng() -> FcRng:
+	return state.rng.fork("draft")
+
+
+func _off() -> FcOffseason:
+	return _new_offseason()
+
+
+## Where the draft stands: {"pick", "round", "team", "user_on_clock", "complete", "total"}.
+func draft_status() -> Dictionary:
+	var ds := state.draft_state
+	if ds.is_empty():
+		return {}
+	var off := _off()
+	var complete := off.draft_complete(ds)
+	var team := 0 if complete else off.draft_team_on_clock(ds)
+	return {"pick": mini(int(ds["next"]), int(ds["total"])), "round": 0 if complete else off.draft_round_on_clock(ds), "team": team,
+		"user_on_clock": team == state.user_team_id, "complete": complete, "total": int(ds["total"])}
+
+
+## The draft board as the user's scouts see it, best first:
+## [{"player", "age", "report" (see FcOffseason.scouting_report)}].
+func draft_board() -> Array:
+	var ds := state.draft_state
+	var off := _off()
+	var out: Array = []
+	for pid in ds.get("available", []):
+		var p: FcPlayer = state.world.players.get_by_id(int(pid))
+		out.append({"player": p, "age": p.age_on(FcDate.new(int(ds["year"]), 7, 1)), "report": off.scouting_report(state.user_team_id, p, int(ds["year"]))})
+	out.sort_custom(func(a, b): return a["report"]["value"] > b["report"]["value"] if a["report"]["value"] != b["report"]["value"] else a["player"].id < b["player"].id)
+	return out
+
+
+## Picks so far: [[round, pick, team id, player id], ...].
+func draft_results() -> Array:
+	return state.draft_state.get("results", [])
+
+
+## The user's team drafts `prospect_id` (it must be the user's turn). Afterwards the AI teams
+## pick until it is the user's turn again (or the draft ends).
+## Returns {"ok": bool, "reason": String}.
+func user_draft_pick(prospect_id: int) -> Dictionary:
+	var status := draft_status()
+	if status.is_empty() or status["complete"]:
+		return {"ok": false, "reason": "There is no draft going on."}
+	if not status["user_on_clock"]:
+		return {"ok": false, "reason": "It is not your turn to pick."}
+	var p: FcPlayer = state.world.players.get_by_id(prospect_id)
+	if not _off().make_pick(state.draft_state, league_id, prospect_id):
+		return {"ok": false, "reason": "That prospect is not available."}
+	_draft_advance_to_user()
+	return {"ok": true, "reason": "You drafted %s." % p.identity.full_name()}
+
+
+## Lets the user's staff choose for the team (the same choice an AI team would make).
+func draft_staff_pick() -> Dictionary:
+	var status := draft_status()
+	if status.is_empty() or status["complete"] or not status["user_on_clock"]:
+		return {"ok": false, "reason": "It is not your turn to pick."}
+	var choice := _off().ai_draft_choice(state.draft_state, state.user_team_id, _draft_rng())
+	return user_draft_pick(choice)
+
+
+## The staff picks for the user from now on and the draft finishes.
+func draft_auto_rest() -> void:
+	var off := _off()
+	while not off.draft_complete(state.draft_state):
+		var team := off.draft_team_on_clock(state.draft_state)
+		off.make_pick(state.draft_state, league_id, off.ai_draft_choice(state.draft_state, team, _draft_rng()))
+	_draft_finish()
+
+
+func _draft_advance_to_user() -> void:
+	var off := _off()
+	while not off.draft_complete(state.draft_state) and off.draft_team_on_clock(state.draft_state) != state.user_team_id:
+		var team := off.draft_team_on_clock(state.draft_state)
+		off.make_pick(state.draft_state, league_id, off.ai_draft_choice(state.draft_state, team, _draft_rng()))
+	if off.draft_complete(state.draft_state):
+		_draft_finish()
+
+
+## Ends the draft (undrafted players become free agents), runs the AI trades and opens
+## the free-agency window.
+func _draft_finish() -> void:
+	if state.draft_state.is_empty():
+		return
+	var finished := season()
+	var off := _off()
+	_report_so_far["drafted"] = off.finish_draft(state.draft_state, finished)
+	_report_so_far.merge(off.run_after_draft(league_id, finished, state.rng))
+	state.draft_state = {}
+	state.offseason_stage = 1
 
 
 # --- contracts ending -----------------------------------------------------------------------
@@ -308,6 +425,8 @@ func free_agent_market(limit: int = 30) -> Array:
 ## close to the minimum), then the mid-level exception (once a season).
 ## Returns {"signed": bool, "reason": String}.
 func sign_free_agent(player_id: int) -> Dictionary:
+	if state.offseason_stage == 2:
+		return {"signed": false, "reason": "Finish the draft first."}
 	var w := state.world
 	var team: FcTeam = w.teams.get_by_id(state.user_team_id)
 	var p: FcPlayer = w.players.get_by_id(player_id)

@@ -36,7 +36,7 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 
 ## Next (proposed order, driven by dependencies)
 1. (done) Staff entities. 2. (done) Save system. 3. (done) Procedural generation of the league.
-   League structure, league rules, simulation v1 and the season engine are done. Next (autonomous work order): a basic UI shell on the game controller (main menu, new league wizard, owner dashboard, standings, schedule, box scores, roster, finances), trades, injuries, history/records and the Hall of Fame, scouting and prospect uncertainty, dynasty-mode roster control, deeper simulation (matchups, timeouts, end-game fouling).
+   Done since: the UI shell and all tabs, trades (AI and human), injuries, careers/records/Hall of Fame, scouting with a scouted draft board and user picking, draft lottery, free-agent signing and releasing, re-sign decisions, the owner's offseason window, loans, sponsorship style, arena projects, revenue sharing. Remaining (autonomous work order): Dynasty-mode roster control (lineups/minutes), deeper simulation (matchups, timeouts; the overtime rate is still low), contract negotiation, draft pick trading, AI-proposed trades, mobile layouts, a visual polish pass.
 4. **Basketball engine v1**: possession simulation, box scores, stress-test tool for plausibility.
 5. **League operations**: schedule, standings, playoffs, season progression.
 6. **Basic UI shell**: main menu, save selection, standings, box score viewer (manual testing begins).

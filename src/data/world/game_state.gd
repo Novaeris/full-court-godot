@@ -22,9 +22,11 @@ var current_date: FcDate = FcDate.new(2026, 7, 1)
 ## Players the owner has agreed to keep when their contracts end this season. Applied by the
 ## offseason as new contracts, then cleared. (Missing in older saves = nobody.)
 var agreed_extensions: Array[int] = []
-## 0 = normal; 1 = the offseason's first half has run and the owner's free-agency window is open
-## (current_season is still the season that just ended).
+## 0 = normal; 2 = the owner's draft is under way; 1 = the draft and the rest of the first half are
+## done and the owner's free-agency window is open (current_season is still the season that just ended).
 var offseason_stage: int = 0
+## The draft while it is under way (stage 2), see FcOffseason.prepare_draft. Empty otherwise.
+var draft_state: Dictionary = {}
 
 
 func _init(game_world: FcWorld, random: FcRng) -> void:
@@ -62,9 +64,25 @@ func to_dict() -> Dictionary:
 		"current_date": current_date.to_iso(),
 		"agreed_extensions": agreed_extensions.duplicate(),
 		"offseason_stage": offseason_stage,
+		"draft_state": draft_state.duplicate(true),
 		"rng": rng.get_state(),
 		"world": world.to_dict(),
 	}
+
+
+## JSON turns whole numbers into floats; put the draft state's integers back.
+static func _clean_draft_state(raw: Dictionary) -> Dictionary:
+	var order: Array = []
+	for t in raw.get("order", []):
+		order.append(int(t))
+	var available: Array = []
+	for p in raw.get("available", []):
+		available.append(int(p))
+	var results: Array = []
+	for r in raw.get("results", []):
+		results.append([int(r[0]), int(r[1]), int(r[2]), int(r[3])])
+	return {"year": int(raw.get("year", 0)), "order": order, "total": int(raw.get("total", 0)),
+		"next": int(raw.get("next", 1)), "available": available, "results": results}
 
 
 ## Problems found while loading are appended to `errors`.
@@ -81,6 +99,9 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 	s.user_team_id = int(data.get("user_team_id", 0))
 	s.current_season = int(data.get("current_season", 2026))
 	s.offseason_stage = int(data.get("offseason_stage", 0))
+	var raw_draft = data.get("draft_state", {})
+	if raw_draft is Dictionary and not raw_draft.is_empty():
+		s.draft_state = _clean_draft_state(raw_draft)
 	for pid in data.get("agreed_extensions", []):
 		s.agreed_extensions.append(int(pid))
 	var d := FcDate.from_iso(str(data.get("current_date", "")))

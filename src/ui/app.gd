@@ -14,7 +14,7 @@ const AREA_CHOICES := [
 const CAP_CHOICES := [["Soft cap with hard limit (recommended)", "soft_cap_with_hard_limit"], ["Hard cap", "hard_cap"], ["No cap (luxury tax only)", "no_cap"]]
 const ERA_CHOICES := [["Mid 2010s (default)", "mid_2010s"], ["Early 2010s: slower, mid-range", "early_2010s"], ["Late 2010s: fast, three-point heavy", "late_2010s"]]
 const GAMES_CHOICES := [["Short: about 40 games", 40], ["Medium: about 60 games", 60], ["Standard: about 80 games (default)", 80], ["Long: about 100 games", 100]]
-const TAB_NAMES := ["Overview", "Standings", "Schedule", "Roster", "Finances", "Staff", "Market", "Trades", "History", "News", "League"]
+const TAB_NAMES := ["Overview", "Standings", "Schedule", "Roster", "Finances", "Staff", "Draft", "Market", "Trades", "History", "News", "League"]
 
 var controller: FcGameController
 var saves := FcSaveManager.new()
@@ -295,7 +295,7 @@ func show_dashboard() -> void:
 	var phase := controller.phase()
 	var info := FcUiTables.label("%s    Season %d-%02d    %s    Mode: %s" % [
 		controller.state.current_date.to_iso(), s.year, (s.year + 1) % 100,
-		{"regular_season": "Regular season", "playoffs": "Playoffs", "season_complete": "Season complete", "offseason": "Offseason: free agency is open to you first"}[phase],
+		{"regular_season": "Regular season", "playoffs": "Playoffs", "season_complete": "Season complete", "offseason": "Offseason: free agency is open to you first", "draft": "The draft"}[phase],
 		"Owner" if controller.state.mode == FcGameState.MODE_OWNER else "Dynasty"], 16)
 	box.add_child(info)
 	var actions := HBoxContainer.new()
@@ -309,6 +309,8 @@ func show_dashboard() -> void:
 		FcGameController.PHASE_PLAYOFFS:
 			actions.add_child(FcUiTables.button("Next Playoff Day", func(): on_advance(1)))
 			actions.add_child(FcUiTables.button("Play All Playoffs", func(): on_sim_playoffs()))
+		FcGameController.PHASE_DRAFT:
+			actions.add_child(FcUiTables.button("Let the staff finish the draft", on_draft_auto))
 		FcGameController.PHASE_OFFSEASON:
 			actions.add_child(FcUiTables.button("Finish Offseason and Start Next Season", on_next_season))
 		_:
@@ -365,13 +367,23 @@ func on_next_season() -> void:
 	if controller.state.mode == FcGameState.MODE_OWNER and controller.state.offseason_stage == 0:
 		var first := controller.begin_offseason()
 		controller.autosave(saves)
+		_last_tab = FcApp.TAB_NAMES.find("Draft")
 		show_dashboard()
-		_say("Offseason: %d retired, %d drafted, %d re-signed, %d trades. Sign free agents on the Market tab before the AI teams do, then finish the offseason." % [first["retired"], first["drafted"], first["re_signed"], first["trades"]])
+		_say("Offseason: %d players retired, %d re-signed. The draft has begun: scout the board on the Draft tab and pick when it is your turn." % [first["retired"], first["re_signed"]])
 		return
 	var report := controller.start_next_season()
 	controller.autosave(saves)
 	show_dashboard()
 	_say("New season. The AI teams signed %d free agents." % report["signed"] if not report.has("retired") else "New season. Offseason: %d retired, %d drafted, %d free agents signed, %d re-signed." % [report["retired"], report["drafted"], report["signed"], report["re_signed"]])
+
+
+## The staff finishes the draft for the user; the free-agency window opens.
+func on_draft_auto() -> void:
+	controller.draft_auto_rest()
+	controller.autosave(saves)
+	_last_tab = FcApp.TAB_NAMES.find("Market")
+	show_dashboard()
+	_say("The draft is over. Sign free agents on the Market tab before the AI teams do, then finish the offseason.")
 
 
 func on_save() -> void:
@@ -396,6 +408,7 @@ func build_tab(tab_name: String) -> Control:
 		"Roster": return _tab_roster()
 		"Finances": return _tab_finances()
 		"Staff": return _tab_staff()
+		"Draft": return _tab_draft()
 		"Market": return _tab_market()
 		"Trades": return _tab_trades()
 		"History": return _tab_history()
@@ -499,6 +512,89 @@ func _tab_trades() -> Control:
 
 
 ## Free agents (best first) and the most recent draft. Read-only for now.
+func _tab_draft() -> Control:
+	var w := controller.state.world
+	var box := VBoxContainer.new()
+	var status := controller.draft_status()
+	if status.is_empty():
+		box.add_child(FcUiTables.label("The draft is held after the season, in the offseason. You will see your scouts' board here and pick for your team.", 16))
+		var report := controller.latest_draft_report()
+		var rows: Array = []
+		if not report.is_empty():
+			box.add_child(FcUiTables.label("The %d draft" % report["year"], 18, true))
+			for entry in report["rows"]:
+				var p: FcPlayer = w.players.get_by_id(entry["player"])
+				if p != null:
+					rows.append([entry["pick"], entry["round"], _team_name(entry["team"]), p.identity.full_name(), FcPosition.abbreviation(p.primary_position)])
+		box.add_child(FcUiTables.table(["Pick", "Round", "Team", "Player", "Pos"], rows, [50, 60, 0, 0, 50]))
+		return box
+	var prefix := "Pick %d of %d (round %d): " % [status["pick"], status["total"], status["round"]]
+	if status["complete"]:
+		box.add_child(FcUiTables.label("The draft is complete.", 18, true))
+	elif status["user_on_clock"]:
+		box.add_child(FcUiTables.label(prefix + "YOU ARE ON THE CLOCK", 18, true))
+	else:
+		box.add_child(FcUiTables.label(prefix + _team_name(status["team"]), 18))
+	var columns := HBoxContainer.new()
+	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var left := VBoxContainer.new()
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left.size_flags_stretch_ratio = 1.6
+	left.add_child(FcUiTables.label("Draft board (your scouts' view; ranges hold the truth about 4 times in 5)", 16, true))
+	var rows2: Array = []
+	var ids: Array[int] = []
+	var rank := 0
+	for entry in controller.draft_board():
+		rank += 1
+		var p: FcPlayer = entry["player"]
+		var r: Dictionary = entry["report"]
+		rows2.append([rank, p.identity.full_name(), FcPosition.abbreviation(p.primary_position), entry["age"], "%d cm" % p.physical.height_cm, "%d-%d" % [r["ovr_low"], r["ovr_high"]], "%d-%d" % [r["pot_low"], r["pot_high"]], p.identity.country])
+		ids.append(p.id)
+	var table := FcUiTables.table(["#", "Prospect", "Pos", "Age", "Height", "Overall", "Potential", "From"], rows2, [40, 0, 45, 45, 70, 70, 80, 110])
+	left.add_child(table)
+	var buttons := HBoxContainer.new()
+	buttons.add_child(FcUiTables.button("Draft selected prospect", func():
+		var item := table.get_selected()
+		if item == null:
+			_say("Select a prospect first.")
+			return
+		var r2 := controller.user_draft_pick(ids[item.get_index()])
+		_say(r2["reason"])
+		_after_draft_action()))
+	buttons.add_child(FcUiTables.button("Let my staff pick", func():
+		var r3 := controller.draft_staff_pick()
+		_say(r3["reason"])
+		_after_draft_action()))
+	left.add_child(buttons)
+	columns.add_child(left)
+	var right := VBoxContainer.new()
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right.add_child(FcUiTables.label("Picks so far", 16, true))
+	var log_rows: Array = []
+	var results := controller.draft_results()
+	for i in range(results.size() - 1, -1, -1):
+		var pick: Array = results[i]
+		var p2: FcPlayer = w.players.get_by_id(pick[3])
+		log_rows.append([pick[1], _team_name(pick[2]), p2.identity.full_name(), FcPosition.abbreviation(p2.primary_position)])
+	right.add_child(FcUiTables.table(["Pick", "Team", "Player", "Pos"], log_rows, [50, 0, 0, 50]))
+	columns.add_child(right)
+	box.add_child(columns)
+	return box
+
+
+## After a pick: back to the offseason window if the draft ended, otherwise refresh the board.
+func _after_draft_action() -> void:
+	var message := _message.text if _message != null else ""
+	if controller.phase() == FcGameController.PHASE_OFFSEASON:
+		controller.autosave(saves)
+		_last_tab = FcApp.TAB_NAMES.find("Market")
+		show_dashboard()
+		_say(message + " The draft is over: sign free agents on the Market tab before the AI teams do, then finish the offseason.")
+		return
+	show_dashboard()
+	_say(message)
+
+
 func _tab_market() -> Control:
 	var w := controller.state.world
 	var box := HBoxContainer.new()

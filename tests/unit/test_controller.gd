@@ -312,10 +312,12 @@ func test_pausing_in_the_offseason_changes_nothing() -> void:
 	a.start_next_season()
 	var b := _game(40)
 	var first := b.begin_offseason()
+	assert_eq(b.phase(), FcGameController.PHASE_DRAFT)
+	b.draft_auto_rest()
 	assert_eq(b.phase(), FcGameController.PHASE_OFFSEASON)
 	assert_eq(b.state.offseason_stage, 1)
 	assert_eq(b.state.current_season, 2026, "still the old season until the offseason is finished")
-	assert_true(first.has("drafted") and not first.has("signed"), "AI free agency has not happened yet")
+	assert_true(not first.has("signed"), "AI free agency has not happened yet")
 	b.start_next_season()
 	assert_eq(b.state.offseason_stage, 0)
 	assert_eq(b.state.current_season, 2027)
@@ -325,6 +327,7 @@ func test_pausing_in_the_offseason_changes_nothing() -> void:
 func test_free_agent_signed_in_the_window_gets_a_next_season_contract() -> void:
 	var g := _game(41)
 	g.begin_offseason()
+	g.draft_auto_rest()
 	var w := g.state.world
 	var team: FcTeam = w.teams.get_by_id(g.state.user_team_id)
 	var rules := w.rules_of_league(g.league_id)
@@ -342,6 +345,7 @@ func test_free_agent_signed_in_the_window_gets_a_next_season_contract() -> void:
 func test_offseason_window_survives_saving() -> void:
 	var g := _game(42)
 	g.begin_offseason()
+	g.draft_auto_rest()
 	var manager := FcSaveManager.new("user://test_saves_window")
 	assert_true(g.autosave(manager).is_ok())
 	var loaded := manager.load_slot(FcSaveManager.AUTOSAVE_SLOT, FcDefinitionSet.load_default())

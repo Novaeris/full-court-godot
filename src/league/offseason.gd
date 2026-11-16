@@ -48,11 +48,20 @@ func run(league_id: int, finished: FcSeason, rng: FcRng) -> Dictionary:
 	return report
 
 
-## Aging and retirement, expiring contracts, re-signing, the draft and AI trades.
-## A human owner can act (sign free agents, release players) between this and
-## run_second_half. Uses the same random streams as run(), so the two halves
-## together give exactly the same result.
+## Aging and retirement, expiring contracts, re-signing, the draft and AI trades,
+## all automatic (Dynasty Mode, tools and tests). A human owner uses the pieces
+## instead (run_before_draft, prepare_draft / make_pick / finish_draft,
+## run_after_draft) so they can draft and sign free agents before run_second_half.
+## Uses the same random streams either way.
 func run_first_half(league_id: int, finished: FcSeason, rng: FcRng) -> Dictionary:
+	var report := run_before_draft(league_id, finished, rng)
+	report["drafted"] = run_draft(league_id, finished, finished.year + 1, rng.fork("draft"))
+	report.merge(run_after_draft(league_id, finished, rng))
+	return report
+
+
+## Archiving, aging and retirement, contracts ending, re-signing.
+func run_before_draft(league_id: int, finished: FcSeason, rng: FcRng) -> Dictionary:
 	var new_year := finished.year + 1
 	var report := {}
 	# keep the detailed data of the last two seasons; older ones keep only their history
@@ -62,9 +71,12 @@ func run_first_half(league_id: int, finished: FcSeason, rng: FcRng) -> Dictionar
 	report.merge(progress_and_retire(league_id, finished.year, new_year, rng.fork("progress")))
 	report.merge(expire_contracts(league_id, finished.year))
 	report["re_signed"] = re_sign(league_id, new_year, rng.fork("resign"))
-	report["drafted"] = run_draft(league_id, finished, new_year, rng.fork("draft"))
-	report["trades"] = FcTrades.new(world).run(league_id, finished, new_year, rng.fork("trades"))
 	return report
+
+
+## AI trades (after the draft).
+func run_after_draft(league_id: int, finished: FcSeason, rng: FcRng) -> Dictionary:
+	return {"trades": FcTrades.new(world).run(league_id, finished, finished.year + 1, rng.fork("trades"))}
 
 
 ## AI free agency, legal rosters and staff changes.
@@ -227,15 +239,22 @@ func _sign(team: FcTeam, player: FcPlayer, salary: int, years: int, first_season
 
 
 # --- 4. the draft ----------------------------------------------------------------------------
+#
+# The draft is a small state machine so a human owner can pick for their team:
+#   ds = prepare_draft(...)            creates the class and the order (lottery included)
+#   make_pick(ds, ...)                 one pick for the team on the clock (AI or human choice)
+#   finish_draft(ds, finished)         undrafted prospects become free agents, results are stored
+# `ds` is a plain Dictionary (saved with the game while the draft is under way):
+#   {"year", "order" (round-one team ids), "total", "next" (1-based pick on the clock),
+#    "available" (prospect ids), "results" ([[round, pick, team id, player id], ...])}
 
-## Returns the number of players drafted. Order: teams that missed the playoffs
-## by worst record first, then playoff teams by worst record (no lottery in v1).
-func run_draft(league_id: int, finished: FcSeason, new_year: int, rng: FcRng) -> int:
+## Teams that missed the playoffs pick first (worst record first, or by lottery),
+## then playoff teams by worst record. Creates the prospects.
+func prepare_draft(league_id: int, finished: FcSeason, new_year: int, rng: FcRng) -> Dictionary:
 	var league := _league(league_id)
 	var rules := _rules(league_id)
 	var team_ids := league.all_team_ids()
-	var standings := FcStandings.compute(league, finished.games)
-	var ranking := standings.league_ranking()
+	var ranking := FcStandings.compute(league, finished.games).league_ranking()
 	var order: Array[int] = []
 	var qualified: Array[int] = []
 	var missed: Array[int] = []
@@ -249,49 +268,121 @@ func run_draft(league_id: int, finished: FcSeason, new_year: int, rng: FcRng) ->
 	missed = FcDraftLottery.order(missed, rules.draft, rng.fork("lottery"))
 	order.append_array(missed)
 	order.append_array(qualified)
-
 	var total_picks := team_ids.size() * DRAFT_ROUNDS
 	_used_names_refresh()
-	var prospects := _make_prospects(total_picks + UNDRAFTED_EXTRA, new_year, rng)
-	var available: Array[FcPlayer] = prospects.duplicate()
-	var today := FcDate.new(new_year, 7, 1)
-	var results: Array = []
-	var pick := 0
-	for round_number in range(1, DRAFT_ROUNDS + 1):
-		for team_id in order:
-			pick += 1
-			var team: FcTeam = world.teams.get_by_id(team_id)
-			var noise := draft_noise(team_id)
-			var best: FcPlayer = null
-			var best_score := -INF
-			for p in available:
-				var score := market.value(p, _age(p, new_year)) + rng.gaussian(0.0, maxf(0.5, noise))
-				if score > best_score:
-					best_score = score
-					best = p
-			available.erase(best)
-			best.status = FcPlayer.Status.ACTIVE
-			results.append([round_number, pick, team_id, best.id])
-			if pick == 1:
-				world.add_news(FcDate.new(new_year, 6, 25), "draft", "%s select %s with the first pick of the draft" % [world.team_display_name(team_id), best.identity.full_name()], team_id)
-			# Late picks only get a roster spot when the team has room (otherwise the
-			# player is released into free agency, as second-rounders often are).
-			if round_number > 1 and team.roster.size() >= rules.roster_max - 2:
-				continue
-			if team.roster.size() >= rules.roster_max:
-				_waive_worst(team, new_year)
-			var salary := rules.cap.rookie_salary(pick, total_picks)
-			var c := FcPlayerMarket.make_contract(world.ids.next_id(FcWorld.KIND_CONTRACT), best.id, team_id,
-				new_year, rules.cap.rookie_contract_years, salary, rules.cap, today)
-			for i in c.years.size():
-				if i >= rules.cap.rookie_guaranteed_years:
-					c.years[i].option_type = FcContractYear.OptionType.TEAM
-			world.contracts.add(c)
-			team.roster.add(best.id)
-	for p in available:
-		p.status = FcPlayer.Status.ACTIVE   # undrafted: free agents
-	finished.draft = results
-	return results.size()
+	var prospects := _make_prospects(total_picks + UNDRAFTED_EXTRA, new_year, rng.fork("prospects"))
+	var available: Array = []
+	for p in prospects:
+		available.append(p.id)
+	return {"year": new_year, "order": order, "total": total_picks, "next": 1, "available": available, "results": []}
+
+
+func draft_complete(ds: Dictionary) -> bool:
+	return int(ds["next"]) > int(ds["total"])
+
+
+## The team whose turn it is.
+func draft_team_on_clock(ds: Dictionary) -> int:
+	var order: Array = ds["order"]
+	return int(order[(int(ds["next"]) - 1) % order.size()])
+
+
+func draft_round_on_clock(ds: Dictionary) -> int:
+	return floori(float(int(ds["next"]) - 1) / (ds["order"] as Array).size()) + 1
+
+
+## Which prospect a team's staff would pick right now (the AI's choice, also used
+## to "let the staff pick" for a human). Each team sees prospects with its own
+## error (see draft_noise); the noise is reproducible from the pick number.
+func ai_draft_choice(ds: Dictionary, team_id: int, rng: FcRng) -> int:
+	var pick_rng := rng.fork("pick%d" % int(ds["next"]))
+	var noise := maxf(0.5, draft_noise(team_id))
+	var best := 0
+	var best_score := -INF
+	for pid in ds["available"]:
+		var p: FcPlayer = world.players.get_by_id(int(pid))
+		var score := market.value(p, _age(p, int(ds["year"]))) + pick_rng.gaussian(0.0, noise)
+		if score > best_score:
+			best_score = score
+			best = int(pid)
+	return best
+
+
+## The team on the clock takes `prospect_id`; returns false if he is not available.
+func make_pick(ds: Dictionary, league_id: int, prospect_id: int) -> bool:
+	var available: Array = ds["available"]
+	var index := -1
+	for i in available.size():
+		if int(available[i]) == prospect_id:
+			index = i
+	if index < 0 or draft_complete(ds):
+		return false
+	var rules := _rules(league_id)
+	var new_year: int = int(ds["year"])
+	var pick: int = int(ds["next"])
+	var round_number := draft_round_on_clock(ds)
+	var team_id := draft_team_on_clock(ds)
+	var team: FcTeam = world.teams.get_by_id(team_id)
+	var best: FcPlayer = world.players.get_by_id(prospect_id)
+	available.remove_at(index)
+	best.status = FcPlayer.Status.ACTIVE
+	(ds["results"] as Array).append([round_number, pick, team_id, best.id])
+	ds["next"] = pick + 1
+	if pick == 1:
+		world.add_news(FcDate.new(new_year, 6, 25), "draft", "%s select %s with the first pick of the draft" % [world.team_display_name(team_id), best.identity.full_name()], team_id)
+	# Late picks only get a roster spot when the team has room (otherwise the
+	# player is released into free agency, as second-rounders often are).
+	if round_number > 1 and team.roster.size() >= rules.roster_max - 2:
+		return true
+	if team.roster.size() >= rules.roster_max:
+		_waive_worst(team, new_year)
+	var salary := rules.cap.rookie_salary(pick, int(ds["total"]))
+	var c := FcPlayerMarket.make_contract(world.ids.next_id(FcWorld.KIND_CONTRACT), best.id, team_id,
+		new_year, rules.cap.rookie_contract_years, salary, rules.cap, FcDate.new(new_year, 7, 1))
+	for i in c.years.size():
+		if i >= rules.cap.rookie_guaranteed_years:
+			c.years[i].option_type = FcContractYear.OptionType.TEAM
+	world.contracts.add(c)
+	team.roster.add(best.id)
+	return true
+
+
+## Ends the draft: undrafted prospects become free agents and the results are stored.
+func finish_draft(ds: Dictionary, finished: FcSeason) -> int:
+	for pid in ds["available"]:
+		world.players.get_by_id(int(pid)).status = FcPlayer.Status.ACTIVE
+	ds["available"] = []
+	finished.draft = (ds["results"] as Array).duplicate(true)
+	return finished.draft.size()
+
+
+## The whole draft with AI choices for every team. `rng` is the draft stream.
+## Returns the number of players drafted.
+func run_draft(league_id: int, finished: FcSeason, new_year: int, rng: FcRng) -> int:
+	var ds := prepare_draft(league_id, finished, new_year, rng)
+	while not draft_complete(ds):
+		make_pick(ds, league_id, ai_draft_choice(ds, draft_team_on_clock(ds), rng))
+	return finish_draft(ds, finished)
+
+
+## What a team's scouts report about a prospect: estimates with ranges that hold the
+## truth about 80% of the time. Better GMs and scouts give narrower, more accurate
+## reports. The error is fixed for a team and prospect (reproducible, so the board
+## does not change when it is redrawn). {"ovr", "ovr_low", "ovr_high", "pot", "pot_low",
+## "pot_high", "value"}.
+func scouting_report(team_id: int, prospect: FcPlayer, year: int) -> Dictionary:
+	var sd := maxf(SCOUTING_MIN_SD, draft_noise(team_id))
+	var pot_sd := sd * POTENTIAL_UNCERTAINTY
+	var noise := FcRng.new(hash("scout:%d:%d" % [team_id, prospect.id]))
+	var half := ceili(1.28 * sd)
+	var pot_half := ceili(1.28 * pot_sd)
+	var ovr := clampi(roundi(ratings.overall(prospect) + noise.gaussian(0.0, sd)), 1, 99)
+	var pot := clampi(roundi(prospect.development.potential + noise.gaussian(0.0, pot_sd)), 1, 99)
+	return {
+		"ovr": ovr, "ovr_low": maxi(1, ovr - half), "ovr_high": mini(99, ovr + half),
+		"pot": pot, "pot_low": maxi(1, pot - pot_half), "pot_high": mini(99, pot + pot_half),
+		"value": market.value(prospect, _age(prospect, year)) + noise.gaussian(0.0, sd),
+	}
 
 
 ## How far off a team's view of a prospect can be (standard deviation in value
@@ -301,6 +392,12 @@ func run_draft(league_id: int, finished: FcSeason, new_year: int, rng: FcRng) ->
 const BASE_NOISE := 6.0
 const SCOUT_NOISE_PER_100 := 1.2
 const SCOUT_NOISE_MAX := 3.0
+
+
+## Even the best scouts cannot see a teenager perfectly, and potential is harder to
+## read than current ability.
+const SCOUTING_MIN_SD := 2.0
+const POTENTIAL_UNCERTAINTY := 1.5
 
 
 func draft_noise(team_id: int) -> float:
