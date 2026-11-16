@@ -23,6 +23,11 @@ var debt: int = 0
 var valuation: int = 0
 ## Season in which the mid-level exception was last used (0 = never); it can be used once a season.
 var mid_level_used_season: int = 0
+## Sponsorship deal style (owner choice): 0 balanced (default, also used by AI teams),
+## 1 steady (smaller guaranteed money, ignores results), 2 performance (smaller base,
+## pays much more for winning and playoff success).
+var sponsor_plan: int = 0
+const SPONSOR_PLANS := ["Balanced", "Steady", "Performance"]
 
 
 func _init(team_id: int = 0) -> void:
@@ -44,6 +49,8 @@ func validate() -> Array[String]:
 		errors.append("cash and debt cannot be negative (a shortfall becomes debt)")
 	if valuation < 0:
 		errors.append("valuation cannot be negative")
+	if sponsor_plan < 0 or sponsor_plan > 2:
+		errors.append("unknown sponsorship plan")
 	return errors
 
 
@@ -51,7 +58,7 @@ func to_dict() -> Dictionary:
 	return {
 		"schema": SCHEMA_VERSION, "id": id, "ticket_price": ticket_price,
 		"marketing_budget": marketing_budget, "facilities_level": facilities_level,
-		"fan_interest": fan_interest, "brand": brand, "cash": cash, "debt": debt, "valuation": valuation, "mid_level_used_season": mid_level_used_season,
+		"fan_interest": fan_interest, "brand": brand, "cash": cash, "debt": debt, "valuation": valuation, "mid_level_used_season": mid_level_used_season, "sponsor_plan": sponsor_plan,
 	}
 
 
@@ -66,4 +73,5 @@ static func from_dict(d: Dictionary) -> FcTeamBusiness:
 	b.debt = int(d.get("debt", b.debt))
 	b.valuation = int(d.get("valuation", b.valuation))
 	b.mid_level_used_season = int(d.get("mid_level_used_season", 0))
+	b.sponsor_plan = clampi(int(d.get("sponsor_plan", 0)), 0, 2)
 	return b

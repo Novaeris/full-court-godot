@@ -268,3 +268,12 @@ func test_validation_catches_bad_business_data() -> void:
 	r.capacity = 100
 	r.average_attendance = 200
 	assert_true(r.validate().size() >= 2)
+
+
+func test_business_saves_sponsor_plan() -> void:
+	var b := FcTeamBusiness.new(2)
+	b.sponsor_plan = 2
+	assert_eq(FcTeamBusiness.from_dict(b.to_dict()).sponsor_plan, 2)
+	var old := b.to_dict()
+	old.erase("sponsor_plan")
+	assert_eq(FcTeamBusiness.from_dict(old).sponsor_plan, 0)

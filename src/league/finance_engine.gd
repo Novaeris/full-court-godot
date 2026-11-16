@@ -168,7 +168,12 @@ func settle(league_id: int, season: FcSeason, human_teams: Array[int] = []) -> A
 			+ fans * float(k["concessions_per_head"]) * price_scale * fac_factor * po_games)
 		rec.revenue["concessions"] = roundi(fans * float(k["concessions_per_head"]) * price_scale * fac_factor * home_games)
 		rec.revenue["merchandise"] = roundi(float(k["merchandise_base"]) * scale * pow(business.brand / 50.0, 1.2) * m)
-		rec.revenue["sponsorship"] = roundi(float(k["sponsorship_base"]) * scale * (0.5 + business.brand / 100.0) * pow(m, 0.8) * (1.0 + 0.15 * success))
+		var plan_factor := 1.0 + 0.15 * success
+		if business.sponsor_plan == 1:
+			plan_factor = float(k["sponsor_steady_multiplier"])
+		elif business.sponsor_plan == 2:
+			plan_factor = float(k["sponsor_performance_base"]) + float(k["sponsor_performance_win_weight"]) * standings.win_pct(tid) + float(k["sponsor_performance_playoff_weight"]) * success
+		rec.revenue["sponsorship"] = roundi(float(k["sponsorship_base"]) * scale * (0.5 + business.brand / 100.0) * pow(m, 0.8) * plan_factor)
 		rec.revenue["broadcasting"] = roundi(float(k["broadcasting_per_team"]) * scale)
 		rec.revenue["arena_events"] = roundi(float(k["arena_events_base"]) * scale * city.economy_index / 100.0 * arena.capacity / float(k["reference_capacity"]))
 		rec.revenue["tax_share"] = int(shared["payouts"].get(tid, 0))

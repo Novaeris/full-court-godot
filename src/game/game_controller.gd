@@ -304,6 +304,44 @@ func release_player(player_id: int) -> Dictionary:
 
 # --- owner decisions --------------------------------------------------------------------
 
+## Chooses the sponsorship deal style: 0 balanced, 1 steady, 2 performance
+## (see FcTeamBusiness.sponsor_plan). It applies when the season's books are settled.
+func set_sponsor_plan(plan: int) -> bool:
+	if plan < 0 or plan > 2:
+		return false
+	business().sponsor_plan = plan
+	return true
+
+
+## The most the owner may owe in total: a share of the franchise's value.
+func loan_limit() -> int:
+	return roundi(business().valuation * float(FcFinanceEngine.load_constants()["loan_limit_share"]))
+
+
+## Borrows money (it becomes debt, which costs interest every season).
+## Returns {"ok": bool, "reason": String}.
+func borrow(amount: int) -> Dictionary:
+	var b := business()
+	if amount <= 0:
+		return {"ok": false, "reason": "Enter an amount above zero."}
+	if b.debt + amount > loan_limit():
+		return {"ok": false, "reason": "Lenders will not let you owe more than $%.1fM (you owe $%.1fM)." % [loan_limit() / 1e6, b.debt / 1e6]}
+	b.cash += amount
+	b.debt += amount
+	return {"ok": true, "reason": "Borrowed $%.1fM." % (amount / 1e6)}
+
+
+## Repays debt from cash. Returns {"ok": bool, "reason": String}.
+func repay_debt(amount: int) -> Dictionary:
+	var b := business()
+	var paid := mini(mini(amount, b.debt), b.cash)
+	if paid <= 0:
+		return {"ok": false, "reason": "Nothing to repay (no debt, no cash, or no amount)."}
+	b.cash -= paid
+	b.debt -= paid
+	return {"ok": true, "reason": "Repaid $%.1fM." % (paid / 1e6)}
+
+
 func business() -> FcTeamBusiness:
 	return state.world.businesses.get_by_id(state.user_team_id)
 

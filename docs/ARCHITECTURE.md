@@ -148,6 +148,10 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 - A whole 30-team, 80-game season plus playoffs takes about 13 seconds; a 1,230-game season is stored in about 100 KB.
 - Rosters are read when an engine is created; change rosters between seasons.
 
+## Sponsorship style and loans (Owner Mode)
+- `FcTeamBusiness.sponsor_plan`: 0 balanced (default, all AI teams), 1 steady (95% of base, ignores results), 2 performance (65% base plus weight on win percentage and playoff rounds, so it pays more only for winners). Constants in `data/simulation/finance.json`. `FcGameController.set_sponsor_plan`.
+- `borrow(amount)` adds cash and debt up to `loan_limit()` (40% of franchise value); `repay_debt(amount)` pays from cash. Debt already costs 6% interest a season in the finance engine. Both are on the Finances tab. Not built: named sponsor contracts with multiple years, negotiated loan terms.
+
 ## Draft lottery
 - `FcDraftRules` (in `FcLeagueRules.draft`): `lottery_teams` (0 = no lottery), `lottery_picks`, `odds_power`. `FcDraftRules.suggest(n)` enters about 45% of the teams and draws up to 4 picks. `FcDraftLottery.order` draws the top picks among the worst non-playoff teams with odds weight (places from best)^1.3, so the worst team is favoured but can fall at most `lottery_picks` places. New leagues get a lottery by default (`draft_lottery` in generation config, `lottery=off` in tools/generate_league); saves made before the rule exist have no lottery. The draw uses its own forked rng stream, so other randomness is unchanged. `FcGameController.latest_draft_report()` rebuilds where each team would have picked without the lottery, so the Market tab shows how many places the lottery moved each team (nothing extra is saved).
 

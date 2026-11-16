@@ -176,3 +176,38 @@ func test_save_between_seasons_and_resume() -> void:
 	assert_eq(a.state.world.to_dict(), b.state.world.to_dict(), "the next season is identical after a reload")
 	manager.delete_slot(FcSaveManager.AUTOSAVE_SLOT)
 	DirAccess.remove_absolute("user://test_saves_controller2")
+
+
+func test_loans_and_repayment() -> void:
+	var g := _game(31)
+	g.sim_playoffs()
+	var b := g.business()
+	assert_true(g.loan_limit() > 0)
+	var cash := b.cash
+	var debt := b.debt
+	assert_true(not g.borrow(0)["ok"])
+	assert_true(not g.borrow(g.loan_limit() * 2)["ok"], "cannot borrow beyond the limit")
+	var r := g.borrow(5000000)
+	assert_true(r["ok"], r["reason"])
+	assert_eq(b.cash, cash + 5000000)
+	assert_eq(b.debt, debt + 5000000)
+	assert_true(g.repay_debt(5000000)["ok"])
+	assert_eq(b.cash, cash)
+	assert_eq(b.debt, debt)
+	b.debt = 0
+	assert_true(not g.repay_debt(1000)["ok"], "no debt to repay")
+
+
+func test_sponsor_plan_changes_sponsorship_income() -> void:
+	var results := {}
+	for plan in 3:
+		var g := _game(32)
+		assert_true(g.set_sponsor_plan(plan))
+		g.sim_playoffs()
+		var w := g.state.world
+		for r in w.finances.all():
+			if r.team_id == g.state.user_team_id:
+				results[plan] = r.revenue["sponsorship"]
+	assert_true(results[0] != results[1] and results[0] != results[2], "plans pay differently: %s" % str(results))
+	var g2 := _game(32)
+	assert_true(not g2.set_sponsor_plan(3))

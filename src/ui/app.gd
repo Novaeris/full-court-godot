@@ -757,6 +757,34 @@ func _tab_finances() -> Control:
 			_say("Arena improved." if controller.invest_in_facilities(10) else "Not enough cash for that.")
 			show_dashboard()))
 		box.add_child(row)
+		var loans := HBoxContainer.new()
+		loans.add_child(FcUiTables.label("Sponsorship deal:"))
+		var plan := OptionButton.new()
+		for name in FcTeamBusiness.SPONSOR_PLANS:
+			plan.add_item(name)
+		plan.selected = b.sponsor_plan
+		plan.item_selected.connect(func(i):
+			controller.set_sponsor_plan(i)
+			_say("Sponsorship: %s. Steady pays less but guaranteed; Performance pays more only if you win." % FcTeamBusiness.SPONSOR_PLANS[i]))
+		loans.add_child(plan)
+		loans.add_child(FcUiTables.label("   Loan $M"))
+		var amount := SpinBox.new()
+		amount.min_value = 1
+		amount.max_value = 500
+		amount.value = 10
+		loans.add_child(amount)
+		loans.add_child(FcUiTables.button("Borrow", func():
+			var r := controller.borrow(roundi(amount.value * 1e6))
+			_say(r["reason"])
+			if r["ok"]:
+				show_dashboard()))
+		loans.add_child(FcUiTables.button("Repay", func():
+			var r := controller.repay_debt(roundi(amount.value * 1e6))
+			_say(r["reason"])
+			if r["ok"]:
+				show_dashboard()))
+		loans.add_child(FcUiTables.label("   Borrowing limit %s" % FcUiTables.money(controller.loan_limit())))
+		box.add_child(loans)
 	var fin := FcFinanceEngine.new(w)
 	var rows: Array = []
 	var years: Array = []
