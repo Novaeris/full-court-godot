@@ -78,6 +78,9 @@ var playoff_bracket: String = "conference"
 var playoff_team_count: int = 16
 var playoff_series: Array[int] = [5, 7, 7, 7]
 
+## Draft lottery: on = FcDraftRules.suggest for the league size; off = worst record picks first.
+var draft_lottery: bool = true
+
 
 ## Number of teams the league will have.
 func effective_team_count() -> int:
@@ -124,6 +127,7 @@ static func load_default(data: FcGenerationData) -> FcGenerationConfig:
 	c.playoff_qualification = str(d.get("playoff_qualification", c.playoff_qualification))
 	c.playoff_bracket = str(d.get("playoff_bracket", c.playoff_bracket))
 	c.playoff_team_count = int(d.get("playoff_team_count", c.playoff_team_count))
+	c.draft_lottery = bool(d.get("draft_lottery", c.draft_lottery))
 	c.playoff_series = []
 	for s in d.get("playoff_series", [5, 7, 7, 7]):
 		c.playoff_series.append(int(s))
@@ -151,6 +155,8 @@ func build_rules(league: FcLeague) -> FcLeagueRules:
 	r.roster_min = roster_min
 	r.roster_max = roster_max
 	r.sim_era = sim_era
+	if draft_lottery:
+		r.draft = FcDraftRules.suggest(league.all_team_ids().size())
 	if auto_season:
 		r.season = FcSeasonRules.suggest(league, target_games)
 	else:

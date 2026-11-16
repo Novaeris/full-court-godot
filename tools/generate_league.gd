@@ -64,6 +64,7 @@ func _initialize() -> void:
 				cfg.playoff_series = []
 				for s in _list(value):
 					cfg.playoff_series.append(int(s))
+			"lottery": cfg.draft_lottery = value in ["on", "yes", "true", "1"]
 			"cap": cfg.cap_preset = {"soft": "soft_cap_with_hard_limit", "hard": "hard_cap", "none": "no_cap"}.get(value, value)
 			"salarycap": cfg.salary_cap = int(value)
 			_: print("Unknown option '%s'" % parts[0])

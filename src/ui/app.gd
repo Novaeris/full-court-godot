@@ -536,6 +536,10 @@ func _tab_overview() -> Control:
 	box.add_child(FcUiTables.label("League rules", 18, true))
 	for line in rules.playoffs.describe(controller.state.world.leagues.get_by_id(controller.league_id)):
 		box.add_child(FcUiTables.label("  " + line))
+	if rules.draft.lottery_teams > 0:
+		box.add_child(FcUiTables.label("  Draft lottery: the worst %d non-playoff teams enter and the top %d picks are drawn" % [rules.draft.lottery_teams, rules.draft.lottery_picks]))
+	else:
+		box.add_child(FcUiTables.label("  No draft lottery: the worst record picks first"))
 	box.add_child(FcUiTables.label("  Salary cap %s, tax line %s, hard limit %s" % [FcUiTables.money(rules.cap.salary_cap), FcUiTables.money(rules.cap.luxury_tax_line), FcUiTables.money(rules.cap.effective_limit())]))
 	return box
 

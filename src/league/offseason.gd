@@ -221,6 +221,7 @@ func run_draft(league_id: int, finished: FcSeason, new_year: int, rng: FcRng) ->
 			missed.append(t)
 	missed.reverse()
 	qualified.reverse()
+	missed = FcDraftLottery.order(missed, rules.draft, rng.fork("lottery"))
 	order.append_array(missed)
 	order.append_array(qualified)
 

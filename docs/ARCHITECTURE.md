@@ -148,6 +148,9 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 - A whole 30-team, 80-game season plus playoffs takes about 13 seconds; a 1,230-game season is stored in about 100 KB.
 - Rosters are read when an engine is created; change rosters between seasons.
 
+## Draft lottery
+- `FcDraftRules` (in `FcLeagueRules.draft`): `lottery_teams` (0 = no lottery), `lottery_picks`, `odds_power`. `FcDraftRules.suggest(n)` enters about 45% of the teams and draws up to 4 picks. `FcDraftLottery.order` draws the top picks among the worst non-playoff teams with odds weight (places from best)^1.3, so the worst team is favoured but can fall at most `lottery_picks` places. New leagues get a lottery by default (`draft_lottery` in generation config, `lottery=off` in tools/generate_league); saves made before the rule exist have no lottery. The draw uses its own forked rng stream, so other randomness is unchanged.
+
 ## Signing and releasing (human owner)
 - `FcGameController.free_agent_market()` lists free agents with their asking salary and years; `sign_free_agent(id)` signs one at his asking price using the cheapest legal route (cap space, then the minimum contract for players asking close to it, then the mid-level exception once per season, tracked in `FcTeamBusiness.mid_level_used_season`). `release_player(id)` waives a player for a buyout of half his current salary (from cash, shortfall becomes debt). The Market and Roster tabs have buttons for both. Signing and releasing are possible during the season; the offseason runs automatically.
 
