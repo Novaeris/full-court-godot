@@ -609,6 +609,7 @@ func staff_rollover(league_id: int, finished_year: int, new_year: int, rng: FcRn
 			if job != null:
 				job.status = FcContract.Status.TERMINATED
 				vacancies.append([job.team_id, job.role])
+				_staff_news(today, job.team_id, "%s, your %s, retired." % [m.identity.full_name(), FcStaffRole.display_name(job.role)])
 			retired += 1
 	# 2. expired contracts: renew or vacate
 	for c in world.staff_contracts.all():
@@ -618,8 +619,11 @@ func staff_rollover(league_id: int, finished_year: int, new_year: int, rng: FcRn
 			if m != null and m.status == FcStaffMember.Status.ACTIVE and rng.chance(0.7):
 				world.staff_contracts.add(_staff_contract(c.staff_id, c.team_id, c.role, m.reputation, new_year, rng, staff_gen, today))
 				renewed += 1
+				_staff_news(today, c.team_id, "%s, your %s, signed a new contract." % [m.identity.full_name(), FcStaffRole.display_name(c.role)])
 			else:
 				vacancies.append([c.team_id, c.role])
+				if m != null:
+					_staff_news(today, c.team_id, "%s, your %s, left when his contract ended." % [m.identity.full_name(), FcStaffRole.display_name(c.role)])
 	# 3. fill vacancies
 	for v in vacancies:
 		var best: FcStaffMember = null
@@ -631,8 +635,15 @@ func staff_rollover(league_id: int, finished_year: int, new_year: int, rng: FcRn
 			best = staff_gen.generate(rng, world.ids.next_id(FcWorld.KIND_STAFF), v[1], clampf(rng.gaussian(52.0, 10.0), 30.0, 80.0), today, _names_taken_staff())
 			world.staff.add(best)
 		world.staff_contracts.add(_staff_contract(best.id, v[0], v[1], best.reputation, new_year, rng, staff_gen, today))
+		_staff_news(today, v[0], "%s was hired as your %s." % [best.identity.full_name(), FcStaffRole.display_name(v[1])])
 		hired += 1
 	return {"staff_retired": retired, "staff_renewed": renewed, "staff_hired": hired}
+
+
+## Staff changes are reported as news for teams a human owns (the AI teams' changes are not).
+func _staff_news(date: FcDate, team_id: int, text: String) -> void:
+	if human_team_ids.has(team_id):
+		world.add_news(date, "staff", text, team_id)
 
 
 func _names_taken_staff() -> Dictionary:

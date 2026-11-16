@@ -205,3 +205,22 @@ func test_gm_report_card_appears_after_a_season() -> void:
 	var card := g.gm_report()
 	assert_true(card["grade"] in ["Excellent", "Good", "Satisfactory", "Disappointing"])
 	assert_true(card["limit"] > 0 and card["payroll"] > 0)
+
+
+func test_owner_is_told_when_staff_change() -> void:
+	var g := _game(100)
+	var w := g.state.world
+	var team_id := g.state.user_team_id
+	# force the GM's contract to end and his replacement to be hired
+	var gm_contract := w.staff_contracts_of_team(team_id, FcStaffRole.Id.GENERAL_MANAGER)[0]
+	for y in gm_contract.years:
+		y.season = 2026
+	g.sim_playoffs()
+	var before := w.news.size()
+	g.start_next_season()
+	var told := false
+	for i in range(before, w.news.size()):
+		if w.news[i]["kind"] == "staff" and w.news[i]["team"] == team_id:
+			told = true
+	assert_true(told, "a staff change on the owner's team is reported")
+	assert_true(w.staff_in_role(team_id, FcStaffRole.Id.GENERAL_MANAGER) != null, "the team still has a GM")
