@@ -34,3 +34,7 @@ The screens are plain tables and buttons, built to test the game. `docs/PROGRESS
 - `tests/` automated tests
 
 The code is on GitHub (public): https://github.com/Novaeris/full-court-godot . New commits are pushed only when the founder asks.
+
+## License
+
+Copyright (c) 2026 Novaeris. All rights reserved. The repository is public to be read, not reused: see [LICENSE](LICENSE).
