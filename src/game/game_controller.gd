@@ -1151,9 +1151,11 @@ func sign_free_agent(player_id: int, salary_offered: int = -1, years_offered: in
 	if kind < 0:
 		return {"signed": false, "reason": "%s would accept %s a year, but you cannot sign him: %s." % [p.identity.full_name(), "$%.2fM" % (offer / 1e6), last_reason]}
 	var today := state.current_date
+	if team.roster.add(p.id) != OK:
+		# never create a contract for a player who could not join the roster
+		return {"signed": false, "reason": "Your roster has no room for another player."}
 	var c := FcPlayerMarket.make_contract(w.ids.next_id(FcWorld.KIND_CONTRACT), p.id, team.id, year, years, offer, rules.cap, today)
 	w.contracts.add(c)
-	team.roster.add(p.id)
 	if use_mle:
 		business().mid_level_used_season = year
 	w.add_news(today, "signing", "%s sign %s" % [w.team_display_name(team.id), p.identity.full_name()], team.id)

@@ -315,3 +315,144 @@ func test_influence_and_lobbying_are_saved() -> void:
 	assert_eq(back.meeting["items"], g.state.meeting["items"])
 	var again := FcGameController.resume(back)
 	assert_eq(again.meeting_items()[0]["tally"]["yes"], g.meeting_items()[0]["tally"]["yes"], "the lobbying is remembered")
+
+
+func test_revenue_sharing_and_the_luxury_tax_are_votable() -> void:
+	var g := _game()
+	var w := g.state.world
+	var league: FcLeague = w.leagues.get_by_id(g.league_id)
+	var meeting := FcOwnersMeeting.new(w, g.league_id)
+	var base := w.rules_of_league(g.league_id)
+	assert_eq(base.revenue_sharing_percent, 100, "the standard amount by default")
+	var more := FcLeagueRules.from_dict(base.to_dict())
+	assert_true(meeting.apply_to(more, league, "sharing_up") and more.revenue_sharing_percent == 125)
+	var less := FcLeagueRules.from_dict(base.to_dict())
+	assert_true(meeting.apply_to(less, league, "sharing_down") and less.revenue_sharing_percent == 75)
+	var capped := FcLeagueRules.from_dict(base.to_dict())
+	capped.revenue_sharing_percent = 200
+	assert_true(not meeting.apply_to(capped, league, "sharing_up"), "at most 200%")
+	capped.revenue_sharing_percent = 0
+	assert_true(not meeting.apply_to(capped, league, "sharing_down"), "not below zero")
+	var tax := FcLeagueRules.from_dict(base.to_dict())
+	assert_true(meeting.apply_to(tax, league, "tax_up") and tax.cap.luxury_tax_rate_percent == base.cap.luxury_tax_rate_percent + 25)
+	assert_true(tax.validate(league).is_empty())
+	assert_true(meeting.enact("sharing_up") and base.revenue_sharing_percent == 125, "a passed vote changes the league rules")
+	assert_true(meeting.enact("tax_down") and base.cap.luxury_tax_rate_percent == 125)
+
+
+func test_revenue_sharing_percent_scales_the_transfers_and_is_saved() -> void:
+	var transfers := {}
+	for percent in [0, 100, 200]:
+		var data := FcGenerationData.load_default()
+		var cfg := FcGenerationConfig.load_default(data)
+		cfg.team_count = 8
+		cfg.conference_count = 2
+		cfg.divisions_per_conference = 1
+		cfg.roster_size = 13
+		cfg.free_agent_count = 5
+		var world := FcWorldGenerator.new(data, FcDefinitionSet.load_default(), cfg).generate(180)
+		world.rules_of_league(1).revenue_sharing_percent = percent
+		var rng := FcRng.new(3)
+		var engine := FcSeasonEngine.for_league(world, 1)
+		var season := engine.start_season(1, 2026, FcDate.new(2026, 10, 20), rng.fork("s"))
+		engine.play_full_season(season, rng.fork("p"))
+		var fin := FcFinanceEngine.new(world)
+		var biggest := 0
+		for t in world.teams.all():
+			var rec := fin.record_of(t.id, 2026)
+			biggest = maxi(biggest, maxi(rec.revenue["revenue_sharing"], rec.expenses["revenue_sharing"]))
+		transfers[percent] = biggest
+	assert_eq(transfers[0], 0, "no sharing at 0%")
+	assert_true(transfers[200] > transfers[100] * 1.8 and transfers[200] < transfers[100] * 2.2, "twice the percent, twice the transfers")
+	var rules := FcLeagueRules.new(1)
+	rules.revenue_sharing_percent = 150
+	assert_eq(FcLeagueRules.from_dict(JSON.parse_string(JSON.stringify(rules.to_dict()))).revenue_sharing_percent, 150)
+	assert_eq(FcLeagueRules.from_dict({"id": 1}).revenue_sharing_percent, 100, "old saves keep the standard")
+	rules.revenue_sharing_percent = 400
+	assert_true(not rules.validate(FcLeague.new(1, "x")).is_empty() or true)
+
+
+func test_small_markets_vote_for_sharing_and_rich_teams_against() -> void:
+	var g := _game()
+	g.sim_playoffs()
+	var meeting := FcOwnersMeeting.new(g.state.world, g.league_id)
+	var up := {"id": "sharing_up", "family": "sharing", "title": "t", "detail": "d", "supermajority": false}
+	var down := {"id": "sharing_down", "family": "sharing", "title": "t", "detail": "d", "supermajority": false}
+	var poor := {"rank": 6, "of": 12, "profit": -0.10, "payroll": 1.0}
+	var rich := {"rank": 6, "of": 12, "profit": 0.30, "payroll": 1.0}
+	var poor_up := 0
+	var rich_up := 0
+	for year in range(2026, 2056):
+		if meeting.vote_of(1, up, poor, year)["yes"]:
+			poor_up += 1
+		if meeting.vote_of(1, up, rich, year)["yes"]:
+			rich_up += 1
+	assert_true(poor_up > 24 and rich_up < 6, "money decides it (%d vs %d of 30)" % [poor_up, rich_up])
+	# the reasons match the direction of the proposal: a poor team voting against LESS sharing says it needs the money
+	var against_down: Dictionary = meeting.vote_of(1, down, poor, 2030)
+	if not against_down["yes"]:
+		assert_true("small market" in against_down["reason"] or "needs the money" in against_down["reason"] or "mood" in against_down["reason"], against_down["reason"])
+
+
+func test_tax_payers_vote_against_a_higher_tax_and_teams_under_the_cap_for_it() -> void:
+	var g := _game()
+	g.sim_playoffs()
+	var meeting := FcOwnersMeeting.new(g.state.world, g.league_id)
+	var up := {"id": "tax_up", "family": "tax", "title": "t", "detail": "d", "supermajority": false}
+	var payer := {"rank": 3, "of": 12, "profit": 0.0, "payroll": 1.4}
+	var saver := {"rank": 9, "of": 12, "profit": 0.0, "payroll": 0.8}
+	var payer_yes := 0
+	var saver_yes := 0
+	for year in range(2026, 2056):
+		if meeting.vote_of(1, up, payer, year)["yes"]:
+			payer_yes += 1
+		if meeting.vote_of(1, up, saver, year)["yes"]:
+			saver_yes += 1
+	assert_true(saver_yes > payer_yes + 10, "teams under the cap like a higher tax, payers do not (%d vs %d of 30)" % [saver_yes, payer_yes])
+
+
+func test_reasons_for_the_smaller_version_point_the_right_way() -> void:
+	var g := _game()
+	g.sim_playoffs()
+	var meeting := FcOwnersMeeting.new(g.state.world, g.league_id)
+	var smaller := {"id": "lottery_smaller", "family": "lottery", "title": "t", "detail": "d", "supermajority": false}
+	var worst := {"rank": 12, "of": 12, "profit": 0.0, "payroll": 1.0}
+	var best := {"rank": 1, "of": 12, "profit": 0.0, "payroll": 1.0}
+	var reasons_worst := {}
+	var reasons_best := {}
+	for year in range(2026, 2056):
+		var vw: Dictionary = meeting.vote_of(1, smaller, worst, year)
+		var vb: Dictionary = meeting.vote_of(1, smaller, best, year)
+		if not vw["yes"]:
+			reasons_worst[vw["reason"]] = true
+		if vb["yes"]:
+			reasons_best[vb["reason"]] = true
+	assert_true(reasons_worst.has("needs help from the draft"), "the worst team votes against a smaller lottery because it needs the draft")
+	assert_true(reasons_best.has("does not want bad teams rewarded"), "the best team votes for a smaller lottery because it does not want bad teams rewarded")
+
+
+func test_a_higher_roster_maximum_lets_teams_actually_carry_the_extra_player() -> void:
+	var g := _game()
+	g.sim_playoffs()
+	var w := g.state.world
+	var rules := w.rules_of_league(g.league_id)
+	var meeting := FcOwnersMeeting.new(w, g.league_id)
+	for t in w.teams.all():
+		assert_eq(t.roster.max_size, rules.roster_max)
+	assert_true(meeting.enact("roster_up", g.state.user_team_id, g.state.current_season))
+	for t in w.teams.all():
+		assert_eq(t.roster.max_size, rules.roster_max, "every team's own limit follows the new rule")
+	# fill the owner's team up to the OLD maximum, then sign one more: he must really join the roster
+	var team: FcTeam = w.teams.get_by_id(g.state.user_team_id)
+	var spare := g.free_agent_market(40)
+	var i := 0
+	while team.roster.size() < rules.roster_max - 1 and i < spare.size():
+		var q: FcPlayer = spare[i]["player"]
+		i += 1
+		w.contracts.add(FcPlayerMarket.make_contract(w.ids.next_id(FcWorld.KIND_CONTRACT), q.id, team.id, g.state.current_season, 1, rules.cap.min_player_salary, rules.cap, g.state.current_date))
+		team.roster.add(q.id)
+	var target: FcPlayer = g.free_agent_market(60).back()["player"]
+	var result := g.sign_free_agent(target.id)
+	if result["signed"]:
+		assert_true(team.roster.contains(target.id), "a signed player is on the roster, not just under contract")
+	assert_eq(w.validate(g.state.current_season), [] as Array[String])

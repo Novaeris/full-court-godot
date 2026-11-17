@@ -9,7 +9,13 @@ extends RefCounted
 ## An item is {"id": kind, "family", "title", "detail", "supermajority": bool}. Everything here is
 ## derived from the rules and the year, so the agenda can be rebuilt at any time.
 
-const FAMILIES := ["cap", "roster", "series", "lottery", "season", "playoffs"]
+const FAMILIES := ["cap", "roster", "series", "lottery", "season", "playoffs", "sharing", "tax"]
+## Money rules: revenue sharing moves in steps of this many percentage points (0-200), the luxury tax
+## rate in steps of this many (100-250).
+const SHARING_STEP := 25
+const SHARING_LIMITS := [0, 200]
+const TAX_STEP := 25
+const TAX_LIMITS := [100, 250]
 const AGENDA_SIZE := 3
 ## The chance each year that an expansion is added to the agenda (when one is possible).
 const EXPANSION_CHANCE := 0.25
@@ -156,6 +162,7 @@ func _kinds_of(family: String) -> Array:
 	return {
 		"cap": ["cap_up", "cap_down"], "roster": ["roster_up", "roster_down"], "series": ["series_longer", "series_shorter"],
 		"lottery": ["lottery_bigger", "lottery_smaller"], "season": ["season_longer", "season_shorter"], "playoffs": ["playoffs_bigger", "playoffs_smaller"],
+		"sharing": ["sharing_up", "sharing_down"], "tax": ["tax_up", "tax_down"],
 	}[family]
 
 
@@ -183,6 +190,12 @@ func _item(kind: String, family: String, before: FcLeagueRules, after: FcLeagueR
 			var games_after := after.season.games_per_team(league)
 			title = "Play %d games a season" % games_after
 			detail = "The regular season goes from %d to %d games (more gates and more wear, or less of both)." % [games_before, games_after]
+		"sharing_up", "sharing_down":
+			title = "%s revenue sharing to %d%% of the standard" % ["Raise" if kind == "sharing_up" else "Lower", after.revenue_sharing_percent]
+			detail = "Big-market teams pay into a pool and small-market teams receive from it. The amount goes from %d%% to %d%% of the standard. Small markets gain, big markets lose." % [before.revenue_sharing_percent, after.revenue_sharing_percent]
+		"tax_up", "tax_down":
+			title = "%s the luxury tax rate to %d%%" % ["Raise" if kind == "tax_up" else "Lower", after.cap.luxury_tax_rate_percent]
+			detail = "Teams over the tax line pay %d%% of the excess instead of %d%%; the money is shared among teams under the cap." % [after.cap.luxury_tax_rate_percent, before.cap.luxury_tax_rate_percent]
 		"playoffs_bigger", "playoffs_smaller":
 			title = "Playoffs with %d teams" % after.playoffs.team_count
 			detail = "The playoff field goes from %d to %d teams." % [before.playoffs.team_count, after.playoffs.team_count]
@@ -246,6 +259,20 @@ func apply_to(rules: FcLeagueRules, league: FcLeague, kind: String) -> bool:
 				return false
 			rules.season = suggested_season
 			return true
+		"sharing_up", "sharing_down":
+			var shared := rules.revenue_sharing_percent + (SHARING_STEP if kind == "sharing_up" else -SHARING_STEP)
+			if shared < SHARING_LIMITS[0] or shared > SHARING_LIMITS[1]:
+				return false
+			rules.revenue_sharing_percent = shared
+			return true
+		"tax_up", "tax_down":
+			if rules.cap.cap_type != "soft":
+				return false
+			var rate := rules.cap.luxury_tax_rate_percent + (TAX_STEP if kind == "tax_up" else -TAX_STEP)
+			if rate < TAX_LIMITS[0] or rate > TAX_LIMITS[1]:
+				return false
+			rules.cap.luxury_tax_rate_percent = rate
+			return true
 		"playoffs_bigger", "playoffs_smaller":
 			var current := rules.playoffs.team_count
 			for step in [2, 4, 6]:
@@ -281,7 +308,12 @@ func enact(kind: String, user_team_id: int = 0, year: int = 2026) -> bool:
 	if not apply_to(trial, league, kind) or not trial.validate(league).is_empty():
 		return false
 	rules.cap = trial.cap
+	rules.revenue_sharing_percent = trial.revenue_sharing_percent
 	rules.roster_max = trial.roster_max
+	# every team's own roster limit follows the league rule (a stale limit makes signings silently fail
+	# to add the player to the roster while still creating his contract)
+	for team in world.teams.all():
+		team.roster.max_size = rules.roster_max
 	rules.playoffs = trial.playoffs
 	rules.draft = trial.draft
 	rules.season = trial.season
@@ -344,6 +376,7 @@ func vote_of(team_id: int, item: Dictionary, situation: Dictionary, year: int) -
 	var rules := world.rules_of_league(league_id)
 	var rank_fraction: float = float(situation["rank"] - 1) / maxf(1.0, situation["of"] - 1.0)   # 0 = best, 1 = worst
 	var down: bool = str(item["id"]).ends_with("_down") or item["id"] in ["series_shorter", "lottery_smaller", "season_shorter", "playoffs_smaller"]
+	var tax_ratio := float(rules.cap.luxury_tax_line) / maxf(1.0, rules.cap.salary_cap)
 	# each term: [feeling about the "more" version, reason when it is a yes, reason when it is a no]
 	var terms: Array = []
 	match item["family"]:
@@ -363,6 +396,11 @@ func vote_of(team_id: int, item: Dictionary, situation: Dictionary, year: int) -
 		"expansion":
 			terms.append([0.5 if situation["profit"] < 0.03 else -0.1, "wants a share of the expansion fee", "does not need the fee"])
 			terms.append([-0.5 if rank_fraction < 0.3 else (0.2 if rank_fraction > 0.7 else 0.0), "more teams to beat", "does not want more competition for the title"])
+		"sharing":
+			# a team that earns less than the 4% of the cap that the model counts as comfortable gains; a rich one pays
+			terms.append([-6.0 * (situation["profit"] - 0.04), "is a small market that needs more sharing" if situation["profit"] < 0.04 else "wants to keep what it earns", "would pay in more than it gets" if situation["profit"] >= 0.04 else "needs the money"])
+		"tax":
+			terms.append([0.6 if situation["payroll"] < 1.0 else (-0.9 if situation["payroll"] > tax_ratio else 0.0), "is under the cap and would share the tax money" if situation["payroll"] < 1.0 else "does not mind", "pays the tax and wants it lower"])
 		"relocation":
 			var voter_region: String = world.cities.get_by_id(world.teams.get_by_id(team_id).city_id).region
 			terms.append([0.4 if situation["profit"] < 0.03 else 0.0, "wants a share of the relocation fee", "does not need the fee"])
@@ -384,7 +422,9 @@ func vote_of(team_id: int, item: Dictionary, situation: Dictionary, year: int) -
 		score += weight
 		if absf(weight) > strongest and absf(weight) > 0.001:
 			strongest = absf(weight)
-			reason = t[1] if weight > 0 else t[2]
+			# t[1] describes a team that likes the "more" version, t[2] one that dislikes it; for the "less"
+			# versions of a proposal the same feelings simply point the other way
+			reason = (t[1] if weight > 0 else t[2]) if not down else (t[2] if weight > 0 else t[1])
 	if strongest < absf(mood) and strongest < 0.2:
 		reason = "in a good mood" if mood > 0 else "in a bad mood"
 	return {"yes": score > 0.0, "reason": reason, "lean": score}

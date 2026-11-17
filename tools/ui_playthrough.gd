@@ -212,6 +212,25 @@ func _check(label: String) -> void:
 		_log("  ok   %s" % label)
 	else:
 		_fail("%s: %s" % [label, "; ".join(problems.slice(0, 3))])
+		_explain_double_contract(problems)
+
+
+## For a "more than one active contract" problem: who holds the contracts, to find out how it happened.
+func _explain_double_contract(problems: Array) -> void:
+	var regex := RegEx.new()
+	regex.compile("player ([0-9]+) has more than one active contract")
+	for message in problems:
+		var m := regex.search(message)
+		if m == null:
+			continue
+		var pid := int(m.get_string(1))
+		var w := _app.controller.state.world
+		var p: FcPlayer = w.players.get_by_id(pid)
+		_log("     player %d %s (status %d) on roster of: %s" % [pid, p.identity.full_name(), p.status, str(w.team_of_player(pid).id if w.team_of_player(pid) != null else 0)])
+		for c in w.contracts.all():
+			if c.player_id == pid and c.status == FcContract.Status.ACTIVE:
+				_log("       contract %d team %d seasons %d-%d signed %s" % [c.id, c.team_id, c.start_season(), c.end_season(), c.signed_on.to_iso()])
+		return
 
 
 func _summary(c: FcGameController) -> String:

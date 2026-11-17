@@ -368,7 +368,7 @@ func settle(league_id: int, season: FcSeason, human_teams: Array[int] = []) -> A
 		rec.revenue["broadcasting"] = roundi(float(k["broadcasting_per_team"]) * scale)
 		rec.revenue["arena_events"] = roundi(float(k["arena_events_base"]) * scale * city.economy_index / 100.0 * arena.capacity / float(k["reference_capacity"]) * (1.0 + float(load_arena_projects().get("suite_event_bonus", 0.2)) * business.suites_level))
 		rec.revenue["tax_share"] = int(shared["payouts"].get(tid, 0))
-		var transfer := roundi(float(k["revenue_sharing_amount"]) * scale * (market_mean - m) / market_mean)
+		var transfer := roundi(float(k["revenue_sharing_amount"]) * scale * rules.revenue_sharing_percent / 100.0 * (market_mean - m) / market_mean)
 		if transfer >= 0:
 			rec.revenue["revenue_sharing"] = transfer
 		else:
