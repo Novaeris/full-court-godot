@@ -47,6 +47,8 @@ var offseason_stage: int = 0
 var meeting: Dictionary = {}
 ## The last season in which the meeting was held (so it is held once a year).
 var meeting_year: int = 0
+## The year the league last expanded (0 = never): expansions are not proposed twice within a few years.
+var last_expansion_year: int = 0
 ## What past meetings decided: [[year, title, passed (0/1), yes, no], ...].
 var meeting_log: Array = []
 ## The owner's career (Owner Mode): "reputation" 0-100 (starts at START_REPUTATION), "history"
@@ -99,6 +101,7 @@ func to_dict() -> Dictionary:
 		"offseason_stage": offseason_stage,
 		"meeting": meeting.duplicate(true),
 		"meeting_year": meeting_year,
+		"last_expansion_year": last_expansion_year,
 		"meeting_log": meeting_log.duplicate(true),
 		"owner_career": owner_career.duplicate(true),
 		"draft_state": draft_state.duplicate(true),
@@ -150,6 +153,7 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 	s.current_season = int(data.get("current_season", 2026))
 	s.offseason_stage = int(data.get("offseason_stage", 0))
 	s.meeting_year = int(data.get("meeting_year", 0))
+	s.last_expansion_year = int(data.get("last_expansion_year", 0))
 	for row in data.get("meeting_log", []):
 		s.meeting_log.append([int(row[0]), str(row[1]), int(row[2]), int(row[3]), int(row[4])])
 	var raw_meeting = data.get("meeting", {})

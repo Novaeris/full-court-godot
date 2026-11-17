@@ -619,7 +619,7 @@ func _tab_meeting() -> Control:
 	if items.is_empty():
 		box.add_child(FcUiTables.label("The league's owners meet once a year, after the season, to vote on rule changes. Press Begin Offseason when the season is over to open the meeting.", 16))
 	else:
-		var intro := FcUiTables.label("The owners' meeting: vote on each proposal (each franchise has one vote). Cap changes need two thirds, everything else a simple majority. Your influence: %d points (spend them to turn an owner's vote or to propose an item)." % controller.meeting_influence(), 16)
+		var intro := FcUiTables.label("The owners' meeting: vote on each proposal (each franchise has one vote). Cap changes need two thirds, an expansion three quarters, everything else a simple majority. Your influence: %d points (spend them to turn an owner's vote or to propose an item)." % controller.meeting_influence(), 16)
 		intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		intro.custom_minimum_size = Vector2(200, 0)
 		box.add_child(intro)

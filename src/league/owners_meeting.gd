@@ -11,6 +11,8 @@ extends RefCounted
 
 const FAMILIES := ["cap", "roster", "series", "lottery", "season", "playoffs"]
 const AGENDA_SIZE := 3
+## The chance each year that an expansion is added to the agenda (when one is possible).
+const EXPANSION_CHANCE := 0.25
 const ROSTER_LIMITS := [13, 17]
 const SEASON_STEP := 10
 const SEASON_LIMITS := [40, 110]
@@ -39,7 +41,7 @@ static func lobby_cost(lean: float) -> int:
 
 ## Every kind of proposal the owner could add to the agenda (valid for the current rules, not
 ## already on it): [{"id", "family", "title", "detail", "supermajority", "proposed": true}].
-func proposable(year: int, on_agenda: Array) -> Array:
+func proposable(year: int, on_agenda: Array, last_expansion_year: int = 0) -> Array:
 	var rules := world.rules_of_league(league_id)
 	var league: FcLeague = world.leagues.get_by_id(league_id)
 	var taken := {}
@@ -55,6 +57,10 @@ func proposable(year: int, on_agenda: Array) -> Array:
 				var item := _item(kind, family, rules, trial, league)
 				item["proposed"] = true
 				out.append(item)
+	var expansion := _expansion_item(year, last_expansion_year)
+	if not expansion.is_empty() and not taken.has("expansion"):
+		expansion["proposed"] = true
+		out.append(expansion)
 	return out
 
 var world: FcWorld
@@ -68,7 +74,7 @@ func _init(game_world: FcWorld, league: int) -> void:
 
 ## The agenda for a year: AGENDA_SIZE items from different families, each a proposal that
 ## would pass the rule checks if adopted. The same list every time for the same rules and year.
-func agenda(year: int) -> Array:
+func agenda(year: int, last_expansion_year: int = 0) -> Array:
 	var rules := world.rules_of_league(league_id)
 	var league: FcLeague = world.leagues.get_by_id(league_id)
 	var rng := FcRng.new(hash("agenda:%d:%d" % [league_id, year]))
@@ -84,7 +90,27 @@ func agenda(year: int) -> Array:
 			if apply_to(trial, league, kind) and trial.validate(league).is_empty() and _affordable(kind, trial, league, year):
 				out.append(_item(kind, family, rules, trial, league))
 				break
+	# once in a while an expansion is on the table too (never twice within MIN_GAP_YEARS)
+	var expansion := _expansion_item(year, last_expansion_year)
+	if not expansion.is_empty() and rng.chance(EXPANSION_CHANCE):
+		out.append(expansion)
 	return out
+
+
+## The expansion proposal, or {} if the league cannot grow or grew too recently.
+func _expansion_item(year: int, last_expansion_year: int) -> Dictionary:
+	if last_expansion_year > 0 and year - last_expansion_year < FcExpansion.MIN_GAP_YEARS:
+		return {}
+	var expansion := FcExpansion.new(world, league_id)
+	var plan_data := expansion.plan(year)
+	if plan_data.is_empty():
+		return {}
+	var names: Array[String] = []
+	for entry in plan_data["cities"]:
+		names.append(str(entry["name"]))
+	return {"id": "expansion", "family": "expansion", "title": "Expand the league to %d teams" % plan_data["size"],
+		"detail": "New franchises in %s. Each existing owner receives an expansion fee of about $%.1fM. The conferences and divisions are redrawn, the new teams start with weaker players and join the next draft. Needs three quarters of the votes." % [", ".join(names), expansion.fee_per_owner(plan_data["delta"]) / 1e6],
+		"supermajority": true}
 
 
 ## A lower cap is only proposed if no team's payroll, this season or next, would be over the new
@@ -142,6 +168,8 @@ func _item(kind: String, family: String, before: FcLeagueRules, after: FcLeagueR
 ## then guaranteed about the rules, so callers use a copy).
 func apply_to(rules: FcLeagueRules, league: FcLeague, kind: String) -> bool:
 	match kind:
+		"expansion":
+			return false   # not a change to the rules: see enact
 		"cap_up", "cap_down":
 			if rules.cap.cap_type == "none":
 				return false
@@ -218,6 +246,8 @@ func apply_to(rules: FcLeagueRules, league: FcLeague, kind: String) -> bool:
 ## and teams over a lowered roster maximum release their weakest players (`user_team_id`'s
 ## team is told in the news). `year` is the season whose values decide who is weakest.
 func enact(kind: String, user_team_id: int = 0, year: int = 2026) -> bool:
+	if kind == "expansion":
+		return not FcExpansion.new(world, league_id).execute(year).is_empty()
 	var rules := world.rules_of_league(league_id)
 	var league: FcLeague = world.leagues.get_by_id(league_id)
 	var trial := FcLeagueRules.from_dict(rules.to_dict())
@@ -303,6 +333,9 @@ func vote_of(team_id: int, item: Dictionary, situation: Dictionary, year: int) -
 			terms.append([0.5 if rank_fraction > 0.5 else (-0.5 if rank_fraction < 0.3 else 0.0), "needs help from the draft", "does not want bad teams rewarded"])
 		"season":
 			terms.append([0.4 if situation["profit"] > 0.04 else (-0.5 if situation["profit"] < 0 else 0.0), "more home games mean more gate money", "more games mean more costs"])
+		"expansion":
+			terms.append([0.5 if situation["profit"] < 0.03 else -0.1, "wants a share of the expansion fee", "does not need the fee"])
+			terms.append([-0.5 if rank_fraction < 0.3 else (0.2 if rank_fraction > 0.7 else 0.0), "more teams to beat", "does not want more competition for the title"])
 		"playoffs":
 			var spots := rules.playoffs.team_count
 			var rank: int = situation["rank"]
@@ -352,5 +385,6 @@ func tally(item: Dictionary, finished: FcSeason, year: int, user_team_id: int, u
 		else:
 			no += 1
 	var total := league.all_team_ids().size()
-	var needed := ceili(total * 2.0 / 3.0) if item["supermajority"] else floori(total / 2.0) + 1
+	var fraction := 0.75 if item["id"] == "expansion" else (2.0 / 3.0 if item["supermajority"] else 0.5)
+	var needed := ceili(total * fraction) if fraction > 0.5 else floori(total / 2.0) + 1
 	return {"votes": votes, "yes": yes, "no": no, "needed": needed, "passes": yes >= needed}

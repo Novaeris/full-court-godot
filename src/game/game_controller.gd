@@ -424,7 +424,7 @@ func meeting_held() -> bool:
 func open_meeting() -> bool:
 	if state.mode != FcGameState.MODE_OWNER or phase() != PHASE_COMPLETE or meeting_held():
 		return false
-	var items := _meeting().agenda(state.current_season)
+	var items := _meeting().agenda(state.current_season, state.last_expansion_year)
 	if items.is_empty():
 		state.meeting_year = state.current_season
 		return false
@@ -491,7 +491,7 @@ func lobby_owner(item_id: String, team_id: int) -> Dictionary:
 func proposable_items() -> Array:
 	if state.offseason_stage != 3 or state.meeting.get("proposed", false):
 		return []
-	return _meeting().proposable(state.current_season, state.meeting["items"])
+	return _meeting().proposable(state.current_season, state.meeting["items"], state.last_expansion_year)
 
 
 ## Adds one of proposable_items() to the agenda. Returns {"ok": bool, "reason": String}.
@@ -525,6 +525,8 @@ func close_meeting() -> Array:
 		var enacted := false
 		if tally["passes"]:
 			enacted = meeting.enact(item["id"], state.user_team_id, state.current_season)
+			if enacted and item["id"] == "expansion":
+				state.last_expansion_year = state.current_season
 		results.append({"title": item["title"], "passed": tally["passes"], "yes": tally["yes"], "no": tally["no"], "needed": tally["needed"], "enacted": enacted})
 		state.meeting_log.append([state.current_season, item["title"], 1 if enacted else 0, tally["yes"], tally["no"]])
 		state.world.add_news(state.current_date, "staff", "Owners' meeting: \"%s\" %s (%d for, %d against)." % [item["title"], "passed" if enacted else "failed", tally["yes"], tally["no"]])
@@ -1408,7 +1410,7 @@ func league_finances() -> Array:
 	for tid in w.leagues.get_by_id(league_id).all_team_ids():
 		var rec := finance.record_of(tid, year)
 		if rec == null:
-			return []
+			continue   # a team that joined after that season has no books yet
 		rows.append({"team": tid, "name": w.team_display_name(tid), "wins": rec.wins, "revenue": rec.total_revenue(), "profit": rec.profit(),
 			"payroll": rec.expenses["payroll"], "price": rec.ticket_price, "attendance": rec.average_attendance, "valuation": rec.valuation_end})
 	rows.sort_custom(func(a, b): return a["profit"] > b["profit"] if a["profit"] != b["profit"] else a["team"] < b["team"])

@@ -4,13 +4,14 @@ extends SceneTree
 ## (extensions, free agents, trades, picks, the draft, loans, projects, GM delegation, saving
 ## and loading) while checking that the game state stays valid.
 ##
-## Run:  godot_console --headless --path . --script res://tools/ui_playthrough.gd -- seasons=3 teams=30 seed=7
+## Run:  godot_console --headless --path . --script res://tools/ui_playthrough.gd -- seasons=3 teams=30 seed=7 [reprice=1] [expand=1]
 ## It prints one line per stage and a list of problems; exit code 1 if any problem was found.
 
 var _app: FcApp
 var _problems: Array[String] = []
 var _t0 := 0
 var _reprice := false
+var _expand := false
 
 
 func _initialize() -> void:
@@ -26,6 +27,7 @@ func _initialize() -> void:
 			"teams": teams = int(kv[1])
 			"seed": seed_text = kv[1]
 			"reprice": _reprice = kv[1] == "1"
+			"expand": _expand = kv[1] == "1"
 	_t0 = Time.get_ticks_msec()
 	_app = FcApp.new()
 	_app.saves = FcSaveManager.new("user://playthrough_saves")
@@ -121,8 +123,19 @@ func _offseason(c: FcGameController, year: int) -> void:
 	if c.phase() == FcGameController.PHASE_MEETING:
 		var items := c.meeting_items()
 		_ok("owners meeting: %s" % "; ".join(items.map(func(e): return "%s (%d-%d, needs %d)" % [e["item"]["title"], e["tally"]["yes"], e["tally"]["no"], e["tally"]["needed"]])))
+		if _expand:
+			# push for an expansion: propose it, vote yes, and lobby the owners who lean against it
+			c.state.meeting["influence"] = 10
+			c.propose_item("expansion")
+			c.cast_meeting_vote("expansion", true)
+			for entry in c.meeting_items():
+				if entry["item"]["id"] == "expansion":
+					for v in entry["tally"]["votes"]:
+						if not v["yes"]:
+							c.lobby_owner("expansion", v["team"])
 		for e in items:
-			c.cast_meeting_vote(e["item"]["id"], year % 2 == 0)
+			if not (_expand and e["item"]["id"] == "expansion"):
+				c.cast_meeting_vote(e["item"]["id"], year % 2 == 0)
 		_app.on_close_meeting()
 		_check("meeting closed")
 	_app.on_next_season()   # warning or begin offseason
