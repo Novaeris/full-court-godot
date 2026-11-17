@@ -72,6 +72,7 @@
 	"injury_per_minute": 0.00025,
 	"minutes_soft_cap_seconds": 2340,
 	"position_balance_bonus": 8.0,
+	"late_tie_window_seconds": 24,
 
 	"home_win_target_note": "Equal teams should win about 57-60% at home."
 }

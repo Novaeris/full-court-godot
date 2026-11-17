@@ -51,6 +51,7 @@ func test_job_offers_only_at_season_end_and_are_stable() -> void:
 func test_a_better_reputation_opens_better_franchises() -> void:
 	var g := _game(121, 20)
 	g.sim_playoffs()
+	g.owner_reputation()   # the finished season is recorded first, so setting the reputation below sticks
 	g.state.owner_career["reputation"] = 5
 	var low := g.job_offers()
 	g.state.owner_career["reputation"] = 100

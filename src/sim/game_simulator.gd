@@ -147,6 +147,8 @@ func _play_possession(o: int) -> void:
 	var first := true
 	while _clock > 0.0:
 		var dur := _sample_duration() if first else clampf(_rng.gaussian(float(_t["putback_seconds"]), 2.0), 2.0, 10.0)
+		if first and _chasing_a_tie(o):
+			dur = _clock   # a team that can still tie holds the ball for the last shot
 		dur = minf(dur, _clock)
 		_use_time(dur)
 		var result := _action(o, d, first)
@@ -184,6 +186,8 @@ func _action(o: int, d: int, check_turnover: bool) -> int:
 	# 3. shot
 	var shooter := _pick_scorer(o)
 	var kind := _pick_shot_type(shooter, o)
+	if _chasing_a_tie(o) and _clock <= 0.5:
+		kind = _tie_shot_kind(o, kind)
 	var passer: FcSimPlayer = null
 	var assisted := _rng.chance(_assist_chance(kind, o))
 	if assisted:
@@ -341,6 +345,26 @@ func _pick_shot_type(shooter: FcSimPlayer, o: int) -> int:
 	var w_mid: float = shooter.tend_mid * (0.3 + shooter.ratings["mid"] / 100.0) * float(_t["mix_mid"])
 	var idx := _rng.weighted_index([maxf(w_three, 0.1), maxf(w_mid, 0.1), maxf(w_rim, 0.1)])
 	return idx
+
+
+## True late in regulation (4th quarter, last `late_tie_window_seconds`) when `o` trails by 1-3 points: such a
+## team plays for the last shot and can still force overtime. Real games end in a tie more often than
+## a pure shot-by-shot model produces because trailing teams do this.
+func _chasing_a_tie(o: int) -> bool:
+	if _period != int(_t["quarters"]) or _clock > float(_t["late_tie_window_seconds"]):
+		return false
+	var behind: int = _score[1 - o] - _score[o]
+	return behind >= 1 and behind <= 3
+
+
+## The shot a team takes with the last possession when it trails: a three when down 3, a two when down 2 (or 1).
+func _tie_shot_kind(o: int, normal: int) -> int:
+	var behind: int = _score[1 - o] - _score[o]
+	if behind == 3:
+		return THREE
+	if normal == THREE:
+		return RIM if _rng.chance(0.6) else MID
+	return normal
 
 
 # --- choosing players --------------------------------------------------------

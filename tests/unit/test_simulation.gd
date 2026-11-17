@@ -475,3 +475,13 @@ func test_every_team_can_play_every_other() -> void:
 			if a != b:
 				var box := sim.simulate(_team(a), _team(b), rng)
 				assert_true(box.scores[0] > 50 and box.scores[1] > 50)
+
+
+func test_a_team_trailing_late_holds_the_ball_for_the_last_shot() -> void:
+	# overtime happens clearly more often than the ~2.3% a pure shot-by-shot model gave (real leagues: 5-6%)
+	var overtime := 0
+	var games := 1200
+	for box in _simulate_many(1, 2, games, {}, 4242):
+		if box.overtimes > 0:
+			overtime += 1
+	assert_between(100.0 * overtime / games, 3.0, 9.0, "overtime rate in percent")

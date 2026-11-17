@@ -47,7 +47,7 @@ func test_good_prevention_means_fewer_injuries() -> void:
 		var sim := FcGameSimulator.new({"injury_per_minute": 0.001})
 		var rng := FcRng.new(4)
 		var n := 0
-		for i in 160:
+		for i in 400:
 			var box := sim.simulate(FcGameTeam.from_world(world, 1, ratings), FcGameTeam.from_world(world, 2, ratings), rng)
 			for row in box.injuries:
 				if world.teams.get_by_id(1).roster.contains(row[0]):
