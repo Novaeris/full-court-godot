@@ -218,7 +218,7 @@ func test_arena_projects_cost_time_and_then_apply() -> void:
 	var w := g.state.world
 	var team: FcTeam = w.teams.get_by_id(g.state.user_team_id)
 	var arena: FcArena = w.arenas.get_by_id(team.arena_id)
-	assert_eq(g.arena_project_options().size(), 4)
+	assert_eq(g.arena_project_options().size(), 5)
 	var seats := arena.capacity
 	g.business().cash = 200000000
 	var cash := g.business().cash

@@ -187,3 +187,8 @@ Built on the founder's instruction to continue; the following product choices we
 - Seasons are identified by the calendar year in which they start.
 - Alternatives rejected: one large Player class (hard to evolve); salary stored on player (blocks options, bonuses, history, cap queries); attributes as hard-coded variables (every balance change needs code edits).
 - Statistics, history, finances, staff and owner are deferred as separate records keyed by id, to be designed with their systems.
+
+## D-033 Long-run economy (2026-11-17, founder asked for it; details chosen by Claude)
+- Money grows with inflation (about 3% a year) and the salary cap follows league profit toward a 6% average margin, instead of staying fixed. The cap never falls in dollars.
+- Surplus cash is spent on building projects (AI automatically, human by choice) and paid out as dividends; a new-arena project exists.
+- Alternatives rejected: a fixed profit cap (feels artificial), taxing cash directly (confusing), growing revenue only (does not fix margin).

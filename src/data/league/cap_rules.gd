@@ -309,8 +309,9 @@ func check_trade(payroll_before: int, incoming: int, outgoing: int) -> FcRuleChe
 	return FcRuleCheck.ok()
 
 
-## Contract terms that break these rules (empty = fine).
-func validate_contract(contract: FcContract) -> Array[String]:
+## Contract terms that break these rules (empty = fine). Seasons before `from_season` are not checked
+## against the salary limits: they were signed under the limits of their day, which the league changes over time.
+func validate_contract(contract: FcContract, from_season: int = 0) -> Array[String]:
 	var errors: Array[String] = []
 	var years := contract.effective_years()
 	var salary_ceiling := max_player_salary
@@ -325,9 +326,11 @@ func validate_contract(contract: FcContract) -> Array[String]:
 		errors.append("a contract may last at most %d years" % max_contract_years)
 	for i in years.size():
 		var s := years[i].salary
+		if years[i].season < from_season:
+			continue
 		if s < min_player_salary or s > salary_ceiling:
 			errors.append("salary %d in %d is outside %d-%d" % [s, years[i].season, min_player_salary, salary_ceiling])
-		if i > 0 and s > _percent_of(years[i - 1].salary, 100 + max_annual_raise_percent) + 10000:
+		if i > 0 and years[i - 1].season >= from_season and s > _percent_of(years[i - 1].salary, 100 + max_annual_raise_percent) + 10000:
 			errors.append("raise into %d exceeds %d%%" % [years[i].season, max_annual_raise_percent])
 	return errors
 

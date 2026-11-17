@@ -1,0 +1,16 @@
+{
+	"schema": 1,
+	"note": "The long-run economy (FcEconomy). Every offseason the league's money grows with inflation, and the salary cap follows league profits: when clubs earn more than the target margin the players' share (the cap) rises faster, when they earn less it rises more slowly. All teams' cash beyond a reserve goes into building projects or is paid out to the owner.",
+	"base_growth": 0.03,
+	"growth_noise": 0.015,
+	"recession_chance": 0.06,
+	"margin_target": 0.06,
+	"margin_gain": 0.5,
+	"cap_share_step_min": -0.03,
+	"cap_share_step_max": 0.05,
+	"cap_share_min": 0.8,
+	"cap_share_max": 1.7,
+	"reserve_cap_share": 0.8,
+	"dividend_cap_share": 1.6,
+	"projects_per_year": 2
+}

@@ -454,11 +454,11 @@ func test_world_flags_rule_violations() -> void:
 	var rules := w.rules_of_league(1)
 	var team: FcTeam = w.teams.get_by_id(1)
 	var contract := w.active_contract_of(team.roster.player_ids[0])
-	contract.years[0].salary = rules.cap.max_player_salary + 5000000
-	contract.years[0].guaranteed = contract.years[0].salary
+	contract.years[contract.years.size() - 1].salary = rules.cap.max_player_salary + 5000000
+	contract.years[contract.years.size() - 1].guaranteed = contract.years[0].salary
 	assert_true(_errors_contain(w.validate(cfg.start_season), "breaks league rules"))
-	contract.years[0].salary = rules.cap.max_player_salary
-	contract.years[0].guaranteed = contract.years[0].salary
+	contract.years[contract.years.size() - 1].salary = rules.cap.max_player_salary
+	contract.years[contract.years.size() - 1].guaranteed = contract.years[0].salary
 	for pid in team.roster.player_ids:
 		var c := w.active_contract_of(pid)
 		for y in c.years:

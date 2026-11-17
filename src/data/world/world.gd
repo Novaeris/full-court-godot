@@ -324,7 +324,7 @@ func validate(season: int = 0) -> Array[String]:
 	for c in contracts.all():
 		var team_rules := rules_of_team(c.team_id)
 		if team_rules != null and c.status == FcContract.Status.ACTIVE:
-			for e in team_rules.cap.validate_contract(c):
+			for e in team_rules.cap.validate_contract(c, season):
 				errors.append("contract %d breaks league rules: %s" % [c.id, e])
 	for t in teams.all():
 		var team_rules := rules_of_team(t.id)

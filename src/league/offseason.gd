@@ -78,6 +78,7 @@ func run_before_draft(league_id: int, finished: FcSeason, rng: FcRng) -> Diction
 		if s.league_id == league_id and s.year <= finished.year - 2:
 			s.archive()
 	world.prune_old_contracts(new_year)
+	report["economy"] = FcEconomy.new(world).advance(league_id, finished.year, human_team_ids)
 	report.merge(progress_and_retire(league_id, finished.year, new_year, rng.fork("progress")))
 	report.merge(expire_contracts(league_id, finished.year))
 	report["re_signed"] = re_sign(league_id, new_year, rng.fork("resign"))

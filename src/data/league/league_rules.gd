@@ -22,6 +22,10 @@ var roster_max: int = 15
 ## Revenue sharing between markets as a percent of the standard amount (100 = the standard,
 ## 0 = none; see FcFinanceEngine). Voted on at the owners' meeting. Older saves have 100.
 var revenue_sharing_percent: int = 100
+## The size of the league's money economy as parts per million of the reference economy (finance.json),
+## grown every offseason by FcEconomy (inflation). 0 = not set yet: money amounts then follow the cap, as in
+## older saves and in a league that has not finished a season.
+var money_scale_ppm: int = 0
 ## Playing style of the games (see data/simulation/eras.json).
 var sim_era: String = "mid_2010s"
 
@@ -43,6 +47,8 @@ func validate(league: FcLeague) -> Array[String]:
 		errors.append("revenue sharing must be 0-300 percent of the standard")
 	if not FcGameSimulator.era_keys().has(sim_era):
 		errors.append("unknown game era '%s'" % sim_era)
+	if money_scale_ppm < 0:
+		errors.append("the money scale cannot be negative")
 	errors.append_array(cap.validate())
 	errors.append_array(draft.validate())
 	errors.append_array(season.validate(league))
@@ -55,7 +61,7 @@ func to_dict() -> Dictionary:
 		"schema": SCHEMA_VERSION, "id": id, "league_id": league_id,
 		"season": season.to_dict(), "playoffs": playoffs.to_dict(), "cap": cap.to_dict(), "draft": draft.to_dict(),
 		"roster_min": roster_min, "roster_max": roster_max, "sim_era": sim_era,
-		"revenue_sharing_percent": revenue_sharing_percent,
+		"revenue_sharing_percent": revenue_sharing_percent, "money_scale_ppm": money_scale_ppm,
 	}
 
 
@@ -70,4 +76,5 @@ static func from_dict(data: Dictionary) -> FcLeagueRules:
 	r.roster_max = int(data.get("roster_max", r.roster_max))
 	r.sim_era = str(data.get("sim_era", r.sim_era))
 	r.revenue_sharing_percent = int(data.get("revenue_sharing_percent", 100))
+	r.money_scale_ppm = maxi(0, int(data.get("money_scale_ppm", 0)))
 	return r

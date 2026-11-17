@@ -56,6 +56,8 @@ func start_project(business: FcTeamBusiness, arena: FcArena, key: String, scale:
 		return "The practice facility is already at its highest level."
 	if def.has("max_medical") and business.medical_level >= int(def["max_medical"]):
 		return "The medical center is already at its highest level."
+	if def.has("max_start_facilities") and business.facilities_level > int(def["max_start_facilities"]):
+		return "The arena is still too new to replace (quality %d; it must be %d or lower)." % [business.facilities_level, int(def["max_start_facilities"])]
 	if def.has("facilities") and business.facilities_level >= 100:
 		return "The arena is already in perfect condition."
 	var cost := roundi(float(def["cost"]) * scale)
@@ -85,6 +87,9 @@ func advance_projects(business: FcTeamBusiness, arena: FcArena, team_id: int, ye
 			business.medical_level = mini(int(def["max_medical"]), business.medical_level + int(def["medical"]))
 		if def.has("facilities"):
 			business.facilities_level = mini(100, business.facilities_level + int(def["facilities"]))
+		if def.get("rebuild", false):
+			business.facilities_level = 100
+			arena.year_built = year + 1
 		world.add_news(FcDate.new(year + 1, 6, 1), "staff", "%s finished a building project: %s" % [world.team_display_name(team_id), def.get("name", p["key"])], team_id)
 	business.projects = remaining
 
@@ -193,7 +198,12 @@ static func load_constants() -> Dictionary:
 	return parsed if parsed is Dictionary else {}
 
 
+## How big the league's money is compared with the reference economy. Before the first offseason (and in
+## older saves) it follows the cap; afterwards FcEconomy grows it with inflation, and the cap follows the
+## economy (a slightly different share each year), so prices, sponsors and costs grow at realistic rates.
 func scale_for(rules: FcLeagueRules) -> float:
+	if rules.money_scale_ppm > 0:
+		return rules.money_scale_ppm / 1000000.0
 	return float(rules.cap.salary_cap) / float(k["reference_cap"])
 
 

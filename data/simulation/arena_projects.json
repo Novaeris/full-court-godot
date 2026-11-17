@@ -9,7 +9,9 @@
 		{"key": "medical_center", "name": "Medical center", "cost": 15000000, "seasons": 1, "medical": 1, "max_medical": 3,
 			"description": "Injuries heal faster (6% shorter per level), up to 3 levels; each level costs upkeep every season."},
 		{"key": "luxury_suites", "name": "Luxury suites", "cost": 12000000, "seasons": 1, "suites": 1, "max_suites": 3,
-			"description": "More arena event income (each level adds 25%), up to 3 levels."}
+			"description": "More arena event income (each level adds 25%), up to 3 levels."},
+		{"key": "new_arena", "name": "Build a new arena", "cost": 450000000, "seasons": 3, "capacity": 2500, "max_capacity": 30000, "rebuild": true, "max_start_facilities": 65,
+			"description": "Replace the old building: +2,500 seats, facilities back to perfect and the age reset. A very large project for an owner with a lot of cash; only possible once the arena has aged (quality 65 or lower)."}
 	],
 	"suite_event_bonus": 0.25,
 	"facility_upkeep_per_level": 2000000

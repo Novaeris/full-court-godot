@@ -1379,6 +1379,21 @@ func _tab_finances() -> Control:
 			show_dashboard()))
 	loans.add_child(FcUiTables.label("   Borrowing limit %s   Debt %s (6%% interest a season)" % [FcUiTables.money(controller.loan_limit()), FcUiTables.money(b.debt)]))
 	money.add_child(loans)
+	money.add_child(FcUiTables.label("Owner payouts", 18, true))
+	var payouts := HBoxContainer.new()
+	payouts.add_child(FcUiTables.label("Dividend $M"))
+	var dividend := SpinBox.new()
+	dividend.min_value = 1
+	dividend.max_value = 5000
+	dividend.value = 10
+	payouts.add_child(dividend)
+	payouts.add_child(FcUiTables.button("Pay myself", func():
+		var rd := controller.take_dividend(roundi(dividend.value * 1e6))
+		_say(rd["reason"])
+		if rd["ok"]:
+			show_dashboard()))
+	payouts.add_child(FcUiTables.label("   You can take %s now   Taken so far %s" % [FcUiTables.money(controller.dividend_limit()), FcUiTables.money(b.distributions)]))
+	money.add_child(payouts)
 
 	# --- arena and facilities ---
 	var arena_page := VBoxContainer.new()

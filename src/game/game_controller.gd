@@ -1347,6 +1347,32 @@ func repay_debt(amount: int) -> Dictionary:
 	return {"ok": true, "reason": "Repaid $%.1fM." % (paid / 1e6)}
 
 
+## The most cash the owner may take out now: what is above a reserve (a share of the cap), and
+## nothing while the club owes money.
+func dividend_limit() -> int:
+	var b := business()
+	if b.debt > 0:
+		return 0
+	var cap := state.world.rules_of_league(league_id).cap.salary_cap
+	var reserve := roundi(float(FcEconomy.load_constants()["reserve_cap_share"]) * 0.5 * cap)
+	return maxi(0, b.cash - reserve)
+
+
+## Pays the owner a dividend from the club's cash (counted in the owner's own wealth, `distributions`).
+## Returns {"ok": bool, "reason": String}.
+func take_dividend(amount: int) -> Dictionary:
+	var b := business()
+	if amount <= 0:
+		return {"ok": false, "reason": "Enter an amount above zero."}
+	if b.debt > 0:
+		return {"ok": false, "reason": "Repay the club's debt before paying yourself."}
+	if amount > dividend_limit():
+		return {"ok": false, "reason": "The club must keep a cash reserve: you can take at most $%.1fM now." % (dividend_limit() / 1e6)}
+	b.cash -= amount
+	b.distributions += amount
+	return {"ok": true, "reason": "Paid yourself $%.1fM. Your total payouts are $%.1fM." % [amount / 1e6, b.distributions / 1e6]}
+
+
 func business() -> FcTeamBusiness:
 	return state.world.businesses.get_by_id(state.user_team_id)
 
