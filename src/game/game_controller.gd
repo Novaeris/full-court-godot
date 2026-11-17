@@ -20,6 +20,8 @@ const PHASE_OFFSEASON := "offseason"
 const PHASE_DRAFT := "draft"
 ## Owner Mode only: the league owners are meeting after the season to vote on rule changes.
 const PHASE_MEETING := "meeting"
+## Owner Mode only: the league has approved an expansion and the owner chooses whom to protect.
+const PHASE_EXPANSION := "expansion"
 const SEASON_START_MONTH := 10
 const SEASON_START_DAY := 20
 
@@ -70,6 +72,7 @@ func phase() -> String:
 				1: return PHASE_OFFSEASON
 				2: return PHASE_DRAFT
 				3: return PHASE_MEETING
+				4: return PHASE_EXPANSION
 			return PHASE_COMPLETE
 	return PHASE_REGULAR
 
@@ -119,6 +122,8 @@ func sim_playoffs() -> void:
 func start_next_season() -> Dictionary:
 	if state.offseason_stage == 3:
 		close_meeting()
+	if state.offseason_stage == 4:
+		run_expansion_draft()
 	if state.offseason_stage == 0:
 		begin_offseason()
 	if state.offseason_stage == 2:
@@ -156,7 +161,9 @@ func _new_offseason() -> FcOffseason:
 ## Returns the report so far.
 func begin_offseason() -> Dictionary:
 	if state.offseason_stage == 3:
-		close_meeting()   # the owner skipped the meeting: nothing was voted for, the AI owners decide alone
+		close_meeting()
+	if state.offseason_stage == 4:
+		run_expansion_draft()   # the owner skipped the meeting: nothing was voted for, the AI owners decide alone
 	sim_playoffs()
 	var finished := season()
 	_gm_log = []
@@ -519,21 +526,79 @@ func close_meeting() -> Array:
 	if state.offseason_stage != 3:
 		return results
 	var meeting := _meeting()
+	var expansion_approved := false
 	for entry in meeting_items():
 		var item: Dictionary = entry["item"]
 		var tally: Dictionary = entry["tally"]
 		var enacted := false
-		if tally["passes"]:
+		if tally["passes"] and item["id"] == "expansion":
+			enacted = true   # carried out by the expansion draft that follows
+			expansion_approved = true
+			state.last_expansion_year = state.current_season
+		elif tally["passes"]:
 			enacted = meeting.enact(item["id"], state.user_team_id, state.current_season)
-			if enacted and item["id"] == "expansion":
-				state.last_expansion_year = state.current_season
 		results.append({"title": item["title"], "passed": tally["passes"], "yes": tally["yes"], "no": tally["no"], "needed": tally["needed"], "enacted": enacted})
 		state.meeting_log.append([state.current_season, item["title"], 1 if enacted else 0, tally["yes"], tally["no"]])
 		state.world.add_news(state.current_date, "staff", "Owners' meeting: \"%s\" %s (%d for, %d against)." % [item["title"], "passed" if enacted else "failed", tally["yes"], tally["no"]])
 	state.meeting = {}
 	state.meeting_year = state.current_season
 	state.offseason_stage = 0
+	if expansion_approved:
+		state.expansion = {"year": state.current_season, "protected": FcExpansion.new(state.world, league_id).default_protected(state.user_team_id, state.current_season)}
+		state.offseason_stage = 4
 	return results
+
+
+# --- the expansion draft (Owner Mode) -----------------------------------------------------------
+
+## While an approved expansion waits for the owner's protected list:
+## {"protected": [player ids], "limit", "new_teams", "picks_per_team", "size"}; {} otherwise.
+func expansion_status() -> Dictionary:
+	if state.offseason_stage != 4:
+		return {}
+	var expansion := FcExpansion.new(state.world, league_id)
+	var plan_data := expansion.plan(state.current_season)
+	if plan_data.is_empty():
+		return {}
+	return {"protected": state.expansion["protected"], "limit": FcExpansion.PROTECTED_PER_TEAM, "new_teams": plan_data["delta"], "size": plan_data["size"],
+		"picks_per_team": expansion.picks_per_new_team(plan_data["delta"], state.world.leagues.get_by_id(league_id).team_count())}
+
+
+## Chooses the players to protect (at most FcExpansion.PROTECTED_PER_TEAM, all on the owner's roster).
+func set_protected_players(player_ids: Array) -> Dictionary:
+	if state.offseason_stage != 4:
+		return {"ok": false, "reason": "There is no expansion draft pending."}
+	var team: FcTeam = state.world.teams.get_by_id(state.user_team_id)
+	if player_ids.size() > FcExpansion.PROTECTED_PER_TEAM:
+		return {"ok": false, "reason": "You can protect at most %d players." % FcExpansion.PROTECTED_PER_TEAM}
+	var kept: Array[int] = []
+	for pid in player_ids:
+		if not team.roster.contains(pid):
+			return {"ok": false, "reason": "A protected player is not on your roster."}
+		kept.append(pid)
+	state.expansion["protected"] = kept
+	return {"ok": true, "reason": "%d players protected." % kept.size()}
+
+
+## Runs the expansion draft with the owner's protected list (the best players if none was chosen),
+## creates the new teams and returns to the normal offseason. Returns the result of
+## FcExpansion.execute plus "lost" (the owner's players that were taken: [[player id, new team id]]).
+func run_expansion_draft() -> Dictionary:
+	if state.offseason_stage != 4:
+		return {}
+	var year: int = state.expansion["year"]
+	var result := FcExpansion.new(state.world, league_id).execute(year, state.user_team_id, state.expansion["protected"])
+	state.expansion = {}
+	state.offseason_stage = 0
+	var lost: Array = []
+	state.expansion_log = []
+	for pick in result.get("picks", []):
+		state.expansion_log.append([year, pick[0], pick[1], pick[2], pick[3]])
+		if pick[3] == state.user_team_id:
+			lost.append([pick[2], pick[1]])
+	result["lost"] = lost
+	_prepare_engine()
+	return result
 
 
 # --- the draft (Owner Mode) -----------------------------------------------------------------

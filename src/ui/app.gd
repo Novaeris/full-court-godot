@@ -299,7 +299,7 @@ func show_dashboard() -> void:
 	var phase := controller.phase()
 	var info := FcUiTables.label("%s    Season %d-%02d    %s    Mode: %s" % [
 		controller.state.current_date.to_iso(), s.year, (s.year + 1) % 100,
-		{"regular_season": "Regular season", "playoffs": "Playoffs", "season_complete": "Season complete", "offseason": "Offseason: free agency is open to you first", "draft": "The draft", "meeting": "The owners are meeting"}[phase],
+		{"regular_season": "Regular season", "playoffs": "Playoffs", "season_complete": "Season complete", "offseason": "Offseason: free agency is open to you first", "draft": "The draft", "meeting": "The owners are meeting", "expansion": "Expansion draft: choose your protected players"}[phase],
 		"Owner" if controller.state.mode == FcGameState.MODE_OWNER else "Spectator"], 16)
 	box.add_child(info)
 	var actions := HBoxContainer.new()
@@ -315,6 +315,8 @@ func show_dashboard() -> void:
 			actions.add_child(FcUiTables.button("Play All Playoffs", func(): on_sim_playoffs()))
 		FcGameController.PHASE_MEETING:
 			actions.add_child(FcUiTables.button("Close the meeting and count the votes", on_close_meeting))
+		FcGameController.PHASE_EXPANSION:
+			actions.add_child(FcUiTables.button("Run the expansion draft", on_run_expansion))
 		FcGameController.PHASE_DRAFT:
 			actions.add_child(FcUiTables.button("Let the staff finish the draft", on_draft_auto))
 		FcGameController.PHASE_OFFSEASON:
@@ -408,6 +410,18 @@ func on_close_meeting() -> void:
 	_last_tab = FcApp.TAB_NAMES.find("Meeting")
 	show_dashboard()
 	_say("Meeting closed. " + " | ".join(lines))
+
+
+## Runs the approved expansion's draft and tells the owner what it cost.
+func on_run_expansion() -> void:
+	var result := controller.run_expansion_draft()
+	controller.autosave(saves)
+	_last_tab = FcApp.TAB_NAMES.find("Meeting")
+	show_dashboard()
+	var lost: Array[String] = []
+	for entry in result.get("lost", []):
+		lost.append("%s (to %s)" % [controller.state.world.player_name(entry[0]), _team_name(entry[1])])
+	_say("The league now has %d teams. %s Every existing owner received an expansion fee of %s. Press Begin Offseason to continue." % [result.get("size", 0), ("You lost " + ", ".join(lost) + ".") if not lost.is_empty() else "None of your players was taken.", FcUiTables.money(result.get("fee_each", 0))])
 
 
 ## The staff finishes the draft for the user; the free-agency window opens.
@@ -615,6 +629,31 @@ func _tab_trades() -> Control:
 ## The owners' meeting: while it is on, the proposals with how every owner leans, and your vote.
 func _tab_meeting() -> Control:
 	var box := VBoxContainer.new()
+	var pending := controller.expansion_status()
+	if not pending.is_empty():
+		var info := FcUiTables.label("The owners approved an expansion to %d teams. The %d new teams will each pick %d players from the existing teams in an expansion draft. Protect up to %d of your players (select them below); no team loses more than one player. Then press Run the expansion draft." % [pending["size"], pending["new_teams"], pending["picks_per_team"], pending["limit"]], 16)
+		info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		info.custom_minimum_size = Vector2(200, 0)
+		box.add_child(info)
+		var protect_list := ItemList.new()
+		protect_list.select_mode = ItemList.SELECT_MULTI
+		protect_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		var roster_ids: Array[int] = []
+		var ratings_now := FcPlayerRatings.load_default()
+		for pid in controller.state.world.teams.get_by_id(controller.state.user_team_id).roster.player_ids:
+			var p: FcPlayer = controller.state.world.players.get_by_id(pid)
+			protect_list.add_item("%s  %s  age %d  ovr %d" % [p.identity.full_name(), FcPosition.abbreviation(p.primary_position), p.age_on(FcDate.new(controller.contract_year(), 7, 1)), roundi(ratings_now.overall(p))])
+			roster_ids.append(pid)
+			if pid in pending["protected"]:
+				protect_list.select(protect_list.item_count - 1, false)
+		box.add_child(protect_list)
+		box.add_child(FcUiTables.button("Confirm my protected players", func():
+			var chosen: Array = []
+			for i in protect_list.get_selected_items():
+				chosen.append(roster_ids[i])
+			var result := controller.set_protected_players(chosen)
+			_say(result["reason"] + (" Press Run the expansion draft when ready." if result["ok"] else ""))))
+		return box
 	var items := controller.meeting_items()
 	if items.is_empty():
 		box.add_child(FcUiTables.label("The league's owners meet once a year, after the season, to vote on rule changes. Press Begin Offseason when the season is over to open the meeting.", 16))

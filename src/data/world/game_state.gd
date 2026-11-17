@@ -38,7 +38,7 @@ const DELEGATION_KEYS := ["contracts", "draft", "free_agency", "trades", "injuri
 var direction: Dictionary = {"philosophy": "balanced", "budget": "normal"}
 const PHILOSOPHIES := ["win_now", "balanced", "rebuild"]
 const BUDGETS := ["frugal", "normal", "aggressive"]
-## 0 = normal; 3 = the owners' meeting is under way; 2 = the owner's draft is under way; 1 = the draft and the rest of the first half are
+## 0 = normal; 4 = an approved expansion's draft is waiting for the owner's protected list; 3 = the owners' meeting is under way; 2 = the owner's draft is under way; 1 = the draft and the rest of the first half are
 ## done and the owner's free-agency window is open (current_season is still the season that just ended).
 var offseason_stage: int = 0
 ## The owners' meeting while it is under way (stage 3): {"year", "items": [item dictionaries from
@@ -49,6 +49,10 @@ var meeting: Dictionary = {}
 var meeting_year: int = 0
 ## The year the league last expanded (0 = never): expansions are not proposed twice within a few years.
 var last_expansion_year: int = 0
+## While the expansion draft is pending (stage 4): {"year", "protected": [player ids of the owner's team]}.
+var expansion: Dictionary = {}
+## The last expansion draft: [[year, pick number, new team id, player id, team he came from], ...].
+var expansion_log: Array = []
 ## What past meetings decided: [[year, title, passed (0/1), yes, no], ...].
 var meeting_log: Array = []
 ## The owner's career (Owner Mode): "reputation" 0-100 (starts at START_REPUTATION), "history"
@@ -102,6 +106,8 @@ func to_dict() -> Dictionary:
 		"meeting": meeting.duplicate(true),
 		"meeting_year": meeting_year,
 		"last_expansion_year": last_expansion_year,
+		"expansion": expansion.duplicate(true),
+		"expansion_log": expansion_log.duplicate(true),
 		"meeting_log": meeting_log.duplicate(true),
 		"owner_career": owner_career.duplicate(true),
 		"draft_state": draft_state.duplicate(true),
@@ -154,6 +160,14 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 	s.offseason_stage = int(data.get("offseason_stage", 0))
 	s.meeting_year = int(data.get("meeting_year", 0))
 	s.last_expansion_year = int(data.get("last_expansion_year", 0))
+	for row in data.get("expansion_log", []):
+		s.expansion_log.append([int(row[0]), int(row[1]), int(row[2]), int(row[3]), int(row[4])])
+	var raw_expansion = data.get("expansion", {})
+	if raw_expansion is Dictionary and not raw_expansion.is_empty():
+		var kept: Array[int] = []
+		for pid in raw_expansion.get("protected", []):
+			kept.append(int(pid))
+		s.expansion = {"year": int(raw_expansion.get("year", 0)), "protected": kept}
 	for row in data.get("meeting_log", []):
 		s.meeting_log.append([int(row[0]), str(row[1]), int(row[2]), int(row[3]), int(row[4])])
 	var raw_meeting = data.get("meeting", {})

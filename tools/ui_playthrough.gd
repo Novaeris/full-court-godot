@@ -138,6 +138,12 @@ func _offseason(c: FcGameController, year: int) -> void:
 				c.cast_meeting_vote(e["item"]["id"], year % 2 == 0)
 		_app.on_close_meeting()
 		_check("meeting closed")
+		if c.phase() == FcGameController.PHASE_EXPANSION:
+			var status := c.expansion_status()
+			_ok("expansion approved: %d teams, %d new, %d picks each" % [status["size"], status["new_teams"], status["picks_per_team"]])
+			_app.on_run_expansion()
+			_check("expansion draft run")
+			_ok("the league now has %d teams; owner lost %d players" % [c.state.world.leagues.get_by_id(c.league_id).team_count(), c.state.expansion_log.filter(func(r): return r[4] == c.state.user_team_id).size()])
 	_app.on_next_season()   # warning or begin offseason
 	if c.state.offseason_stage == 0:
 		_app.on_next_season()

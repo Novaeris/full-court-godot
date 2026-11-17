@@ -2,12 +2,16 @@ class_name FcExpansion
 extends RefCounted
 ## League expansion (D-031: up to 64 teams): new franchises join in cities the league does not
 ## use yet, the conferences and divisions are redrawn for the new size, and the existing owners
-## share an expansion fee. New teams get a roster of weaker players (an expansion draft with
-## protected lists is a later stage), a staff, an arena and a business, exactly like the teams
-## the league started with. The plan (which size, which cities) is derived from the league and
+## share an expansion fee. The new teams fill their rosters in an expansion draft: every existing team
+## protects PROTECTED_PER_TEAM players, the new teams then take turns picking the best unprotected
+## player, and no existing team loses more than one player. Spots still empty are filled with
+## weaker generated players. The new teams also get a staff, an arena and a business, exactly like
+## the teams the league started with. The plan (which size, which cities) is derived from the league and
 ## the year, so it can be shown to the owners before the vote and carried out identically after.
 
 const MIN_GAP_YEARS := 3
+## Players each existing team may protect from the expansion draft.
+const PROTECTED_PER_TEAM := 8
 ## The fee each new franchise pays, as a share of the average franchise value; the existing owners split it.
 const FEE_SHARE_OF_VALUE := 0.30
 ## New teams start weaker: their players are rated this much lower than a founding team's.
@@ -61,6 +65,26 @@ func plan(year: int) -> Dictionary:
 	return {"size": size, "delta": delta, "cities": cities}
 
 
+## The players an AI team protects (and the choice made for the owner if they do not choose): the
+## best PROTECTED_PER_TEAM by market value.
+func default_protected(team_id: int, year: int) -> Array[int]:
+	var market := FcPlayerMarket.new(FcPlayerRatings.load_default())
+	var scored: Array = []
+	for pid in world.teams.get_by_id(team_id).roster.player_ids:
+		var p: FcPlayer = world.players.get_by_id(pid)
+		scored.append([market.value(p, p.age_on(FcDate.new(year + 1, 7, 1))), pid])
+	scored.sort_custom(func(a, b): return a[0] > b[0] if a[0] != b[0] else a[1] < b[1])
+	var out: Array[int] = []
+	for entry in scored.slice(0, PROTECTED_PER_TEAM):
+		out.append(entry[1])
+	return out
+
+
+## How many players each new team will take in the expansion draft.
+func picks_per_new_team(delta: int, existing_count: int) -> int:
+	return mini(world.rules_of_league(league_id).roster_min, floori(float(existing_count) / maxf(1.0, delta)))
+
+
 ## The fee each existing owner receives if the league expands (dollars).
 func fee_per_owner(plan_delta: int) -> int:
 	var total := 0.0
@@ -75,9 +99,11 @@ func fee_per_owner(plan_delta: int) -> int:
 	return roundi(total / count * FEE_SHARE_OF_VALUE * plan_delta / count / 100000.0) * 100000
 
 
-## Carries out the expansion for the season starting after `year`. Returns {} if there is no plan,
-## else {"teams": [new team ids], "size", "fee_each"}.
-func execute(year: int) -> Dictionary:
+## Carries out the expansion for the season starting after `year`, including the expansion draft.
+## `user_protected` is the list the player chose for `user_team_id` (empty = the default choice).
+## Returns {} if there is no plan, else {"teams": [new team ids], "size", "fee_each",
+## "picks": [[pick number, new team id, player id, team he came from], ...]}.
+func execute(year: int, user_team_id: int = 0, user_protected: Array = []) -> Dictionary:
 	var plan_data := plan(year)
 	if plan_data.is_empty():
 		return {}
@@ -136,8 +162,15 @@ func execute(year: int) -> Dictionary:
 		team.roster.max_size = rules.roster_max
 		world.teams.add(team)
 		new_teams.append(team)
-		gen._fill_roster(world, team, team_rng.fork("players"), used_names, reference, str(entry["country"]), rules.cap)
 		gen._hire_staff(world, team, team_rng.fork("staff"), used_names, reference, str(entry["country"]))
+
+	# the expansion draft, then generated players for the spots it leaves empty
+	var protected_map := {}
+	for tid in existing_ids:
+		protected_map[tid] = user_protected if (tid == user_team_id and not user_protected.is_empty()) else default_protected(tid, year)
+	var picks := _expansion_draft(new_teams, existing_ids, protected_map, new_year, user_team_id, rng.fork("draft"))
+	for i in new_teams.size():
+		_add_filler(gen, new_teams[i], rules.roster_min - new_teams[i].roster.size(), rng.fork("filler%d" % i), used_names, reference, str(plan_data["cities"][i]["country"]), rules.cap)
 
 	# the league is redrawn for its new size: conferences west to east, divisions south to north
 	var structure := _structure_for(plan_data["size"], league.conferences.size())
@@ -182,7 +215,64 @@ func execute(year: int) -> Dictionary:
 		ids.append(t.id)
 		names.append(world.team_display_name(t.id))
 	world.add_news(FcDate.new(new_year, 6, 1), "staff", "The league expands to %d teams: %s join. Each existing owner receives an expansion fee of $%.1fM." % [plan_data["size"], " and ".join(names), fee_each / 1e6])
-	return {"teams": ids, "size": plan_data["size"], "fee_each": fee_each}
+	return {"teams": ids, "size": plan_data["size"], "fee_each": fee_each, "picks": picks}
+
+
+## The draft itself: the new teams take turns (in a seeded order), each picking the most valuable
+## player who is not protected and whose team has not lost anyone yet.
+func _expansion_draft(new_teams: Array[FcTeam], existing_ids: Array[int], protected_map: Dictionary, new_year: int, user_team_id: int, rng: FcRng) -> Array:
+	var market := FcPlayerMarket.new(FcPlayerRatings.load_default())
+	var per_team := picks_per_new_team(new_teams.size(), existing_ids.size())
+	var order: Array = []
+	for t in new_teams:
+		order.append(t)
+	var shuffled: Array = FcWorldGenerator.new(data, world.definitions, FcGenerationConfig.load_default(data))._shuffled(rng, order)
+	var lost := {}
+	var picks: Array = []
+	for round_number in per_team:
+		for team in shuffled:
+			var best := 0
+			var best_from := 0
+			var best_value := -INF
+			for tid in existing_ids:
+				if lost.has(tid):
+					continue
+				for pid in world.teams.get_by_id(tid).roster.player_ids:
+					var contract := world.active_contract_of(pid)
+					if pid in protected_map[tid] or contract == null or contract.end_season() < new_year:
+						continue   # protected, or a contract that is about to run out
+					var p: FcPlayer = world.players.get_by_id(pid)
+					var v := market.value(p, p.age_on(FcDate.new(new_year, 7, 1)))
+					if v > best_value or (v == best_value and pid < best):
+						best_value = v
+						best = pid
+						best_from = tid
+			if best == 0:
+				continue
+			world.teams.get_by_id(best_from).roster.remove(best)
+			team.roster.add(best)
+			world.active_contract_of(best).team_id = team.id
+			lost[best_from] = true
+			picks.append([picks.size() + 1, team.id, best, best_from])
+			if best_from == user_team_id:
+				world.add_news(FcDate.new(new_year, 6, 2), "signing", "%s was taken by %s in the expansion draft." % [world.player_name(best), world.team_display_name(team.id)], user_team_id)
+	return picks
+
+
+## Fills the empty roster spots of a new team with weaker young players on ordinary contracts.
+func _add_filler(gen: FcWorldGenerator, team: FcTeam, count: int, rng: FcRng, used_names: Dictionary, reference: FcDate, country: String, cap: FcCapRules) -> void:
+	for i in maxi(0, count):
+		var spec := FcPlayerSpec.new()
+		spec.age = rng.range_int(20, 27)
+		spec.position = FcPosition.Id.PG + (i % 5)
+		spec.level = clampf(rng.gaussian(40.0, 5.0), 25.0, 58.0)
+		spec.country_key = gen._names.pick_origin(rng, country, gen.config.home_country_share)
+		spec.reference_date = reference
+		spec.used_names = used_names
+		var player := gen._players.generate(rng, world.ids.next_id(FcWorld.KIND_PLAYER), spec)
+		world.players.add(player)
+		team.roster.add(player.id)
+		world.contracts.add(gen._player_contract(world, rng, player.id, team.id, spec.level, cap))
 
 
 ## The conference/division layout for a size, keeping the number of conferences if possible.
