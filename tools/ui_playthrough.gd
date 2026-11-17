@@ -6,7 +6,7 @@ extends SceneTree
 ##
 ## auto=1: the owner decides nothing: the general manager handles every area every season (contracts, draft,
 ## free agency, trades, injuries), the meeting is voted by the owner's own interests only, prices follow the suggestion.
-## Run:  godot_console --headless --path . --script res://tools/ui_playthrough.gd -- seasons=3 teams=30 seed=7 [reprice=1] [expand=1] [relocate=1] [auto=1]
+## Run:  godot_console --headless --path . --script res://tools/ui_playthrough.gd -- seasons=3 teams=30 seed=7 [reprice=1] [expand=1] [relocate=1] [auto=1] [philosophy=win_now|balanced|rebuild] [budget=frugal|normal|aggressive]
 ## It prints one line per stage and a list of problems; exit code 1 if any problem was found.
 
 var _app: FcApp
@@ -16,6 +16,8 @@ var _reprice := false
 var _expand := false
 var _relocate := false
 var _auto := false
+var _philosophy := "cycle"
+var _budget := "cycle"
 
 
 func _initialize() -> void:
@@ -34,6 +36,8 @@ func _initialize() -> void:
 			"expand": _expand = kv[1] == "1"
 			"relocate": _relocate = kv[1] == "1"
 			"auto": _auto = kv[1] == "1"
+			"philosophy": _philosophy = kv[1]
+			"budget": _budget = kv[1]
 	_t0 = Time.get_ticks_msec()
 	_app = FcApp.new()
 	_app.saves = FcSaveManager.new("user://playthrough_saves")
@@ -149,7 +153,7 @@ func _offseason(c: FcGameController, year: int) -> void:
 	var delegate := _auto or year % 2 == 1
 	for key in FcGameState.DELEGATION_KEYS:
 		c.set_delegation(key, delegate)
-	c.set_direction(["win_now", "balanced", "rebuild"][year % 3], ["frugal", "normal", "aggressive"][year % 3])
+	c.set_direction(["win_now", "balanced", "rebuild"][year % 3] if _philosophy == "cycle" else _philosophy, ["frugal", "normal", "aggressive"][year % 3] if _budget == "cycle" else _budget)
 	_app.on_next_season()   # the owners meeting opens first
 	if c.phase() == FcGameController.PHASE_MEETING:
 		var items := c.meeting_items()
