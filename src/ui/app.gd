@@ -48,6 +48,30 @@ var _message: Label
 
 func _ready() -> void:
 	setup()
+	if OS.get_cmdline_user_args().has("--selftest"):
+		call_deferred("_run_self_test")
+
+
+## `FullCourt.exe -- --selftest` (also headless): plays a small league through a season and an offseason using the
+## packaged data files, saves it, prints "SELFTEST OK" or the problem, and quits (exit code 0 or 1). It is how a
+## build is checked on the machine it was made for: a missing data file in the export shows up here.
+func _run_self_test() -> void:
+	var problem := ""
+	saves = FcSaveManager.new("user://selftest_saves")
+	if not on_create_league({"teams": 8, "conferences": 2, "divisions": 1, "free_agents": 10, "seed": "1", "name": "Selftest"}):
+		problem = "could not create a league (a data file may be missing from the build)"
+	else:
+		on_start_game(_pending_state.world.teams.ids()[0])
+		controller.sim_playoffs()
+		controller.start_next_season()
+		controller.sim_playoffs()
+		var errors := controller.state.validate()
+		if not errors.is_empty():
+			problem = "the league is invalid: %s" % errors[0]
+		elif not saves.save("selftest", controller.state, "Selftest").is_ok():
+			problem = "could not write a save file"
+	print("SELFTEST OK" if problem == "" else "SELFTEST FAILED: " + problem)
+	get_tree().quit(0 if problem == "" else 1)
 
 
 ## Builds the window frame and shows the main menu. Called automatically when the
