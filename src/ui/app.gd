@@ -454,7 +454,7 @@ func _team_name(team_id: int) -> String:
 ## Builds one tab's content. Public so tests can open every tab.
 func build_tab(tab_name: String) -> Control:
 	match tab_name:
-		"Overview": return _tab_overview()
+		"Overview": return _scrollable(_tab_overview())
 		"Standings": return _tab_standings()
 		"Schedule": return _tab_schedule()
 		"Roster": return _tab_roster()
@@ -929,6 +929,15 @@ func _tab_market() -> Control:
 	return box
 
 
+## Wraps a long page so it can be scrolled instead of running off the bottom of the window.
+func _scrollable(content: Control) -> Control:
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(content)
+	return scroll
+
+
 func _tab_overview() -> Control:
 	var box := VBoxContainer.new()
 	var s := controller.season()
@@ -943,7 +952,7 @@ func _tab_overview() -> Control:
 	var report := controller.owner_report()
 	if not report.is_empty():
 		box.add_child(FcUiTables.label("Owner report, %d-%02d season" % [report["year"], (report["year"] + 1) % 100], 18, true))
-		box.add_child(FcUiTables.label("Profit %s    Revenue %s    Franchise value %s (%s)    Cash %s    Debt %s" % [
+		box.add_child(FcUiTables.label("Profit %s    Revenue %s    Franchise value %s (%s this season)    Cash %s    Debt %s" % [
 			FcUiTables.money(report["profit"]), FcUiTables.money(report["revenue"]), FcUiTables.money(report["valuation"]),
 			FcUiTables.money(report["valuation_change"]), FcUiTables.money(report["cash"]), FcUiTables.money(report["debt"])]))
 		box.add_child(FcUiTables.label("Wins %d (expected about %d)    Owner approval: %d / 100" % [report["wins"], report["expected_wins"], report["approval"]]))
