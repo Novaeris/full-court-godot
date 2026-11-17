@@ -128,3 +128,16 @@ Tests that touch disk use `user://test_saves` and clean up in `after_each()`. In
 
 ## Mouse-click test (tools/click_test.ps1)
 `tools/click_test.gd` hosts the app in its own 1280x800 viewport and sends real mouse press and release events at the positions of the controls (so it needs no window and also works with one). It clicks through: New Game, a drop-down, Create League, a table row to choose a team, Start Game, Next Week, every tab, Borrow/Repay, Use suggestion, Start project, a roster row and the profile popup, Release (and Release with nothing selected shows a hint), a free agent row and Sign, a trade list and Check the offer, To End of Regular Season, Play All Playoffs, Begin Offseason (with the warning), a draft row and a workout, Draft selected prospect, Finish Offseason; after each click it checks that the game state really changed. 66 clicks in the latest version (it also opens the owners meeting, votes, and the Finances pages), 0 problems; the first version, 54 clicks, was repeated 3 times in both headless and windowed modes. Limits: the entries inside a drop-down list are chosen directly after a real click on the drop-down (the list is a separate pop-up window); typing into text boxes is not simulated; layout and looks are still checked by screenshots (`tools/screenshot.ps1`).
+
+## Added 2026-11-17
+| Area | Test file |
+|---|---|
+| Long-run economy: seeded growth, the cap following profit and never falling, AI projects and dividends, the new arena, the owner's dividend, re-signings agreed before the minimum rose | `test_economy.gd` |
+| Staff chemistry parts, hire preview, development effect, GM negotiation in contracts and trades | `test_staff_chemistry.gd` |
+| Season tickets, promotion nights, saving of the plan | `test_ticket_plan.gd` |
+| AI trade wariness, meeting rapport, neighbours losing fans, saving of relations | `test_ai_reactions.gd` |
+| The owner's choice of city and team name when relocating | `test_relocation.gd` |
+| The first-time tutorial, preferences, text size | `test_tutorial.gd` |
+| Overtime rate | `test_simulation.gd` |
+
+Long checks (not part of the unit suite): `./tools/economy_check.ps1 seasons=50 teams=12|30|64` (exit code 1 if profit, cash or payroll-to-cap runs away), `./tools/ui_playthrough.ps1`, `./tools/click_test.ps1`.

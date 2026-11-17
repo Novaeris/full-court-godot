@@ -3,6 +3,22 @@
 Newest first. Written so someone returning after a break can see where things stand.
 The repository was published to GitHub on 2026-11-17 at the founder's request (public: https://github.com/Novaeris/full-court-godot, remote `origin`, branch `main`). Later commits stay local until the founder asks for a push.
 
+## 2026-11-17: the "finish the list" session
+
+The founder asked for the whole remaining list (economy, Owner features, polish, decisions) to be finished, with a commit and push after each part. What was done, in order (each is its own commit on `main`):
+1. **Long-run economy** (`FcEconomy`): inflation, a cap that follows league profit, new-arena project, AI building projects, dividends (also an owner button). `tools/economy_check.ps1` plays AI-only leagues for 50 seasons: 12, 30 and 64 teams all pass (cap $140M to about $0.8-0.9B, margins 4-10%, cash under 3x the cap).
+2. **Relocation**: the owner chooses the city and renames the team (D-034).
+3. **Overtime**: 2.3% to about 4.0% of games (real: 5-6%).
+4. **Staff chemistry** and the GM's negotiation skill in deals.
+5. **Season tickets and promotion nights.**
+6. **AI reactions** (trade wariness, meeting rapport, neighbours lose fans when a team moves in).
+7. A real bug found by the UI playthrough and fixed with a regression test: contracts agreed before the league minimum salary rose were below the new minimum.
+8. **First-time tutorial**, player settings, a central theme and text sizes.
+9. **Windows export** (`export_presets.cfg`, `tools/export_windows.ps1`, `docs/RELEASE.md`).
+10. **Decisions and legal**: `docs/LEGAL_CHECKLIST.md`, `docs/LOOK_AND_FEEL.md`, a review of `docs/MILESTONE_PLAN.md`, D-034 and D-035.
+Tests: 581 pass (was 542). The click test (67 clicks) and the UI playthrough (4 seasons, 12 teams, relocate and expand on) report 0 problems.
+Still needing the founder: look-and-feel references, a lawyer for the checklist, and a go-ahead on the plan.
+
 ## 2026-11-16 hand-off: where Owner Mode stands
 
 **542 automated tests pass** (`./tools/run_tests.ps1`), plus two long checks that drive the real UI:

@@ -22,6 +22,8 @@ The screens are plain tables and buttons, built to test the game. `docs/PROGRESS
 | `./tools/play_seasons.ps1 seasons=6` | Plays several seasons with offseasons and a health table |
 | `./tools/simulate_games.ps1 [games=1000] [leaders]` | Checks game statistics against real-league ranges |
 | `./tools/finances.ps1` | Every team's revenue, expenses, profit and value |
+| `./tools/economy_check.ps1 seasons=50 teams=12` | Plays an AI-only league for decades and checks profit, cash and the cap stay bounded |
+| `./tools/export_windows.ps1` | Builds the Windows game (`builds/windows/FullCourt.exe`); see `docs/RELEASE.md` |
 | `./tools/owner_playthrough.ps1 strategy=builder` | Plays seasons as an owner with a scripted strategy and prints the books |
 | `./tools/ui_playthrough.ps1 seasons=3` | Plays Owner Mode through the real screens and checks nothing breaks |
 | `./tools/click_test.ps1` | Clicks through the game with simulated mouse clicks |

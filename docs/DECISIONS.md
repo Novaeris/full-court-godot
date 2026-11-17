@@ -192,3 +192,13 @@ Built on the founder's instruction to continue; the following product choices we
 - Money grows with inflation (about 3% a year) and the salary cap follows league profit toward a 6% average margin, instead of staying fixed. The cap never falls in dollars.
 - Surplus cash is spent on building projects (AI automatically, human by choice) and paid out as dividends; a new-arena project exists.
 - Alternatives rejected: a fixed profit cap (feels artificial), taxing cash directly (confusing), growing revenue only (does not fix margin).
+
+## D-034 Relocation: the owner chooses the city and the name (2026-11-17, founder)
+- When the owner moves their franchise, **they choose the destination city and may rename the team** (the AI still picks its own destination and keeps its name). The proposal still needs two thirds of the owners and costs influence points; the mover pays the relocation fee plus half of a new arena; clubs already in the destination's region lose fans.
+- Built: `FcRelocation.destinations / plan(city) / execute(city, nickname)`, `FcGameController.relocation_options / propose_relocation`, a chooser on the Meeting tab.
+
+## D-035 Long-run economy details and AI reactions (2026-11-17, Claude's recommended choices, founder asked for these to be completed)
+- Inflation about 3% a year with seeded variation; the cap follows league profit toward a 6% average margin and never falls; surplus cash goes into building projects (AI automatically) and dividends; a new-arena project exists.
+- AI clubs remember trades (wariness) and meeting votes (rapport); a team moving into a region costs its neighbours fans.
+- Season tickets and promotion nights are owner levers (default off). Staff chemistry changes player development by up to about +/-6 coaching points. The general manager's negotiation moves salaries by up to 5% and trade profit by up to 8 points.
+- Overtime: trailing teams play for the last shot (about 4.0% overtime games).
