@@ -31,6 +31,8 @@ var _trade_partner: int = 0
 var _confirm_next_season: bool = false
 ## The proposal that was selected on the Meeting tab (kept when the screen is rebuilt after lobbying).
 var _last_meeting_item: int = 0
+## The page of the Finances tab that was open (kept when the screen is rebuilt).
+var _last_finance_page: int = 0
 var _last_tab := 0
 var _form := {}
 var _message: Label
@@ -1185,145 +1187,27 @@ func _tab_roster() -> Control:
 	return box
 
 
+## The Finances tab is split into four pages (the owner's levers are many): a summary with the
+## books and the league comparison, prices and the shop, sponsors and loans, arena and facilities.
 func _tab_finances() -> Control:
-	var box := VBoxContainer.new()
 	var w := controller.state.world
 	var b := controller.business()
 	var cap := w.rules_of_league(controller.league_id).cap
-	box.add_child(FcUiTables.label("Your franchise", 18, true))
-	box.add_child(FcUiTables.label("Payroll %s of a %s cap (hard limit %s). Cash %s. Debt %s. Value %s." % [
+	var summary := VBoxContainer.new()
+	summary.add_child(FcUiTables.label("Your franchise", 18, true))
+	summary.add_child(FcUiTables.label("Payroll %s of a %s cap (hard limit %s). Cash %s. Debt %s. Value %s." % [
 		FcUiTables.money(w.payroll_of_team(b.id, controller.state.current_season)), FcUiTables.money(cap.salary_cap),
 		FcUiTables.money(cap.effective_limit()), FcUiTables.money(b.cash), FcUiTables.money(b.debt), FcUiTables.money(b.valuation)]))
-	box.add_child(FcUiTables.label("Fan interest %d, brand %d, arena quality %d." % [b.fan_interest, b.brand, b.facilities_level]))
-	var finance_engine := FcFinanceEngine.new(w)
+	summary.add_child(FcUiTables.label("Fan interest %d, brand %d, arena quality %d." % [b.fan_interest, b.brand, b.facilities_level]))
 	var executive := w.staff_in_role(b.id, FcStaffRole.Id.BUSINESS_EXECUTIVE)
+	var executive_label: Label
 	if executive == null:
-		box.add_child(FcUiTables.label("No business executive: sponsorships, marketing and overhead all suffer. Hire one on the Staff tab."))
+		executive_label = FcUiTables.label("No business executive: sponsorships, marketing and overhead all suffer. Hire one on the Staff tab.")
 	else:
-		box.add_child(FcUiTables.label("Business executive %s: marketing %d (sponsorships and brand), financial acumen %d (overhead), community relations %d (fan interest)." % [executive.identity.full_name(), executive.skills.get_value("marketing"), executive.skills.get_value("financial_acumen"), executive.skills.get_value("community_relations")]))
-	if controller.state.mode == FcGameState.MODE_OWNER:
-		var row := HBoxContainer.new()
-		row.add_child(FcUiTables.label("Ticket price $"))
-		var price := SpinBox.new()
-		price.min_value = 5
-		price.max_value = 2000
-		price.value = b.ticket_price
-		row.add_child(price)
-		row.add_child(FcUiTables.label("  Marketing $M"))
-		var marketing := SpinBox.new()
-		marketing.min_value = 0
-		marketing.max_value = 100
-		marketing.step = 0.5
-		marketing.value = b.marketing_budget / 1e6
-		row.add_child(marketing)
-		row.add_child(FcUiTables.button("Apply", func():
-			var ok := controller.set_ticket_price(int(price.value)) and controller.set_marketing_budget(roundi(marketing.value * 1e6))
-			_say("Updated." if ok else "Those values are not allowed.")))
-		row.add_child(FcUiTables.button("Invest in arena (+10)", func():
-			_say("Arena improved." if controller.invest_in_facilities(10) else "Not enough cash for that.")
-			show_dashboard()))
-		row.add_child(FcUiTables.label("   Suggested $%d" % controller.suggested_ticket_price()))
-		row.add_child(FcUiTables.button("Use suggestion", func():
-			price.value = controller.suggested_ticket_price()
-			var ok2 := controller.set_ticket_price(int(price.value))
-			_say("Ticket price set to the suggestion." if ok2 else "That price is not allowed.")))
-		box.add_child(row)
-		box.add_child(FcUiTables.label("  The suggestion is the price that just fills your arena today. Fan interest and brand change as you win or lose, so check it each season; AI teams reprice every year."))
-		var loans := HBoxContainer.new()
-		loans.add_child(FcUiTables.label("Sponsorship deal:"))
-		var plan := OptionButton.new()
-		for name in FcTeamBusiness.SPONSOR_PLANS:
-			plan.add_item(name)
-		plan.selected = b.sponsor_plan
-		plan.item_selected.connect(func(i):
-			controller.set_sponsor_plan(i)
-			_say("Sponsorship: %s. Steady pays less but guaranteed; Performance pays more only if you win." % FcTeamBusiness.SPONSOR_PLANS[i]))
-		loans.add_child(plan)
-		loans.add_child(FcUiTables.label("   Loan $M"))
-		var amount := SpinBox.new()
-		amount.min_value = 1
-		amount.max_value = 500
-		amount.value = 10
-		loans.add_child(amount)
-		loans.add_child(FcUiTables.button("Borrow", func():
-			var r := controller.borrow(roundi(amount.value * 1e6))
-			_say(r["reason"])
-			if r["ok"]:
-				show_dashboard()))
-		loans.add_child(FcUiTables.button("Repay", func():
-			var r := controller.repay_debt(roundi(amount.value * 1e6))
-			_say(r["reason"])
-			if r["ok"]:
-				show_dashboard()))
-		loans.add_child(FcUiTables.label("   Borrowing limit %s" % FcUiTables.money(controller.loan_limit())))
-		box.add_child(loans)
-		var sponsors := HBoxContainer.new()
-		sponsors.add_child(FcUiTables.label("Sponsors:"))
-		var deal_texts: Array[String] = []
-		for deal in b.sponsor_deals:
-			deal_texts.append("%s %s/yr%s, %d yr left" % [deal["sponsor"], FcUiTables.money(deal["amount"]), " + %s per playoff round" % FcUiTables.money(deal["bonus"]) if deal["bonus"] > 0 else "", deal["years_left"]])
-		sponsors.add_child(FcUiTables.label(", ".join(deal_texts) if not deal_texts.is_empty() else "none yet (open-market income)"))
-		var offers := controller.sponsor_offers()
-		if not offers.is_empty():
-			var offer_pick := OptionButton.new()
-			for o in offers:
-				offer_pick.add_item("%s: %s/yr x %d%s" % [o["sponsor"], FcUiTables.money(o["amount"]), o["years"], " + %s per playoff round" % FcUiTables.money(o["bonus"]) if o["bonus"] > 0 else ""])
-			sponsors.add_child(offer_pick)
-			sponsors.add_child(FcUiTables.button("Sign sponsor deal", func():
-				var r5 := controller.accept_sponsor(offers[offer_pick.selected]["sponsor"])
-				_say(r5["reason"])
-				if r5["ok"]:
-					show_dashboard()))
-		box.add_child(sponsors)
-		var shop := HBoxContainer.new()
-		shop.add_child(FcUiTables.label("Concession prices %"))
-		var concessions := SpinBox.new()
-		concessions.min_value = 70
-		concessions.max_value = 150
-		concessions.step = 5
-		concessions.value = b.concession_price_pct
-		shop.add_child(concessions)
-		shop.add_child(FcUiTables.label("   Playoff ticket price %"))
-		var playoff_price := SpinBox.new()
-		playoff_price.min_value = 100
-		playoff_price.max_value = 300
-		playoff_price.step = 10
-		playoff_price.value = b.playoff_premium_pct
-		shop.add_child(playoff_price)
-		shop.add_child(FcUiTables.label("   Merchandise range"))
-		var merch := OptionButton.new()
-		for name in FcTeamBusiness.MERCH_TIERS:
-			merch.add_item(name)
-		merch.selected = b.merch_tier
-		shop.add_child(merch)
-		shop.add_child(FcUiTables.button("Apply shop settings", func():
-			controller.set_concession_price(int(concessions.value))
-			controller.set_playoff_premium(int(playoff_price.value))
-			controller.set_merch_tier(merch.selected)
-			_say("Shop settings updated. Higher concession prices earn more per fan but cost fan interest; a premium range sells more but costs more stock.")))
-		box.add_child(shop)
-		var build := HBoxContainer.new()
-		build.add_child(FcUiTables.label("Arena project:"))
-		var options := controller.arena_project_options()
-		var project_pick := OptionButton.new()
-		for o in options:
-			project_pick.add_item("%s (%s, %d season%s)%s" % [o["name"], FcUiTables.money(o["cost"]), o["seasons"], "" if o["seasons"] == 1 else "s", " - under way" if o["running"] else ""])
-		build.add_child(project_pick)
-		build.add_child(FcUiTables.button("Start project", func():
-			var r := controller.start_arena_project(options[project_pick.selected]["key"])
-			_say(r["reason"])
-			if r["ok"]:
-				show_dashboard()))
-		box.add_child(build)
-		var detail: Array[String] = []
-		for o in options:
-			detail.append("%s: %s" % [o["name"], o["description"]])
-		var detail_label := FcUiTables.label("  " + "   |   ".join(detail))
-		detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		detail_label.custom_minimum_size = Vector2(200, 0)
-		box.add_child(detail_label)
-		box.add_child(FcUiTables.label("  Built so far: arena suites level %d, practice facility level %d, medical center level %d." % [b.suites_level, b.practice_level, b.medical_level]))
-	var fin := FcFinanceEngine.new(w)
+		executive_label = FcUiTables.label("Business executive %s: marketing %d (sponsorships and brand), financial acumen %d (overhead), community relations %d (fan interest)." % [executive.identity.full_name(), executive.skills.get_value("marketing"), executive.skills.get_value("financial_acumen"), executive.skills.get_value("community_relations")])
+	executive_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	executive_label.custom_minimum_size = Vector2(200, 0)
+	summary.add_child(executive_label)
 	var rows: Array = []
 	var years: Array = []
 	for r in w.finances.all():
@@ -1344,15 +1228,168 @@ func _tab_finances() -> Control:
 	if not league_books.is_empty():
 		var compare := VBoxContainer.new()
 		compare.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		compare.size_flags_stretch_ratio = 1.0
 		compare.add_child(FcUiTables.label("How you compare (last season, * = you)", 16, true))
 		var compare_rows: Array = []
 		for entry in league_books:
 			compare_rows.append(["%s%s" % ["* " if entry["team"] == b.id else "", entry["name"]], entry["wins"], FcUiTables.money(entry["revenue"]), FcUiTables.money(entry["profit"]), FcUiTables.money(entry["payroll"]), "$%d" % entry["price"], entry["attendance"]])
 		compare.add_child(FcUiTables.table(["Team", "Wins", "Revenue", "Profit", "Payroll", "Ticket", "Fans"], compare_rows, [150, 40, 72, 72, 72, 52, 48]))
 		books.add_child(compare)
-	box.add_child(books)
-	return box
+	summary.add_child(books)
+	if controller.state.mode != FcGameState.MODE_OWNER:
+		return summary
+
+	# --- prices and the shop ---
+	var pricing := VBoxContainer.new()
+	pricing.add_child(FcUiTables.label("Tickets", 18, true))
+	var row := HBoxContainer.new()
+	row.add_child(FcUiTables.label("Ticket price $"))
+	var price := SpinBox.new()
+	price.min_value = 5
+	price.max_value = 2000
+	price.value = b.ticket_price
+	row.add_child(price)
+	row.add_child(FcUiTables.label("  Marketing $M"))
+	var marketing := SpinBox.new()
+	marketing.min_value = 0
+	marketing.max_value = 100
+	marketing.step = 0.5
+	marketing.value = b.marketing_budget / 1e6
+	row.add_child(marketing)
+	row.add_child(FcUiTables.button("Apply", func():
+		var ok := controller.set_ticket_price(int(price.value)) and controller.set_marketing_budget(roundi(marketing.value * 1e6))
+		_say("Updated." if ok else "Those values are not allowed.")))
+	row.add_child(FcUiTables.label("   Suggested $%d" % controller.suggested_ticket_price()))
+	row.add_child(FcUiTables.button("Use suggestion", func():
+		price.value = controller.suggested_ticket_price()
+		var ok2 := controller.set_ticket_price(int(price.value))
+		_say("Ticket price set to the suggestion." if ok2 else "That price is not allowed.")))
+	pricing.add_child(row)
+	var hint := FcUiTables.label("The suggestion is the price that just fills your arena today. Fan interest and brand change as you win or lose, so check it each season; AI teams reprice every year.")
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint.custom_minimum_size = Vector2(200, 0)
+	pricing.add_child(hint)
+	pricing.add_child(FcUiTables.label("Shop and concessions", 18, true))
+	var shop := HBoxContainer.new()
+	shop.add_child(FcUiTables.label("Concession prices %"))
+	var concessions := SpinBox.new()
+	concessions.min_value = 70
+	concessions.max_value = 150
+	concessions.step = 5
+	concessions.value = b.concession_price_pct
+	shop.add_child(concessions)
+	shop.add_child(FcUiTables.label("   Playoff ticket price %"))
+	var playoff_price := SpinBox.new()
+	playoff_price.min_value = 100
+	playoff_price.max_value = 300
+	playoff_price.step = 10
+	playoff_price.value = b.playoff_premium_pct
+	shop.add_child(playoff_price)
+	shop.add_child(FcUiTables.label("   Merchandise range"))
+	var merch := OptionButton.new()
+	for name in FcTeamBusiness.MERCH_TIERS:
+		merch.add_item(name)
+	merch.selected = b.merch_tier
+	shop.add_child(merch)
+	shop.add_child(FcUiTables.button("Apply shop settings", func():
+		controller.set_concession_price(int(concessions.value))
+		controller.set_playoff_premium(int(playoff_price.value))
+		controller.set_merch_tier(merch.selected)
+		_say("Shop settings updated. Higher concession prices earn more per fan but cost fan interest; a premium range sells more but costs more stock.")))
+	pricing.add_child(shop)
+
+	# --- sponsors and loans ---
+	var money := VBoxContainer.new()
+	money.add_child(FcUiTables.label("Sponsors", 18, true))
+	var sponsors := HBoxContainer.new()
+	sponsors.add_child(FcUiTables.label("Signed:"))
+	var deal_texts: Array[String] = []
+	for deal in b.sponsor_deals:
+		deal_texts.append("%s %s/yr%s, %d yr left" % [deal["sponsor"], FcUiTables.money(deal["amount"]), " + %s per playoff round" % FcUiTables.money(deal["bonus"]) if deal["bonus"] > 0 else "", deal["years_left"]])
+	sponsors.add_child(FcUiTables.label(", ".join(deal_texts) if not deal_texts.is_empty() else "none yet (open-market income)"))
+	money.add_child(sponsors)
+	var offers := controller.sponsor_offers()
+	if not offers.is_empty():
+		var offer_row := HBoxContainer.new()
+		offer_row.add_child(FcUiTables.label("Offers:"))
+		var offer_pick := OptionButton.new()
+		for o in offers:
+			offer_pick.add_item("%s: %s/yr x %d%s" % [o["sponsor"], FcUiTables.money(o["amount"]), o["years"], " + %s per playoff round" % FcUiTables.money(o["bonus"]) if o["bonus"] > 0 else ""])
+		offer_row.add_child(offer_pick)
+		offer_row.add_child(FcUiTables.button("Sign sponsor deal", func():
+			var r5 := controller.accept_sponsor(offers[offer_pick.selected]["sponsor"])
+			_say(r5["reason"])
+			if r5["ok"]:
+				show_dashboard()))
+		money.add_child(offer_row)
+	var style_row := HBoxContainer.new()
+	style_row.add_child(FcUiTables.label("Style of the rest of your sponsorship income:"))
+	var plan := OptionButton.new()
+	for name in FcTeamBusiness.SPONSOR_PLANS:
+		plan.add_item(name)
+	plan.selected = b.sponsor_plan
+	plan.item_selected.connect(func(i):
+		controller.set_sponsor_plan(i)
+		_say("Sponsorship: %s. Steady pays less but guaranteed; Performance pays more only if you win." % FcTeamBusiness.SPONSOR_PLANS[i]))
+	style_row.add_child(plan)
+	money.add_child(style_row)
+	money.add_child(FcUiTables.label("Loans", 18, true))
+	var loans := HBoxContainer.new()
+	loans.add_child(FcUiTables.label("Loan $M"))
+	var amount := SpinBox.new()
+	amount.min_value = 1
+	amount.max_value = 500
+	amount.value = 10
+	loans.add_child(amount)
+	loans.add_child(FcUiTables.button("Borrow", func():
+		var r := controller.borrow(roundi(amount.value * 1e6))
+		_say(r["reason"])
+		if r["ok"]:
+			show_dashboard()))
+	loans.add_child(FcUiTables.button("Repay", func():
+		var r := controller.repay_debt(roundi(amount.value * 1e6))
+		_say(r["reason"])
+		if r["ok"]:
+			show_dashboard()))
+	loans.add_child(FcUiTables.label("   Borrowing limit %s   Debt %s (6%% interest a season)" % [FcUiTables.money(controller.loan_limit()), FcUiTables.money(b.debt)]))
+	money.add_child(loans)
+
+	# --- arena and facilities ---
+	var arena_page := VBoxContainer.new()
+	arena_page.add_child(FcUiTables.label("Arena and facilities", 18, true))
+	var quality := HBoxContainer.new()
+	quality.add_child(FcUiTables.label("Arena quality %d (it wears down a little every season)." % b.facilities_level))
+	quality.add_child(FcUiTables.button("Invest in arena (+10)", func():
+		_say("Arena improved." if controller.invest_in_facilities(10) else "Not enough cash for that.")
+		show_dashboard()))
+	arena_page.add_child(quality)
+	var build := HBoxContainer.new()
+	build.add_child(FcUiTables.label("Building project:"))
+	var options := controller.arena_project_options()
+	var project_pick := OptionButton.new()
+	for o in options:
+		project_pick.add_item("%s (%s, %d season%s)%s" % [o["name"], FcUiTables.money(o["cost"]), o["seasons"], "" if o["seasons"] == 1 else "s", " - under way" if o["running"] else ""])
+	build.add_child(project_pick)
+	build.add_child(FcUiTables.button("Start project", func():
+		var r := controller.start_arena_project(options[project_pick.selected]["key"])
+		_say(r["reason"])
+		if r["ok"]:
+			show_dashboard()))
+	arena_page.add_child(build)
+	arena_page.add_child(FcUiTables.label("Built so far: arena suites level %d, practice facility level %d, medical center level %d." % [b.suites_level, b.practice_level, b.medical_level]))
+	for o in options:
+		var line := FcUiTables.label("%s: %s" % [o["name"], o["description"]])
+		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		line.custom_minimum_size = Vector2(200, 0)
+		arena_page.add_child(line)
+
+	var pages := TabContainer.new()
+	pages.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	for entry in [["Summary", summary], ["Prices and shop", pricing], ["Sponsors and loans", money], ["Arena and facilities", arena_page]]:
+		entry[1].name = entry[0]
+		pages.add_child(entry[1])
+	pages.current_tab = clampi(_last_finance_page, 0, pages.get_tab_count() - 1)
+	pages.tab_changed.connect(func(i): _last_finance_page = i)
+	return pages
 
 
 func _tab_staff() -> Control:
