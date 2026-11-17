@@ -16,6 +16,8 @@ const BRAND_KEPT := 0.85
 ## The chance in a year that a struggling AI team asks to move (when one qualifies).
 const REQUEST_CHANCE := 0.35
 const MAX_NICKNAME_LENGTH := 24
+## Clubs in the region a team moves into lose this much fan interest (the newcomer takes some of their fans).
+const NEIGHBOUR_FAN_LOSS := 3
 ## The part of a new arena's cost the moving club pays itself (the city pays the rest), as a share of the
 ## "new_arena" project price (data/simulation/arena_projects.json).
 const ARENA_COST_SHARE := 0.5
@@ -192,6 +194,15 @@ func execute(team_id: int, year: int, city_name: String = "", new_nickname: Stri
 	var expansion := FcExpansion.new(world, league_id)
 	expansion.redraw(league.all_team_ids(), expansion._structure_for(league.team_count(), league.conferences.size()))
 	var fee_paid: int = fee_for(team_id)["fee"]
+	# the clubs already in the new city's region lose a part of their fans to the newcomer
+	for tid in league.all_team_ids():
+		if tid == team_id:
+			continue
+		var neighbour: FcTeamBusiness = world.businesses.get_by_id(tid)
+		if neighbour != null and world.cities.get_by_id(world.teams.get_by_id(tid).city_id).region == city.region:
+			neighbour.fan_interest = clampi(neighbour.fan_interest - NEIGHBOUR_FAN_LOSS, 5, 100)
+			neighbour.brand = clampi(neighbour.brand - 1, 5, 100)
+			world.add_news(FcDate.new(year + 1, 6, 1), "staff", "The %s are unhappy: the %s now share their region." % [world.teams.get_by_id(tid).identity.nickname, team.identity.nickname], tid)
 	var rename_note := "" if old_nickname == team.identity.nickname else " and become the %s" % team.identity.nickname
 	world.add_news(FcDate.new(year + 1, 6, 1), "staff", "The %s move from %s to %s%s. The other owners share a relocation fee of $%.1fM." % [old_nickname, old_city.name, city.name, rename_note, fee_paid / 1e6], team_id)
 	if not rules.validate(league).is_empty():

@@ -12,6 +12,8 @@ extends RefCounted
 const AI_PROFIT := 0.10
 ## The owner's general manager negotiates: a skill of 100 lowers the AI's required profit by this much, a skill of 0 raises it.
 const NEGOTIATION_EFFECT := 0.08
+## Each point of the AI club's wariness (it remembers the owner's recent trades) raises the profit it demands by this much.
+const WARINESS_COST := 0.02
 ## How many drafts ahead picks can be traded.
 const PICK_YEARS := 3
 
@@ -26,7 +28,7 @@ func _init(game_world: FcWorld) -> void:
 
 ## Result: {"accepted": bool, "reason": String}. Nothing changes unless accepted
 ## and `execute` is true.
-func propose(league_id: int, year: int, user_team_id: int, ai_team_id: int, give_ids: Array, get_ids: Array, ai_contending: bool, execute: bool = true, give_picks: Array = [], get_picks: Array = [], first_pick_year: int = 0, negotiation: float = 50.0) -> Dictionary:
+func propose(league_id: int, year: int, user_team_id: int, ai_team_id: int, give_ids: Array, get_ids: Array, ai_contending: bool, execute: bool = true, give_picks: Array = [], get_picks: Array = [], first_pick_year: int = 0, negotiation: float = 50.0, wariness: int = 0) -> Dictionary:
 	var rules := world.rules_of_league(league_id)
 	var user_team: FcTeam = world.teams.get_by_id(user_team_id)
 	var ai_team: FcTeam = world.teams.get_by_id(ai_team_id)
@@ -74,8 +76,9 @@ func propose(league_id: int, year: int, user_team_id: int, ai_team_id: int, give
 	var strengths := _strength_fractions(league)
 	var received := _package_value(give_ids, year, ai_contending) + _picks_value(give_picks, first_pick_year, strengths, ai_contending)
 	var given := _package_value(get_ids, year, ai_contending) + _picks_value(get_picks, first_pick_year, strengths, ai_contending)
-	if received < given * (1.0 + AI_PROFIT - NEGOTIATION_EFFECT * (negotiation - 50.0) / 50.0) + 1.0:
-		return _no("%s turned the offer down: it does not think it gets enough back." % world.team_display_name(ai_team_id))
+	if received < given * (1.0 + AI_PROFIT - NEGOTIATION_EFFECT * (negotiation - 50.0) / 50.0 + WARINESS_COST * wariness) + 1.0:
+		var wary_note := " It remembers your recent trades and drives a harder bargain." if wariness > 0 else ""
+		return _no("%s turned the offer down: it does not think it gets enough back.%s" % [world.team_display_name(ai_team_id), wary_note])
 	if execute:
 		# everybody leaves first, then everybody arrives: a full roster only has room after its outgoing players go
 		for pid in give_ids:

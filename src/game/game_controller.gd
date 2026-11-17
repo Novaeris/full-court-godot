@@ -135,6 +135,8 @@ func start_next_season() -> Dictionary:
 	report.merge(offseason.run_second_half(league_id, finished, state.rng))
 	state.offseason_stage = 0
 	state.agreed_staff_terms.clear()
+	for tid in state.ai_relations:   # the clubs forget a little of the past trades each season
+		state.ai_relations[tid]["wary"] = maxi(0, int(state.ai_relations[tid]["wary"]) - 1)
 	state.current_season = finished.year + 1
 	state.current_date = FcDate.new(state.current_season, 7, 1)
 	_prepare_engine()
@@ -309,7 +311,57 @@ func propose_trade(ai_team_id: int, give_ids: Array, get_ids: Array, preview: bo
 	if state.offseason_stage == 2:
 		return {"accepted": false, "reason": "Finish the draft first."}
 	var desk := FcTradeDesk.new(state.world)
-	return desk.propose(league_id, contract_year(), state.user_team_id, ai_team_id, give_ids, get_ids, is_contending(ai_team_id), not preview, give_picks, get_picks, first_tradable_pick_year(), gm_negotiation())
+	var result := desk.propose(league_id, contract_year(), state.user_team_id, ai_team_id, give_ids, get_ids, is_contending(ai_team_id), not preview, give_picks, get_picks, first_tradable_pick_year(), gm_negotiation(), ai_wariness(ai_team_id))
+	if result["accepted"] and not preview:
+		_relation(ai_team_id)["wary"] = mini(6, ai_wariness(ai_team_id) + 2)   # that club remembers the deal
+	return result
+
+
+## How wary an AI club is of the owner's offers (0-6, see FcGameState.ai_relations).
+func ai_wariness(team_id: int) -> int:
+	return int(state.ai_relations.get(team_id, {}).get("wary", 0))
+
+
+## An AI owner's rapport with the player (-6 to 6), built at the owners' meetings.
+func ai_rapport(team_id: int) -> int:
+	return int(state.ai_relations.get(team_id, {}).get("rapport", 0))
+
+
+func _relation(team_id: int) -> Dictionary:
+	if not state.ai_relations.has(team_id):
+		state.ai_relations[team_id] = {"wary": 0, "rapport": 0}
+	return state.ai_relations[team_id]
+
+
+func _rapport_map() -> Dictionary:
+	var out := {}
+	for tid in state.ai_relations:
+		out[tid] = int(state.ai_relations[tid].get("rapport", 0))
+	return out
+
+
+## After a meeting: old feelings fade by one point; owners who voted the way the player stood (or the player's
+## own proposal) like the player more; owners who voted against, and owners the player had to lobby, like them less.
+func _update_rapport(items: Array) -> void:
+	for tid in state.ai_relations:
+		var r: Dictionary = state.ai_relations[tid]
+		r["rapport"] = int(r["rapport"]) - signi(int(r["rapport"]))
+	for entry in items:
+		var item: Dictionary = entry["item"]
+		var stand = entry["user_vote"]
+		if stand == null and item.get("proposed", false):
+			stand = true
+		if stand == null:
+			continue
+		var lobbied: Array = state.meeting.get("lobbied", {}).get(item["id"], [])
+		for v in entry["tally"]["votes"]:
+			var r := _relation(v["team"])
+			if lobbied.has(v["team"]):
+				r["rapport"] = clampi(int(r["rapport"]) - 1, -6, 6)
+			elif v["yes"] == stand:
+				r["rapport"] = clampi(int(r["rapport"]) + 1, -6, 6)
+			else:
+				r["rapport"] = clampi(int(r["rapport"]) - 1, -6, 6)
 
 
 # --- the owner's career: reputation and changing jobs -----------------------------------------
@@ -450,7 +502,7 @@ func meeting_items() -> Array:
 		return out
 	for item in state.meeting["items"]:
 		var vote = state.meeting["votes"].get(item["id"], null)
-		out.append({"item": item, "tally": _meeting().tally(item, season(), state.current_season, state.user_team_id, vote, state.meeting["lobbied"].get(item["id"], [])), "user_vote": vote})
+		out.append({"item": item, "tally": _meeting().tally(item, season(), state.current_season, state.user_team_id, vote, state.meeting["lobbied"].get(item["id"], []), _rapport_map()), "user_vote": vote})
 	return out
 
 
@@ -568,7 +620,9 @@ func close_meeting() -> Array:
 		return results
 	var meeting := _meeting()
 	var expansion_approved := false
-	for entry in meeting_items():
+	var entries := meeting_items()
+	_update_rapport(entries)
+	for entry in entries:
 		var item: Dictionary = entry["item"]
 		var tally: Dictionary = entry["tally"]
 		var enacted := false

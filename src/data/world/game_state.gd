@@ -55,6 +55,11 @@ var relocation_log: Array = []
 var expansion: Dictionary = {}
 ## The last expansion draft: [[year, pick number, new team id, player id, team he came from], ...].
 var expansion_log: Array = []
+## How AI clubs feel about the owner (Owner Mode): {team id: {"wary": 0-6, "rapport": -6..6}}. "wary" rises
+## by 2 with every trade the owner makes with that club and makes it ask for more next time (it fades by 1 each
+## season); "rapport" moves with the owners' meetings (owners who voted with the owner like them more, those
+## who were lobbied or voted against like them less) and nudges those owners' later votes.
+var ai_relations: Dictionary = {}
 ## What past meetings decided: [[year, title, passed (0/1), yes, no], ...].
 var meeting_log: Array = []
 ## The owner's career (Owner Mode): "reputation" 0-100 (starts at START_REPUTATION), "history"
@@ -112,6 +117,7 @@ func to_dict() -> Dictionary:
 		"expansion": expansion.duplicate(true),
 		"expansion_log": expansion_log.duplicate(true),
 		"meeting_log": meeting_log.duplicate(true),
+		"ai_relations": ai_relations.duplicate(true),
 		"owner_career": owner_career.duplicate(true),
 		"draft_state": draft_state.duplicate(true),
 		"rng": rng.get_state(),
@@ -173,6 +179,11 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 		for pid in raw_expansion.get("protected", []):
 			kept.append(int(pid))
 		s.expansion = {"year": int(raw_expansion.get("year", 0)), "protected": kept}
+	var raw_relations = data.get("ai_relations", {})
+	if raw_relations is Dictionary:
+		for key in raw_relations:
+			var entry: Dictionary = raw_relations[key]
+			s.ai_relations[int(key)] = {"wary": clampi(int(entry.get("wary", 0)), 0, 6), "rapport": clampi(int(entry.get("rapport", 0)), -6, 6)}
 	for row in data.get("meeting_log", []):
 		s.meeting_log.append([int(row[0]), str(row[1]), int(row[2]), int(row[3]), int(row[4])])
 	var raw_meeting = data.get("meeting", {})

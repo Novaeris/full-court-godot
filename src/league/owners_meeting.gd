@@ -24,6 +24,8 @@ const SEASON_STEP := 10
 const SEASON_LIMITS := [40, 110]
 const CAP_STEP := 0.05
 const MOOD := 0.5
+## Each point of an owner's rapport with the player moves its vote by this much (toward the player's stand).
+const RAPPORT_WEIGHT := 0.12
 ## Influence (D-031, simple version): points the owner earns for each meeting and spends on
 ## lobbying (turning one owner's vote) or proposing an item. They do not carry over.
 const PROPOSE_COST := 5
@@ -375,7 +377,7 @@ func situations(finished: FcSeason) -> Dictionary:
 
 ## One AI owner's vote on a proposal: {"yes", "reason", "lean"}. `lean` is the strength of the
 ## feeling (positive = in favour) including this year's mood.
-func vote_of(team_id: int, item: Dictionary, situation: Dictionary, year: int) -> Dictionary:
+func vote_of(team_id: int, item: Dictionary, situation: Dictionary, year: int, bias: float = 0.0) -> Dictionary:
 	var rules := world.rules_of_league(league_id)
 	var rank_fraction: float = float(situation["rank"] - 1) / maxf(1.0, situation["of"] - 1.0)   # 0 = best, 1 = worst
 	var down: bool = str(item["id"]).ends_with("_down") or item["id"] in ["series_shorter", "lottery_smaller", "season_shorter", "playoffs_smaller"]
@@ -417,7 +419,7 @@ func vote_of(team_id: int, item: Dictionary, situation: Dictionary, year: int) -
 	if item["family"] == "relocation" and team_id == int(item.get("mover", 0)):
 		return {"yes": true, "reason": "wants to move", "lean": 5.0}
 	var mood := FcRng.new(hash("mood:%d:%s:%d" % [year, item["id"], team_id])).range_float(-MOOD, MOOD)
-	var score := mood
+	var score := mood + bias
 	var reason := "no strong feelings"
 	var strongest := 0.0
 	for t in terms:
@@ -437,7 +439,7 @@ func vote_of(team_id: int, item: Dictionary, situation: Dictionary, year: int) -
 ## {"votes": [{"team", "name", "yes", "reason", "lean"}], "yes", "no", "needed", "passes"}.
 ## The player's own team is left out of the AI votes: the player decides for it.
 ## `flipped` lists the owners the player has lobbied: their vote is the opposite of what it would be.
-func tally(item: Dictionary, finished: FcSeason, year: int, user_team_id: int, user_vote, flipped: Array = []) -> Dictionary:
+func tally(item: Dictionary, finished: FcSeason, year: int, user_team_id: int, user_vote, flipped: Array = [], rapport: Dictionary = {}) -> Dictionary:
 	var league: FcLeague = world.leagues.get_by_id(league_id)
 	var situation := situations(finished)
 	var votes: Array = []
@@ -446,7 +448,9 @@ func tally(item: Dictionary, finished: FcSeason, year: int, user_team_id: int, u
 	for tid in league.all_team_ids():
 		if tid == user_team_id:
 			continue
-		var v := vote_of(tid, item, situation[tid], year)
+		# an owner who likes (or dislikes) the player leans toward (or away from) the player's stand
+		var stand := 1.0 if (user_vote == true or (user_vote == null and item.get("proposed", false))) else (-1.0 if user_vote == false else 0.0)
+		var v := vote_of(tid, item, situation[tid], year, RAPPORT_WEIGHT * float(rapport.get(tid, 0)) * stand)
 		var was_flipped := flipped.has(tid)
 		if was_flipped:
 			v = {"yes": not v["yes"], "reason": "persuaded by you", "lean": v["lean"]}
