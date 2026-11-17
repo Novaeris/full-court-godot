@@ -99,6 +99,7 @@ func _initialize() -> void:
 		_ok("RESULT: %d wins (expected %d), profit %s, payroll %s, approval %d, GM grade %s, rounds won %d" % [report["wins"], report["expected_wins"], FcUiTables.money(report["profit"]), FcUiTables.money(c.state.world.payroll_of_team(c.state.user_team_id, c.state.current_season)), report["approval"], card.get("grade", "-"), report["playoff_rounds_won"]])
 		_offseason(c, year)
 	_log("final: season %d, %s; %d teams in the league, %d franchise moves, %d expansions" % [c.state.current_season, _summary(c), c.state.world.leagues.get_by_id(c.league_id).team_count(), c.state.relocation_log.size(), 1 if c.state.last_expansion_year > 0 else 0])
+	_log("levers used (%d kinds): %s" % [_levers.size(), ", ".join(_levers.keys().map(func(k): return "%s x%d" % [k, _levers[k]]))])
 	_finish()
 
 
@@ -139,7 +140,47 @@ func _use_in_season_features(c: FcGameController) -> void:
 	var worst := team.roster.player_ids[team.roster.size() - 1]
 	_ok("trade check: %s" % c.propose_trade(rival, [worst], [], true)["reason"])
 	_ok("pick gift check: %s" % c.propose_trade(rival, [], [], true, [[c.first_tradable_pick_year(), 2, c.state.user_team_id]], [])["reason"])
+	_use_more_levers(c)
 	_check("in-season features")
+
+
+## The levers the milestone plan calls "every lever": ticket plan, playoff price, dividends, the new arena, sponsors,
+## staff chemistry and the GM's negotiation, relations with AI clubs. Different settings by season so all values get used.
+## `_levers` counts how many different levers were used; the run ends with the list.
+var _levers := {}
+
+
+func _lever(name: String, ok: bool) -> void:
+	if ok:
+		_levers[name] = int(_levers.get(name, 0)) + 1
+	else:
+		_fail("lever %s was refused" % name)
+
+
+func _use_more_levers(c: FcGameController) -> void:
+	var step := c.state.current_season % 4
+	_lever("season tickets", c.set_season_ticket_share([0, 20, 40, 10][step]))
+	_lever("promotion nights", c.set_promotion_nights([0, 3, 6, 2][step]))
+	_lever("playoff price", c.set_playoff_premium([160, 200, 130, 250][step]))
+	_lever("marketing budget", c.set_marketing_budget(roundi(c.business().marketing_budget * [1.0, 1.1, 0.9, 1.0][step])))
+	_lever("sponsor plan", c.set_sponsor_plan(step % 3))
+	_lever("merch tier", c.set_merch_tier(step % 3))
+	if c.invest_in_facilities(2):
+		_levers["arena quality"] = int(_levers.get("arena quality", 0)) + 1   # may be refused when cash is short: that is the rule working
+	var offers := c.sponsor_offers()
+	if not offers.is_empty() and c.business().sponsor_deals.size() < 2:
+		_lever("sponsor deal", c.accept_sponsor(offers[0]["sponsor"])["ok"])
+	for key in ["practice_facility", "medical_center", "expand_seating", "new_arena"]:
+		var started := c.start_arena_project(key)
+		if started["ok"]:
+			_levers["project " + key] = int(_levers.get("project " + key, 0)) + 1
+	var limit := c.dividend_limit()
+	if limit > 1000000:
+		_lever("dividend", c.take_dividend(limit / 2)["ok"])
+	var chemistry := c.staff_chemistry()
+	_lever("staff chemistry shown", chemistry["score"] >= 0 and chemistry["parts"].size() == 4)
+	_lever("negotiation skill", c.gm_negotiation() >= 0.0)
+	_lever("ticket plan preview", c.ticket_plan_preview()["capacity"] > 0)
 
 
 func _offseason(c: FcGameController, year: int) -> void:

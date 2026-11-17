@@ -20,7 +20,7 @@ const MAX_NICKNAME_LENGTH := 24
 const NEIGHBOUR_FAN_LOSS := 3
 ## The part of a new arena's cost the moving club pays itself (the city pays the rest), as a share of the
 ## "new_arena" project price (data/simulation/arena_projects.json).
-const ARENA_COST_SHARE := 0.5
+const ARENA_COST_SHARE := 0.35
 ## What counts as struggling: lost money last season and the fan base is below this.
 const STRUGGLING_FAN_INTEREST := 45
 

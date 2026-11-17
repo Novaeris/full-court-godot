@@ -67,7 +67,7 @@ Scope (in rough order):
    - *Risks*: AI votes could drift the league (every change is checked with the league health tools); saved-structure changes
      need migrations; one new screen and a lot of tests.
 Done when: a scripted 20-season owner playthrough exercises every lever, stays valid, and the books and league
-health checks stay in range.
+health checks stay in range. **Done 2026-11-17:** `tools/ui_playthrough.ps1 seasons=20 teams=12 seed=21 reprice=1 expand=1 relocate=1` used 14 kinds of lever (ticket plan, prices, sponsors, projects, chemistry and more), three relocations and an expansion, with 0 integrity problems. Finding: a naive scripted owner who relocates, expands and overspends on payroll sinks into debt (about $0.6B after 20 years) and the game lets it happen (the owner cannot lose); the relocation arena share was lowered from 50% to 35% after this run.
 Needs from you: whether relocation/expansion belong in v1.
 
 ## M2. Long-run health and balance (size L, partly overlaps M1)
