@@ -5,7 +5,7 @@ Nothing has been pushed anywhere: the repository is local only (no remote).
 
 ## 2026-11-16 hand-off: where Owner Mode stands
 
-**540 automated tests pass** (`./tools/run_tests.ps1`), plus two long checks that drive the real UI:
+**542 automated tests pass** (`./tools/run_tests.ps1`), plus two long checks that drive the real UI:
 `./tools/click_test.ps1` (54 simulated mouse clicks through a whole season and offseason) and
 `./tools/ui_playthrough.ps1 seasons=3 teams=30` (many owner features over several seasons, saving and loading
 mid-draft). Everything is committed locally; nothing is published.

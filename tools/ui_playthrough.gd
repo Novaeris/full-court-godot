@@ -4,7 +4,9 @@ extends SceneTree
 ## (extensions, free agents, trades, picks, the draft, loans, projects, GM delegation, saving
 ## and loading) while checking that the game state stays valid.
 ##
-## Run:  godot_console --headless --path . --script res://tools/ui_playthrough.gd -- seasons=3 teams=30 seed=7 [reprice=1] [expand=1] [relocate=1]
+## auto=1: the owner decides nothing: the general manager handles every area every season (contracts, draft,
+## free agency, trades, injuries), the meeting is voted by the owner's own interests only, prices follow the suggestion.
+## Run:  godot_console --headless --path . --script res://tools/ui_playthrough.gd -- seasons=3 teams=30 seed=7 [reprice=1] [expand=1] [relocate=1] [auto=1]
 ## It prints one line per stage and a list of problems; exit code 1 if any problem was found.
 
 var _app: FcApp
@@ -13,6 +15,7 @@ var _t0 := 0
 var _reprice := false
 var _expand := false
 var _relocate := false
+var _auto := false
 
 
 func _initialize() -> void:
@@ -30,6 +33,7 @@ func _initialize() -> void:
 			"reprice": _reprice = kv[1] == "1"
 			"expand": _expand = kv[1] == "1"
 			"relocate": _relocate = kv[1] == "1"
+			"auto": _auto = kv[1] == "1"
 	_t0 = Time.get_ticks_msec()
 	_app = FcApp.new()
 	_app.saves = FcSaveManager.new("user://playthrough_saves")
@@ -61,6 +65,31 @@ func _initialize() -> void:
 			if entry["team"] == c.state.user_team_id:
 				mine = entry
 		_ok("LEAGUE: profit rank %d of %d, revenue rank %d, ticket $%d (league average $%d), attendance %d" % [mine["profit_rank"], books.size(), mine["revenue_rank"], mine["price"], roundi(avg_price), mine["attendance"]])
+		var ratings := FcPlayerRatings.load_default()
+		var mine_values: Array = []
+		var ages := 0.0
+		var roster_ids: Array = c.state.world.teams.get_by_id(c.state.user_team_id).roster.player_ids
+		for pid in roster_ids:
+			var pl: FcPlayer = c.state.world.players.get_by_id(pid)
+			mine_values.append(ratings.overall(pl))
+			ages += pl.age_on(FcDate.new(c.state.current_season + 1, 7, 1))
+		mine_values.sort()
+		mine_values.reverse()
+		var top8 := 0.0
+		for v in mine_values.slice(0, 8):
+			top8 += v / 8.0
+		var league_top8 := 0.0
+		for t in c.state.world.teams.all():
+			var vals: Array = []
+			for pid in t.roster.player_ids:
+				vals.append(ratings.overall(c.state.world.players.get_by_id(pid)))
+			vals.sort()
+			vals.reverse()
+			var sum8 := 0.0
+			for v in vals.slice(0, 8):
+				sum8 += v / 8.0
+			league_top8 += sum8 / c.state.world.teams.count()
+		_ok("ROSTER: top-8 rating %.1f (league average %.1f), average age %.1f, philosophy %s, budget %s" % [top8, league_top8, ages / maxf(1.0, roster_ids.size()), c.philosophy(), c.state.direction["budget"]])
 		_ok("RESULT: %d wins (expected %d), profit %s, payroll %s, approval %d, GM grade %s, rounds won %d" % [report["wins"], report["expected_wins"], FcUiTables.money(report["profit"]), FcUiTables.money(c.state.world.payroll_of_team(c.state.user_team_id, c.state.current_season)), report["approval"], card.get("grade", "-"), report["playoff_rounds_won"]])
 		_offseason(c, year)
 	_log("final: season %d, %s; %d teams in the league, %d franchise moves, %d expansions" % [c.state.current_season, _summary(c), c.state.world.leagues.get_by_id(c.league_id).team_count(), c.state.relocation_log.size(), 1 if c.state.last_expansion_year > 0 else 0])
@@ -113,11 +142,11 @@ func _offseason(c: FcGameController, year: int) -> void:
 	var expiring := c.expiring_players()
 	var kept := 0
 	for e in expiring:
-		if kept < 3 and c.extend_contract(e["player"].id)["ok"]:
+		if not _auto and kept < 3 and c.extend_contract(e["player"].id)["ok"]:
 			kept += 1
-	_ok("%d expiring contracts, %d extended" % [expiring.size(), kept])
+	_ok("%d expiring contracts, %d extended by hand" % [expiring.size(), kept])
 	# alternate between doing everything by hand and letting the GM do it
-	var delegate := year % 2 == 1
+	var delegate := _auto or year % 2 == 1
 	for key in FcGameState.DELEGATION_KEYS:
 		c.set_delegation(key, delegate)
 	c.set_direction(["win_now", "balanced", "rebuild"][year % 3], ["frugal", "normal", "aggressive"][year % 3])
@@ -161,7 +190,7 @@ func _offseason(c: FcGameController, year: int) -> void:
 	if c.state.offseason_stage == 0:
 		_app.on_next_season()
 	_check("offseason begun (%s)" % c.phase())
-	if c.phase() == FcGameController.PHASE_DRAFT:
+	if c.phase() == FcGameController.PHASE_DRAFT and not _auto:
 		var board := c.draft_board()
 		_ok("draft board of %d prospects, workouts left %d" % [board.size(), c.draft_workouts_left()])
 		c.invite_to_workout(board[0]["player"].id)
@@ -176,7 +205,7 @@ func _offseason(c: FcGameController, year: int) -> void:
 		var market := c.free_agent_market(10)
 		var signed := 0
 		for entry in market:
-			if signed < 2 and c.sign_free_agent(entry["player"].id)["signed"]:
+			if not _auto and signed < 2 and c.sign_free_agent(entry["player"].id)["signed"]:
 				signed += 1
 		_ok("window: signed %d of the best free agents; GM log: %s" % [signed, "; ".join(c.gm_log())])
 		_save_load_check(c, "free-agency window")

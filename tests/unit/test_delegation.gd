@@ -311,3 +311,26 @@ func test_gm_grade_does_not_depend_on_season_length() -> void:
 	var diff: float = float(report["wins"] - report["expected_wins"]) / report["games"]
 	var expected := "Excellent" if diff >= 0.12 else ("Good" if diff >= 0.03 else ("Satisfactory" if diff >= -0.06 else "Disappointing"))
 	assert_eq(card["grade"], expected)
+
+
+func test_the_gm_measures_players_against_the_league_rotation_level() -> void:
+	var g := _game(105)
+	var market := FcPlayerMarket.new(FcPlayerRatings.load_default())
+	var before := g._league_rotation_value(market)
+	assert_true(before > 30.0 and before < 90.0, "a believable rotation level (%f)" % before)
+	# when the whole league gets better, the bar rises with it
+	var w := g.state.world
+	for p in w.players.all():
+		for key in w.definitions.attributes.keys():
+			p.attributes.set_clamped(key, p.attributes.get_value(key) + 8)
+	assert_true(g._league_rotation_value(market) > before + 3.0, "the bar rises as the league's talent grows")
+
+
+func test_the_gm_does_not_bet_on_very_old_players() -> void:
+	var g := _game(106)
+	var market := FcPlayerMarket.new(FcPlayerRatings.load_default())
+	var team: FcTeam = g.state.world.teams.get_by_id(g.state.user_team_id)
+	var p: FcPlayer = g.state.world.players.get_by_id(team.roster.player_ids[0])
+	var young := g._gm_value(p, 30, market)
+	var old := g._gm_value(p, 36, market)
+	assert_true(old < young - 6.0, "the same player is worth less to him at 36 than at 30 (%f vs %f)" % [old, young])

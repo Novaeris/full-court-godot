@@ -671,7 +671,7 @@ func _philosophy_emphasis() -> float:
 ## GM's (and scouts') talent evaluation, the same for the same player every time.
 func _gm_value(p: FcPlayer, age: int, market: FcPlayerMarket) -> float:
 	var noise := FcRng.new(hash("gm:%d:%d" % [state.user_team_id, p.id])).gaussian(0.0, maxf(0.5, _off().draft_noise(state.user_team_id)))
-	var value := market.value(p, age) + noise
+	var value := market.value(p, age) + noise - 2.0 * maxf(0.0, age - 32)   # the GM does not bet on very old players
 	match state.direction["philosophy"]:
 		"win_now":
 			value -= 0.2 * (p.development.potential - FcPlayerRatings.load_default().overall(p))
@@ -683,10 +683,33 @@ func _gm_value(p: FcPlayer, age: int, market: FcPlayerMarket) -> float:
 ## Re-signing by the GM: he keeps players he believes are worth at least the keep line
 ## (value points), at their asking price, as far as the cap allows.
 const GM_KEEP_VALUE := 50.0
+## The GM measures players against the league's rotation level (the average value of each team's
+## eighth best player, which rises as the league's talent grows): he keeps players within
+## GM_KEEP_MARGIN of it and signs free agents above it, never below the fixed minimums.
+const GM_KEEP_MARGIN := 2.0
+const GM_SIGN_MARGIN := 1.0
 ## Staff with at least this reputation are kept when the GM handles contracts.
 const GM_KEEP_STAFF_REPUTATION := 40
 const GM_FREE_AGENT_VALUE := 52.0
 const GM_MAX_SIGNINGS := 3
+
+
+## The average value of the eighth best player of each team: what a rotation player is worth now.
+func _league_rotation_value(market: FcPlayerMarket) -> float:
+	var w := state.world
+	var total := 0.0
+	var count := 0
+	for tid in w.leagues.get_by_id(league_id).all_team_ids():
+		var values: Array = []
+		for pid in w.teams.get_by_id(tid).roster.player_ids:
+			var p: FcPlayer = w.players.get_by_id(pid)
+			values.append(market.value(p, p.age_on(FcDate.new(state.current_season + 1, 7, 1))))
+		values.sort()
+		values.reverse()
+		if values.size() >= 8:
+			total += values[7]
+			count += 1
+	return total / count if count > 0 else GM_KEEP_VALUE
 
 
 func _gm_re_sign_players() -> void:
@@ -697,11 +720,12 @@ func _gm_re_sign_players() -> void:
 		if kept["ok"]:
 			_gm_log.append("Your general manager kept %s (%s)." % [entry["member"].identity.full_name(), FcStaffRole.display_name(entry["role"])])
 	var market := FcPlayerMarket.new(FcPlayerRatings.load_default())
+	var keep_line := maxf(GM_KEEP_VALUE, _league_rotation_value(market) - GM_KEEP_MARGIN)
 	for entry in expiring_players():
 		if entry["agreed"]:
 			continue
 		var p: FcPlayer = entry["player"]
-		if _gm_value(p, entry["age"], market) < GM_KEEP_VALUE:
+		if _gm_value(p, entry["age"], market) < keep_line:
 			continue
 		if entry["ask"] + state.world.payroll_of_team(state.user_team_id, state.current_season + 1) > gm_payroll_limit():
 			_gm_log.append("Your general manager let %s go: his price does not fit your budget." % p.identity.full_name())
@@ -839,6 +863,16 @@ func _gm_sign_free_agents() -> void:
 	var team: FcTeam = state.world.teams.get_by_id(state.user_team_id)
 	var rules := state.world.rules_of_league(league_id)
 	var signed := 0
+	var own_values: Array = []
+	for pid in team.roster.player_ids:
+		var own: FcPlayer = state.world.players.get_by_id(pid)
+		own_values.append(_gm_value(own, own.age_on(FcDate.new(contract_year(), 7, 1)), market))
+	own_values.sort()
+	own_values.reverse()
+	# a signing must beat the league's rotation level and the team's own eighth man
+	var sign_line := maxf(GM_FREE_AGENT_VALUE, _league_rotation_value(market) + GM_SIGN_MARGIN)
+	if own_values.size() >= 8:
+		sign_line = maxf(sign_line, own_values[7] + 1.0)
 	var ranked: Array = []
 	for entry in free_agent_market(40):
 		ranked.append([_gm_value(entry["player"], entry["age"], market), entry["player"]])
@@ -846,7 +880,7 @@ func _gm_sign_free_agents() -> void:
 	for pair in ranked:
 		if signed >= GM_MAX_SIGNINGS or team.roster.size() >= rules.roster_max - 1:
 			break
-		if pair[0] < GM_FREE_AGENT_VALUE:
+		if pair[0] < sign_line:
 			break
 		if state.direction["philosophy"] == "rebuild" and pair[1].age_on(FcDate.new(contract_year(), 7, 1)) > 29:
 			continue   # a rebuilding team does not sign older players
