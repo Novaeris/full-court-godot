@@ -199,6 +199,7 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 
 ## Practice facility and medical center (Owner Mode)
 - Two more projects in `data/simulation/arena_projects.json`, 3 levels each, 1 season to build, saved as `FcTeamBusiness.practice_level` / `medical_level`: the practice facility adds 5 points per level to the team's coaching rating of player development used by the offseason progression (`FcOffseason.PRACTICE_BONUS_PER_LEVEL`); the medical center shortens injuries 6% per level (in `FcSeasonEngine._apply_injuries`, on top of the medical staff's rehabilitation skill). Each level costs $2M a year in the facilities expense line. AI teams have level 0, so league averages are unchanged.
+- The Staff tab (pages "Front office" and "People") and the Trades tab (pages "Offers from teams (N)", which opens first when there are offers, and "Propose a trade") are split the same way; the Roster tab got a one-line hint above its buttons. The open page of each tab is remembered. Pages are checked with the click test (67 clicks).
 - The Finances tab is now split into four pages (a TabContainer inside the tab; the open page is remembered across rebuilds): **Summary** (books, executive, your seasons, league comparison), **Prices and shop** (ticket price, marketing, concessions, playoff price, merchandise), **Sponsors and loans**, **Arena and facilities**. The mouse-click test opens the right page before pressing its buttons (66 clicks).
 
 ## Playoff ticket prices (Owner Mode)

@@ -216,7 +216,7 @@ func test_player_profile_text() -> void:
 	assert_true("Three-Point Shooting" in text and "Loyalty" in text)
 	assert_eq(app.player_profile_text(999999), "")
 	var roster_tab := app.build_tab("Roster")
-	assert_true(roster_tab.get_child_count() == 2, "the roster has its table and the profile button")
+	assert_true(roster_tab.get_child_count() == 3, "the roster has its table, a hint line and the buttons row")
 	roster_tab.free()
 
 
@@ -231,7 +231,7 @@ func test_market_tab_lists_free_agents_and_draft() -> void:
 func test_trades_tab_builds_and_a_trade_can_be_proposed() -> void:
 	_start_small_game()
 	var tab := app.build_tab("Trades")
-	assert_true(tab is VBoxContainer and tab.get_child_count() >= 4)
+	assert_true(tab is TabContainer and tab.get_tab_count() == 2, "an offers page and a propose page")
 	tab.free()
 	var other := 1 if app.controller.state.user_team_id != 1 else 2
 	var r := app.controller.propose_trade(other, [], [], true)

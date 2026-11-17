@@ -58,22 +58,22 @@ func _run() -> void:
 
 	# --- finances: borrow and use the price suggestion ------------------------------------------
 	await _click_tab("Finances")
-	await _click_finance_page(2)   # Sponsors and loans
+	await _click_page(2)   # Sponsors and loans
 	var debt_before := c.business().debt
 	await _click_button("Borrow")
 	_expect(c.business().debt > debt_before, "Borrow raised the debt (%d -> %d)" % [debt_before, c.business().debt])
 	await _click_tab("Finances")
-	await _click_finance_page(2)
+	await _click_page(2)
 	await _click_button("Repay")
 	_expect(c.business().debt == debt_before, "Repay paid it back")
 	await _click_tab("Finances")
 	c.set_ticket_price(c.suggested_ticket_price() + 40)
 	await _click_tab("Finances")
-	await _click_finance_page(1)   # Prices and shop
+	await _click_page(1)   # Prices and shop
 	await _click_button("Use suggestion")
 	_expect(c.business().ticket_price == c.suggested_ticket_price(), "Use suggestion set the ticket price")
 	await _click_tab("Finances")
-	await _click_finance_page(3)   # Arena and facilities
+	await _click_page(3)   # Arena and facilities
 	await _click_button("Start project")
 	_expect(not c.business().projects.is_empty(), "Start project started the arena project the drop-down showed")
 
@@ -108,6 +108,7 @@ func _run() -> void:
 
 	# --- trades: select players and check an offer ---------------------------------------------------
 	await _click_tab("Trades")
+	await _click_page(1)   # the "Propose a trade" page
 	var lists := _item_lists()
 	if lists.size() >= 2:
 		await _click_list_row(lists[0], 0)
@@ -271,8 +272,8 @@ func _click_tab(name: String) -> void:
 	await _click_at(bar.get_global_rect().position + rect.get_center())
 
 
-## Clicks one of the pages inside the Finances tab (0 summary, 1 prices, 2 sponsors and loans, 3 arena).
-func _click_finance_page(index: int) -> void:
+## Clicks one of the pages inside the open tab (Finances: 0 summary, 1 prices, 2 sponsors and loans, 3 arena; Trades: 0 offers, 1 propose).
+func _click_page(index: int) -> void:
 	var pages := _app._tabs.get_current_tab_control() as TabContainer
 	if pages == null:
 		_fail("the Finances tab has no pages")
