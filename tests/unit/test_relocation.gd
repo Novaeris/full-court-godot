@@ -68,7 +68,8 @@ func test_moving_changes_the_city_the_arena_and_the_fan_base() -> void:
 	assert_true(business.brand < brand and business.projects.is_empty(), "less brand, and the old arena's projects are gone")
 	assert_true(business.fan_interest != interest or interest < 10)
 	assert_eq(team.roster.player_ids, roster_before, "the players move with the team")
-	assert_eq(w.businesses.get_by_id(tid).cash, maxi(0, cash_before[tid] - fees["fee"]), "the team paid the fee (a shortfall becomes debt)")
+	var arena_cost := roundi(float(FcFinanceEngine.project_def("new_arena")["cost"]) * FcFinanceEngine.new(w).scale_for(w.rules_of_league(g.league_id)) * FcRelocation.ARENA_COST_SHARE)
+	assert_eq(w.businesses.get_by_id(tid).cash, maxi(0, cash_before[tid] - fees["fee"] - arena_cost), "the team paid the fee and its share of the arena (a shortfall becomes debt)")
 	for other in cash_before:
 		if other != tid:
 			assert_eq(w.businesses.get_by_id(other).cash, cash_before[other] + fees["each"], "the other owners share it")
@@ -185,3 +186,46 @@ func test_the_relocation_log_and_item_survive_saving() -> void:
 	if not item.is_empty():
 		assert_eq(back.meeting["items"][0]["mover"], item["mover"])
 		assert_eq(back.meeting["items"][0]["region"], item["region"])
+
+
+func test_the_owner_chooses_the_city_and_renames_the_team() -> void:
+	var g := _game(172)
+	g.sim_playoffs()
+	assert_true(g.open_meeting())
+	g.state.meeting["influence"] = 10
+	var options := g.relocation_options()
+	assert_true(options.size() >= 3, "several destinations to choose from")
+	var chosen: String = options[options.size() - 1]["name"]   # the smallest, not the planner's pick
+	var tid := g.state.user_team_id
+	var team: FcTeam = g.state.world.teams.get_by_id(tid)
+	var old_nickname := team.identity.nickname
+	assert_true(not g.propose_relocation("Nowhere Town", "Comets")["ok"], "only real destinations")
+	assert_true(not g.propose_relocation(chosen, "A really very long team name for anybody")["ok"], "name length")
+	var other_name: String = g.state.world.teams.get_by_id(_other_team(g)).identity.nickname
+	assert_true(not g.propose_relocation(chosen, other_name)["ok"], "no clash with another team")
+	assert_true(g.propose_relocation(chosen, "  sea   wolves ")["ok"])
+	assert_true(not g.propose_relocation(chosen, "Comets")["ok"], "one proposal a meeting")
+	var item: Dictionary = g.state.meeting["items"][g.state.meeting["items"].size() - 1]
+	assert_eq(item["city"], chosen)
+	assert_eq(item["nickname"], "Sea Wolves")
+	assert_true("renamed the Sea Wolves" in item["title"])
+	g.cast_meeting_vote(item["id"], true)
+	for entry in g.meeting_items():
+		if entry["item"]["id"] == item["id"]:
+			for v in entry["tally"]["votes"]:
+				if not v["yes"]:
+					g.state.meeting["lobbied"][item["id"]] = g.state.meeting["lobbied"].get(item["id"], []) + [v["team"]]
+	var results := g.close_meeting()
+	assert_true(results.any(func(r): return r["title"].begins_with("Approve the move") and r["enacted"]))
+	assert_eq(g.state.world.cities.get_by_id(team.city_id).name, chosen)
+	assert_eq(team.identity.nickname, "Sea Wolves")
+	assert_true(old_nickname != "Sea Wolves")
+	assert_eq(g.state.validate(), [] as Array[String])
+	assert_true(g.relocation_options().is_empty(), "no second move right away")
+
+
+func test_clean_nickname_tidies_the_text() -> void:
+	assert_eq(FcRelocation.clean_nickname("  sea   wolves "), "Sea Wolves")
+	assert_eq(FcRelocation.clean_nickname("Bad1 Name!!"), "Bad Name")
+	assert_eq(FcRelocation.clean_nickname("1234"), "")
+	assert_eq(FcRelocation.clean_nickname("o'neil-kings"), "O'neil-kings")

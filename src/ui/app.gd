@@ -749,6 +749,25 @@ func _tab_meeting() -> Control:
 				if made["ok"]:
 					show_dashboard()))
 			box.add_child(propose_row)
+		var destinations := controller.relocation_options()
+		if not destinations.is_empty() and not controller.state.meeting.get("proposed", false):
+			box.add_child(FcUiTables.label("Move your franchise: you choose the city and may rename the team (needs two thirds of the owners, costs %d points)." % FcOwnersMeeting.PROPOSE_COST, 14))
+			var move_row := HBoxContainer.new()
+			var city_pick := OptionButton.new()
+			for d in destinations:
+				city_pick.add_item("%s (%s, %.1fM people)" % [d["name"], d["region"], d["population"] / 1e6])
+			move_row.add_child(city_pick)
+			move_row.add_child(FcUiTables.label("New team name (optional):"))
+			var name_edit := LineEdit.new()
+			name_edit.placeholder_text = "keep the current name"
+			name_edit.custom_minimum_size = Vector2(200, 0)
+			move_row.add_child(name_edit)
+			move_row.add_child(FcUiTables.button("Propose the move", func():
+				var moved := controller.propose_relocation(destinations[city_pick.selected]["name"], name_edit.text)
+				_say(moved["reason"])
+				if moved["ok"]:
+					show_dashboard()))
+			box.add_child(move_row)
 	var log_rows: Array = []
 	var log: Array = controller.state.meeting_log
 	for i in range(log.size() - 1, maxi(-1, log.size() - 13), -1):

@@ -113,17 +113,20 @@ func agenda(year: int, last_expansion_year: int = 0, user_team_id: int = 0, relo
 
 
 ## "Approve the move of <team> to <city>". `id` is "relocate:<team id>".
-func relocation_item(team_id: int, year: int) -> Dictionary:
+func relocation_item(team_id: int, year: int, city_name: String = "", nickname: String = "") -> Dictionary:
 	var relocation := FcRelocation.new(world, league_id)
-	var plan_data := relocation.plan(team_id, year)
+	var plan_data := relocation.plan(team_id, year, city_name)
 	if plan_data.is_empty():
 		return {}
+	var new_name := FcRelocation.clean_nickname(nickname) if relocation.nickname_problem(team_id, nickname) == "" else ""
 	var entry: Dictionary = plan_data["city"]
 	var fees := relocation.fee_for(team_id)
 	var team: FcTeam = world.teams.get_by_id(team_id)
 	var from_city: FcCity = world.cities.get_by_id(team.city_id)
+	var renamed := "" if new_name == "" or new_name == team.identity.nickname else " (to be renamed the %s)" % new_name
 	return {"id": "relocate:%d" % team_id, "family": "relocation", "mover": team_id, "region": str(entry["region"]),
-		"title": "Approve the move of the %s to %s" % [team.identity.nickname, entry["name"]],
+		"city": str(entry["name"]), "nickname": new_name,
+		"title": "Approve the move of the %s to %s%s" % [team.identity.nickname, entry["name"], renamed],
 		"detail": "The %s (%s) want to move to %s, a bigger market. They would get a new arena and lose part of their fan base. They pay a relocation fee of about $%.1fM, shared by the other owners ($%.1fM each). The conferences and divisions are redrawn. Needs two thirds of the votes." % [team.identity.nickname, from_city.name, entry["name"], fees["fee"] / 1e6, fees["each"] / 1e6],
 		"supermajority": true}
 
@@ -297,11 +300,11 @@ func apply_to(rules: FcLeagueRules, league: FcLeague, kind: String) -> bool:
 ## The league is then brought in line: contracts outside new salary bounds are moved into them,
 ## and teams over a lowered roster maximum release their weakest players (`user_team_id`'s
 ## team is told in the news). `year` is the season whose values decide who is weakest.
-func enact(kind: String, user_team_id: int = 0, year: int = 2026) -> bool:
+func enact(kind: String, user_team_id: int = 0, year: int = 2026, item: Dictionary = {}) -> bool:
 	if kind == "expansion":
 		return not FcExpansion.new(world, league_id).execute(year).is_empty()
 	if kind.begins_with("relocate:"):
-		return not FcRelocation.new(world, league_id).execute(int(kind.get_slice(":", 1)), year).is_empty()
+		return not FcRelocation.new(world, league_id).execute(int(kind.get_slice(":", 1)), year, str(item.get("city", "")), str(item.get("nickname", ""))).is_empty()
 	var rules := world.rules_of_league(league_id)
 	var league: FcLeague = world.leagues.get_by_id(league_id)
 	var trial := FcLeagueRules.from_dict(rules.to_dict())

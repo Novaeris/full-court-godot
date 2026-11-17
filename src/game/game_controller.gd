@@ -511,11 +511,52 @@ func propose_item(kind: String) -> Dictionary:
 		return {"ok": false, "reason": "Proposing costs %d points and you have %d." % [FcOwnersMeeting.PROPOSE_COST, meeting_influence()]}
 	for item in proposable_items():
 		if item["id"] == kind:
-			state.meeting["items"].append(item)
-			state.meeting["influence"] = meeting_influence() - FcOwnersMeeting.PROPOSE_COST
-			state.meeting["proposed"] = true
-			return {"ok": true, "reason": "Your proposal is on the agenda: %s." % item["title"]}
+			return _add_proposal(item)
 	return {"ok": false, "reason": "That cannot be proposed right now."}
+
+
+func _add_proposal(item: Dictionary) -> Dictionary:
+	state.meeting["items"].append(item)
+	state.meeting["influence"] = meeting_influence() - FcOwnersMeeting.PROPOSE_COST
+	state.meeting["proposed"] = true
+	return {"ok": true, "reason": "Your proposal is on the agenda: %s." % item["title"]}
+
+
+## The cities the owner's franchise could move to, biggest first: [{"name", "region", "population"}].
+## Empty if the team may not move this year (moved in the last 10 years, or no meeting).
+func relocation_options() -> Array:
+	var relocation := FcRelocation.new(state.world, league_id)
+	if not relocation.allowed(state.user_team_id, state.current_season, state.relocation_log):
+		return []
+	var out: Array = []
+	for entry in relocation.destinations(state.user_team_id):
+		out.append({"name": str(entry["name"]), "region": str(entry["region"]), "population": int(entry["population"])})
+	return out
+
+
+## Puts a move of the owner's own team on the agenda with the destination city and (optionally) a new team
+## name chosen by the owner. Costs the same as any proposal. Returns {"ok": bool, "reason": String}.
+func propose_relocation(city_name: String, new_nickname: String = "") -> Dictionary:
+	if state.offseason_stage != 3:
+		return {"ok": false, "reason": "There is no meeting going on."}
+	if state.meeting.get("proposed", false):
+		return {"ok": false, "reason": "You have already put an item on the agenda this year."}
+	if meeting_influence() < FcOwnersMeeting.PROPOSE_COST:
+		return {"ok": false, "reason": "Proposing costs %d points and you have %d." % [FcOwnersMeeting.PROPOSE_COST, meeting_influence()]}
+	var relocation := FcRelocation.new(state.world, league_id)
+	if not relocation.allowed(state.user_team_id, state.current_season, state.relocation_log):
+		return {"ok": false, "reason": "Your team moved recently and may not move again yet."}
+	var problem := relocation.nickname_problem(state.user_team_id, new_nickname)
+	if problem != "":
+		return {"ok": false, "reason": problem}
+	for existing in state.meeting["items"]:
+		if existing["id"] == "relocate:%d" % state.user_team_id:
+			return {"ok": false, "reason": "Your move is already on the agenda."}
+	var item := _meeting().relocation_item(state.user_team_id, state.current_season, city_name, new_nickname)
+	if item.is_empty():
+		return {"ok": false, "reason": "That city is not available."}
+	item["proposed"] = true
+	return _add_proposal(item)
 
 
 ## Counts the votes: every proposal that gets enough yes votes becomes the league's rule, news
@@ -538,7 +579,7 @@ func close_meeting() -> Array:
 		elif tally["passes"] and str(item["id"]).begins_with("relocate:"):
 			var mover := int(item["mover"])
 			var old_city: String = state.world.cities.get_by_id(state.world.teams.get_by_id(mover).city_id).name
-			enacted = meeting.enact(item["id"], state.user_team_id, state.current_season)
+			enacted = meeting.enact(item["id"], state.user_team_id, state.current_season, item)
 			if enacted:
 				state.relocation_log.append([state.current_season, mover, old_city, state.world.cities.get_by_id(state.world.teams.get_by_id(mover).city_id).name])
 		elif tally["passes"]:
