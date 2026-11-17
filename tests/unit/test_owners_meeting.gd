@@ -239,3 +239,79 @@ func test_a_lower_cap_is_only_proposed_when_no_team_would_break_the_limit() -> v
 			y.salary = int(rules.cap.hard_limit / 10.0)
 	assert_true(not meeting._affordable("cap_down", trial, league, g.state.current_season), "a team at the limit blocks a lower cap")
 	assert_true(meeting._affordable("cap_up", trial, league, g.state.current_season))
+
+
+func test_influence_income_grows_with_reputation_and_market() -> void:
+	assert_eq(FcOwnersMeeting.influence_income(0, 0.6), 2, "everyone gets a seat at the table")
+	assert_eq(FcOwnersMeeting.influence_income(100, 1.8), 10, "the best case is 10 points")
+	assert_true(FcOwnersMeeting.influence_income(60, 1.0) < FcOwnersMeeting.influence_income(90, 1.0))
+	assert_true(FcOwnersMeeting.influence_income(50, 0.7) < FcOwnersMeeting.influence_income(50, 1.6))
+	assert_eq(FcOwnersMeeting.lobby_cost(0.2), 1)
+	assert_eq(FcOwnersMeeting.lobby_cost(-0.8), 2)
+	assert_eq(FcOwnersMeeting.lobby_cost(1.4), 3)
+
+
+func test_lobbying_turns_a_vote_and_costs_influence() -> void:
+	var g := _game()
+	g.sim_playoffs()
+	assert_true(g.open_meeting())
+	var points := g.meeting_influence()
+	assert_true(points >= 2 and points <= 10)
+	var entry: Dictionary = g.meeting_items()[0]
+	var target: Dictionary = {}
+	for v in entry["tally"]["votes"]:
+		if v["cost"] <= points:
+			target = v
+			break
+	assert_true(not target.is_empty(), "some owner can be turned with the points available")
+	var yes_before: int = entry["tally"]["yes"]
+	var result := g.lobby_owner(entry["item"]["id"], target["team"])
+	assert_true(result["ok"], result["reason"])
+	assert_eq(g.meeting_influence(), points - target["cost"])
+	var after: Dictionary = g.meeting_items()[0]
+	assert_eq(after["tally"]["yes"], yes_before + (-1 if target["yes"] else 1), "the owner's vote flipped")
+	assert_true(not g.lobby_owner(entry["item"]["id"], target["team"])["ok"], "once per owner and item")
+	g.state.meeting["influence"] = 0
+	var broke := g.lobby_owner(g.meeting_items()[1]["item"]["id"], g.meeting_items()[1]["tally"]["votes"][0]["team"])
+	assert_true(not broke["ok"] and "costs" in broke["reason"], "no points, no lobbying")
+
+
+func test_the_owner_can_put_one_item_on_the_agenda() -> void:
+	var g := _game()
+	g.sim_playoffs()
+	assert_true(g.open_meeting())
+	var options := g.proposable_items()
+	assert_true(options.size() > 0)
+	var on_agenda := g.meeting_items().size()
+	g.state.meeting["influence"] = 3
+	assert_true(not g.propose_item(options[0]["id"])["ok"], "not enough points")
+	g.state.meeting["influence"] = 8
+	var made := g.propose_item(options[0]["id"])
+	assert_true(made["ok"], made["reason"])
+	assert_eq(g.meeting_items().size(), on_agenda + 1)
+	assert_eq(g.meeting_influence(), 8 - FcOwnersMeeting.PROPOSE_COST)
+	assert_true(g.meeting_items()[on_agenda]["item"].get("proposed", false), "marked as yours")
+	assert_true(not g.propose_item(g.proposable_items()[0]["id"] if not g.proposable_items().is_empty() else "x")["ok"], "one proposal per meeting")
+	assert_true(g.proposable_items().is_empty())
+	var results := g.close_meeting()
+	assert_eq(results.size(), on_agenda + 1, "the extra item is voted on too")
+
+
+func test_influence_and_lobbying_are_saved() -> void:
+	var g := _game()
+	g.sim_playoffs()
+	g.open_meeting()
+	var entry: Dictionary = g.meeting_items()[0]
+	for v in entry["tally"]["votes"]:
+		if v["cost"] <= g.meeting_influence():
+			g.lobby_owner(entry["item"]["id"], v["team"])
+			break
+	g.state.meeting["influence"] = 9
+	g.propose_item(g.proposable_items()[0]["id"])
+	var back := FcGameState.from_dict(JSON.parse_string(JSON.stringify(g.state.to_dict())), FcDefinitionSet.load_default())
+	assert_eq(back.meeting["lobbied"], g.state.meeting["lobbied"])
+	assert_eq(back.meeting["influence"], g.state.meeting["influence"])
+	assert_eq(back.meeting["proposed"], true)
+	assert_eq(back.meeting["items"], g.state.meeting["items"])
+	var again := FcGameController.resume(back)
+	assert_eq(again.meeting_items()[0]["tally"]["yes"], g.meeting_items()[0]["tally"]["yes"], "the lobbying is remembered")

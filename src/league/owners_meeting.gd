@@ -16,6 +16,46 @@ const SEASON_STEP := 10
 const SEASON_LIMITS := [40, 110]
 const CAP_STEP := 0.05
 const MOOD := 0.5
+## Influence (D-031, simple version): points the owner earns for each meeting and spends on
+## lobbying (turning one owner's vote) or proposing an item. They do not carry over.
+const PROPOSE_COST := 5
+const LOBBY_COSTS := [[0.5, 1], [1.0, 2]]   # a lean up to 0.5 costs 1, up to 1.0 costs 2, anything stronger 3
+const LOBBY_MAX_COST := 3
+
+
+## Points for one meeting: 2 for being at the table, up to 5 from the owner's reputation
+## (reputation / 20) and up to 3 from the size of the market (market factor 0.6 -> 0, 1.8 -> 3).
+static func influence_income(reputation: int, market_factor: float) -> int:
+	return 2 + roundi(clampf(reputation / 20.0, 0.0, 5.0)) + roundi(clampf((market_factor - 0.6) / 1.2 * 3.0, 0.0, 3.0))
+
+
+## What it costs to turn an owner whose vote leans `lean` (either way).
+static func lobby_cost(lean: float) -> int:
+	for step in LOBBY_COSTS:
+		if absf(lean) <= step[0]:
+			return step[1]
+	return LOBBY_MAX_COST
+
+
+## Every kind of proposal the owner could add to the agenda (valid for the current rules, not
+## already on it): [{"id", "family", "title", "detail", "supermajority", "proposed": true}].
+func proposable(year: int, on_agenda: Array) -> Array:
+	var rules := world.rules_of_league(league_id)
+	var league: FcLeague = world.leagues.get_by_id(league_id)
+	var taken := {}
+	for item in on_agenda:
+		taken[item["id"]] = true
+	var out: Array = []
+	for family in FAMILIES:
+		for kind in _kinds_of(family):
+			if taken.has(kind):
+				continue
+			var trial := FcLeagueRules.from_dict(rules.to_dict())
+			if apply_to(trial, league, kind) and trial.validate(league).is_empty() and _affordable(kind, trial, league, year):
+				var item := _item(kind, family, rules, trial, league)
+				item["proposed"] = true
+				out.append(item)
+	return out
 
 var world: FcWorld
 var league_id: int
@@ -287,7 +327,8 @@ func vote_of(team_id: int, item: Dictionary, situation: Dictionary, year: int) -
 ## The tally for one item: every AI owner's vote, plus the player's if given (null = not voted).
 ## {"votes": [{"team", "name", "yes", "reason", "lean"}], "yes", "no", "needed", "passes"}.
 ## The player's own team is left out of the AI votes: the player decides for it.
-func tally(item: Dictionary, finished: FcSeason, year: int, user_team_id: int, user_vote) -> Dictionary:
+## `flipped` lists the owners the player has lobbied: their vote is the opposite of what it would be.
+func tally(item: Dictionary, finished: FcSeason, year: int, user_team_id: int, user_vote, flipped: Array = []) -> Dictionary:
 	var league: FcLeague = world.leagues.get_by_id(league_id)
 	var situation := situations(finished)
 	var votes: Array = []
@@ -297,7 +338,10 @@ func tally(item: Dictionary, finished: FcSeason, year: int, user_team_id: int, u
 		if tid == user_team_id:
 			continue
 		var v := vote_of(tid, item, situation[tid], year)
-		votes.append({"team": tid, "name": world.team_display_name(tid), "yes": v["yes"], "reason": v["reason"], "lean": v["lean"]})
+		var was_flipped := flipped.has(tid)
+		if was_flipped:
+			v = {"yes": not v["yes"], "reason": "persuaded by you", "lean": v["lean"]}
+		votes.append({"team": tid, "name": world.team_display_name(tid), "yes": v["yes"], "reason": v["reason"], "lean": v["lean"], "flipped": was_flipped, "cost": lobby_cost(v["lean"])})
 		if v["yes"]:
 			yes += 1
 		else:

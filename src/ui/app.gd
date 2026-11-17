@@ -29,6 +29,8 @@ var _tabs: TabContainer
 var _trade_partner: int = 0
 ## Set after the warning about expiring contracts; a second press starts the next season.
 var _confirm_next_season: bool = false
+## The proposal that was selected on the Meeting tab (kept when the screen is rebuilt after lobbying).
+var _last_meeting_item: int = 0
 var _last_tab := 0
 var _form := {}
 var _message: Label
@@ -617,7 +619,10 @@ func _tab_meeting() -> Control:
 	if items.is_empty():
 		box.add_child(FcUiTables.label("The league's owners meet once a year, after the season, to vote on rule changes. Press Begin Offseason when the season is over to open the meeting.", 16))
 	else:
-		box.add_child(FcUiTables.label("The owners' meeting: vote on each proposal (each franchise has one vote). Cap changes need two thirds, everything else a simple majority.", 16))
+		var intro := FcUiTables.label("The owners' meeting: vote on each proposal (each franchise has one vote). Cap changes need two thirds, everything else a simple majority. Your influence: %d points (spend them to turn an owner's vote or to propose an item)." % controller.meeting_influence(), 16)
+		intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		intro.custom_minimum_size = Vector2(200, 0)
+		box.add_child(intro)
 		var summary: Array = []
 		for entry in items:
 			var vote = entry["user_vote"]
@@ -630,25 +635,30 @@ func _tab_meeting() -> Control:
 		detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		detail_label.custom_minimum_size = Vector2(200, 0)
 		box.add_child(detail_label)
-		var vote_rows := FcUiTables.table(["Owner", "Vote", "Why"], [], [0, 60, 0])
+		var vote_rows := FcUiTables.table(["Owner", "Vote", "Why", "To turn"], [], [0, 60, 0, 70])
 		box.add_child(vote_rows)
+		var vote_team_ids: Array[int] = []
 		var show_item := func(index: int):
 			var entry: Dictionary = items[index]
 			detail_label.text = "%s: %s" % [entry["item"]["title"], entry["item"]["detail"]]
 			vote_rows.clear()
+			vote_team_ids.clear()
 			var root_item := vote_rows.create_item()
 			for v in entry["tally"]["votes"]:
 				var row_item := vote_rows.create_item(root_item)
 				row_item.set_text(0, v["name"])
 				row_item.set_text(1, "Yes" if v["yes"] else "No")
 				row_item.set_text(2, v["reason"])
+				row_item.set_text(3, "-" if v["flipped"] else "%d pt%s" % [v["cost"], "" if v["cost"] == 1 else "s"])
+				vote_team_ids.append(v["team"])
 		summary_table.item_selected.connect(func():
 			var picked := summary_table.get_selected()
 			if picked != null:
 				show_item.call(picked.get_index()))
 		if summary_table.get_root().get_child_count() > 0:
-			summary_table.get_root().get_child(0).select(0)
-			show_item.call(0)
+			var first_index := mini(_last_meeting_item, summary_table.get_root().get_child_count() - 1)
+			summary_table.get_root().get_child(first_index).select(0)
+			show_item.call(first_index)
 		var buttons := HBoxContainer.new()
 		for choice in [["Vote yes", true], ["Vote no", false]]:
 			buttons.add_child(FcUiTables.button(choice[0], func():
@@ -658,7 +668,32 @@ func _tab_meeting() -> Control:
 					return
 				controller.cast_meeting_vote(items[picked2.get_index()]["item"]["id"], choice[1])
 				show_dashboard()))
+		buttons.add_child(FcUiTables.button("Lobby the selected owner (turn their vote)", func():
+			var proposal := summary_table.get_selected()
+			var owner_row := vote_rows.get_selected()
+			if proposal == null or owner_row == null:
+				_say("Select a proposal, then an owner in the lower list.")
+				return
+			var result := controller.lobby_owner(items[proposal.get_index()]["item"]["id"], vote_team_ids[owner_row.get_index()])
+			_say(result["reason"])
+			if result["ok"]:
+				_last_meeting_item = proposal.get_index()
+				show_dashboard()))
 		box.add_child(buttons)
+		var proposable := controller.proposable_items()
+		if not proposable.is_empty():
+			var propose_row := HBoxContainer.new()
+			propose_row.add_child(FcUiTables.label("Add a proposal of your own (%d points, once a meeting):" % FcOwnersMeeting.PROPOSE_COST))
+			var proposal_pick := OptionButton.new()
+			for p in proposable:
+				proposal_pick.add_item(p["title"])
+			propose_row.add_child(proposal_pick)
+			propose_row.add_child(FcUiTables.button("Propose it", func():
+				var made := controller.propose_item(proposable[proposal_pick.selected]["id"])
+				_say(made["reason"])
+				if made["ok"]:
+					show_dashboard()))
+			box.add_child(propose_row)
 	var log_rows: Array = []
 	var log: Array = controller.state.meeting_log
 	for i in range(log.size() - 1, maxi(-1, log.size() - 13), -1):

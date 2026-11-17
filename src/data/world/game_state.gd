@@ -42,7 +42,8 @@ const BUDGETS := ["frugal", "normal", "aggressive"]
 ## done and the owner's free-agency window is open (current_season is still the season that just ended).
 var offseason_stage: int = 0
 ## The owners' meeting while it is under way (stage 3): {"year", "items": [item dictionaries from
-## FcOwnersMeeting], "votes": {item id: bool}}. Empty otherwise.
+## FcOwnersMeeting], "votes": {item id: bool}, "lobbied": {item id: [team ids]}, "influence": points left,
+## "proposed": whether the owner has added an item}. Empty otherwise.
 var meeting: Dictionary = {}
 ## The last season in which the meeting was held (so it is held once a year).
 var meeting_year: int = 0
@@ -158,8 +159,18 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 			votes[str(key)] = bool(raw_meeting["votes"][key])
 		var items: Array = []
 		for item in raw_meeting.get("items", []):
-			items.append({"id": str(item["id"]), "family": str(item["family"]), "title": str(item["title"]), "detail": str(item["detail"]), "supermajority": bool(item["supermajority"])})
-		s.meeting = {"year": int(raw_meeting.get("year", 0)), "items": items, "votes": votes}
+			var restored := {"id": str(item["id"]), "family": str(item["family"]), "title": str(item["title"]), "detail": str(item["detail"]), "supermajority": bool(item["supermajority"])}
+			if bool(item.get("proposed", false)):
+				restored["proposed"] = true
+			items.append(restored)
+		var lobbied := {}
+		for key in raw_meeting.get("lobbied", {}):
+			var teams: Array = []
+			for t in raw_meeting["lobbied"][key]:
+				teams.append(int(t))
+			lobbied[str(key)] = teams
+		s.meeting = {"year": int(raw_meeting.get("year", 0)), "items": items, "votes": votes, "lobbied": lobbied,
+			"influence": int(raw_meeting.get("influence", 0)), "proposed": bool(raw_meeting.get("proposed", false))}
 	var raw_career = data.get("owner_career", {})
 	if raw_career is Dictionary and not raw_career.is_empty():
 		var rows: Array = []

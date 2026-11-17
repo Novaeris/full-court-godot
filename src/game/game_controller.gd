@@ -428,7 +428,10 @@ func open_meeting() -> bool:
 	if items.is_empty():
 		state.meeting_year = state.current_season
 		return false
-	state.meeting = {"year": state.current_season, "items": items, "votes": {}}
+	var finance := FcFinanceEngine.new(state.world)
+	var team: FcTeam = state.world.teams.get_by_id(state.user_team_id)
+	var points := FcOwnersMeeting.influence_income(owner_reputation(), finance.market_factor(state.world.cities.get_by_id(team.city_id)))
+	state.meeting = {"year": state.current_season, "items": items, "votes": {}, "lobbied": {}, "influence": points, "proposed": false}
 	state.offseason_stage = 3
 	return true
 
@@ -440,7 +443,7 @@ func meeting_items() -> Array:
 		return out
 	for item in state.meeting["items"]:
 		var vote = state.meeting["votes"].get(item["id"], null)
-		out.append({"item": item, "tally": _meeting().tally(item, season(), state.current_season, state.user_team_id, vote), "user_vote": vote})
+		out.append({"item": item, "tally": _meeting().tally(item, season(), state.current_season, state.user_team_id, vote, state.meeting["lobbied"].get(item["id"], [])), "user_vote": vote})
 	return out
 
 
@@ -453,6 +456,59 @@ func cast_meeting_vote(item_id: String, yes: bool) -> bool:
 			state.meeting["votes"][item_id] = yes
 			return true
 	return false
+
+
+## The influence points the owner has left in this meeting.
+func meeting_influence() -> int:
+	return int(state.meeting.get("influence", 0))
+
+
+## Spends influence to turn one AI owner's vote on an item (a no becomes a yes, a yes becomes a no).
+## The cost depends on how strongly the owner leans (1 to 3 points); each owner can be lobbied once
+## per item. Returns {"ok": bool, "reason": String, "cost": int}.
+func lobby_owner(item_id: String, team_id: int) -> Dictionary:
+	if state.offseason_stage != 3:
+		return {"ok": false, "reason": "There is no meeting going on.", "cost": 0}
+	for entry in meeting_items():
+		if entry["item"]["id"] != item_id:
+			continue
+		for v in entry["tally"]["votes"]:
+			if v["team"] != team_id:
+				continue
+			if v["flipped"]:
+				return {"ok": false, "reason": "You already lobbied %s on this." % v["name"], "cost": 0}
+			if v["cost"] > meeting_influence():
+				return {"ok": false, "reason": "Turning %s costs %d points and you have %d." % [v["name"], v["cost"], meeting_influence()], "cost": v["cost"]}
+			state.meeting["influence"] = meeting_influence() - v["cost"]
+			var list: Array = state.meeting["lobbied"].get(item_id, [])
+			list.append(team_id)
+			state.meeting["lobbied"][item_id] = list
+			return {"ok": true, "reason": "%s will now vote %s (cost %d)." % [v["name"], "no" if v["yes"] else "yes", v["cost"]], "cost": v["cost"]}
+	return {"ok": false, "reason": "That owner or proposal is not part of the meeting.", "cost": 0}
+
+
+## Proposals the owner could still add to the agenda (one per meeting, FcOwnersMeeting.PROPOSE_COST points).
+func proposable_items() -> Array:
+	if state.offseason_stage != 3 or state.meeting.get("proposed", false):
+		return []
+	return _meeting().proposable(state.current_season, state.meeting["items"])
+
+
+## Adds one of proposable_items() to the agenda. Returns {"ok": bool, "reason": String}.
+func propose_item(kind: String) -> Dictionary:
+	if state.offseason_stage != 3:
+		return {"ok": false, "reason": "There is no meeting going on."}
+	if state.meeting.get("proposed", false):
+		return {"ok": false, "reason": "You have already put an item on the agenda this year."}
+	if meeting_influence() < FcOwnersMeeting.PROPOSE_COST:
+		return {"ok": false, "reason": "Proposing costs %d points and you have %d." % [FcOwnersMeeting.PROPOSE_COST, meeting_influence()]}
+	for item in proposable_items():
+		if item["id"] == kind:
+			state.meeting["items"].append(item)
+			state.meeting["influence"] = meeting_influence() - FcOwnersMeeting.PROPOSE_COST
+			state.meeting["proposed"] = true
+			return {"ok": true, "reason": "Your proposal is on the agenda: %s." % item["title"]}
+	return {"ok": false, "reason": "That cannot be proposed right now."}
 
 
 ## Counts the votes: every proposal that gets enough yes votes becomes the league's rule, news
