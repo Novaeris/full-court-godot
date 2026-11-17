@@ -468,7 +468,7 @@ func close_meeting() -> Array:
 		var tally: Dictionary = entry["tally"]
 		var enacted := false
 		if tally["passes"]:
-			enacted = meeting.enact(item["id"])
+			enacted = meeting.enact(item["id"], state.user_team_id, state.current_season)
 		results.append({"title": item["title"], "passed": tally["passes"], "yes": tally["yes"], "no": tally["no"], "needed": tally["needed"], "enacted": enacted})
 		state.meeting_log.append([state.current_season, item["title"], 1 if enacted else 0, tally["yes"], tally["no"]])
 		state.world.add_news(state.current_date, "staff", "Owners' meeting: \"%s\" %s (%d for, %d against)." % [item["title"], "passed" if enacted else "failed", tally["yes"], tally["no"]])

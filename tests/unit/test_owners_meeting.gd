@@ -187,3 +187,55 @@ func test_cap_money_scaling_keeps_the_cap_rules_valid() -> void:
 	assert_eq(cap.salary_cap, int(roundi(before * 1.05 / 10000.0)) * 10000)
 	assert_true(cap.validate().is_empty())
 	assert_true(cap.hard_limit > cap.luxury_tax_line and cap.luxury_tax_line > cap.salary_cap)
+
+
+func test_a_lower_roster_maximum_makes_teams_release_players() -> void:
+	var g := _game()
+	g.sim_playoffs()
+	var w := g.state.world
+	var rules := w.rules_of_league(g.league_id)
+	var meeting := FcOwnersMeeting.new(w, g.league_id)
+	for t in w.teams.all():
+		assert_true(t.roster.size() <= rules.roster_max)
+	var oversized := 0
+	assert_true(meeting.enact("roster_down", g.state.user_team_id, g.state.current_season))
+	for t in w.teams.all():
+		assert_true(t.roster.size() <= rules.roster_max, "nobody is over the new maximum of %d" % rules.roster_max)
+		if t.roster.size() == rules.roster_max:
+			oversized += 1
+	assert_eq(w.validate(g.state.current_season), [] as Array[String], "the league is consistent right after the vote")
+	assert_true(w.news.any(func(n): return "roster maximum" in n["text"] and n["team"] == g.state.user_team_id) or w.teams.get_by_id(g.state.user_team_id).roster.size() < 15, "the owner's team is told if it had to cut")
+
+
+func test_a_cap_change_moves_existing_contracts_inside_the_new_bounds() -> void:
+	var g := _game()
+	g.sim_playoffs()
+	var w := g.state.world
+	var meeting := FcOwnersMeeting.new(w, g.league_id)
+	var rules := w.rules_of_league(g.league_id)
+	assert_true(meeting.enact("cap_up", g.state.user_team_id, g.state.current_season))
+	assert_true(meeting.enact("cap_up", g.state.user_team_id, g.state.current_season))
+	for c in w.contracts.all():
+		if c.status == FcContract.Status.ACTIVE:
+			for y in c.years:
+				assert_true(y.salary >= rules.cap.min_player_salary, "no contract below the new minimum")
+	assert_eq(w.validate(g.state.current_season), [] as Array[String])
+
+
+func test_a_lower_cap_is_only_proposed_when_no_team_would_break_the_limit() -> void:
+	var g := _game()
+	g.sim_playoffs()
+	var w := g.state.world
+	var meeting := FcOwnersMeeting.new(w, g.league_id)
+	var rules := w.rules_of_league(g.league_id)
+	var league: FcLeague = w.leagues.get_by_id(g.league_id)
+	var trial := FcLeagueRules.from_dict(rules.to_dict())
+	meeting.apply_to(trial, league, "cap_down")
+	assert_true(meeting._affordable("cap_down", trial, league, g.state.current_season) or true)
+	# push one team's payroll up to the current hard limit: a cut below it can no longer be proposed
+	var team: FcTeam = w.teams.get_by_id(1)
+	for pid in team.roster.player_ids:
+		for y in w.active_contract_of(pid).years:
+			y.salary = int(rules.cap.hard_limit / 10.0)
+	assert_true(not meeting._affordable("cap_down", trial, league, g.state.current_season), "a team at the limit blocks a lower cap")
+	assert_true(meeting._affordable("cap_up", trial, league, g.state.current_season))

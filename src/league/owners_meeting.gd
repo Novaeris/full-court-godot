@@ -41,10 +41,24 @@ func agenda(year: int) -> Array:
 			kinds.reverse()
 		for kind in kinds:
 			var trial := FcLeagueRules.from_dict(rules.to_dict())
-			if apply_to(trial, league, kind) and trial.validate(league).is_empty():
+			if apply_to(trial, league, kind) and trial.validate(league).is_empty() and _affordable(kind, trial, league, year):
 				out.append(_item(kind, family, rules, trial, league))
 				break
 	return out
+
+
+## A lower cap is only proposed if no team's payroll, this season or next, would be over the new
+## hard limit (existing contracts are not torn up).
+func _affordable(kind: String, trial: FcLeagueRules, league: FcLeague, year: int) -> bool:
+	if kind != "cap_down":
+		return true
+	var limit := trial.cap.effective_limit()
+	if limit <= 0:
+		return true
+	for tid in league.all_team_ids():
+		if world.payroll_of_team(tid, year) > limit or world.payroll_of_team(tid, year + 1) > limit:
+			return false
+	return true
 
 
 func _kinds_of(family: String) -> Array:
@@ -160,7 +174,10 @@ func apply_to(rules: FcLeagueRules, league: FcLeague, kind: String) -> bool:
 
 
 ## Makes a passed proposal law. Returns false if it no longer applies or would break the rules.
-func enact(kind: String) -> bool:
+## The league is then brought in line: contracts outside new salary bounds are moved into them,
+## and teams over a lowered roster maximum release their weakest players (`user_team_id`'s
+## team is told in the news). `year` is the season whose values decide who is weakest.
+func enact(kind: String, user_team_id: int = 0, year: int = 2026) -> bool:
 	var rules := world.rules_of_league(league_id)
 	var league: FcLeague = world.leagues.get_by_id(league_id)
 	var trial := FcLeagueRules.from_dict(rules.to_dict())
@@ -171,7 +188,39 @@ func enact(kind: String) -> bool:
 	rules.playoffs = trial.playoffs
 	rules.draft = trial.draft
 	rules.season = trial.season
+	if kind.begins_with("cap_"):
+		_refit_contracts(rules.cap)
+	if kind == "roster_down":
+		trim_rosters(rules.roster_max, user_team_id, year)
 	return true
+
+
+## Moves every active contract inside the cap system's salary bounds (a higher minimum raises the
+## smallest contracts, a lower maximum trims the biggest).
+func _refit_contracts(cap: FcCapRules) -> void:
+	for c in world.contracts.all():
+		if c.status != FcContract.Status.ACTIVE:
+			continue
+		var ceiling := cap.cornerstone_max_salary if c.is_cornerstone else cap.max_player_salary
+		for y in c.years:
+			y.salary = clampi(y.salary, cap.min_player_salary, ceiling)
+			y.guaranteed = mini(y.guaranteed, y.salary)
+
+
+## Teams over the roster maximum release their weakest players until they fit.
+func trim_rosters(roster_max: int, user_team_id: int, year: int) -> int:
+	var off := FcOffseason.new(world)
+	var released := 0
+	for team in world.teams.all():
+		while team.roster.size() > roster_max:
+			var before: Array = team.roster.player_ids.duplicate()
+			off._waive_worst(team, year)
+			released += 1
+			if team.id == user_team_id:
+				for pid in before:
+					if not team.roster.contains(pid):
+						world.add_news(FcDate.new(year, 7, 1), "signing", "%s was released: the league lowered the roster maximum to %d." % [world.player_name(pid), roster_max], team.id)
+	return released
 
 
 # --- voting ----------------------------------------------------------------------------------------
