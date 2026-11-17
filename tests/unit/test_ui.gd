@@ -168,7 +168,7 @@ func test_owner_can_change_prices_from_the_finance_tab() -> void:
 		if n is SpinBox:
 			values.append((n as SpinBox).value)
 		stack.append_array(n.get_children())
-	assert_eq(values.size(), 6, "price, marketing, loan-amount, dividend, concession-price and playoff-price controls exist in Owner Mode")
+	assert_eq(values.size(), 8, "price, marketing, season-ticket share, promotion nights, loan-amount, dividend, concession-price and playoff-price controls exist in Owner Mode")
 	assert_true(values.has(180.0), "the ticket price field shows the current price")
 	tab.free()
 

@@ -53,6 +53,14 @@ var playoff_premium_pct: int = 160
 ## sales but a bigger stock cost (see data/simulation/finance.json).
 var merch_tier: int = 1
 const MERCH_TIERS := ["Limited", "Standard", "Premium"]
+## Share of the arena's seats the owner sells as season tickets, in percent (0-60). Holders pay a discounted price
+## but always come (a renewal rate that follows fan interest), which protects a weak gate; for a sold-out
+## arena they only cost money. 0 = no season tickets (the default, and the AI teams).
+var season_ticket_share: int = 0
+## Home games per season on which tickets are half price and the arena is filled ("promotion nights"),
+## 0-10. They cost a little to stage and lift fan interest, but only pay for themselves when seats would
+## otherwise stay empty.
+var promotion_nights: int = 0
 
 
 func _init(team_id: int = 0) -> void:
@@ -76,6 +84,10 @@ func validate() -> Array[String]:
 		errors.append("distributions cannot be negative")
 	if valuation < 0:
 		errors.append("valuation cannot be negative")
+	if season_ticket_share < 0 or season_ticket_share > 60:
+		errors.append("season ticket share must be 0-60 percent")
+	if promotion_nights < 0 or promotion_nights > 10:
+		errors.append("promotion nights must be 0-10")
 	if sponsor_plan < 0 or sponsor_plan > 2:
 		errors.append("unknown sponsorship plan")
 	return errors
@@ -85,7 +97,7 @@ func to_dict() -> Dictionary:
 	return {
 		"schema": SCHEMA_VERSION, "id": id, "ticket_price": ticket_price,
 		"marketing_budget": marketing_budget, "facilities_level": facilities_level,
-		"fan_interest": fan_interest, "brand": brand, "cash": cash, "debt": debt, "valuation": valuation, "distributions": distributions, "mid_level_used_season": mid_level_used_season, "sponsor_plan": sponsor_plan, "projects": projects.duplicate(true), "suites_level": suites_level, "practice_level": practice_level, "medical_level": medical_level, "sponsor_deals": sponsor_deals.duplicate(true), "concession_price_pct": concession_price_pct, "playoff_premium_pct": playoff_premium_pct, "merch_tier": merch_tier,
+		"fan_interest": fan_interest, "brand": brand, "cash": cash, "debt": debt, "valuation": valuation, "distributions": distributions, "mid_level_used_season": mid_level_used_season, "sponsor_plan": sponsor_plan, "projects": projects.duplicate(true), "suites_level": suites_level, "practice_level": practice_level, "medical_level": medical_level, "sponsor_deals": sponsor_deals.duplicate(true), "season_ticket_share": season_ticket_share, "promotion_nights": promotion_nights, "concession_price_pct": concession_price_pct, "playoff_premium_pct": playoff_premium_pct, "merch_tier": merch_tier,
 	}
 
 
@@ -110,6 +122,8 @@ static func from_dict(d: Dictionary) -> FcTeamBusiness:
 	b.concession_price_pct = clampi(int(d.get("concession_price_pct", 100)), 70, 150)
 	b.playoff_premium_pct = clampi(int(d.get("playoff_premium_pct", 160)), 100, 300)
 	b.merch_tier = clampi(int(d.get("merch_tier", 1)), 0, 2)
+	b.season_ticket_share = clampi(int(d.get("season_ticket_share", 0)), 0, 60)
+	b.promotion_nights = clampi(int(d.get("promotion_nights", 0)), 0, 10)
 	for item in d.get("projects", []):
 		b.projects.append({"key": str(item["key"]), "seasons_left": int(item["seasons_left"])})
 	return b

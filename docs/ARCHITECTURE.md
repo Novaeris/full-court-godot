@@ -369,3 +369,9 @@ See TESTING.md.
 - `FcStaffChemistry.evaluate(team, year, replace)` scores a staff 0-100 from four derived parts: agreement (philosophy distance between GM, head coach and assistants), personality (professionalism, adaptability, ego; two big egos clash), coach-roster fit (the head coach's taste for threes and youth against the players) and continuity (years together). Nothing is saved. The Staff tab shows it, and the hire list previews the chemistry each candidate would give.
 - Effect: development coaching level changes by 0.15 per chemistry point above or below 60 (`FcOffseason._coach_development`).
 - GM negotiation (`FcGameController.gm_negotiation`, 35 with no GM): moves the salary a player or staff member accepts by up to 5% of the asking price (`FcPlayerMarket.NEGOTIATION_EFFECT`) and the profit an AI team demands in a trade by up to 8 points (`FcTradeDesk.NEGOTIATION_EFFECT`). Used in re-signing, free-agent signing, staff hiring and trades.
+
+## Ticket plan: season tickets and promotion nights (Owner Mode, 2026-11-17)
+- `FcTeamBusiness.season_ticket_share` (0-60% of seats) and `promotion_nights` (0-10 home games). Defaults 0, also for AI teams, so nothing changes unless the owner uses them. Constants in `data/simulation/finance.json`.
+- `FcFinanceEngine.ticket_split` divides a regular crowd into holders (share x seats x a renewal rate of 0.55 + 0.45 x fan interest) and single-game buyers (the demand left over). Holders pay 12% less and always come, so they help a weak gate (demand below the holders' seats) and cost money when the arena would sell out anyway.
+- A promotion night fills the arena at half price (the empty seats only), costs $0.4M x the money scale to stage (`expenses["promotions"]`), lifts concessions (more fans) and adds 0.8 to the fan-interest target per night (at most 4).
+- The Finances tab has the two controls and a plain-language hint with today's numbers (`FcGameController.ticket_plan_preview`).

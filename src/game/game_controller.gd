@@ -1332,6 +1332,42 @@ func set_playoff_premium(percent: int) -> bool:
 	return true
 
 
+## Share of the seats sold as season tickets, in percent (0-60).
+func set_season_ticket_share(percent: int) -> bool:
+	if percent < 0 or percent > int(FcFinanceEngine.load_constants()["season_ticket_max_share"]):
+		return false
+	business().season_ticket_share = percent
+	return true
+
+
+## Number of half-price promotion nights per season (0-10).
+func set_promotion_nights(nights: int) -> bool:
+	if nights < 0 or nights > int(FcFinanceEngine.load_constants()["promo_max_nights"]):
+		return false
+	business().promotion_nights = nights
+	return true
+
+
+## What the current ticket plan would mean for a regular game at today's demand:
+## {"holders", "single", "total", "capacity", "demand", "season_price", "promo_price", "promo_cost"}.
+func ticket_plan_preview() -> Dictionary:
+	var w := state.world
+	var team: FcTeam = w.teams.get_by_id(state.user_team_id)
+	var finance := FcFinanceEngine.new(w)
+	var rules := w.rules_of_league(league_id)
+	var scale := finance.price_scale_for(rules, w.leagues.get_by_id(league_id))
+	var arena: FcArena = w.arenas.get_by_id(team.arena_id)
+	var city: FcCity = w.cities.get_by_id(team.city_id)
+	var b := business()
+	var split := finance.ticket_split(b, city, arena, scale, float(b.ticket_price))
+	split["capacity"] = arena.capacity
+	split["demand"] = roundi(finance.demand(b, city, arena, scale, float(b.ticket_price)))
+	split["season_price"] = roundi(b.ticket_price * (1.0 - float(finance.k["season_ticket_discount"])))
+	split["promo_price"] = roundi(b.ticket_price * (1.0 - float(finance.k["promo_ticket_discount"])))
+	split["promo_cost"] = roundi(float(finance.k["promo_cost"]) * finance.scale_for(rules))
+	return split
+
+
 ## Merchandise range: 0 limited, 1 standard, 2 premium.
 func set_merch_tier(tier: int) -> bool:
 	if tier < 0 or tier > 2:

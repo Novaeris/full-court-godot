@@ -1314,6 +1314,30 @@ func _tab_finances() -> Control:
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.custom_minimum_size = Vector2(200, 0)
 	pricing.add_child(hint)
+	var tix := controller.ticket_plan_preview()
+	var season_row := HBoxContainer.new()
+	season_row.add_child(FcUiTables.label("Season tickets % of seats"))
+	var season_share := SpinBox.new()
+	season_share.min_value = 0
+	season_share.max_value = 60
+	season_share.step = 5
+	season_share.value = b.season_ticket_share
+	season_row.add_child(season_share)
+	season_row.add_child(FcUiTables.label("  Promotion nights"))
+	var promo_nights := SpinBox.new()
+	promo_nights.min_value = 0
+	promo_nights.max_value = 10
+	promo_nights.value = b.promotion_nights
+	season_row.add_child(promo_nights)
+	season_row.add_child(FcUiTables.button("Apply", func():
+		var ok3 := controller.set_season_ticket_share(int(season_share.value)) and controller.set_promotion_nights(int(promo_nights.value))
+		_say("Ticket plan updated." if ok3 else "Those values are not allowed.")))
+	pricing.add_child(season_row)
+	var plan_hint := FcUiTables.label("Season holders pay $%d (12%% off) and always come (%d of %d seats now); promotion nights sell the rest of the arena at $%d and cost %s each. Both only pay when seats would otherwise be empty (demand now %d of %d seats)." % [
+		tix["season_price"], tix["holders"], tix["capacity"], tix["promo_price"], FcUiTables.money(tix["promo_cost"]), tix["demand"], tix["capacity"]])
+	plan_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	plan_hint.custom_minimum_size = Vector2(200, 0)
+	pricing.add_child(plan_hint)
 	pricing.add_child(FcUiTables.label("Shop and concessions", 18, true))
 	var shop := HBoxContainer.new()
 	shop.add_child(FcUiTables.label("Concession prices %"))

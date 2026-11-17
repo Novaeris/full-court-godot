@@ -231,6 +231,17 @@ func demand(business: FcTeamBusiness, city: FcCity, arena: FcArena, scale: float
 	return base * pow(reference_price / maxf(1.0, price), float(k["price_elasticity"]))
 
 
+## How a regular home game's crowd splits between season-ticket holders and single-game buyers:
+## {"holders", "single", "total"}. Holders (a share of the seats times a renewal rate that follows fan interest)
+## always come; single-game buyers fill what is left of the demand.
+func ticket_split(business: FcTeamBusiness, city: FcCity, arena: FcArena, scale: float, price: float) -> Dictionary:
+	var demand_total := roundi(demand(business, city, arena, scale, price))
+	var renewal := clampf(float(k["season_renewal_base"]) + float(k["season_renewal_interest"]) * business.fan_interest / 100.0, 0.3, 1.0)
+	var holders := mini(arena.capacity, roundi(arena.capacity * business.season_ticket_share / 100.0 * renewal))
+	var single := mini(arena.capacity - holders, maxi(0, demand_total - holders))
+	return {"holders": holders, "single": single, "total": holders + single}
+
+
 func attendance(business: FcTeamBusiness, city: FcCity, arena: FcArena, scale: float, price: float) -> int:
 	return mini(arena.capacity, roundi(demand(business, city, arena, scale, price)))
 
@@ -350,18 +361,24 @@ func settle(league_id: int, season: FcSeason, human_teams: Array[int] = []) -> A
 		rec.ticket_price = business.ticket_price
 
 		var home_games: int = int(regular_home.get(tid, k["home_games_per_season"]))
-		var fans := attendance(business, city, arena, price_scale, float(business.ticket_price))
-		rec.average_attendance = fans
+		var split := ticket_split(business, city, arena, price_scale, float(business.ticket_price))
+		var fans: int = split["total"]
+		var promo_nights := mini(business.promotion_nights, home_games)
+		var normal_games := home_games - promo_nights
+		rec.average_attendance = roundi(float(fans * normal_games + arena.capacity * promo_nights) / maxf(1.0, home_games))
 		var m := market_factor(city)
 		var fac_factor := 0.8 + 0.4 * business.facilities_level / 100.0
 		var po_games: int = int(playoff_home.get(tid, 0))
 		var success := float(rec.playoff_rounds_won) / maxf(1.0, po.rounds if po != null else 1.0)
 
-		rec.revenue["tickets"] = fans * business.ticket_price * home_games
+		var season_price := business.ticket_price * (1.0 - float(k["season_ticket_discount"]))
+		var promo_price := business.ticket_price * (1.0 - float(k["promo_ticket_discount"]))
+		rec.revenue["tickets"] = roundi(split["holders"] * season_price * home_games + split["single"] * business.ticket_price * normal_games \
+			+ (arena.capacity - split["holders"]) * promo_price * promo_nights)
 		var playoff_fans := playoff_attendance(business, city, arena, price_scale, business.playoff_premium_pct)
 		rec.revenue["playoffs"] = roundi(playoff_fans * business.ticket_price * business.playoff_premium_pct / 100.0 * po_games \
 			+ playoff_fans * float(k["concessions_per_head"]) * price_scale * fac_factor * po_games * concession_factor(business.concession_price_pct))
-		rec.revenue["concessions"] = roundi(fans * float(k["concessions_per_head"]) * price_scale * fac_factor * home_games * concession_factor(business.concession_price_pct))
+		rec.revenue["concessions"] = roundi((fans * normal_games + arena.capacity * promo_nights) * float(k["concessions_per_head"]) * price_scale * fac_factor * concession_factor(business.concession_price_pct))
 		rec.revenue["merchandise"] = roundi(float(k["merchandise_base"]) * scale * pow(business.brand / 50.0, 1.2) * m * merch_multiplier(business))
 		rec.expenses["merchandise_stock"] = roundi(rec.revenue["merchandise"] * float(k["merch_cost_shares"][business.merch_tier]))
 		var plan_factor := 1.0 + 0.15 * success
@@ -394,6 +411,7 @@ func settle(league_id: int, season: FcSeason, human_teams: Array[int] = []) -> A
 		rec.expenses["staff"] = staff_pay
 		rec.expenses["arena_operations"] = roundi(float(k["arena_operations"]) * scale * arena.capacity / float(k["reference_capacity"]))
 		rec.expenses["marketing"] = business.marketing_budget
+		rec.expenses["promotions"] = roundi(promo_nights * float(k["promo_cost"]) * scale)
 		var cost_factor := 1.0 - float(k["executive_cost_effect"]) * (executive_skill(tid, "financial_acumen") - float(k["executive_neutral_skill"])) / 50.0
 		rec.expenses["travel"] = roundi(float(k["travel"]) * scale * cost_factor)
 		rec.expenses["administration"] = roundi(float(k["administration"]) * scale * cost_factor)
@@ -415,7 +433,8 @@ func settle(league_id: int, season: FcSeason, human_teams: Array[int] = []) -> A
 		var star := clampf((_best_overall(tid) - 50.0) / 40.0, 0.0, 1.0)
 		var interest_target := 25.0 + 55.0 * pow(win_pct, 0.9) + 12.0 * success + 8.0 * star \
 			+ float(k["executive_interest_effect"]) * (executive_skill(tid, "community_relations") - float(k["executive_neutral_skill"])) / 50.0 \
-			- float(k["concession_interest_effect"]) * (business.concession_price_pct / 100.0 - 1.0)
+			- float(k["concession_interest_effect"]) * (business.concession_price_pct / 100.0 - 1.0) \
+			+ minf(float(k["promo_interest_max"]), float(k["promo_interest_per_night"]) * promo_nights)
 		business.fan_interest = clampi(roundi(business.fan_interest + float(k["interest_catchup"]) * (interest_target - business.fan_interest)), 5, 100)
 		var marketing_effect := clampf(float(business.marketing_budget) / (12000000.0 * scale) * (1.0 + float(k["executive_marketing_effect"]) * (executive_skill(tid, "marketing") - float(k["executive_neutral_skill"])) / 50.0), 0.0, 1.0)
 		var brand_target := 15.0 + 0.55 * business.fan_interest + 20.0 * marketing_effect + (8.0 if season.champion_id == tid else 0.0)
