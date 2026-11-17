@@ -1,7 +1,7 @@
 # Progress Log
 
 Newest first. Written so someone returning after a break can see where things stand.
-Nothing has been pushed anywhere: the repository is local only (no remote).
+The repository was published to GitHub on 2026-11-17 at the founder's request (public: https://github.com/Novaeris/full-court-godot, remote `origin`, branch `main`). Later commits stay local until the founder asks for a push.
 
 ## 2026-11-16 hand-off: where Owner Mode stands
 

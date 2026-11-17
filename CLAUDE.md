@@ -11,7 +11,7 @@ The developer is a solo, beginner programmer. Explain decisions in plain languag
 - Free-to-play, no pay-to-win. No monetization code until there is a clear reason.
 - Real-world places are fine (real cities and countries, user-selectable by area). Teams, players, staff and branding are ORIGINAL and generated: no real franchises, player names, logos or league IP (those need licenses). Changed from "fully fictional" by the founder on 2026-11-15.
 - Leagues are user-customizable: size, which areas/cities, number of conferences and divisions.
-- Version control: Git, private GitHub repo. Never publish or push without being asked.
+- Version control: Git. The GitHub repo exists (public, Novaeris/full-court-godot, created 2026-11-17 at the founder's request, D-032). Never push, create or change remotes, or change visibility without being asked.
 
 ## Layout
 - `src/core/`   Foundation utilities with no game knowledge (seeded RNG, ID generation).

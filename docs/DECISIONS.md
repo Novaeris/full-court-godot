@@ -154,6 +154,10 @@ Built on the founder's instruction to continue; the following product choices we
 - Art and audio will be produced with AI tools (founder). Platform priority after Windows: **mobile** (Android/iOS), so touch-friendly layouts move earlier in the plan.
 - Consequences: the 50-year target is an M2 requirement (health, performance and save size over 50 seasons); Dynasty Mode is a separate product track (collection, lineups, likely online); legal review must cover loot-box rules, AI-generated assets (rights, store disclosure) and invented names.
 
+## D-032 Published to GitHub (2026-11-17, founder)
+- The founder authorized publishing: a PUBLIC repository `Novaeris/full-court-godot` was created and the whole history (86 commits) pushed. The name `Novaeris/Full-Court` already belongs to an earlier, different TypeScript project and was not touched.
+- Consequences to keep in mind: the commit author email is public; there is no LICENSE file (all rights reserved by default); the docs, including design and business notes, are public; invented names should still get the legal check before a commercial release (D-020). Pushes happen only when asked.
+
 ## D-031 Owners' meeting (2026-11-16, founder)
 - Relocation and expansion are in Owner Mode; teams vote on rule changes, expansion and similar items in a stage of the offseason.
 - AI owners have **no fixed personalities**: each vote comes from the team's current situation (record, payroll, profit, market) plus a fresh mood each year, so votes can change from year to year.
