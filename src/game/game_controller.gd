@@ -431,7 +431,7 @@ func meeting_held() -> bool:
 func open_meeting() -> bool:
 	if state.mode != FcGameState.MODE_OWNER or phase() != PHASE_COMPLETE or meeting_held():
 		return false
-	var items := _meeting().agenda(state.current_season, state.last_expansion_year)
+	var items := _meeting().agenda(state.current_season, state.last_expansion_year, state.user_team_id, state.relocation_log)
 	if items.is_empty():
 		state.meeting_year = state.current_season
 		return false
@@ -498,7 +498,7 @@ func lobby_owner(item_id: String, team_id: int) -> Dictionary:
 func proposable_items() -> Array:
 	if state.offseason_stage != 3 or state.meeting.get("proposed", false):
 		return []
-	return _meeting().proposable(state.current_season, state.meeting["items"], state.last_expansion_year)
+	return _meeting().proposable(state.current_season, state.meeting["items"], state.last_expansion_year, state.user_team_id, state.relocation_log)
 
 
 ## Adds one of proposable_items() to the agenda. Returns {"ok": bool, "reason": String}.
@@ -535,6 +535,12 @@ func close_meeting() -> Array:
 			enacted = true   # carried out by the expansion draft that follows
 			expansion_approved = true
 			state.last_expansion_year = state.current_season
+		elif tally["passes"] and str(item["id"]).begins_with("relocate:"):
+			var mover := int(item["mover"])
+			var old_city: String = state.world.cities.get_by_id(state.world.teams.get_by_id(mover).city_id).name
+			enacted = meeting.enact(item["id"], state.user_team_id, state.current_season)
+			if enacted:
+				state.relocation_log.append([state.current_season, mover, old_city, state.world.cities.get_by_id(state.world.teams.get_by_id(mover).city_id).name])
 		elif tally["passes"]:
 			enacted = meeting.enact(item["id"], state.user_team_id, state.current_season)
 		results.append({"title": item["title"], "passed": tally["passes"], "yes": tally["yes"], "no": tally["no"], "needed": tally["needed"], "enacted": enacted})

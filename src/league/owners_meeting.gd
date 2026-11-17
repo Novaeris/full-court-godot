@@ -41,7 +41,7 @@ static func lobby_cost(lean: float) -> int:
 
 ## Every kind of proposal the owner could add to the agenda (valid for the current rules, not
 ## already on it): [{"id", "family", "title", "detail", "supermajority", "proposed": true}].
-func proposable(year: int, on_agenda: Array, last_expansion_year: int = 0) -> Array:
+func proposable(year: int, on_agenda: Array, last_expansion_year: int = 0, user_team_id: int = 0, relocation_log: Array = []) -> Array:
 	var rules := world.rules_of_league(league_id)
 	var league: FcLeague = world.leagues.get_by_id(league_id)
 	var taken := {}
@@ -61,6 +61,11 @@ func proposable(year: int, on_agenda: Array, last_expansion_year: int = 0) -> Ar
 	if not expansion.is_empty() and not taken.has("expansion"):
 		expansion["proposed"] = true
 		out.append(expansion)
+	if user_team_id > 0 and FcRelocation.new(world, league_id).allowed(user_team_id, year, relocation_log) and not taken.has("relocate:%d" % user_team_id):
+		var own := relocation_item(user_team_id, year)
+		if not own.is_empty():
+			own["proposed"] = true
+			out.append(own)
 	return out
 
 var world: FcWorld
@@ -74,7 +79,7 @@ func _init(game_world: FcWorld, league: int) -> void:
 
 ## The agenda for a year: AGENDA_SIZE items from different families, each a proposal that
 ## would pass the rule checks if adopted. The same list every time for the same rules and year.
-func agenda(year: int, last_expansion_year: int = 0) -> Array:
+func agenda(year: int, last_expansion_year: int = 0, user_team_id: int = 0, relocation_log: Array = []) -> Array:
 	var rules := world.rules_of_league(league_id)
 	var league: FcLeague = world.leagues.get_by_id(league_id)
 	var rng := FcRng.new(hash("agenda:%d:%d" % [league_id, year]))
@@ -94,7 +99,27 @@ func agenda(year: int, last_expansion_year: int = 0) -> Array:
 	var expansion := _expansion_item(year, last_expansion_year)
 	if not expansion.is_empty() and rng.chance(EXPANSION_CHANCE):
 		out.append(expansion)
+	# a struggling AI team may ask to move
+	var mover := FcRelocation.new(world, league_id).struggling_team(year, user_team_id, relocation_log)
+	if mover > 0 and rng.chance(FcRelocation.REQUEST_CHANCE):
+		out.append(relocation_item(mover, year))
 	return out
+
+
+## "Approve the move of <team> to <city>". `id` is "relocate:<team id>".
+func relocation_item(team_id: int, year: int) -> Dictionary:
+	var relocation := FcRelocation.new(world, league_id)
+	var plan_data := relocation.plan(team_id, year)
+	if plan_data.is_empty():
+		return {}
+	var entry: Dictionary = plan_data["city"]
+	var fees := relocation.fee_for(team_id)
+	var team: FcTeam = world.teams.get_by_id(team_id)
+	var from_city: FcCity = world.cities.get_by_id(team.city_id)
+	return {"id": "relocate:%d" % team_id, "family": "relocation", "mover": team_id, "region": str(entry["region"]),
+		"title": "Approve the move of the %s to %s" % [team.identity.nickname, entry["name"]],
+		"detail": "The %s (%s) want to move to %s, a bigger market. They would get a new arena and lose part of their fan base. They pay a relocation fee of about $%.1fM, shared by the other owners ($%.1fM each). The conferences and divisions are redrawn. Needs two thirds of the votes." % [team.identity.nickname, from_city.name, entry["name"], fees["fee"] / 1e6, fees["each"] / 1e6],
+		"supermajority": true}
 
 
 ## The expansion proposal, or {} if the league cannot grow or grew too recently.
@@ -248,6 +273,8 @@ func apply_to(rules: FcLeagueRules, league: FcLeague, kind: String) -> bool:
 func enact(kind: String, user_team_id: int = 0, year: int = 2026) -> bool:
 	if kind == "expansion":
 		return not FcExpansion.new(world, league_id).execute(year).is_empty()
+	if kind.begins_with("relocate:"):
+		return not FcRelocation.new(world, league_id).execute(int(kind.get_slice(":", 1)), year).is_empty()
 	var rules := world.rules_of_league(league_id)
 	var league: FcLeague = world.leagues.get_by_id(league_id)
 	var trial := FcLeagueRules.from_dict(rules.to_dict())
@@ -336,12 +363,18 @@ func vote_of(team_id: int, item: Dictionary, situation: Dictionary, year: int) -
 		"expansion":
 			terms.append([0.5 if situation["profit"] < 0.03 else -0.1, "wants a share of the expansion fee", "does not need the fee"])
 			terms.append([-0.5 if rank_fraction < 0.3 else (0.2 if rank_fraction > 0.7 else 0.0), "more teams to beat", "does not want more competition for the title"])
+		"relocation":
+			var voter_region: String = world.cities.get_by_id(world.teams.get_by_id(team_id).city_id).region
+			terms.append([0.4 if situation["profit"] < 0.03 else 0.0, "wants a share of the relocation fee", "does not need the fee"])
+			terms.append([-0.7 if voter_region == str(item.get("region", "")) else 0.0, "", "does not want a rival in its own region"])
 		"playoffs":
 			var spots := rules.playoffs.team_count
 			var rank: int = situation["rank"]
 			var bubble := rank > spots - 2 and rank <= spots + 7
 			var top := rank <= spots * 0.3
 			terms.append([0.6 if bubble else (-0.4 if top else 0.0), "is on the bubble and wants a spot" if bubble else "more playoff games mean more revenue", "a bigger field dilutes the playoffs" if top else "worries about missing out"])
+	if item["family"] == "relocation" and team_id == int(item.get("mover", 0)):
+		return {"yes": true, "reason": "wants to move", "lean": 5.0}
 	var mood := FcRng.new(hash("mood:%d:%s:%d" % [year, item["id"], team_id])).range_float(-MOOD, MOOD)
 	var score := mood
 	var reason := "no strong feelings"

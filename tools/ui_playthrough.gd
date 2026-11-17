@@ -4,7 +4,7 @@ extends SceneTree
 ## (extensions, free agents, trades, picks, the draft, loans, projects, GM delegation, saving
 ## and loading) while checking that the game state stays valid.
 ##
-## Run:  godot_console --headless --path . --script res://tools/ui_playthrough.gd -- seasons=3 teams=30 seed=7 [reprice=1] [expand=1]
+## Run:  godot_console --headless --path . --script res://tools/ui_playthrough.gd -- seasons=3 teams=30 seed=7 [reprice=1] [expand=1] [relocate=1]
 ## It prints one line per stage and a list of problems; exit code 1 if any problem was found.
 
 var _app: FcApp
@@ -12,6 +12,7 @@ var _problems: Array[String] = []
 var _t0 := 0
 var _reprice := false
 var _expand := false
+var _relocate := false
 
 
 func _initialize() -> void:
@@ -28,6 +29,7 @@ func _initialize() -> void:
 			"seed": seed_text = kv[1]
 			"reprice": _reprice = kv[1] == "1"
 			"expand": _expand = kv[1] == "1"
+			"relocate": _relocate = kv[1] == "1"
 	_t0 = Time.get_ticks_msec()
 	_app = FcApp.new()
 	_app.saves = FcSaveManager.new("user://playthrough_saves")
@@ -61,7 +63,7 @@ func _initialize() -> void:
 		_ok("LEAGUE: profit rank %d of %d, revenue rank %d, ticket $%d (league average $%d), attendance %d" % [mine["profit_rank"], books.size(), mine["revenue_rank"], mine["price"], roundi(avg_price), mine["attendance"]])
 		_ok("RESULT: %d wins (expected %d), profit %s, payroll %s, approval %d, GM grade %s, rounds won %d" % [report["wins"], report["expected_wins"], FcUiTables.money(report["profit"]), FcUiTables.money(c.state.world.payroll_of_team(c.state.user_team_id, c.state.current_season)), report["approval"], card.get("grade", "-"), report["playoff_rounds_won"]])
 		_offseason(c, year)
-	_log("final: season %d, %s" % [c.state.current_season, _summary(c)])
+	_log("final: season %d, %s; %d teams in the league, %d franchise moves, %d expansions" % [c.state.current_season, _summary(c), c.state.world.leagues.get_by_id(c.league_id).team_count(), c.state.relocation_log.size(), 1 if c.state.last_expansion_year > 0 else 0])
 	_finish()
 
 
@@ -133,8 +135,19 @@ func _offseason(c: FcGameController, year: int) -> void:
 					for v in entry["tally"]["votes"]:
 						if not v["yes"]:
 							c.lobby_owner("expansion", v["team"])
+		if _relocate:
+			# propose moving the owner's own team and lobby everyone who leans against it
+			var own_id := "relocate:%d" % c.state.user_team_id
+			c.state.meeting["influence"] = 10
+			if c.propose_item(own_id)["ok"]:
+				c.cast_meeting_vote(own_id, true)
+				for entry in c.meeting_items():
+					if entry["item"]["id"] == own_id:
+						for v in entry["tally"]["votes"]:
+							if not v["yes"]:
+								c.lobby_owner(own_id, v["team"])
 		for e in items:
-			if not (_expand and e["item"]["id"] == "expansion"):
+			if not (_expand and e["item"]["id"] == "expansion") and not (_relocate and e["item"]["id"] == "relocate:%d" % c.state.user_team_id):
 				c.cast_meeting_vote(e["item"]["id"], year % 2 == 0)
 		_app.on_close_meeting()
 		_check("meeting closed")

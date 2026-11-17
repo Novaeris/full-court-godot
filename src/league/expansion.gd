@@ -43,7 +43,8 @@ func plan(year: int) -> Dictionary:
 	var delta := size - current
 	var used := {}
 	var areas := {}
-	for c in world.cities.all():
+	for tid in league.all_team_ids():   # a city a team has left is free again
+		var c: FcCity = world.cities.get_by_id(world.teams.get_by_id(tid).city_id)
 		used[c.name] = true
 		areas[c.area] = true
 	var candidates: Array = []
@@ -176,20 +177,10 @@ func execute(year: int, user_team_id: int = 0, user_protected: Array = []) -> Di
 	var structure := _structure_for(plan_data["size"], league.conferences.size())
 	gen.config.conference_count = structure["conferences"]
 	gen.config.divisions_per_conference = structure["divisions_per_conference"]
-	var by_name := {}
-	for entry in data.world["cities"]:
-		by_name[str(entry["name"])] = entry
-	var all_teams: Array[FcTeam] = []
-	var all_entries: Array = []
-	for tid in existing_ids:
-		var t: FcTeam = world.teams.get_by_id(tid)
-		all_teams.append(t)
-		all_entries.append(by_name.get(world.cities.get_by_id(t.city_id).name, {"lat": 0.0, "lon": 0.0}))
-	for i in new_teams.size():
-		all_teams.append(new_teams[i])
-		all_entries.append(plan_data["cities"][i])
-	var redrawn := gen._build_league(world, all_teams, all_entries)
-	league.conferences = redrawn.conferences
+	var all_ids: Array[int] = existing_ids.duplicate()
+	for t in new_teams:
+		all_ids.append(t.id)
+	redraw(all_ids, structure)
 
 	# the rules still have to fit the new league
 	var games := rules.season.games_per_team(league)
@@ -273,6 +264,27 @@ func _add_filler(gen: FcWorldGenerator, team: FcTeam, count: int, rng: FcRng, us
 		world.players.add(player)
 		team.roster.add(player.id)
 		world.contracts.add(gen._player_contract(world, rng, player.id, team.id, spec.level, cap))
+
+
+## Draws the conferences (west to east) and divisions (south to north) of the league again for
+## these teams from the coordinates of their cities. `structure` is one of the layouts from
+## FcLeagueStructure.valid_structures.
+func redraw(team_ids: Array[int], structure: Dictionary) -> void:
+	var league: FcLeague = world.leagues.get_by_id(league_id)
+	var cfg := FcGenerationConfig.load_default(data)
+	cfg.conference_count = structure["conferences"]
+	cfg.divisions_per_conference = structure["divisions_per_conference"]
+	var gen := FcWorldGenerator.new(data, world.definitions, cfg)
+	var by_name := {}
+	for entry in data.world["cities"]:
+		by_name[str(entry["name"])] = entry
+	var teams: Array[FcTeam] = []
+	var entries: Array = []
+	for tid in team_ids:
+		var t: FcTeam = world.teams.get_by_id(tid)
+		teams.append(t)
+		entries.append(by_name.get(world.cities.get_by_id(t.city_id).name, {"lat": 0.0, "lon": 0.0}))
+	league.conferences = gen._build_league(world, teams, entries).conferences
 
 
 ## The conference/division layout for a size, keeping the number of conferences if possible.

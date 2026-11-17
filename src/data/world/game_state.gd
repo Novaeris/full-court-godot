@@ -49,6 +49,8 @@ var meeting: Dictionary = {}
 var meeting_year: int = 0
 ## The year the league last expanded (0 = never): expansions are not proposed twice within a few years.
 var last_expansion_year: int = 0
+## Franchise moves: [[year, team id, old city, new city], ...].
+var relocation_log: Array = []
 ## While the expansion draft is pending (stage 4): {"year", "protected": [player ids of the owner's team]}.
 var expansion: Dictionary = {}
 ## The last expansion draft: [[year, pick number, new team id, player id, team he came from], ...].
@@ -106,6 +108,7 @@ func to_dict() -> Dictionary:
 		"meeting": meeting.duplicate(true),
 		"meeting_year": meeting_year,
 		"last_expansion_year": last_expansion_year,
+		"relocation_log": relocation_log.duplicate(true),
 		"expansion": expansion.duplicate(true),
 		"expansion_log": expansion_log.duplicate(true),
 		"meeting_log": meeting_log.duplicate(true),
@@ -160,6 +163,8 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 	s.offseason_stage = int(data.get("offseason_stage", 0))
 	s.meeting_year = int(data.get("meeting_year", 0))
 	s.last_expansion_year = int(data.get("last_expansion_year", 0))
+	for row in data.get("relocation_log", []):
+		s.relocation_log.append([int(row[0]), int(row[1]), str(row[2]), str(row[3])])
 	for row in data.get("expansion_log", []):
 		s.expansion_log.append([int(row[0]), int(row[1]), int(row[2]), int(row[3]), int(row[4])])
 	var raw_expansion = data.get("expansion", {})
@@ -180,6 +185,9 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 			var restored := {"id": str(item["id"]), "family": str(item["family"]), "title": str(item["title"]), "detail": str(item["detail"]), "supermajority": bool(item["supermajority"])}
 			if bool(item.get("proposed", false)):
 				restored["proposed"] = true
+			if item.has("mover"):
+				restored["mover"] = int(item["mover"])
+				restored["region"] = str(item.get("region", ""))
 			items.append(restored)
 		var lobbied := {}
 		for key in raw_meeting.get("lobbied", {}):
