@@ -381,3 +381,6 @@ See TESTING.md.
 
 ## First-time tutorial and player settings (M4, 2026-11-17)
 - `data/tutorial.json` holds the steps (title, tab, text); `FcApp.tutorial_steps/start_tutorial/tutorial_move/close_tutorial` show them as a panel under the top bar, switching to each step's tab. A new Owner Mode game opens it once; the **Help** button reopens it. `FcPreferences` (`user://preferences.cfg`, outside the saves) remembers that it was seen. Tests and tools set their own preferences file so they never touch the player's.
+
+## Look and feel, first pass (M4, 2026-11-17)
+- `FcUiTheme` holds every colour, panel, button, tab and table style (dark navy surface, basketball-orange accent) and the three text sizes; `FcApp.apply_text_size` sets it from the player's settings (main menu: Text size). Screens only use the heading colour through `FcUiTables.label`. The look is a placeholder until the founder sends references; changing the constants in `src/ui/ui_theme.gd` restyles every screen. `tools/screenshot.ps1` shows the result.

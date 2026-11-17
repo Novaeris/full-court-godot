@@ -108,3 +108,15 @@ func test_preferences_survive_and_a_missing_file_is_harmless() -> void:
 	assert_true(FcPreferences.new(PREFS).tutorial_done)
 	q.reset_tutorial()
 	assert_true(not FcPreferences.new(PREFS).tutorial_done)
+
+
+func test_text_size_is_a_setting_that_changes_the_theme_and_is_remembered() -> void:
+	assert_eq(app.preferences.text_size, 1)
+	app.apply_text_size(2)
+	assert_eq(app.theme.default_font_size, FcUiTheme.SIZES[2])
+	assert_eq(FcPreferences.new(PREFS).text_size, 2, "remembered")
+	app.apply_text_size(0)
+	assert_eq(app.theme.default_font_size, FcUiTheme.SIZES[0])
+	app.apply_text_size(99)
+	assert_eq(app.preferences.text_size, FcUiTheme.SIZES.size() - 1, "out-of-range choices are clamped")
+	assert_true(app.theme.has_stylebox("normal", "Button") and app.theme.has_stylebox("tab_selected", "TabContainer"), "the look is defined by the theme")

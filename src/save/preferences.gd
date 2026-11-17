@@ -8,6 +8,8 @@ const DEFAULT_PATH := "user://preferences.cfg"
 
 var path: String
 var tutorial_done: bool = false
+## The text size: 0 small, 1 normal, 2 large (see FcUiTheme).
+var text_size: int = 1
 
 
 func _init(file_path: String = DEFAULT_PATH) -> void:
@@ -19,12 +21,14 @@ func load_file() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(path) == OK:
 		tutorial_done = bool(cfg.get_value("tutorial", "done", false))
+		text_size = clampi(int(cfg.get_value("display", "text_size", 1)), 0, 2)
 
 
 ## Writes the settings. Returns false if the file could not be written (the game goes on regardless).
 func save_file() -> bool:
 	var cfg := ConfigFile.new()
 	cfg.set_value("tutorial", "done", tutorial_done)
+	cfg.set_value("display", "text_size", text_size)
 	return cfg.save(path) == OK
 
 

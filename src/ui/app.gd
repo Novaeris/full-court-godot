@@ -58,7 +58,7 @@ func setup() -> void:
 		return
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var background := ColorRect.new()
-	background.color = Color(0.08, 0.09, 0.12)
+	background.color = FcUiTheme.BACKGROUND
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(background)
 	var margin := MarginContainer.new()
@@ -69,9 +69,15 @@ func setup() -> void:
 	_root = VBoxContainer.new()
 	_root.add_theme_constant_override("separation", 10)
 	margin.add_child(_root)
-	theme = Theme.new()
-	theme.default_font_size = 15
+	apply_text_size(preferences.text_size)
 	show_main_menu()
+
+
+## Sets the text size (0 small, 1 normal, 2 large) for the whole game and remembers the choice.
+func apply_text_size(index: int) -> void:
+	preferences.text_size = clampi(index, 0, FcUiTheme.SIZES.size() - 1)
+	theme = FcUiTheme.build(preferences.text_size)
+	preferences.save_file()
 
 
 func _reset(title: String) -> VBoxContainer:
@@ -119,6 +125,18 @@ func show_main_menu() -> void:
 		row.add_child(FcUiTables.button("Load", on_load_selected))
 		row.add_child(FcUiTables.button("Delete", on_delete_selected))
 		box.add_child(row)
+	var settings := HBoxContainer.new()
+	settings.add_child(FcUiTables.label("Text size:"))
+	var size_pick := OptionButton.new()
+	for name in FcUiTheme.SIZE_NAMES:
+		size_pick.add_item(name)
+	size_pick.selected = preferences.text_size
+	size_pick.item_selected.connect(func(i): apply_text_size(i))
+	settings.add_child(size_pick)
+	settings.add_child(FcUiTables.button("Replay the tutorial next game", func():
+		preferences.reset_tutorial()
+		_say("The tutorial will open when you start your next Owner Mode game.")))
+	box.add_child(settings)
 	box.add_child(FcUiTables.button("Quit", func(): get_tree().quit()))
 
 
