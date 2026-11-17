@@ -109,6 +109,8 @@ func test_owner_career_is_saved_and_old_saves_start_fresh() -> void:
 
 func test_history_tab_shows_the_ownership_career() -> void:
 	var app := FcApp.new()
+	app.preferences = FcPreferences.new("user://test_preferences.cfg")
+	app.preferences.tutorial_done = true   # the tutorial has its own tests
 	app.saves = FcSaveManager.new("user://test_saves_career_ui")
 	Engine.get_main_loop().root.add_child(app)
 	app.setup()

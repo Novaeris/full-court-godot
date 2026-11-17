@@ -18,6 +18,11 @@ const TAB_NAMES := ["Overview", "Standings", "Schedule", "Roster", "Finances", "
 
 var controller: FcGameController
 var saves := FcSaveManager.new()
+## The player's settings (the tutorial is shown once, to a new Owner Mode game).
+var preferences := FcPreferences.new()
+## The open step of the tutorial (-1 = closed). Kept here because the dashboard is rebuilt often.
+var _tutorial_step: int = -1
+var _tutorial_steps: Array = []
 
 var _defs := FcDefinitionSet.load_default()
 var _data := FcGenerationData.load_default()
@@ -270,6 +275,10 @@ func show_team_choice() -> void:
 		rows.append([t.identity.display_name(city.name), city.country, "%.1fM" % (city.population / 1e6), FcUiTables.money(w.payroll_of_team(t.id, 2026)), "%d" % roundi(best), b.fan_interest])
 		ids.append(t.id)
 	box.add_child(FcUiTables.label("Pick the franchise you will own. Big markets earn more; small markets are harder but rewarding."))
+	var advice := FcUiTables.label("New to the game? Choose a team with a high fan interest and a good best player: a short tutorial will open when you start. You cannot be fired, and you can change teams later.")
+	advice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	advice.custom_minimum_size = Vector2(300, 0)
+	box.add_child(advice)
 	var table := FcUiTables.table(["Team", "Country", "Metro pop.", "Payroll", "Best player", "Fan interest"], rows, [0, 150, 90, 90, 90, 90])
 	box.add_child(table)
 	table.set_meta("team_ids", ids)
@@ -293,7 +302,81 @@ func on_start_game(team_id: int) -> void:
 	_pending_state.user_team_id = team_id
 	controller = FcGameController.resume(_pending_state)
 	_pending_state = null
+	if controller.state.mode == FcGameState.MODE_OWNER and not preferences.tutorial_done:
+		_tutorial_step = 0
 	show_dashboard()
+
+
+# --- the first-time tutorial ---------------------------------------------------------------
+
+## The steps of the tutorial: [{"title", "tab", "text"}] (data/tutorial.json).
+func tutorial_steps() -> Array:
+	if _tutorial_steps.is_empty():
+		var file := FileAccess.open("res://data/tutorial.json", FileAccess.READ)
+		var parsed = FcChecks.parse_json(file.get_as_text()) if file != null else null
+		if parsed is Dictionary:
+			_tutorial_steps = parsed.get("steps", [])
+	return _tutorial_steps
+
+
+## Opens the tutorial at its first step (the Help button).
+func start_tutorial() -> void:
+	_tutorial_step = 0
+	_show_tutorial_tab()
+	show_dashboard()
+
+
+## Moves the tutorial by `delta` steps; past the last step it closes and is remembered as seen.
+func tutorial_move(delta: int) -> void:
+	if _tutorial_step < 0:
+		return
+	_tutorial_step = maxi(0, _tutorial_step + delta)
+	if _tutorial_step >= tutorial_steps().size():
+		close_tutorial()
+		return
+	_show_tutorial_tab()
+	show_dashboard()
+
+
+## Closes the tutorial and remembers that it has been seen, so it does not open again by itself.
+func close_tutorial() -> void:
+	_tutorial_step = -1
+	preferences.mark_tutorial_done()
+	if controller != null:
+		show_dashboard()
+
+
+func tutorial_open() -> bool:
+	return _tutorial_step >= 0
+
+
+func _show_tutorial_tab() -> void:
+	var steps := tutorial_steps()
+	if _tutorial_step >= 0 and _tutorial_step < steps.size():
+		var index := TAB_NAMES.find(str(steps[_tutorial_step]["tab"]))
+		if index >= 0:
+			_last_tab = index
+
+
+func _tutorial_panel() -> Control:
+	var steps := tutorial_steps()
+	var step: Dictionary = steps[_tutorial_step]
+	var panel := PanelContainer.new()
+	var inner := VBoxContainer.new()
+	panel.add_child(inner)
+	inner.add_child(FcUiTables.label("Tutorial %d of %d: %s" % [_tutorial_step + 1, steps.size(), step["title"]], 18, true))
+	var body := FcUiTables.label(str(step["text"]), 15)
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.custom_minimum_size = Vector2(300, 0)
+	inner.add_child(body)
+	var buttons := HBoxContainer.new()
+	if _tutorial_step > 0:
+		buttons.add_child(FcUiTables.button("Back", func(): tutorial_move(-1)))
+	var last := _tutorial_step == steps.size() - 1
+	buttons.add_child(FcUiTables.button("Finish the tutorial" if last else "Next", func(): tutorial_move(1)))
+	buttons.add_child(FcUiTables.button("Skip the tutorial", close_tutorial))
+	inner.add_child(buttons)
+	return panel
 
 
 # --- dashboard ---------------------------------------------------------------------------
@@ -332,8 +415,12 @@ func show_dashboard() -> void:
 			else:
 				actions.add_child(FcUiTables.button("Start Next Season (offseason)", on_next_season))
 	actions.add_child(FcUiTables.button("Save", on_save))
+	if controller.state.mode == FcGameState.MODE_OWNER:
+		actions.add_child(FcUiTables.button("Help", start_tutorial))
 	actions.add_child(FcUiTables.button("Main Menu", show_main_menu))
 	box.add_child(actions)
+	if _tutorial_step >= 0 and _tutorial_step < tutorial_steps().size():
+		box.add_child(_tutorial_panel())
 	_tabs = TabContainer.new()
 	_tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	for name in TAB_NAMES:

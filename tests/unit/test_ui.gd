@@ -9,6 +9,8 @@ var app: FcApp
 
 func before_each() -> void:
 	app = FcApp.new()
+	app.preferences = FcPreferences.new("user://test_preferences.cfg")
+	app.preferences.tutorial_done = true   # the tutorial has its own tests
 	app.saves = FcSaveManager.new(SAVE_DIR)
 	Engine.get_main_loop().root.add_child(app)
 	app.setup()

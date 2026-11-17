@@ -89,6 +89,8 @@ func test_news_and_boxes_survive_saving() -> void:
 
 func test_ui_shows_news_and_box_scores() -> void:
 	var app := FcApp.new()
+	app.preferences = FcPreferences.new("user://test_preferences.cfg")
+	app.preferences.tutorial_done = true   # the tutorial has its own tests
 	app.saves = FcSaveManager.new("user://test_saves_ui_news")
 	Engine.get_main_loop().root.add_child(app)
 	app.setup()

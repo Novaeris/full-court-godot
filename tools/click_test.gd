@@ -21,6 +21,8 @@ func _initialize() -> void:
 	_screen.gui_embed_subwindows = true
 	root.add_child(_screen)
 	_app = FcApp.new()
+	_app.preferences = FcPreferences.new("user://test_preferences.cfg")
+	_app.preferences.tutorial_done = true   # the tutorial has its own tests
 	_app.saves = FcSaveManager.new("user://click_saves")
 	_screen.add_child(_app)
 	_app.setup()

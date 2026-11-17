@@ -26,6 +26,8 @@ func _initialize() -> void:
 			"offseason": _offseason = kv[1]
 	root.size = Vector2i(1280, 800)
 	_app = FcApp.new()
+	_app.preferences = FcPreferences.new("user://test_preferences.cfg")
+	_app.preferences.tutorial_done = true   # the tutorial has its own tests
 	_app.saves = FcSaveManager.new("user://screenshot_saves")
 	root.add_child(_app)
 	_app.setup()

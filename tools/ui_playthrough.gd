@@ -40,6 +40,8 @@ func _initialize() -> void:
 			"budget": _budget = kv[1]
 	_t0 = Time.get_ticks_msec()
 	_app = FcApp.new()
+	_app.preferences = FcPreferences.new("user://test_preferences.cfg")
+	_app.preferences.tutorial_done = true   # the tutorial has its own tests
 	_app.saves = FcSaveManager.new("user://playthrough_saves")
 	root.add_child(_app)
 	_app.setup()
