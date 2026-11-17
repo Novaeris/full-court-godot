@@ -18,6 +18,8 @@ const PHASE_COMPLETE := "season_complete"
 const PHASE_OFFSEASON := "offseason"
 ## Owner Mode only: the draft is under way and the owner picks for their team.
 const PHASE_DRAFT := "draft"
+## Owner Mode only: the league owners are meeting after the season to vote on rule changes.
+const PHASE_MEETING := "meeting"
 const SEASON_START_MONTH := 10
 const SEASON_START_DAY := 20
 
@@ -67,6 +69,7 @@ func phase() -> String:
 			match state.offseason_stage:
 				1: return PHASE_OFFSEASON
 				2: return PHASE_DRAFT
+				3: return PHASE_MEETING
 			return PHASE_COMPLETE
 	return PHASE_REGULAR
 
@@ -114,6 +117,8 @@ func sim_playoffs() -> void:
 ## contracts, draft, free agency, staff) and starts the next season.
 ## Returns the offseason report.
 func start_next_season() -> Dictionary:
+	if state.offseason_stage == 3:
+		close_meeting()
 	if state.offseason_stage == 0:
 		begin_offseason()
 	if state.offseason_stage == 2:
@@ -150,6 +155,8 @@ func _new_offseason() -> FcOffseason:
 ## release players before start_next_season() lets the AI teams sign players.
 ## Returns the report so far.
 func begin_offseason() -> Dictionary:
+	if state.offseason_stage == 3:
+		close_meeting()   # the owner skipped the meeting: nothing was voted for, the AI owners decide alone
 	sim_playoffs()
 	var finished := season()
 	_gm_log = []
@@ -399,6 +406,76 @@ func transfer_to(team_id: int) -> Dictionary:
 	_prepare_engine()
 	w.add_news(state.current_date, "staff", "%s's owner moves on: %s now has a new owner." % [old_name, w.team_display_name(team_id)], team_id)
 	return {"ok": true, "reason": "You are now the owner of %s." % w.team_display_name(team_id)}
+
+
+# --- the owners' meeting (Owner Mode) ----------------------------------------------------------
+
+func _meeting() -> FcOwnersMeeting:
+	return FcOwnersMeeting.new(state.world, league_id)
+
+
+## True once this season's meeting has been held (it is held once a year, after the season).
+func meeting_held() -> bool:
+	return state.meeting_year == state.current_season
+
+
+## Opens the owners' meeting (Owner Mode, season over, before the offseason begins, once a
+## season). Returns false if it cannot or there is nothing on the agenda.
+func open_meeting() -> bool:
+	if state.mode != FcGameState.MODE_OWNER or phase() != PHASE_COMPLETE or meeting_held():
+		return false
+	var items := _meeting().agenda(state.current_season)
+	if items.is_empty():
+		state.meeting_year = state.current_season
+		return false
+	state.meeting = {"year": state.current_season, "items": items, "votes": {}}
+	state.offseason_stage = 3
+	return true
+
+
+## The agenda with the current tally of each item: [{"item", "tally", "user_vote" (null/true/false)}].
+func meeting_items() -> Array:
+	var out: Array = []
+	if state.meeting.is_empty():
+		return out
+	for item in state.meeting["items"]:
+		var vote = state.meeting["votes"].get(item["id"], null)
+		out.append({"item": item, "tally": _meeting().tally(item, season(), state.current_season, state.user_team_id, vote), "user_vote": vote})
+	return out
+
+
+## The player's vote on an item of the agenda. Returns false outside the meeting.
+func cast_meeting_vote(item_id: String, yes: bool) -> bool:
+	if state.offseason_stage != 3:
+		return false
+	for item in state.meeting["items"]:
+		if item["id"] == item_id:
+			state.meeting["votes"][item_id] = yes
+			return true
+	return false
+
+
+## Counts the votes: every proposal that gets enough yes votes becomes the league's rule, news
+## and the log record the outcome, and the meeting ends. Returns
+## [{"title", "passed", "yes", "no", "needed", "enacted"}].
+func close_meeting() -> Array:
+	var results: Array = []
+	if state.offseason_stage != 3:
+		return results
+	var meeting := _meeting()
+	for entry in meeting_items():
+		var item: Dictionary = entry["item"]
+		var tally: Dictionary = entry["tally"]
+		var enacted := false
+		if tally["passes"]:
+			enacted = meeting.enact(item["id"])
+		results.append({"title": item["title"], "passed": tally["passes"], "yes": tally["yes"], "no": tally["no"], "needed": tally["needed"], "enacted": enacted})
+		state.meeting_log.append([state.current_season, item["title"], 1 if enacted else 0, tally["yes"], tally["no"]])
+		state.world.add_news(state.current_date, "staff", "Owners' meeting: \"%s\" %s (%d for, %d against)." % [item["title"], "passed" if enacted else "failed", tally["yes"], tally["no"]])
+	state.meeting = {}
+	state.meeting_year = state.current_season
+	state.offseason_stage = 0
+	return results
 
 
 # --- the draft (Owner Mode) -----------------------------------------------------------------

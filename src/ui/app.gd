@@ -14,7 +14,7 @@ const AREA_CHOICES := [
 const CAP_CHOICES := [["Soft cap with hard limit (recommended)", "soft_cap_with_hard_limit"], ["Hard cap", "hard_cap"], ["No cap (luxury tax only)", "no_cap"]]
 const ERA_CHOICES := [["Mid 2010s (default)", "mid_2010s"], ["Early 2010s: slower, mid-range", "early_2010s"], ["Late 2010s: fast, three-point heavy", "late_2010s"]]
 const GAMES_CHOICES := [["Short: about 40 games", 40], ["Medium: about 60 games", 60], ["Standard: about 80 games (default)", 80], ["Long: about 100 games", 100]]
-const TAB_NAMES := ["Overview", "Standings", "Schedule", "Roster", "Finances", "Staff", "Draft", "Market", "Trades", "History", "News", "League"]
+const TAB_NAMES := ["Overview", "Standings", "Schedule", "Roster", "Finances", "Staff", "Draft", "Market", "Trades", "Meeting", "History", "News", "League"]
 
 var controller: FcGameController
 var saves := FcSaveManager.new()
@@ -73,6 +73,8 @@ func _reset(title: String) -> VBoxContainer:
 	_root.add_child(box)
 	_content = box
 	_message = FcUiTables.label("")
+	_message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART   # a long message must not make the whole screen wider than the window
+	_message.custom_minimum_size = Vector2(200, 0)
 	_root.add_child(_message)
 	return box
 
@@ -295,7 +297,7 @@ func show_dashboard() -> void:
 	var phase := controller.phase()
 	var info := FcUiTables.label("%s    Season %d-%02d    %s    Mode: %s" % [
 		controller.state.current_date.to_iso(), s.year, (s.year + 1) % 100,
-		{"regular_season": "Regular season", "playoffs": "Playoffs", "season_complete": "Season complete", "offseason": "Offseason: free agency is open to you first", "draft": "The draft"}[phase],
+		{"regular_season": "Regular season", "playoffs": "Playoffs", "season_complete": "Season complete", "offseason": "Offseason: free agency is open to you first", "draft": "The draft", "meeting": "The owners are meeting"}[phase],
 		"Owner" if controller.state.mode == FcGameState.MODE_OWNER else "Spectator"], 16)
 	box.add_child(info)
 	var actions := HBoxContainer.new()
@@ -309,6 +311,8 @@ func show_dashboard() -> void:
 		FcGameController.PHASE_PLAYOFFS:
 			actions.add_child(FcUiTables.button("Next Playoff Day", func(): on_advance(1)))
 			actions.add_child(FcUiTables.button("Play All Playoffs", func(): on_sim_playoffs()))
+		FcGameController.PHASE_MEETING:
+			actions.add_child(FcUiTables.button("Close the meeting and count the votes", on_close_meeting))
 		FcGameController.PHASE_DRAFT:
 			actions.add_child(FcUiTables.button("Let the staff finish the draft", on_draft_auto))
 		FcGameController.PHASE_OFFSEASON:
@@ -354,6 +358,12 @@ func on_sim_playoffs() -> void:
 ## you); the next press lets the AI teams sign players and starts the new season.
 ## Spectator mode: one press does everything.
 func on_next_season() -> void:
+	if controller.state.mode == FcGameState.MODE_OWNER and controller.state.offseason_stage == 0 and not controller.meeting_held() and controller.open_meeting():
+		controller.autosave(saves)
+		_last_tab = FcApp.TAB_NAMES.find("Meeting")
+		show_dashboard()
+		_say("The league owners are meeting. Look through the proposals on the Meeting tab, vote on the ones you care about, then close the meeting. Press the button again afterwards to begin the offseason.")
+		return
 	if controller.state.mode == FcGameState.MODE_OWNER and controller.state.offseason_stage == 0 and controller.phase() != FcGameController.PHASE_PLAYOFFS and controller.phase() != FcGameController.PHASE_REGULAR and not _confirm_next_season:
 		var leaving := controller.expiring_players().filter(func(e): return not e["agreed"])
 		var leaving_staff := controller.expiring_staff().filter(func(e): return not e["agreed"])
@@ -384,6 +394,18 @@ func on_next_season() -> void:
 	controller.autosave(saves)
 	show_dashboard()
 	_say("New season. The AI teams signed %d free agents." % report["signed"] if not report.has("retired") else "New season. Offseason: %d retired, %d drafted, %d free agents signed, %d re-signed." % [report["retired"], report["drafted"], report["signed"], report["re_signed"]])
+
+
+## Counts the votes of the owners' meeting and shows what the league decided.
+func on_close_meeting() -> void:
+	var results := controller.close_meeting()
+	var lines: Array[String] = []
+	for r in results:
+		lines.append("%s: %s (%d for, %d against, %d needed)" % [r["title"], "PASSED" if r["enacted"] else "failed", r["yes"], r["no"], r["needed"]])
+	controller.autosave(saves)
+	_last_tab = FcApp.TAB_NAMES.find("Meeting")
+	show_dashboard()
+	_say("Meeting closed. " + " | ".join(lines))
 
 
 ## The staff finishes the draft for the user; the free-agency window opens.
@@ -418,6 +440,7 @@ func build_tab(tab_name: String) -> Control:
 		"Finances": return _tab_finances()
 		"Staff": return _tab_staff()
 		"Draft": return _tab_draft()
+		"Meeting": return _tab_meeting()
 		"Market": return _tab_market()
 		"Trades": return _tab_trades()
 		"History": return _tab_history()
@@ -587,6 +610,64 @@ func _tab_trades() -> Control:
 
 
 ## Free agents (best first) and the most recent draft. Read-only for now.
+## The owners' meeting: while it is on, the proposals with how every owner leans, and your vote.
+func _tab_meeting() -> Control:
+	var box := VBoxContainer.new()
+	var items := controller.meeting_items()
+	if items.is_empty():
+		box.add_child(FcUiTables.label("The league's owners meet once a year, after the season, to vote on rule changes. Press Begin Offseason when the season is over to open the meeting.", 16))
+	else:
+		box.add_child(FcUiTables.label("The owners' meeting: vote on each proposal (each franchise has one vote). Cap changes need two thirds, everything else a simple majority.", 16))
+		var summary: Array = []
+		for entry in items:
+			var vote = entry["user_vote"]
+			summary.append([entry["item"]["title"], entry["tally"]["yes"], entry["tally"]["no"], entry["tally"]["needed"], "-" if vote == null else ("Yes" if vote else "No"), "PASSES" if entry["tally"]["passes"] else "fails"])
+		var summary_table := FcUiTables.table(["Proposal", "Yes", "No", "Needed", "Your vote", "Now"], summary, [0, 50, 50, 70, 80, 70])
+		summary_table.custom_minimum_size = Vector2(0, 130)
+		summary_table.size_flags_vertical = Control.SIZE_FILL
+		box.add_child(summary_table)
+		var detail_label := FcUiTables.label("Select a proposal to see what it does and how every owner leans.")
+		detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		detail_label.custom_minimum_size = Vector2(200, 0)
+		box.add_child(detail_label)
+		var vote_rows := FcUiTables.table(["Owner", "Vote", "Why"], [], [0, 60, 0])
+		box.add_child(vote_rows)
+		var show_item := func(index: int):
+			var entry: Dictionary = items[index]
+			detail_label.text = "%s: %s" % [entry["item"]["title"], entry["item"]["detail"]]
+			vote_rows.clear()
+			var root_item := vote_rows.create_item()
+			for v in entry["tally"]["votes"]:
+				var row_item := vote_rows.create_item(root_item)
+				row_item.set_text(0, v["name"])
+				row_item.set_text(1, "Yes" if v["yes"] else "No")
+				row_item.set_text(2, v["reason"])
+		summary_table.item_selected.connect(func():
+			var picked := summary_table.get_selected()
+			if picked != null:
+				show_item.call(picked.get_index()))
+		if summary_table.get_root().get_child_count() > 0:
+			summary_table.get_root().get_child(0).select(0)
+			show_item.call(0)
+		var buttons := HBoxContainer.new()
+		for choice in [["Vote yes", true], ["Vote no", false]]:
+			buttons.add_child(FcUiTables.button(choice[0], func():
+				var picked2 := summary_table.get_selected()
+				if picked2 == null:
+					_say("Select a proposal first.")
+					return
+				controller.cast_meeting_vote(items[picked2.get_index()]["item"]["id"], choice[1])
+				show_dashboard()))
+		box.add_child(buttons)
+	var log_rows: Array = []
+	var log: Array = controller.state.meeting_log
+	for i in range(log.size() - 1, maxi(-1, log.size() - 13), -1):
+		log_rows.append(["%d-%02d" % [log[i][0], (log[i][0] + 1) % 100], log[i][1], "Passed" if log[i][2] == 1 else "Failed", "%d-%d" % [log[i][3], log[i][4]]])
+	box.add_child(FcUiTables.label("Past meetings", 16, true))
+	box.add_child(FcUiTables.table(["Season", "Proposal", "Result", "Vote"], log_rows, [70, 0, 70, 70]))
+	return box
+
+
 func _tab_draft() -> Control:
 	var w := controller.state.world
 	var box := VBoxContainer.new()

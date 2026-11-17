@@ -43,7 +43,7 @@ Scope (in rough order):
      dilution); the tally shows each team's vote and reason.
    - *The player's role*: one vote, a read on how each owner leans, and *influence* (from owner reputation and market size)
      to spend on lobbying or on proposing one item a year; supporting another owner's item can buy support for yours.
-   - *Staging*: (a) meeting with rule tweaks, expansion and relocation, AI voting and a tally; (b) influence, lobbying and
+   - *Staging* (decided 2026-11-16: AI owners have no fixed personalities, expansion stops at 64 teams, votes may change gameplay rules; a first version of (a) with rule votes only is built): (a) meeting with rule tweaks, expansion and relocation, AI voting and a tally; (b) influence, lobbying and
      player proposals; (c) the details: expansion draft with protected lists, realignment, arena for relocated teams.
    - *Fits the code*: league rules are already data classes with `validate()`; valid league sizes are known
      (`FcLeagueStructure`); the schedule builder and standings accept any valid structure; saves can hold 100 teams (D-005).

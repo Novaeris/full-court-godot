@@ -117,6 +117,14 @@ func _offseason(c: FcGameController, year: int) -> void:
 	for key in FcGameState.DELEGATION_KEYS:
 		c.set_delegation(key, delegate)
 	c.set_direction(["win_now", "balanced", "rebuild"][year % 3], ["frugal", "normal", "aggressive"][year % 3])
+	_app.on_next_season()   # the owners meeting opens first
+	if c.phase() == FcGameController.PHASE_MEETING:
+		var items := c.meeting_items()
+		_ok("owners meeting: %s" % "; ".join(items.map(func(e): return "%s (%d-%d, needs %d)" % [e["item"]["title"], e["tally"]["yes"], e["tally"]["no"], e["tally"]["needed"]])))
+		for e in items:
+			c.cast_meeting_vote(e["item"]["id"], year % 2 == 0)
+		_app.on_close_meeting()
+		_check("meeting closed")
 	_app.on_next_season()   # warning or begin offseason
 	if c.state.offseason_stage == 0:
 		_app.on_next_season()

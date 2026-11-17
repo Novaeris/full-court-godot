@@ -80,7 +80,7 @@ Deferred. Condition from founder: keep a clean persistence abstraction. Implemen
 ## D-017 League size and structure (2026-11-15, founder request)
 - At creation: 4-64 teams, conferences 1-4, divisions per conference 1-8, EVERY division the same size, 3-8 teams (a 4-8 team league may be one division). Team counts with no valid layout (11, 13, 17, 19, 22, 23, 26, 29, 31, 37, 41, 43, 47, 53, 55, 57-59, 61, 62) are refused with a list of nearby sizes that work. Reason: fair schedules and brackets.
 - Why a 4-team minimum: with at most 4 games per opponent, a 2-3 team league cannot reach a 10-game season.
-- Expansion: a saved league may grow to 100 teams (limited by the 100 nicknames and 154 cities in the data). Inside a save uneven divisions are legal; the future expansion system must rebalance and re-validate schedules.
+- Expansion: a saved league may grow to 64 teams (D-031; earlier note said 100). Inside a save uneven divisions are legal; the future expansion system must rebalance and re-validate schedules.
 - The earlier behavior of splitting an uneven team count by distributing remainders was removed from validation (the helper `FcLeague.make_even` still does it for previews).
 
 ## D-018 League rules (2026-11-15, founder request)
@@ -153,6 +153,13 @@ Built on the founder's instruction to continue; the following product choices we
 - **Dynasty Mode**: a **card-collecting** game inspired by NBA 2K MyTeam with **static players made by the founder**; has **paid features**.
 - Art and audio will be produced with AI tools (founder). Platform priority after Windows: **mobile** (Android/iOS), so touch-friendly layouts move earlier in the plan.
 - Consequences: the 50-year target is an M2 requirement (health, performance and save size over 50 seasons); Dynasty Mode is a separate product track (collection, lineups, likely online); legal review must cover loot-box rules, AI-generated assets (rights, store disclosure) and invented names.
+
+## D-031 Owners' meeting (2026-11-16, founder)
+- Relocation and expansion are in Owner Mode; teams vote on rule changes, expansion and similar items in a stage of the offseason.
+- AI owners have **no fixed personalities**: each vote comes from the team's current situation (record, payroll, profit, market) plus a fresh mood each year, so votes can change from year to year.
+- The league size ceiling, including expansion, is **64 teams** (this replaces the earlier 100-team ceiling in D-005's note).
+- Votes **may change how the game plays** (playoff series, season length, roster size, lottery, cap level), not only money and structure rules.
+- The player's "influence" mechanic is still being defined (see the plan); stage (a) of the meeting has the player's one vote and a view of how every owner leans.
 
 ## D-030 Platforms by mode (2026-11-16, founder)
 - PC (Windows first, Mac later) carries all three modes. Mobile (Android/iOS) carries **Dynasty Mode only**.

@@ -13,7 +13,7 @@ extends RefCounted
 
 const MAX_TEAMS_AT_CREATION := 64
 ## A saved league can grow (expansion) up to this many teams.
-const MAX_TEAMS_IN_SAVE := 100
+const MAX_TEAMS_IN_SAVE := 64   # D-031: expansion stops at 64 too
 ## Smaller leagues cannot play a season of at least 10 games (a team can meet
 ## each opponent at most 4 times).
 const MIN_TEAMS := 4

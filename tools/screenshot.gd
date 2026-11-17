@@ -41,6 +41,12 @@ func _initialize() -> void:
 		_app.on_sim_regular()
 		_app.on_sim_playoffs()
 		_app.on_next_season()
+		if _app.controller.phase() == FcGameController.PHASE_MEETING:
+			if _offseason == "meeting":
+				_app._tabs.current_tab = FcApp.TAB_NAMES.find("Meeting")
+			else:
+				_app.on_close_meeting()
+				_app.on_next_season()
 		if _app.controller.state.offseason_stage == 0:
 			_app.on_next_season()
 		if _offseason == "window" and _app.controller.phase() == FcGameController.PHASE_DRAFT:

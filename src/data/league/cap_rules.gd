@@ -97,6 +97,27 @@ var no_trade_min_seasons_with_team: int = 8
 
 
 ## Payroll no team may exceed, or 0 if there is none.
+## Multiplies every money amount of the cap system by `factor` (rounded to $10,000): the cap, the
+## tax line, the hard limit, salary floors and ceilings, exceptions, the rookie scale. Used when
+## the owners vote the cap up or down.
+func scale_money(factor: float) -> void:
+	salary_cap = _scaled(salary_cap, factor)
+	luxury_tax_line = _scaled(luxury_tax_line, factor)
+	hard_limit = _scaled(hard_limit, factor)
+	minimum_payroll = _scaled(minimum_payroll, factor)
+	min_player_salary = _scaled(min_player_salary, factor)
+	max_player_salary = _scaled(max_player_salary, factor)
+	mid_level_exception = _scaled(mid_level_exception, factor)
+	restriction_line = _scaled(restriction_line, factor)
+	rookie_scale_top = _scaled(rookie_scale_top, factor)
+	rookie_scale_bottom = _scaled(rookie_scale_bottom, factor)
+	cornerstone_max_salary = _scaled(cornerstone_max_salary, factor)
+
+
+func _scaled(amount: int, factor: float) -> int:
+	return int(roundi(amount * factor / 10000.0)) * 10000 if amount > 0 else amount
+
+
 func effective_limit() -> int:
 	match cap_type:
 		"hard":

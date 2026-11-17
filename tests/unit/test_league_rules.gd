@@ -76,7 +76,7 @@ func test_creation_rejects_uneven_or_oversized_leagues_with_suggestions() -> voi
 
 func test_expansion_headroom() -> void:
 	assert_eq(FcLeagueStructure.MAX_TEAMS_AT_CREATION, 64)
-	assert_true(FcLeagueStructure.MAX_TEAMS_IN_SAVE > 64)
+	assert_eq(FcLeagueStructure.MAX_TEAMS_IN_SAVE, 64, "expansion stops at 64 (D-031)")
 	assert_true(data.world["nicknames"].size() >= FcLeagueStructure.MAX_TEAMS_IN_SAVE, "enough names to expand")
 	assert_true(data.world["cities"].size() >= FcLeagueStructure.MAX_TEAMS_IN_SAVE, "enough cities to expand")
 

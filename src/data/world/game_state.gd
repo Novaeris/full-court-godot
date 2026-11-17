@@ -38,9 +38,16 @@ const DELEGATION_KEYS := ["contracts", "draft", "free_agency", "trades", "injuri
 var direction: Dictionary = {"philosophy": "balanced", "budget": "normal"}
 const PHILOSOPHIES := ["win_now", "balanced", "rebuild"]
 const BUDGETS := ["frugal", "normal", "aggressive"]
-## 0 = normal; 2 = the owner's draft is under way; 1 = the draft and the rest of the first half are
+## 0 = normal; 3 = the owners' meeting is under way; 2 = the owner's draft is under way; 1 = the draft and the rest of the first half are
 ## done and the owner's free-agency window is open (current_season is still the season that just ended).
 var offseason_stage: int = 0
+## The owners' meeting while it is under way (stage 3): {"year", "items": [item dictionaries from
+## FcOwnersMeeting], "votes": {item id: bool}}. Empty otherwise.
+var meeting: Dictionary = {}
+## The last season in which the meeting was held (so it is held once a year).
+var meeting_year: int = 0
+## What past meetings decided: [[year, title, passed (0/1), yes, no], ...].
+var meeting_log: Array = []
 ## The owner's career (Owner Mode): "reputation" 0-100 (starts at START_REPUTATION), "history"
 ## [[year, team id, approval, wins, title (0 or 1)], ...] one row per finished season, and
 ## "transfer_year" (the last season in which the owner changed teams, 0 = never).
@@ -89,6 +96,9 @@ func to_dict() -> Dictionary:
 		"delegation": delegation.duplicate(),
 		"direction": direction.duplicate(),
 		"offseason_stage": offseason_stage,
+		"meeting": meeting.duplicate(true),
+		"meeting_year": meeting_year,
+		"meeting_log": meeting_log.duplicate(true),
 		"owner_career": owner_career.duplicate(true),
 		"draft_state": draft_state.duplicate(true),
 		"rng": rng.get_state(),
@@ -138,6 +148,18 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 	s.user_team_id = int(data.get("user_team_id", 0))
 	s.current_season = int(data.get("current_season", 2026))
 	s.offseason_stage = int(data.get("offseason_stage", 0))
+	s.meeting_year = int(data.get("meeting_year", 0))
+	for row in data.get("meeting_log", []):
+		s.meeting_log.append([int(row[0]), str(row[1]), int(row[2]), int(row[3]), int(row[4])])
+	var raw_meeting = data.get("meeting", {})
+	if raw_meeting is Dictionary and not raw_meeting.is_empty():
+		var votes := {}
+		for key in raw_meeting.get("votes", {}):
+			votes[str(key)] = bool(raw_meeting["votes"][key])
+		var items: Array = []
+		for item in raw_meeting.get("items", []):
+			items.append({"id": str(item["id"]), "family": str(item["family"]), "title": str(item["title"]), "detail": str(item["detail"]), "supermajority": bool(item["supermajority"])})
+		s.meeting = {"year": int(raw_meeting.get("year", 0)), "items": items, "votes": votes}
 	var raw_career = data.get("owner_career", {})
 	if raw_career is Dictionary and not raw_career.is_empty():
 		var rows: Array = []
