@@ -1465,6 +1465,11 @@ func _tab_staff() -> Control:
 		rows.append([FcStaffRole.display_name(sc.role), m.identity.full_name(), m.reputation, m.experience_years, FcUiTables.money(sc.salary_for(controller.state.current_season)), sc.end_season()])
 		ids.append(m.id)
 	if controller.state.mode == FcGameState.MODE_OWNER:
+		var chemistry := controller.staff_chemistry()
+		front.add_child(FcUiTables.label("Staff chemistry: %d / 100 (%s)" % [chemistry["score"], chemistry["label"]], 18, true))
+		front.add_child(FcUiTables.label("It moves how fast your players develop (%+.1f coaching points now)." % chemistry["development_bonus"], 14))
+		for part in chemistry["parts"]:
+			front.add_child(FcUiTables.label("%s: %d. %s" % [part["name"], roundi(part["value"]), part["note"]], 14))
 		front.add_child(FcUiTables.label("Front office: what your general manager handles", 18, true))
 		var gm := controller.gm_summary()
 		if gm.is_empty():
@@ -1524,7 +1529,7 @@ func _tab_staff() -> Control:
 			person_picker.clear()
 			var role: int = role_picker.get_item_metadata(role_picker.selected)
 			for m in controller.staff_pool(role).slice(0, 12):
-				person_picker.add_item("%s (rep %d, %s)" % [m.identity.full_name(), m.reputation, FcUiTables.money(controller.asking_salary(m.id))])
+				person_picker.add_item("%s (rep %d, %s, staff chemistry would be %d)" % [m.identity.full_name(), m.reputation, FcUiTables.money(controller.asking_salary(m.id)), controller.staff_chemistry(m.id, role)["score"]])
 				person_picker.set_item_metadata(person_picker.item_count - 1, m.id)
 		role_picker.item_selected.connect(func(_i): fill.call())
 		fill.call()

@@ -364,3 +364,8 @@ See TESTING.md.
 
 ## Overtime rate (M3, recalibrated 2026-11-17)
 - A pure shot-by-shot model gave about 2.3-2.6% overtime games (real leagues about 5-6%). Real teams that are behind by 1-3 points in the last 24 seconds of the 4th quarter hold the ball for the last shot, and with 3 down they go for a three. `FcGameSimulator._chasing_a_tie` / `_tie_shot_kind` do this (`late_tie_window_seconds` in `data/simulation/tuning.json`). Over 6,000 games the overtime rate is now about 4.0% (all 16 league-average checks in range, home win rate and margins unchanged). Still below real; a further step would be late-game fouling by the leading team (tried once before without effect).
+
+## Staff chemistry and the general manager's negotiation (Owner Mode, 2026-11-17)
+- `FcStaffChemistry.evaluate(team, year, replace)` scores a staff 0-100 from four derived parts: agreement (philosophy distance between GM, head coach and assistants), personality (professionalism, adaptability, ego; two big egos clash), coach-roster fit (the head coach's taste for threes and youth against the players) and continuity (years together). Nothing is saved. The Staff tab shows it, and the hire list previews the chemistry each candidate would give.
+- Effect: development coaching level changes by 0.15 per chemistry point above or below 60 (`FcOffseason._coach_development`).
+- GM negotiation (`FcGameController.gm_negotiation`, 35 with no GM): moves the salary a player or staff member accepts by up to 5% of the asking price (`FcPlayerMarket.NEGOTIATION_EFFECT`) and the profit an AI team demands in a trade by up to 8 points (`FcTradeDesk.NEGOTIATION_EFFECT`). Used in re-signing, free-agent signing, staff hiring and trades.

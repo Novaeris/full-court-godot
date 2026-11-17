@@ -10,6 +10,8 @@ extends RefCounted
 
 ## The AI wants to come out this much ahead (a fraction of what it gives up).
 const AI_PROFIT := 0.10
+## The owner's general manager negotiates: a skill of 100 lowers the AI's required profit by this much, a skill of 0 raises it.
+const NEGOTIATION_EFFECT := 0.08
 ## How many drafts ahead picks can be traded.
 const PICK_YEARS := 3
 
@@ -24,7 +26,7 @@ func _init(game_world: FcWorld) -> void:
 
 ## Result: {"accepted": bool, "reason": String}. Nothing changes unless accepted
 ## and `execute` is true.
-func propose(league_id: int, year: int, user_team_id: int, ai_team_id: int, give_ids: Array, get_ids: Array, ai_contending: bool, execute: bool = true, give_picks: Array = [], get_picks: Array = [], first_pick_year: int = 0) -> Dictionary:
+func propose(league_id: int, year: int, user_team_id: int, ai_team_id: int, give_ids: Array, get_ids: Array, ai_contending: bool, execute: bool = true, give_picks: Array = [], get_picks: Array = [], first_pick_year: int = 0, negotiation: float = 50.0) -> Dictionary:
 	var rules := world.rules_of_league(league_id)
 	var user_team: FcTeam = world.teams.get_by_id(user_team_id)
 	var ai_team: FcTeam = world.teams.get_by_id(ai_team_id)
@@ -72,7 +74,7 @@ func propose(league_id: int, year: int, user_team_id: int, ai_team_id: int, give
 	var strengths := _strength_fractions(league)
 	var received := _package_value(give_ids, year, ai_contending) + _picks_value(give_picks, first_pick_year, strengths, ai_contending)
 	var given := _package_value(get_ids, year, ai_contending) + _picks_value(get_picks, first_pick_year, strengths, ai_contending)
-	if received < given * (1.0 + AI_PROFIT) + 1.0:
+	if received < given * (1.0 + AI_PROFIT - NEGOTIATION_EFFECT * (negotiation - 50.0) / 50.0) + 1.0:
 		return _no("%s turned the offer down: it does not think it gets enough back." % world.team_display_name(ai_team_id))
 	if execute:
 		# everybody leaves first, then everybody arrives: a full roster only has room after its outgoing players go

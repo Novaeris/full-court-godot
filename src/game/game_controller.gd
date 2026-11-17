@@ -309,7 +309,7 @@ func propose_trade(ai_team_id: int, give_ids: Array, get_ids: Array, preview: bo
 	if state.offseason_stage == 2:
 		return {"accepted": false, "reason": "Finish the draft first."}
 	var desk := FcTradeDesk.new(state.world)
-	return desk.propose(league_id, contract_year(), state.user_team_id, ai_team_id, give_ids, get_ids, is_contending(ai_team_id), not preview, give_picks, get_picks, first_tradable_pick_year())
+	return desk.propose(league_id, contract_year(), state.user_team_id, ai_team_id, give_ids, get_ids, is_contending(ai_team_id), not preview, give_picks, get_picks, first_tradable_pick_year(), gm_negotiation())
 
 
 # --- the owner's career: reputation and changing jobs -----------------------------------------
@@ -655,6 +655,22 @@ var _gm_log: Array[String] = []
 
 
 ## The general manager's talent evaluation (0-100) and name, or {} if there is no GM.
+## The owner's general manager's negotiation skill (0-100): it lowers what players, staff and AI teams
+## ask for in the owner's deals. A club with no general manager negotiates at 35 (a poor level).
+func gm_negotiation() -> float:
+	var gm := state.world.staff_in_role(state.user_team_id, FcStaffRole.Id.GENERAL_MANAGER)
+	return gm.skills.get_value("negotiation") if gm != null else 35.0
+
+
+## How well the owner's staff works together: see FcStaffChemistry.evaluate. `staff_id` and `role` preview
+## the chemistry if that person were hired (a unique role is replaced).
+func staff_chemistry(staff_id: int = 0, role: int = 0) -> Dictionary:
+	var replace := {}
+	if staff_id > 0:
+		replace = {"role": role, "staff_id": staff_id}
+	return FcStaffChemistry.new(state.world).evaluate(state.user_team_id, contract_year(), replace)
+
+
 func gm_summary() -> Dictionary:
 	var gm := state.world.staff_in_role(state.user_team_id, FcStaffRole.Id.GENERAL_MANAGER)
 	if gm == null:
@@ -1106,7 +1122,7 @@ func extend_contract(player_id: int, salary_offered: int = -1, years_offered: in
 	var wanted := clampi(salary_offered if salary_offered > 0 else ask, rules.cap.min_player_salary, rules.cap.max_player_salary)
 	if state.agreed_extensions.has(player_id):
 		return {"ok": false, "reason": "%s has already agreed to stay." % p.identity.full_name()}
-	var verdict := market.evaluate_offer(p, age, rules.cap, wanted, years, true)
+	var verdict := market.evaluate_offer(p, age, rules.cap, wanted, years, true, gm_negotiation())
 	if not verdict["accepted"]:
 		return {"ok": false, "required": verdict["required"], "reason": "%s will not accept that: he wants at least %s a year for %d years." % [p.identity.full_name(), "$%.2fM" % (verdict["required"] / 1e6), years]}
 	var check := rules.cap.check_signing(w.payroll_of_team(team.id, next_year), wanted, FcCapRules.SigningKind.OWN_PLAYER)
@@ -1192,7 +1208,7 @@ func sign_free_agent(player_id: int, salary_offered: int = -1, years_offered: in
 	var ask := market.asking_salary(p, age, rules.cap)
 	var years := clampi(years_offered if years_offered > 0 else market.desired_years(age, rules.cap), 1, rules.cap.max_contract_years)
 	var offer := clampi(salary_offered if salary_offered > 0 else ask, rules.cap.min_player_salary, rules.cap.max_player_salary)
-	var verdict := market.evaluate_offer(p, age, rules.cap, offer, years, false)
+	var verdict := market.evaluate_offer(p, age, rules.cap, offer, years, false, gm_negotiation())
 	if not verdict["accepted"]:
 		return {"signed": false, "required": verdict["required"], "reason": "%s will not accept that: he wants at least %s a year for %d years." % [p.identity.full_name(), "$%.2fM" % (verdict["required"] / 1e6), years]}
 	var payroll := w.payroll_of_team(team.id, year)
@@ -1476,7 +1492,7 @@ const STAFF_SECURITY_PER_YEAR := 0.025
 ## The least first-year salary this person accepts for a contract of `years`
 ## (staff re-signing with the owner's team give an extra 3% discount).
 func staff_minimum_acceptable(staff_id: int, years: int, own_team: bool = false) -> int:
-	var flex := STAFF_FLEXIBILITY + (0.03 if own_team else 0.0)
+	var flex := STAFF_FLEXIBILITY + (0.03 if own_team else 0.0) + FcPlayerMarket.NEGOTIATION_EFFECT * (gm_negotiation() - 50.0) / 50.0
 	var factor := 1.0 - STAFF_SECURITY_PER_YEAR * clampi(years - 3, -2, 2)
 	return int(ceil(asking_salary(staff_id) * (1.0 - flex) * factor / 10000.0)) * 10000
 

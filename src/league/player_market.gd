@@ -47,13 +47,16 @@ func desired_years(age: int, cap: FcCapRules) -> int:
 ## they want, more per year below it).
 const BASE_FLEXIBILITY := 0.06
 const SECURITY_PER_YEAR := 0.025
+## A general manager's negotiation skill (0-100, 50 is average) moves the salary a player accepts by up to
+## this much of his asking price either way (a great negotiator gets a 5% discount, a poor one pays 5% more).
+const NEGOTIATION_EFFECT := 0.05
 
 
 ## The least first-year salary this player accepts for a contract of `years`.
 ## `own_team` is true when he is re-signing with his current team.
-func minimum_acceptable(player: FcPlayer, age: int, cap: FcCapRules, years: int, own_team: bool) -> int:
+func minimum_acceptable(player: FcPlayer, age: int, cap: FcCapRules, years: int, own_team: bool, negotiation: float = 50.0) -> int:
 	var ask := asking_salary(player, age, cap)
-	var flex := BASE_FLEXIBILITY
+	var flex := BASE_FLEXIBILITY + NEGOTIATION_EFFECT * (negotiation - 50.0) / 50.0
 	if own_team:
 		flex += 0.03 + (player.personality.get_value("loyalty") - 50.0) / 1000.0
 	var year_factor := 1.0 - SECURITY_PER_YEAR * clampi(years - desired_years(age, cap), -2, 3)
@@ -62,8 +65,8 @@ func minimum_acceptable(player: FcPlayer, age: int, cap: FcCapRules, years: int,
 
 ## Would he accept this offer? {"accepted": bool, "required": int}. A near-minimum
 ## player also accepts the minimum salary (the minimum-contract exception).
-func evaluate_offer(player: FcPlayer, age: int, cap: FcCapRules, salary: int, years: int, own_team: bool) -> Dictionary:
-	var required := minimum_acceptable(player, age, cap, years, own_team)
+func evaluate_offer(player: FcPlayer, age: int, cap: FcCapRules, salary: int, years: int, own_team: bool, negotiation: float = 50.0) -> Dictionary:
+	var required := minimum_acceptable(player, age, cap, years, own_team, negotiation)
 	var ask := asking_salary(player, age, cap)
 	var accepted := salary >= required or (salary == cap.min_player_salary and ask <= int(cap.min_player_salary * 1.35))
 	return {"accepted": accepted, "required": required}

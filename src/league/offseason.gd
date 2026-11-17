@@ -123,7 +123,9 @@ func _on_a_roster() -> Dictionary:
 	return out
 
 
-func _coach_development(team_id: int) -> float:
+## The coaching level of a team in the offseason of `new_year`: the coaches' player-development skill, plus the
+## practice facility, plus (or minus) the staff's chemistry.
+func _coach_development(team_id: int, new_year: int = 0) -> float:
 	var total := 0.0
 	var count := 0
 	for sc in world.staff_contracts_of_team(team_id):
@@ -136,6 +138,8 @@ func _coach_development(team_id: int) -> float:
 	var business: FcTeamBusiness = world.businesses.get_by_id(team_id)
 	if business != null:
 		level = minf(100.0, level + PRACTICE_BONUS_PER_LEVEL * business.practice_level)
+	if new_year > 0:
+		level = clampf(level + FcStaffChemistry.new(world).evaluate(team_id, new_year)["development_bonus"], 0.0, 100.0)
 	return level
 
 
@@ -179,7 +183,7 @@ func progress_and_retire(league_id: int, finished_year: int, new_year: int, rng:
 		var age := _age(p, new_year)
 		var team_id: int = team_of.get(p.id, 0)
 		if team_id > 0 and not coach_cache.has(team_id):
-			coach_cache[team_id] = _coach_development(team_id)
+			coach_cache[team_id] = _coach_development(team_id, new_year)
 		var coach: float = coach_cache.get(team_id, 50.0)
 		progression.progress(p, age, coach, rng)
 		progressed += 1

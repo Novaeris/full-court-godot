@@ -31,7 +31,7 @@ func test_staff_accept_a_little_less_for_longer_deals_and_their_own_team() -> vo
 	assert_true(normal < ask and normal > 0, "a small discount")
 	assert_true(g.staff_minimum_acceptable(m.id, 5) <= normal, "longer security = a lower price")
 	assert_true(g.staff_minimum_acceptable(m.id, 1) >= normal, "shorter = a higher price")
-	assert_true(g.staff_minimum_acceptable(m.id, 3, true) < normal, "re-signing with his team is cheaper")
+	assert_true(g.staff_minimum_acceptable(m.id, 3, true) <= normal, "re-signing with his team is no dearer (the 3% is below the $10,000 rounding for a cheap scout)")
 
 
 func test_hiring_with_terms() -> void:
