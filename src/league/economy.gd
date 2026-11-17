@@ -71,7 +71,7 @@ func advance(league_id: int, finished_year: int, human_team_ids: Array[int] = []
 	var wanted_cap := maxf(float(cap_before), new_scale * reference_cap * share)
 	if wanted_cap / cap_before - 1.0 > 0.0005:
 		rules.cap.scale_money(wanted_cap / cap_before)
-		_lift_minimum_contracts(rules.cap.min_player_salary, rules.cap.max_annual_raise_percent, finished_year + 1)
+		_lift_minimum_contracts(rules.cap.min_player_salary, rules.cap.max_annual_raise_percent, finished_year)
 	var spent := _clubs_use_cash(league_id, finished_year, finance.scale_for(rules), rules.cap.salary_cap, human_team_ids)
 	var report := {"growth": growth, "margin": margin, "cap_before": cap_before, "cap_after": rules.cap.salary_cap,
 		"projects": spent["projects"], "dividends": spent["dividends"]}
@@ -81,7 +81,7 @@ func advance(league_id: int, finished_year: int, human_team_ids: Array[int] = []
 
 
 ## When the league minimum salary rises, deals that pay less than it are raised to the new minimum
-## (for the seasons still to be played), as a real league's minimum applies to everyone.
+## (from the season just finished on: the owner's offseason is still validated against that season), as a real league's minimum applies to everyone.
 func _lift_minimum_contracts(minimum: int, max_raise_percent: int, from_year: int) -> void:
 	for c in world.contracts.all():
 		if c.status != FcContract.Status.ACTIVE:

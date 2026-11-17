@@ -133,3 +133,31 @@ func test_the_owner_can_pay_themselves_only_from_surplus_and_without_debt() -> v
 	assert_eq(b.cash, before - 10000000)
 	assert_eq(b.distributions, 10000000)
 	assert_true(not g.take_dividend(cap * 10)["ok"], "cannot drain the club")
+
+
+func test_a_re_signing_agreed_before_the_minimum_rose_is_lifted_to_the_new_minimum() -> void:
+	# found by the UI playthrough: terms agreed with the general manager before the offseason were below the new minimum
+	var g := _game(411)
+	var w := g.state.world
+	var team: FcTeam = w.teams.get_by_id(g.state.user_team_id)
+	var rules := w.rules_of_league(1)
+	var cheap := rules.cap.min_player_salary
+	var pid := 0
+	for id in team.roster.player_ids:
+		var c := w.active_contract_of(id)
+		if c.end_season() == g.state.current_season:
+			pid = id
+			break
+	if pid == 0:
+		pid = team.roster.player_ids[0]
+		var c0 := w.active_contract_of(pid)
+		for y in c0.years:
+			y.season = min(y.season, g.state.current_season)   # make it expire now
+		c0.years = [c0.years[0]]
+		c0.years[0].season = g.state.current_season
+	g.state.agreed_extensions.append(pid)
+	g.state.agreed_terms[pid] = [cheap, 2]
+	g.sim_playoffs()
+	g.begin_offseason()
+	assert_true(rules.cap.min_player_salary >= cheap)
+	assert_eq(w.validate(g.state.current_season), [] as Array[String], "every contract is inside the new limits")

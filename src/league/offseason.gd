@@ -243,7 +243,8 @@ func re_sign(league_id: int, new_year: int, rng: FcRng) -> int:
 		var ask := market.asking_salary(p, age, rules.cap)
 		var years := market.desired_years(age, rules.cap)
 		if agreed and agreed_terms.has(p.id):
-			ask = int(agreed_terms[p.id][0])
+			# agreed before the offseason began: the league minimum may have risen since (see FcEconomy)
+			ask = clampi(int(agreed_terms[p.id][0]), rules.cap.min_player_salary, rules.cap.max_player_salary)
 			years = int(agreed_terms[p.id][1])
 		var check := rules.cap.check_signing(payroll(team.id, new_year), ask, FcCapRules.SigningKind.OWN_PLAYER)
 		if not check.allowed:
