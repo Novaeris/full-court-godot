@@ -7,6 +7,9 @@ Status 2026-11-17: **Windows export works** (a single `FullCourt.exe`, data pack
 2. From the project folder in PowerShell: `./tools/export_windows.ps1` (add `-Debug` for a debug build).
 3. The game is `builds/windows/FullCourt.exe` (the `builds/` folder is git-ignored). It runs on its own: no install needed. Saves and settings go to `%APPDATA%\Godot\app_userdata\Full Court\` (the project name).
 
+## Package for testers
+`./tools/package_windows.ps1` builds the release exe and packs `builds/FullCourt-<version>-windows.zip` (about 38 MB: the exe, a READ ME FIRST with the SmartScreen note, and the license). Checked 2026-11-17: the unpacked zip's exe passes `--selftest`.
+
 ## What the export includes
 `export_presets.cfg` packs all game scripts and scenes and the `data/*.json` and `data/*/*.json` files (the game reads them as plain files, so they must be listed in `include_filter`). It leaves out `tests/`, `tools/`, `docs/`, the README and the LICENSE. If a new folder of data files is added under `data/`, check that the filter still matches it (`data/*/*.json` covers one level; deeper folders need another pattern).
 
@@ -18,7 +21,7 @@ Status 2026-11-17: **Windows export works** (a single `FullCourt.exe`, data pack
 ## Not done yet (in rough order)
 1. A game icon and window title artwork (needs art from the founder; `application/icon` in the preset).
 2. A Credits/Licenses screen with Godot's MIT notice (see `docs/LEGAL_CHECKLIST.md`).
-3. An installer (or a zip) and code signing (an unsigned exe triggers Windows SmartScreen warnings for new publishers).
+3. An installer and code signing (a zip exists) (an unsigned exe triggers Windows SmartScreen warnings for new publishers).
 4. Mac export (needs a Mac or a build service for notarization), then Android and iOS for Dynasty Mode only (decision D-030).
 5. Crash logs the player can send (privacy review first).
 6. Automated builds (a CI job that runs the tests and the export on every release tag).
