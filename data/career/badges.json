@@ -1,0 +1,15 @@
+{
+	"schema": 1,
+	"note": "Badges: skill-tree unlocks that reward a playstyle. `requires` lists attribute minimums, a minimum level and prerequisite badges; `cost` is skill points; `effects` are small adjustments to the simulation's composite ratings (data/simulation/ratings.json names). The total bonus on any composite is capped by `bonus_cap`, so badges never destabilise the simulation. New badges are added here only.",
+	"bonus_cap": 4,
+	"badges": [
+		{"key": "catch_and_shoot", "name": "Catch and Shoot", "tree": "shooting", "description": "Spot-up threes come easier.", "cost": 1, "requires": {"attributes": {"three_point": 60}, "level": 3, "badges": []}, "effects": {"three": 2}},
+		{"key": "corner_specialist", "name": "Corner Specialist", "tree": "shooting", "description": "A deadly corner three.", "cost": 3, "requires": {"attributes": {"three_point": 65}, "level": 8, "badges": ["catch_and_shoot"]}, "effects": {"three": 2}},
+		{"key": "ankle_breaker", "name": "Ankle Breaker", "tree": "playmaking", "description": "Dribble moves leave defenders behind.", "cost": 2, "requires": {"attributes": {"ball_handling": 70}, "level": 5, "badges": []}, "effects": {"creation": 2}},
+		{"key": "pick_and_roll_maestro", "name": "Pick and Roll Maestro", "tree": "playmaking", "description": "Runs the pick and roll with precision.", "cost": 2, "requires": {"attributes": {"passing": 65, "ball_handling": 60}, "level": 6, "badges": []}, "effects": {"playmaking": 2}},
+		{"key": "clamps", "name": "Clamps", "tree": "defense", "description": "Locks down the man he guards.", "cost": 2, "requires": {"attributes": {"perimeter_defense": 70}, "level": 5, "badges": []}, "effects": {"perimeter_d": 2}},
+		{"key": "rim_protector", "name": "Rim Protector", "tree": "defense", "description": "Changes everything near the rim.", "cost": 2, "requires": {"attributes": {"blocks": 65, "interior_defense": 60}, "level": 5, "badges": []}, "effects": {"block": 2, "interior_d": 1}},
+		{"key": "rebound_chaser", "name": "Rebound Chaser", "tree": "rebounding", "description": "Goes after every miss.", "cost": 1, "requires": {"attributes": {"rebounding": 65}, "level": 3, "badges": []}, "effects": {"rebound": 2}},
+		{"key": "posterizer", "name": "Posterizer", "tree": "finishing", "description": "Finishes over anyone.", "cost": 2, "requires": {"attributes": {"dunking": 70, "vertical": 65}, "level": 6, "badges": []}, "effects": {"finishing": 2}}
+	]
+}

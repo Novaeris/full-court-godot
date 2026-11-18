@@ -19,6 +19,7 @@ const TAB_NAMES := ["Overview", "Standings", "Schedule", "Roster", "Finances", "
 var controller: FcGameController
 ## The open Career Mode game (null in Owner Mode).
 var career: FcCareerController
+var _last_career_tab := 0
 var saves := FcSaveManager.new()
 ## The player's settings (the tutorial is shown once, to a new Owner Mode game).
 var preferences := FcPreferences.new()
@@ -230,17 +231,41 @@ func on_create_career(spec: Dictionary, seed_value: int = -1) -> bool:
 	return true
 
 
-## The Career Hub: the player's card. (Next phases add the calendar, training, objectives and history.)
+## The Career Hub: the player's card, development (points, training) and skills (badges). The calendar and games come next.
 func show_career_hub() -> void:
 	var card := career.card()
 	var box := _reset("%s   #%d" % [card["name"], card["jersey"]])
 	box.add_child(FcUiTables.label("%s%s   %s   Age %d   %d cm, %d kg, wingspan %d cm   Team: %s" % [
 		card["position"], "/" + card["secondary"] if card["secondary"] != "" else "", card["archetype"], card["age"],
 		card["height_cm"], card["weight_kg"], card["wingspan_cm"], card["team"]], 16))
-	box.add_child(FcUiTables.label("Overall %d    Potential %d (your ceiling)    Level %d    XP %d" % [card["overall"], card["potential"], card["level"], card["xp"]], 18, true))
+	var progress := career.progress()
+	box.add_child(FcUiTables.label("Overall %d    Potential %d (your ceiling)    Level %d    XP %d (%d of %d to the next level)    Development points %d    Skill points %d" % [
+		card["overall"], card["potential"], progress["level"], progress["xp"], progress["into_level"], progress["needed"], progress["development_points"], progress["skill_points"]], 17, true))
+	var tabs := TabContainer.new()
+	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var card_tab := _career_card_tab(card)
+	card_tab.name = "Card"
+	tabs.add_child(card_tab)
+	var develop_tab := _career_develop_tab(card, progress)
+	develop_tab.name = "Develop"
+	tabs.add_child(develop_tab)
+	var skills_tab := _career_skills_tab(progress)
+	skills_tab.name = "Skills"
+	tabs.add_child(skills_tab)
+	tabs.current_tab = clampi(_last_career_tab, 0, 2)
+	tabs.tab_changed.connect(func(i): _last_career_tab = i)
+	box.add_child(tabs)
+	box.add_child(FcUiTables.label("Career id %s. Saved to slot career_1; load it from the main menu. The calendar and games arrive in the next phase." % card["profile_id"], 14))
+	var row := HBoxContainer.new()
+	row.add_child(FcUiTables.button("Save", func():
+		var r := career.save(saves)
+		_say("Saved." if r.is_ok() else "Save failed: " + r.message)))
+	row.add_child(FcUiTables.button("Main Menu", show_main_menu))
+	box.add_child(row)
+
+
+func _career_card_tab(card: Dictionary) -> Control:
 	var columns := HBoxContainer.new()
-	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	box.add_child(columns)
 	for group in card["groups"]:
 		var rows: Array = []
 		for row in group["rows"]:
@@ -250,13 +275,81 @@ func show_career_hub() -> void:
 		part.add_child(FcUiTables.label(group["name"], 16, true))
 		part.add_child(FcUiTables.table(["Attribute", "Now", "Can reach"], rows, [0, 50, 70]))
 		columns.add_child(part)
-	box.add_child(FcUiTables.label("Career id %s. Saved to slot career_1; load it from the main menu. The calendar, training and games arrive in the next phases." % card["profile_id"], 14))
-	var row := HBoxContainer.new()
-	row.add_child(FcUiTables.button("Save", func():
-		var r := career.save(saves)
-		_say("Saved." if r.is_ok() else "Save failed: " + r.message)))
-	row.add_child(FcUiTables.button("Main Menu", show_main_menu))
-	box.add_child(row)
+	return columns
+
+
+func _career_develop_tab(card: Dictionary, progress: Dictionary) -> Control:
+	var box := VBoxContainer.new()
+	var train_row := HBoxContainer.new()
+	var train_button := FcUiTables.button("Train (%d sessions left this season)" % progress["training_left"], func():
+		var r := career.train()
+		_say(r["reason"])
+		show_career_hub())
+	train_button.tooltip_text = "A training session gives XP. Each season has a few, and each is worth a little less than the last: training is a choice, not a grind."
+	train_row.add_child(train_button)
+	box.add_child(train_row)
+	var intro := FcUiTables.label("Spend development points to raise an attribute by 1. The cost grows as the attribute gets higher, and your body and potential set the most each one can reach. Points come from levels; XP comes from games, training and milestones.", 14)
+	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	intro.custom_minimum_size = Vector2(400, 0)
+	box.add_child(intro)
+	var grid := GridContainer.new()
+	grid.columns = 8
+	grid.add_theme_constant_override("h_separation", 12)
+	var keys: Array[String] = _defs.attributes.keys()
+	for group in card["groups"]:
+		for row in group["rows"]:
+			var key := ""
+			for k in keys:
+				if _defs.attributes.get_def(k).display_name == row[0]:
+					key = k
+			var cost := FcCareerRules.attribute_cost(int(row[1]))
+			grid.add_child(FcUiTables.label(row[0]))
+			grid.add_child(FcUiTables.label("%d / %d" % [row[1], row[2]]))
+			var raise := FcUiTables.button("+1 (%d)" % cost, func():
+				var r := career.raise_attribute(key)
+				_say(r["reason"])
+				show_career_hub())
+			raise.disabled = int(row[1]) >= int(row[2]) or progress["development_points"] < cost
+			raise.tooltip_text = "Raise %s by 1 for %d development points." % [row[0], cost]
+			grid.add_child(raise)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.add_child(grid)
+	box.add_child(scroll)
+	return box
+
+
+func _career_skills_tab(progress: Dictionary) -> Control:
+	var box := VBoxContainer.new()
+	var intro := FcUiTables.label("Badges reward a playstyle with a small, capped bonus in the simulation. They need a level, attribute minimums and sometimes another badge, and cost skill points. You can equip up to %d." % int(FcBuildRules.rules()["max_badges_equipped"]), 14)
+	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	intro.custom_minimum_size = Vector2(400, 0)
+	box.add_child(intro)
+	var rows: Array = []
+	for b in career.badge_list():
+		rows.append([b["name"], b["tree"].capitalize(), b["cost"], "Equipped" if b["equipped"] else ("Owned" if b["owned"] else (b["problem"] if b["problem"] != "" else "Ready to unlock")), b["description"]])
+	box.add_child(FcUiTables.table(["Badge", "Tree", "Cost", "Status", "What it does"], rows, [170, 100, 50, 300, 0]))
+	var pick := OptionButton.new()
+	for b in career.badge_list():
+		pick.add_item(b["name"])
+		pick.set_item_metadata(pick.item_count - 1, b["key"])
+	pick.tooltip_text = "Choose a badge, then unlock it or equip it."
+	var actions := HBoxContainer.new()
+	actions.add_child(pick)
+	actions.add_child(FcUiTables.button("Unlock", func():
+		var r := career.unlock_badge(pick.get_item_metadata(pick.selected))
+		_say(r["reason"])
+		show_career_hub()))
+	actions.add_child(FcUiTables.button("Equip", func():
+		var r2 := career.equip_badge(pick.get_item_metadata(pick.selected), true)
+		_say(r2["reason"])
+		show_career_hub()))
+	actions.add_child(FcUiTables.button("Unequip", func():
+		var r3 := career.equip_badge(pick.get_item_metadata(pick.selected), false)
+		_say(r3["reason"])
+		show_career_hub()))
+	box.add_child(actions)
+	return box
 
 
 ## Dynasty Mode's home: planned, not built (docs/DYNASTY_MODE_DRAFT.md).

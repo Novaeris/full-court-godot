@@ -60,6 +60,11 @@ static func attribute_ceiling(key: String, spec: Dictionary) -> int:
 	return clampi(roundi(value), int(r["attribute_floor"]) + 20, int(r["attribute_cap"]))
 
 
+## The build values of an existing player that decide his ceilings (height, weight, wingspan, potential).
+static func spec_of(player: FcPlayer) -> Dictionary:
+	return {"height_cm": player.physical.height_cm, "weight_kg": player.physical.weight_kg, "wingspan_cm": player.physical.wingspan_cm, "potential": player.development.potential}
+
+
 ## Points spent above (or saved below) the baseline: the sum of (value - baseline) over every attribute.
 static func budget_used(attributes: Dictionary) -> int:
 	var total := 0

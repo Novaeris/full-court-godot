@@ -32,6 +32,9 @@ var badges_owned: Array[String] = []
 var badges_equipped: Array[String] = []
 var build_version: int = 1
 var ruleset_version: int = 1
+## Milestone keys already claimed (each pays once) and training sessions used per season ({"2026": 3}).
+var milestones: Array[String] = []
+var training_used: Dictionary = {}
 ## Career decisions: [{"year", "key", "choice"}] (filled by the career RPG phase).
 var decisions: Array = []
 ## One row per season: {"year", "team_id", "games", "points", "rebounds", "assists", "awards": []}.
@@ -80,7 +83,7 @@ func to_dict() -> Dictionary:
 		"schema": SCHEMA_VERSION, "profile_id": profile_id, "player_id": player_id, "archetype": archetype_key,
 		"appearance": appearance.duplicate(), "jersey_number": jersey_number, "stage": stage, "xp": xp, "level": level,
 		"development_points": development_points, "skill_points": skill_points, "reputation": reputation, "currency": currency,
-		"badges_owned": badges_owned.duplicate(), "badges_equipped": badges_equipped.duplicate(),
+		"badges_owned": badges_owned.duplicate(), "badges_equipped": badges_equipped.duplicate(), "milestones": milestones.duplicate(), "training_used": training_used.duplicate(),
 		"build_version": build_version, "ruleset_version": ruleset_version,
 		"decisions": decisions.duplicate(true), "history": history.duplicate(true), "owner_account": owner_account,
 	}
@@ -107,6 +110,12 @@ static func from_dict(d: Dictionary) -> FcCareerProfile:
 		p.badges_owned.append(str(key))
 	for key in d.get("badges_equipped", []):
 		p.badges_equipped.append(str(key))
+	for key in d.get("milestones", []):
+		p.milestones.append(str(key))
+	var used = d.get("training_used", {})
+	if used is Dictionary:
+		for year in used:
+			p.training_used[str(year)] = int(used[year])
 	p.build_version = int(d.get("build_version", 1))
 	p.ruleset_version = int(d.get("ruleset_version", 1))
 	for row in d.get("decisions", []):

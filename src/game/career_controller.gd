@@ -84,6 +84,57 @@ func card() -> Dictionary:
 		"profile_id": profile.profile_id, "groups": out_groups}
 
 
+# --- progression (all rules live in FcCareerRules; these only apply them to this career) -----------------------
+
+## Where the career stands: level, XP progress, points, training left this season, owned and equipped badges.
+func progress() -> Dictionary:
+	var profile := profile()
+	var level := FcCareerRules.level_progress(profile.xp)
+	var used := int(profile.training_used.get(str(state.current_season), 0))
+	return {"level": profile.level, "xp": profile.xp, "into_level": level["into_level"], "needed": level["needed"], "fraction": level["fraction"],
+		"development_points": profile.development_points, "skill_points": profile.skill_points, "currency": profile.currency,
+		"training_left": int(FcCareerRules.rules()["training"]["sessions_per_season"]) - used,
+		"badges_owned": profile.badges_owned.duplicate(), "badges_equipped": profile.badges_equipped.duplicate(),
+		"milestones": profile.milestones.duplicate()}
+
+
+## Applies a played game line (from a simulation box score) to the career: XP, milestones, levels. Returns what was granted.
+func award_game(line: Dictionary) -> Dictionary:
+	return FcCareerRules.apply_game(profile(), line)
+
+
+func train() -> Dictionary:
+	return FcCareerRules.train(profile(), state.current_season)
+
+
+## Spends development points to raise one attribute by 1 (cost grows with the value; the body's ceiling is a hard limit).
+func raise_attribute(key: String) -> Dictionary:
+	return FcCareerRules.raise_attribute(profile(), player(), key)
+
+
+## Every badge with whether it is owned/equipped and why it cannot be unlocked yet ("" = it can).
+func badge_list() -> Array:
+	var out: Array = []
+	for badge in FcBadges.all():
+		out.append({"key": badge["key"], "name": badge["name"], "tree": badge["tree"], "description": badge["description"], "cost": badge["cost"],
+			"owned": profile().badges_owned.has(badge["key"]), "equipped": profile().badges_equipped.has(badge["key"]),
+			"problem": FcCareerRules.badge_problem(profile(), player(), badge["key"])})
+	return out
+
+
+func unlock_badge(key: String) -> Dictionary:
+	return FcCareerRules.unlock_badge(profile(), player(), key)
+
+
+func equip_badge(key: String, equipped: bool) -> Dictionary:
+	return FcCareerRules.set_badge_equipped(profile(), key, equipped)
+
+
+## Composite rating bonuses of the equipped badges (used by the simulation integration in a later phase).
+func badge_bonus() -> Dictionary:
+	return FcCareerRules.composite_bonus(profile().badges_equipped)
+
+
 ## Saves the career to a slot. Returns the FcSaveResult.
 func save(manager: FcSaveManager, slot_id: String = "career_1") -> FcSaveResult:
 	return manager.save(slot_id, state, "%s (Career)" % player().identity.full_name())

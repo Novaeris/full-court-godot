@@ -57,7 +57,7 @@ Existing files extended: `game_state.gd` (mode, career section, validation), `ve
 ## 6. Phase breakdown
 1. **Player domain foundation** *(done 2026-11-18)*: `FcCareerProfile`, `FcPlayerBuild`, archetypes and build rules data, ceilings, stable `profile_id`, canonical serialization, `MODE_CAREER`, save v2 + migration, tests. No UI.
 2. **Character creator** *(done 2026-11-18: form, validation, hub card, save and resume; the league wizard shortcut and portraits are later)*: screens to create, validate, save and reload a player; appearance and jersey; hybrid builds; league wizard shortcut to place the player as a rookie.
-3. **Progression:** XP, levels, development points, attribute allocation under ceilings, badge and skill frameworks, training rewards; deterministic tests.
+3. **Progression** *(done 2026-11-18: rules, data, controller, Develop and Skills tabs; badge effects are applied to the simulation in phase 4)*: XP, levels, development points, attribute allocation under ceilings, badge and skill frameworks, training rewards; deterministic tests.
 4. **Career simulation:** team placement, calendar, games with role control, stats and history, post-game rewards, save and resume; Owner regression with fixed seeds.
 5. **Career RPG:** agents, contracts, coach relations, chemistry, rivalries, media, endorsements; each decision with a mechanical consequence.
 6. **Multiplayer preparation:** audit and document the authoritative-server contract (below); no networking.
