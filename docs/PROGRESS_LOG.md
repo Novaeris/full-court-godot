@@ -17,6 +17,7 @@ The founder asked for the whole remaining list (economy, Owner features, polish,
 9. **Windows export** (`export_presets.cfg`, `tools/export_windows.ps1`, `docs/RELEASE.md`).
 10. **Decisions and legal**: `docs/LEGAL_CHECKLIST.md`, `docs/LOOK_AND_FEEL.md`, a review of `docs/MILESTONE_PLAN.md`, D-034 and D-035.
 Tests: 581 pass (was 542). The click test (67 clicks) and the UI playthrough (4 seasons, 12 teams, relocate and expand on) report 0 problems.
+Follow-up the same day, in plan order: M1 (20-season playthrough with every lever), M2 (a 50-season run with the owner playing found and fixed that the owner's prices ignored inflation; 50 seasons take about 6 s each and a 5.2 MB save), M4 (tooltips, About/licenses/logs, sizes), M5 (tester zip, `--selftest`), M3 (late fouling), and draft designs for M6 and M7. The unit suite now takes about 10 minutes (584 tests).
 Still needing the founder: look-and-feel references, a lawyer for the checklist, and a go-ahead on the plan.
 
 ## 2026-11-16 hand-off: where Owner Mode stands
