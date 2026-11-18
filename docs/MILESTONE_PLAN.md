@@ -24,7 +24,7 @@ What changed since v2, in the order of the founder's work list:
 - **M8 (pre-release): a legal checklist now exists** (`docs/LEGAL_CHECKLIST.md`): license, names, loot boxes, AI art, privacy, stores. It needs a lawyer.
 
 Review notes on the plan itself (Claude's recommendations; the order is unchanged unless the founder says otherwise):
-1. **Current priority (2026-11-18): stability sign-off** (`docs/STABILITY_REPORT.md`): a dependable Owner Mode foundation before any redesign. Keep the order M1+M2, then M4/M5, with M3 in parallel. **M4 (look and feel) is blocked only on the founder's references**; M3 (simulation depth) is the natural thing to do while waiting. The visual redesign is not part of the stability milestone.
+1. **Current priority (2026-11-18): stability sign-off** (`docs/STABILITY_REPORT.md`, conditional sign-off with one open founder decision on small-market finances): a dependable Owner Mode foundation before any redesign. Keep the order M1+M2, then M4/M5, with M3 in parallel. **M4 (look and feel) is blocked only on the founder's references**; M3 (simulation depth) is the natural thing to do while waiting. The visual redesign is not part of the stability milestone.
 2. Before Career Mode starts, run one 50-season human-owner playthrough (`tools/ui_playthrough.ps1`) to catch rough edges the AI-only runs cannot.
 3. Dynasty Mode's legal questions (loot boxes) should be answered before its design is final, because they decide whether packs are paid at all.
 4. Treat this plan as approved only when the founder says so; nothing above changes a decision the founder already made (D-029 to D-032).

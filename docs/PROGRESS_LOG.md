@@ -3,6 +3,10 @@
 Newest first. Written so someone returning after a break can see where things stand.
 The repository was published to GitHub on 2026-11-17 at the founder's request (public: https://github.com/Novaeris/full-court-godot, remote `origin`, branch `main`). Later commits stay local until the founder asks for a push.
 
+## 2026-11-18: stability sign-off
+
+Response to an outside review: explicit pricing modes in the playthrough tool, a debt restructuring rule that keeps D-029 (D-036), AI financial discipline, a hard-limit fix, an owner stress tool, multi-seed economy runs, reconciled docs and GitHub Actions CI. Result and every number: `docs/STABILITY_REPORT.md` (597 tests, CI green, conditional sign-off). Open: a founder decision on small-market owners who need repeated restructuring.
+
 ## 2026-11-17: the "finish the list" session
 
 The founder asked for the whole remaining list (economy, Owner features, polish, decisions) to be finished, with a commit and push after each part. What was done, in order (each is its own commit on `main`):

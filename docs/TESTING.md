@@ -114,13 +114,13 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 
 Shared sample builders for tests live in `tests/support/test_data.gd` (`FcTestData`).
 
-Last verified: see `docs/STABILITY_REPORT.md` for the dated count and run time (the unit suite takes about 10 minutes; the older table above lists only the first systems).
+Last verified: see `docs/STABILITY_REPORT.md` for the dated count and run time (the unit suite takes about 7 minutes locally and 9-14 minutes in CI; the older table above lists only the first systems).
 
 Tests that touch disk use `user://test_saves` and clean up in `after_each()`. Inspection tools: `./tools/inspect_data.ps1`, `./tools/inspect_saves.ps1`, `./tools/simulate_games.ps1 [games=1000] [seed=2026] [era=mid_2010s] [tune=key:value,...] [box] [mirror] [leaders]` (stress test: 16 league averages vs the era's realistic ranges, one full box score, home-court check, full-season individual leaders), `./tools/finances.ps1 [seasons=2] [seed=...]` (every team's revenue, expenses, profit, valuation), `./tools/play_seasons.ps1 [seasons=5]` (several seasons with offseasons and a league-health table), `./tools/play_season.ps1 [option=value ...]` (plays a whole season and prints standings, playoffs, champion, awards), `./tools/generate_league.ps1 [option=value ...]` (e.g. `areas=europe teams=16 conferences=2 divisions=2`). The runner was also verified to report failures (exit code 1).
 
 ## Known issues / limits
 - Runtime script errors in a TOOL script (not the test runner) can leave Godot running forever; use `timeout` when running tools from a shell.
-- The whole suite takes about 10 minutes (simulation tests run thousands of games and several tests play whole seasons). Use `timeout` generously when running it from a shell.
+- The whole suite takes about 7 minutes locally, 9-14 in CI (simulation tests run thousands of games and several tests play whole seasons). Use `timeout` generously when running it from a shell.
 - Runner discovers methods by name only. A test file with a syntax error is reported as a FAIL (an earlier version hung forever instead; fixed).
 - GDScript gotcha: `var x := <untyped value>` is a parse error in this project (warnings are errors). Annotate the type: `var x: String = ...`.
 - The stress tools are listed in the "Added 2026-11-17" section below and run on GitHub Actions (`.github/workflows/`).
