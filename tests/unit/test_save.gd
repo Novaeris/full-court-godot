@@ -169,7 +169,7 @@ func test_crash_after_verified_temp_before_rename_recovers_newest() -> void:
 
 func test_save_from_newer_game_is_rejected() -> void:
 	var newer := FcSaveManager.new(DIR)
-	newer.current_data_version = 2
+	newer.current_data_version = FcVersion.DATA_VERSION + 1
 	newer.save("slot_1", _state())
 	var r := manager.load_slot("slot_1", defs)
 	assert_eq(r.code, Code.UNSUPPORTED_VERSION)
@@ -177,6 +177,7 @@ func test_save_from_newer_game_is_rejected() -> void:
 
 
 func test_migration_upgrades_old_save() -> void:
+	manager.current_data_version = 1
 	manager.save("slot_1", _state(2026))  # written as data version 1
 	var upgraded := FcSaveManager.new(DIR)
 	upgraded.current_data_version = 3
@@ -192,9 +193,10 @@ func test_migration_upgrades_old_save() -> void:
 
 
 func test_missing_or_failing_migration_is_reported() -> void:
+	manager.current_data_version = 1
 	manager.save("slot_1", _state())
 	var no_step := FcSaveManager.new(DIR)
-	no_step.current_data_version = 2
+	no_step.current_data_version = FcVersion.DATA_VERSION + 1   # the built-in 1 -> 2 step exists, 2 -> 3 does not
 	assert_eq(no_step.load_slot("slot_1", defs).code, Code.MIGRATION_FAILED)
 
 	var failing := FcSaveManager.new(DIR)

@@ -130,8 +130,24 @@ func _say(text: String) -> void:
 
 func show_main_menu() -> void:
 	var box := _reset("FULL COURT")
-	box.add_child(FcUiTables.label("Basketball management simulation", 16))
-	box.add_child(FcUiTables.button("New Game", show_new_league))
+	box.add_child(FcUiTables.label("Basketball management simulation. Choose how you want to play:", 16))
+	var modes := HBoxContainer.new()
+	modes.add_theme_constant_override("separation", 12)
+	for entry in [
+			["Owner Mode", "Run every part of a franchise for up to 50 seasons: money, people, players, the draft, the league's rules.", show_new_league, "Available"],
+			["Career Mode", "Create one player and take them through a career. Draft, contracts, teams, rivalries.", show_career_home, "In development"],
+			["Dynasty Mode", "Collect hand-made player cards, build a lineup and compete.", show_dynasty_home, "Planned"]]:
+		var card := PanelContainer.new()
+		var inner := VBoxContainer.new()
+		card.add_child(inner)
+		inner.add_child(FcUiTables.label("%s  (%s)" % [entry[0], entry[3]], 18, true))
+		var blurb := FcUiTables.label(entry[1], 14)
+		blurb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		blurb.custom_minimum_size = Vector2(260, 0)
+		inner.add_child(blurb)
+		inner.add_child(FcUiTables.button(entry[0], entry[2]))
+		modes.add_child(card)
+	box.add_child(modes)
 	var slots := saves.list_slots()
 	if not slots.is_empty():
 		box.add_child(FcUiTables.button("Continue (latest save)", on_continue))
@@ -163,6 +179,31 @@ func show_main_menu() -> void:
 	box.add_child(settings)
 	box.add_child(FcUiTables.button("About, licenses and logs", show_about))
 	box.add_child(FcUiTables.button("Quit", func(): get_tree().quit()))
+
+
+## Career Mode's home. The player foundation is built step by step (docs/CAREER_MODE_PLAN.md); until the player creator
+## exists this screen says so plainly instead of pretending.
+func show_career_home() -> void:
+	var box := _reset("Career Mode")
+	var text := FcUiTables.label("Create one player (name, body, position, strengths) and take them through a career of about 20 seasons: development, contracts, teams, rivalries, a legacy. Later, the same player can go online.
+
+Status: in development. The shared player foundation comes first, then the player creator, then progression and playing seasons. See docs/CAREER_MODE_PLAN.md.", 16)
+	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text.custom_minimum_size = Vector2(400, 0)
+	box.add_child(text)
+	box.add_child(FcUiTables.button("Back to the main menu", show_main_menu))
+
+
+## Dynasty Mode's home: planned, not built (docs/DYNASTY_MODE_DRAFT.md).
+func show_dynasty_home() -> void:
+	var box := _reset("Dynasty Mode")
+	var text := FcUiTables.label("A card-collecting basketball game with hand-made players, lineups and matches.
+
+Status: planned. It is not scheduled yet; its design is a draft in docs/DYNASTY_MODE_DRAFT.md and needs the founder's decisions first.", 16)
+	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text.custom_minimum_size = Vector2(400, 0)
+	box.add_child(text)
+	box.add_child(FcUiTables.button("Back to the main menu", show_main_menu))
 
 
 ## The About screen: version, the engine's licenses (the MIT notice the engine requires in every game made with it) and
@@ -1118,6 +1159,13 @@ func _tab_overview() -> Control:
 		box.add_child(FcUiTables.label("Next game: %s %s on %s" % ["vs" if next.home_id == controller.state.user_team_id else "at", _team_name(opp), s.date_of_day(next.day).to_iso()]))
 	if s.status == FcSeason.Status.COMPLETE:
 		box.add_child(FcUiTables.label("Champions: %s    Runner-up: %s" % [_team_name(s.champion_id), _team_name(s.runner_up_id)], 18, true))
+	var warning := controller.distress_warning()
+	if warning != "":
+		var alert := FcUiTables.label("Warning: " + warning, 15)
+		alert.add_theme_color_override("font_color", FcUiTheme.BAD)
+		alert.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		alert.custom_minimum_size = Vector2(300, 0)
+		box.add_child(alert)
 	var report := controller.owner_report()
 	if not report.is_empty():
 		box.add_child(FcUiTables.label("Owner report, %d-%02d season" % [report["year"], (report["year"] + 1) % 100], 18, true))

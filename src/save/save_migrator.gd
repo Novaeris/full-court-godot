@@ -7,9 +7,22 @@ extends RefCounted
 ## A save from version 1 loaded by version 4 passes through steps 1->2, 2->3
 ## and 3->4 in order. Steps must never be edited after release.
 ##
-## There are no steps yet because DATA_VERSION is still 1.
+## Built-in steps: 1 -> 2 (Career Mode) adds the empty `career_profiles` list. Tests may register their own
+## steps, which replace a built-in step with the same number.
 
 var _steps: Dictionary = {}
+
+
+func _init() -> void:
+	register(1, _v1_to_v2)
+
+
+## Version 2 added the Career Mode section. A version-1 save has no career, so it gets an empty list.
+func _v1_to_v2(payload: Dictionary) -> Dictionary:
+	var out := payload.duplicate(true)
+	if not out.has("career_profiles"):
+		out["career_profiles"] = []
+	return out
 
 
 ## `step` is a Callable taking the payload Dictionary and returning the

@@ -32,7 +32,7 @@ func _initialize() -> void:
 func _run() -> void:
 	await _frames(3)
 	# --- main menu -> new league -> team choice -> dashboard -----------------------------------
-	await _click_button("New Game")
+	await _click_button("Owner Mode")
 	_expect(_find_label("New League") != null, "the New League screen opened")
 	# a small league keeps the test quick: pick 12 teams from the real drop-down by keyboard-free clicks
 	var teams_pick: OptionButton = _find_option("teams")

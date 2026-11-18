@@ -1,0 +1,27 @@
+{
+	"schema": 1,
+	"note": "Archetypes are recommendations, not restrictions: each gives starting bonus points over the baseline (spent from the build's budget), the positions it suits, and a description. A hybrid is any build whose attributes you choose yourself; 'custom' is the empty template. The bonus points of every archetype must fit build_rules.json budget_points (a test checks it).",
+	"archetypes": [
+		{"key": "custom", "name": "Custom", "description": "Start from the baseline and spend every point yourself.", "positions": [1, 2, 3, 4, 5], "bonus": {}},
+		{"key": "floor_general", "name": "Floor General", "description": "A pass-first point guard who runs the offense.", "positions": [1, 2],
+			"bonus": {"passing": 28, "ball_handling": 26, "basketball_iq": 22, "decision_making": 18, "offensive_awareness": 14, "speed": 10, "agility": 10, "perimeter_defense": 8, "free_throw": 8, "leadership": 10, "shot_selection": 8}},
+		{"key": "scoring_guard", "name": "Scoring Guard", "description": "A guard who creates and makes his own shots.", "positions": [1, 2],
+			"bonus": {"mid_range": 24, "three_point": 24, "ball_handling": 20, "layups": 18, "free_throw": 14, "shot_selection": 14, "agility": 10, "speed": 10, "close_finishing": 10, "offensive_awareness": 12}},
+		{"key": "shot_creator", "name": "Shot Creator", "description": "A dribbler who creates separation for tough shots.", "positions": [1, 2, 3],
+			"bonus": {"ball_handling": 28, "mid_range": 22, "three_point": 18, "agility": 16, "layups": 14, "shot_selection": 12, "speed": 12, "free_throw": 10, "offensive_awareness": 12, "consistency": 8}},
+		{"key": "sharpshooter", "name": "Sharpshooter", "description": "A specialist who spaces the floor.", "positions": [2, 3, 4],
+			"bonus": {"three_point": 36, "free_throw": 24, "mid_range": 20, "shot_selection": 20, "offensive_awareness": 14, "consistency": 14, "stamina": 10, "basketball_iq": 10}},
+		{"key": "two_way_wing", "name": "Two-Way Wing", "description": "A wing who defends and scores.", "positions": [2, 3],
+			"bonus": {"perimeter_defense": 28, "three_point": 18, "mid_range": 10, "layups": 12, "steals": 14, "speed": 12, "agility": 12, "stamina": 14, "defensive_awareness": 14, "rebounding": 6, "durability": 8, "competitive_mentality": 12}},
+		{"key": "point_forward", "name": "Point Forward", "description": "A big wing who runs the offense and rebounds.", "positions": [3, 4],
+			"bonus": {"passing": 24, "ball_handling": 18, "basketball_iq": 20, "decision_making": 14, "rebounding": 18, "layups": 12, "mid_range": 10, "strength": 14, "offensive_awareness": 14, "close_finishing": 10, "perimeter_defense": 6, "defensive_awareness": 8}},
+		{"key": "stretch_four", "name": "Stretch Four", "description": "A forward who shoots threes and rebounds.", "positions": [4, 5],
+			"bonus": {"three_point": 26, "mid_range": 16, "free_throw": 14, "rebounding": 18, "strength": 14, "interior_defense": 10, "shot_selection": 10, "close_finishing": 14, "offensive_awareness": 10, "stamina": 8, "consistency": 8}},
+		{"key": "defensive_anchor", "name": "Defensive Anchor", "description": "A big who protects the paint and organizes the defense.", "positions": [4, 5],
+			"bonus": {"interior_defense": 32, "defensive_awareness": 24, "rebounding": 24, "blocks": 20, "strength": 20, "vertical": 12, "basketball_iq": 10, "competitive_mentality": 12, "leadership": 10, "durability": 8, "close_finishing": 8}},
+		{"key": "rim_protector", "name": "Rim Protector", "description": "A shot-blocking athlete at the rim.", "positions": [4, 5],
+			"bonus": {"blocks": 36, "interior_defense": 26, "vertical": 24, "rebounding": 22, "strength": 14, "dunking": 20, "close_finishing": 14, "defensive_awareness": 12, "stamina": 8}},
+		{"key": "post_scorer", "name": "Post Scorer", "description": "A big who scores with back-to-the-basket moves.", "positions": [4, 5],
+			"bonus": {"close_finishing": 34, "strength": 24, "layups": 14, "free_throw": 14, "rebounding": 20, "offensive_awareness": 18, "shot_selection": 14, "interior_defense": 12, "mid_range": 10, "dunking": 10, "consistency": 8}}
+	]
+}

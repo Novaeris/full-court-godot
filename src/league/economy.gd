@@ -82,9 +82,9 @@ func is_distressed(team_id: int, cap: int) -> bool:
 ## The most payroll an AI club in debt will commit to: `indebted_payroll_revenue_share` x its latest season's revenue.
 ## A club with no debt (or no books yet) has no such limit (-1). Clubs that lose money must live within their means,
 ## so small-market clubs stop adding to their debt instead of spending to the cap regardless of what they earn.
-func payroll_ceiling(team_id: int) -> int:
+func payroll_ceiling(team_id: int, even_without_debt: bool = false) -> int:
 	var business: FcTeamBusiness = world.businesses.get_by_id(team_id)
-	if business == null or business.debt <= 0:
+	if business == null or (business.debt <= 0 and not even_without_debt):
 		return -1
 	var latest: FcFinanceRecord = null
 	for rec in world.finances.all():

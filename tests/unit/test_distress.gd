@@ -225,10 +225,32 @@ func test_the_general_manager_lives_within_the_means_of_a_club_in_debt_unless_th
 	var cap := g.state.world.rules_of_league(1).cap
 	b.debt = 0
 	g.set_direction("balanced", "normal")
-	assert_eq(g.gm_payroll_limit(), cap.salary_cap, "no debt: the whole cap")
+	var rec0 := FcFinanceEngine.new(g.state.world).record_of(g.state.user_team_id, g.state.current_season)
+	var affordable := maxi(roundi(float(k["indebted_payroll_revenue_share"]) * rec0.total_revenue()), cap.minimum_payroll)
+	assert_eq(g.gm_payroll_limit(), mini(cap.salary_cap, affordable), "even without debt the GM spends within the club's means")
 	b.debt = 50000000
 	var rec := FcFinanceEngine.new(g.state.world).record_of(g.state.user_team_id, g.state.current_season)
 	var ceiling := roundi(float(k["indebted_payroll_revenue_share"]) * rec.total_revenue())
-	assert_eq(g.gm_payroll_limit(), mini(cap.salary_cap, maxi(ceiling, cap.minimum_payroll)), "in debt: held to 65% of revenue (never below the minimum payroll)")
+	assert_eq(g.gm_payroll_limit(), mini(cap.salary_cap, maxi(ceiling, cap.minimum_payroll)), "in debt too: held to 65% of revenue (never below the minimum payroll)")
 	g.set_direction("balanced", "aggressive")
 	assert_true(g.gm_payroll_limit() >= mini(roundi(cap.salary_cap * 1.15), cap.luxury_tax_line) - 1 or g.gm_payroll_limit() == cap.luxury_tax_line, "aggressive is the owner's explicit choice and ignores the debt")
+
+
+func test_the_owner_sees_a_plain_warning_when_finances_go_wrong() -> void:
+	var g := _game(814)
+	g.sim_playoffs()
+	var b := g.business()
+	var cap := g.state.world.rules_of_league(1).cap.salary_cap
+	b.debt = 0
+	assert_eq(g.distress_warning(), "", "no debt, no warning")
+	b.debt = cap * 3
+	b.valuation = cap * 4
+	assert_true("close to your club's value" in g.distress_warning(), "debt near the value warns before the rescue")
+	b.debt = cap
+	b.valuation = cap * 40
+	var rec := FcFinanceEngine.new(g.state.world).record_of(g.state.user_team_id, g.state.current_season)
+	rec.revenue["tickets"] = 0
+	rec.expenses["administration"] = cap
+	assert_true("lost" in g.distress_warning(), "a loss with debt is flagged")
+	b.restructured_year = g.state.current_season
+	assert_true("froze new loans" in g.distress_warning(), "after a restructuring the warning says so")

@@ -24,6 +24,7 @@ The developer is a solo, beginner programmer. Explain decisions in plain languag
 - `src/data/business/` + `src/league/finance_engine.gd`: Owner Mode business model. `tools/finances.ps1` shows the books.
 - `src/game/`  The game controller: the one API screens use. Screens must call it, never the engines directly.
 - `data/definitions/`  JSON definitions of attributes, personality traits, tendencies. Edit these to rebalance, not code.
+- `src/career/` + `src/data/career/` + `data/career/`  Career Mode (docs/CAREER_MODE_PLAN.md): pure build validation and (later) progression rules, the career profile record, archetypes and build rules as data. The player itself is the shared `FcPlayer`; never create a second player type.
 - `src/...`     Further modules are added only when they hold real code (see docs/ARCHITECTURE.md).
 - `tests/`      Automated tests. `tests/unit/test_*.gd`; base class `FcTestCase`.
 - `tools/`      Dev scripts (test runner wrapper, later: season stress-test).

@@ -379,6 +379,25 @@ func _apply_restructuring(economy_report: Dictionary, year: int) -> void:
 		_gm_log.append("Lenders restructured your debt ($%.1fM written off). Your reputation fell by %d and new loans are frozen for %d seasons." % [int(entry["written_off"]) / 1e6, penalty, int(FcEconomy.load_constants()["restructure_lockout_seasons"])])
 
 
+## A plain-language warning about the owner's finances ("" when all is well): loans frozen, debt close to a
+## restructuring, or a loss-making club with debt. Shown on the Overview and Finances tabs.
+func distress_warning() -> String:
+	if state.mode != FcGameState.MODE_OWNER:
+		return ""
+	var b := business()
+	var cap := state.world.rules_of_league(league_id).cap.salary_cap
+	var k := FcEconomy.load_constants()
+	if loans_frozen():
+		return "Lenders restructured your debt and froze new loans for %d more seasons. Your reputation took a hit. Raise income or lower payroll." % (int(k["restructure_lockout_seasons"]) - (state.current_season - b.restructured_year))
+	var base := maxi(b.valuation, roundi(float(k["restructure_floor_cap_share"]) * cap))
+	if b.debt > 0 and float(b.debt) > 0.7 * float(k["restructure_trigger_share"]) * base:
+		return "Your debt ($%.0fM) is close to your club's value. Past 100%% lenders will restructure it: part is written off, your reputation falls and loans freeze. Cut payroll, reprice tickets or sell assets." % (b.debt / 1e6)
+	var rec := FcFinanceEngine.new(state.world).record_of(state.user_team_id, state.current_season if season().status == FcSeason.Status.COMPLETE else state.current_season - 1)
+	if b.debt > 0 and rec != null and rec.profit() < 0:
+		return "You lost $%.0fM last season and carry $%.0fM of debt. Your general manager now limits payroll to 65%% of revenue (unless the budget is aggressive)." % [-rec.profit() / 1e6, b.debt / 1e6]
+	return ""
+
+
 ## True while new loans are frozen after a restructuring.
 func loans_frozen() -> bool:
 	var b := business()
@@ -782,7 +801,7 @@ func philosophy() -> String:
 
 
 ## The most payroll the GM may commit: a share of the cap by budget (frugal 92%, normal 100%,
-## aggressive 115% but never above the luxury tax line), and while the club is in debt no more than 65% of its
+## aggressive 115% but never above the luxury tax line), and no more than 65% of last season's
 ## revenue (never below the league's minimum payroll) unless the budget is aggressive.
 func gm_payroll_limit() -> int:
 	var cap := state.world.rules_of_league(league_id).cap
@@ -790,10 +809,12 @@ func gm_payroll_limit() -> int:
 	var limit := roundi(cap.salary_cap * share)
 	if state.direction["budget"] == "aggressive" and cap.luxury_tax_line > 0:
 		limit = mini(limit, cap.luxury_tax_line)
-	# a club in debt lives within its means, like the AI clubs (FcEconomy.payroll_ceiling): a frugal or normal budget is
-	# held to 65% of last season's revenue; only an "aggressive" budget, the owner's explicit choice, ignores the debt
+	# the GM spends the owner's money carefully: a frugal or normal budget is held to 65% of last season's revenue (never
+	# below the league's minimum payroll), whether or not the club is in debt yet. Only an "aggressive" budget, the owner's
+	# explicit choice, spends beyond the club's means. (Found by the 50-season owner runs: a GM spending to the cap
+	# bankrupts small markets.)
 	if state.direction["budget"] != "aggressive":
-		var ceiling := FcEconomy.new(state.world).payroll_ceiling(state.user_team_id)
+		var ceiling := FcEconomy.new(state.world).payroll_ceiling(state.user_team_id, true)
 		if ceiling >= 0:
 			limit = mini(limit, maxi(ceiling, cap.minimum_payroll))
 	return limit

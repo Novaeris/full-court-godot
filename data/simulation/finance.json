@@ -40,7 +40,7 @@
 	"executive_marketing_effect": 0.40,
 	"executive_cost_effect": 0.20,
 	"executive_interest_effect": 10.0,
-	"revenue_sharing_amount": 120000000,
+	"revenue_sharing_amount": 240000000,
 	"sponsor_steady_multiplier": 0.95,
 	"sponsor_performance_base": 0.65,
 	"sponsor_performance_win_weight": 0.55,

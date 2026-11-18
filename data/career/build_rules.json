@@ -1,0 +1,45 @@
+{
+	"schema": 1,
+	"ruleset_version": 1,
+	"note": "Rules for validating a Career Mode player build. They use the shared 0-100 attribute catalog (data/definitions/attributes.json). The same rules must run unchanged on a future online server. Edit values to rebalance; bump ruleset_version when a change would make old builds invalid.",
+	"attribute_floor": 25,
+	"attribute_cap": 99,
+	"start_attribute_cap": 85,
+	"baseline": 40,
+	"budget_points": 380,
+	"potential_min": 40,
+	"potential_max": 99,
+	"ceiling_base": 55,
+	"ceiling_per_potential": 0.44,
+	"physical": {
+		"height_cm": [165, 232],
+		"weight_kg": [60, 180],
+		"wingspan_cm": [165, 250],
+		"wingspan_over_height_cm": [-8, 22],
+		"bmi": [18.0, 34.0],
+		"reference_height_cm": 198,
+		"reference_weight_kg": 95
+	},
+	"potential_cap": {
+		"base": 82,
+		"per_cm_over_reference": 0.25,
+		"per_cm_wingspan_over_height": 0.4,
+		"min": 60,
+		"max": 95
+	},
+	"ceiling_modifiers": {
+		"note": "Points added to (or taken from) an attribute's ceiling per cm of height above 198 cm, per cm of wingspan beyond height + 5 cm, and per 10 kg above 95 kg. Taller players cap lower in speed and handling and higher in interior skills; nothing is forbidden, only harder.",
+		"per_cm_height": {"blocks": 0.5, "interior_defense": 0.35, "rebounding": 0.3, "close_finishing": 0.15, "strength": 0.2, "speed": -0.45, "agility": -0.45, "ball_handling": -0.3, "three_point": -0.12, "steals": -0.15},
+		"per_cm_wingspan": {"blocks": 0.5, "steals": 0.4, "interior_defense": 0.2, "rebounding": 0.2, "perimeter_defense": 0.2},
+		"per_10kg": {"strength": 1.5, "speed": -0.8, "agility": -0.8, "vertical": -0.6, "stamina": -0.4}
+	},
+	"jersey_number": [0, 99],
+	"name_max_length": 24,
+	"max_badges_equipped": 5,
+	"appearance": {
+		"skin": ["tone_1", "tone_2", "tone_3", "tone_4", "tone_5", "tone_6"],
+		"hair": ["bald", "short", "fade", "afro", "braids", "locs", "curly", "long"],
+		"face": ["face_1", "face_2", "face_3", "face_4", "face_5", "face_6"],
+		"facial_hair": ["none", "stubble", "goatee", "beard"]
+	}
+}

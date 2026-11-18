@@ -11,13 +11,18 @@ const MODE_OWNER := "owner"
 ## Watch-only mode: the AI runs every team, including yours (no owner controls). It is NOT the
 ## planned Dynasty Mode (a card-collecting game, see D-029); it used to be called "dynasty".
 const MODE_SPECTATOR := "spectator"
-const MODES := [MODE_OWNER, MODE_SPECTATOR]
+## Career Mode: one created player lives a career in the league (docs/CAREER_MODE_PLAN.md). The career record is in
+## `career_profiles`; `user_team_id` stays 0 until the player joins a team.
+const MODE_CAREER := "career"
+const MODES := [MODE_OWNER, MODE_SPECTATOR, MODE_CAREER]
 
 var world: FcWorld
 var rng: FcRng
 var mode: String = MODE_OWNER
 ## The franchise the player controls.
 var user_team_id: int = 0
+## Career Mode profiles (FcCareerProfile), one per created player; empty in the other modes. Saved from data version 2.
+var career_profiles: Array[FcCareerProfile] = []
 ## Season identified by the year it starts in (2026 = 2026-27).
 var current_season: int = 2026
 var current_date: FcDate = FcDate.new(2026, 7, 1)
@@ -89,7 +94,19 @@ func validate() -> Array[String]:
 	var errors: Array[String] = []
 	if not MODES.has(mode):
 		errors.append("unknown game mode '%s'" % mode)
-	if user_team_id <= 0 or not world.teams.has_id(user_team_id):
+	if mode == MODE_CAREER:
+		var seen := {}
+		for profile in career_profiles:
+			for e in profile.validate():
+				errors.append("career profile: %s" % e)
+			if profile.player_id > 0 and world.players.get_by_id(profile.player_id) == null:
+				errors.append("career profile %s refers to player %d who does not exist" % [profile.profile_id, profile.player_id])
+			if seen.has(profile.profile_id):
+				errors.append("career profile id %s is used twice" % profile.profile_id)
+			seen[profile.profile_id] = true
+		if user_team_id != 0 and not world.teams.has_id(user_team_id):
+			errors.append("career team %d does not exist" % user_team_id)
+	elif user_team_id <= 0 or not world.teams.has_id(user_team_id):
 		errors.append("user team %d does not exist" % user_team_id)
 	if not current_date.is_valid():
 		errors.append("current date is not valid")
@@ -102,6 +119,7 @@ func to_dict() -> Dictionary:
 		"schema": SCHEMA_VERSION,
 		"mode": mode,
 		"user_team_id": user_team_id,
+		"career_profiles": career_profiles.map(func(c): return c.to_dict()),
 		"current_season": current_season,
 		"current_date": current_date.to_iso(),
 		"agreed_extensions": agreed_extensions.duplicate(),
@@ -174,6 +192,9 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 	if s.mode == "dynasty":
 		s.mode = MODE_SPECTATOR   # saves made before the rename
 	s.user_team_id = int(data.get("user_team_id", 0))
+	for row in data.get("career_profiles", []):
+		if row is Dictionary:
+			s.career_profiles.append(FcCareerProfile.from_dict(row))
 	s.current_season = int(data.get("current_season", 2026))
 	s.offseason_stage = int(data.get("offseason_stage", 0))
 	s.meeting_year = int(data.get("meeting_year", 0))
