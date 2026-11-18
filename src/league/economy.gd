@@ -72,6 +72,14 @@ func advance(league_id: int, finished_year: int, human_team_ids: Array[int] = []
 	if wanted_cap / cap_before - 1.0 > 0.0005:
 		rules.cap.scale_money(wanted_cap / cap_before)
 		_lift_minimum_contracts(rules.cap.min_player_salary, rules.cap.max_annual_raise_percent, finished_year)
+	# the owner's own prices and marketing budget keep their place as money inflates (they stay the owner's choice,
+	# but a forgotten price would otherwise fall further behind the market every year: found by the 50-season playthrough)
+	var ratio := finance.scale_for(rules) / old_scale
+	for tid in human_team_ids:
+		var own: FcTeamBusiness = world.businesses.get_by_id(tid)
+		if own != null:
+			own.ticket_price = clampi(roundi(own.ticket_price * ratio), 1, 5000)
+			own.marketing_budget = roundi(own.marketing_budget * ratio)
 	var spent := _clubs_use_cash(league_id, finished_year, finance.scale_for(rules), rules.cap.salary_cap, human_team_ids)
 	var report := {"growth": growth, "margin": margin, "cap_before": cap_before, "cap_after": rules.cap.salary_cap,
 		"projects": spent["projects"], "dividends": spent["dividends"]}

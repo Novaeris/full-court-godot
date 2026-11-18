@@ -384,3 +384,8 @@ See TESTING.md.
 
 ## Look and feel, first pass (M4, 2026-11-17)
 - `FcUiTheme` holds every colour, panel, button, tab and table style (dark navy surface, basketball-orange accent) and the three text sizes; `FcApp.apply_text_size` sets it from the player's settings (main menu: Text size). Screens only use the heading colour through `FcUiTables.label`. The look is a placeholder until the founder sends references; changing the constants in `src/ui/ui_theme.gd` restyles every screen. `tools/screenshot.ps1` shows the result.
+
+## 50 seasons with the owner playing, saves and speed (M2, 2026-11-17)
+- **Found and fixed:** a human owner's ticket price and marketing budget did not move with inflation, so after 50 seasons the owner charged $251 against the league's $945 and sank $16B into debt. `FcEconomy.advance` now indexes the owner's own ticket price and marketing budget by the yearly inflation (they stay the owner's choice; AI clubs reprice themselves). Rerun (`ui_playthrough seasons=50 teams=12 seed=41 auto=1`, all 15 kinds of lever in use every season): 0 problems, debt $0, cash $0.96B, franchise value $6.9B.
+- **Speed and size (`play_seasons seasons=50 teams=12`, seed 31):** 285 s for 50 seasons (5.7 s a season, constant), a 50-season save is 5.2 MB, written in 0.8 s and loaded in 1.0 s. 3,040 players in the database (2,274 retired).
+- **Parity (same run):** 11 different champions; titles PIT 11, TOR 8, SEA 6, OTT 5, BAL 5, NEW 4, MIA 4, CAL 3, SAN 2, PHO 1, HOU 1. One club with 11 of 50 is more than the earlier runs (at most 6); it is one seed, so it is noted, not changed. Re-check across more seeds before M3 balance work.

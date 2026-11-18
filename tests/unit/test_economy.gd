@@ -161,3 +161,17 @@ func test_a_re_signing_agreed_before_the_minimum_rose_is_lifted_to_the_new_minim
 	g.begin_offseason()
 	assert_true(rules.cap.min_player_salary >= cheap)
 	assert_eq(w.validate(g.state.current_season), [] as Array[String], "every contract is inside the new limits")
+
+
+func test_the_owners_prices_and_marketing_follow_inflation() -> void:
+	var g := _game(412)
+	g.sim_playoffs()
+	var b := g.business()
+	b.ticket_price = 200
+	b.marketing_budget = 10000000
+	var before_scale := FcFinanceEngine.new(g.state.world).scale_for(g.state.world.rules_of_league(1))
+	FcEconomy.new(g.state.world).advance(1, 2026, [g.state.user_team_id] as Array[int])
+	var ratio := FcFinanceEngine.new(g.state.world).scale_for(g.state.world.rules_of_league(1)) / before_scale
+	assert_true(ratio > 1.0 or ratio == 1.0)
+	assert_eq(b.ticket_price, roundi(200 * ratio))
+	assert_eq(b.marketing_budget, roundi(10000000 * ratio))
