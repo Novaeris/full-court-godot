@@ -60,7 +60,7 @@ Existing files extended: `game_state.gd` (mode, career section, validation), `ve
 3. **Progression** *(done 2026-11-18: rules, data, controller, Develop and Skills tabs; badge effects are applied to the simulation in phase 4)*: XP, levels, development points, attribute allocation under ceilings, badge and skill frameworks, training rewards; deterministic tests.
 4. **Career simulation** *(done 2026-11-18 as a first slice: team placement, calendar, games, stats, rewards, history, save and resume, badge bonus in the sim, retirement; role and usage control still open)*: team placement, calendar, games with role control, stats and history, post-game rewards, save and resume; Owner regression with fixed seeds.
 5. **Career RPG:** agents, contracts, coach relations, chemistry, rivalries, media, endorsements; each decision with a mechanical consequence.
-6. **Multiplayer preparation:** audit and document the authoritative-server contract (below); no networking.
+6. **Multiplayer preparation** *(done 2026-11-18 as a document: `docs/CAREER_MODE_MULTIPLAYER_READINESS.md`... see CAREER_MULTIPLAYER_READINESS.md)*: audit and document the authoritative-server contract (below); no networking.
 
 ## 7. Testing strategy
 Deterministic unit tests for every rule (validation boundaries, ceilings, XP/level tables, costs, unlock requirements, badge caps); save/load round trips and a **v1 to v2 migration test**; property-style tests (random valid builds always validate, random invalid builds never do); simulation-integration tests with fixed seeds, including "no flagged player means identical box scores to today"; the full existing suite and click test after each phase; `ui_playthrough` and `economy_check` unaffected (Owner paths untouched); CI runs it all.
