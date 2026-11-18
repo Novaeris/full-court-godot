@@ -108,6 +108,12 @@ func _initialize() -> void:
 		_ok("RESULT: %d wins (expected %d), profit %s, payroll %s, approval %d, GM grade %s, rounds won %d" % [report["wins"], report["expected_wins"], FcUiTables.money(report["profit"]), FcUiTables.money(c.state.world.payroll_of_team(c.state.user_team_id, c.state.current_season)), report["approval"], card.get("grade", "-"), report["playoff_rounds_won"]])
 		_offseason(c, year)
 	_log("final: season %d, %s; %d teams in the league, %d franchise moves, %d expansions" % [c.state.current_season, _summary(c), c.state.world.leagues.get_by_id(c.league_id).team_count(), c.state.relocation_log.size(), 1 if c.state.last_expansion_year > 0 else 0])
+	var rescued := 0
+	for row in c.state.owner_career["restructurings"]:
+		rescued += int(row[2])
+	_log("OWNER BOOKS: debt %s, cash %s, franchise value %s, restructurings %d (written off %s), paid to the owner %s, reputation %d" % [
+		FcUiTables.money(c.business().debt), FcUiTables.money(c.business().cash), FcUiTables.money(c.business().valuation),
+		c.state.owner_career["restructurings"].size(), FcUiTables.money(rescued), FcUiTables.money(c.business().distributions), c.owner_reputation()])
 	_log("levers used (%d kinds): %s" % [_levers.size(), ", ".join(_levers.keys().map(func(k): return "%s x%d" % [k, _levers[k]]))])
 	_finish()
 

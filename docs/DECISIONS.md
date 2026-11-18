@@ -152,6 +152,7 @@ Built on the founder's instruction to continue; the following product choices we
 - **Career Mode**: the player creates one player and takes them through an RPG-style progression, about **20 years**. Randomized players.
 - **Dynasty Mode**: a **card-collecting** game inspired by NBA 2K MyTeam with **static players made by the founder**; has **paid features**.
 - Art and audio will be produced with AI tools (founder). Platform priority after Windows: **mobile** (Android/iOS), so touch-friendly layouts move earlier in the plan.
+- (Note 2026-11-18, D-036: "cannot lose" is kept; a distressed owner's debt is restructured at a price instead of ending the game.)
 - Consequences: the 50-year target is an M2 requirement (health, performance and save size over 50 seasons); Dynasty Mode is a separate product track (collection, lineups, likely online); legal review must cover loot-box rules, AI-generated assets (rights, store disclosure) and invented names.
 
 ## D-032 Published to GitHub (2026-11-17, founder)
@@ -201,4 +202,9 @@ Built on the founder's instruction to continue; the following product choices we
 - Inflation about 3% a year with seeded variation; the cap follows league profit toward a 6% average margin and never falls; surplus cash goes into building projects (AI automatically) and dividends; a new-arena project exists.
 - AI clubs remember trades (wariness) and meeting votes (rapport); a team moving into a region costs its neighbours fans.
 - Season tickets and promotion nights are owner levers (default off). Staff chemistry changes player development by up to about +/-6 coaching points. The general manager's negotiation moves salaries by up to 5% and trade profit by up to 8 points.
-- Overtime: trailing teams play for the last shot (about 4.0% overtime games).
+- Overtime: trailing teams play for the last shot (about 4.0% overtime games; late fouling added the same day brought it to about 4.4%).
+
+## D-036 Debt restructuring keeps the owner in the game (2026-11-18, founder chose "keep 'cannot lose' + restructuring")
+- The owner still cannot lose the franchise (D-029). When debt passes 1.0x the club's value (floored at 0.5x the cap), lenders cut it to 40% of the pre-adjustment value; at most once per 3 seasons; no cash is added; reputation -15; loans frozen for 3 seasons; the write-off is tracked apart from operating profit.
+- AI clubs follow the same rule, and an AI club in debt signs minimum contracts only and keeps payroll within 65% of its revenue.
+- Alternatives rejected: warnings only (the $16B spiral stays possible) and a forced transfer (changes what "cannot lose" means).

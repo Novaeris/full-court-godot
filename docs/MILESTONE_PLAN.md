@@ -24,7 +24,7 @@ What changed since v2, in the order of the founder's work list:
 - **M8 (pre-release): a legal checklist now exists** (`docs/LEGAL_CHECKLIST.md`): license, names, loot boxes, AI art, privacy, stores. It needs a lawyer.
 
 Review notes on the plan itself (Claude's recommendations; the order is unchanged unless the founder says otherwise):
-1. Keep the order M1+M2, then M4/M5, with M3 in parallel. With M1 and the economy done, **M4 (look and feel) is now the next big item and is blocked only on the founder's references**; M3 (simulation depth) is the natural thing to do while waiting.
+1. **Current priority (2026-11-18): stability sign-off** (`docs/STABILITY_REPORT.md`): a dependable Owner Mode foundation before any redesign. Keep the order M1+M2, then M4/M5, with M3 in parallel. **M4 (look and feel) is blocked only on the founder's references**; M3 (simulation depth) is the natural thing to do while waiting. The visual redesign is not part of the stability milestone.
 2. Before Career Mode starts, run one 50-season human-owner playthrough (`tools/ui_playthrough.ps1`) to catch rough edges the AI-only runs cannot.
 3. Dynasty Mode's legal questions (loot boxes) should be answered before its design is final, because they decide whether packs are paid at all.
 4. Treat this plan as approved only when the founder says so; nothing above changes a decision the founder already made (D-029 to D-032).
@@ -82,7 +82,7 @@ Open M2 item found 2026-11-16: owner profit grows without limit over a long run 
 
 ## M3. Simulation depth (size L)
 Goal: games feel like real basketball at the level a manager can notice.
-Scope: overtime rate (still about 2.6% vs 5-6%; one fix tried and reverted), timeouts, matchups and positions,
+Scope: overtime rate (about 4.4% now vs 5-6% real; two fixes built, see `docs/ARCHITECTURE.md`), timeouts, matchups and positions,
 end-of-game situations, fouls and foul trouble, pace and style choices that matter, home-court detail, more
 realistic injuries. Each change is recalibrated with `tools/simulate_games.ps1` (the 16 league checks stay in range).
 Done when: all league-average checks pass in all three eras AND the overtime rate, clutch scoring and close-game

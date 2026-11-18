@@ -20,7 +20,7 @@ Status 2026-11-17: **Windows export works** (a single `FullCourt.exe`, data pack
 
 ## Not done yet (in rough order)
 1. A game icon and window title artwork (needs art from the founder; `application/icon` in the preset).
-2. A Credits/Licenses screen with Godot's MIT notice (see `docs/LEGAL_CHECKLIST.md`).
+2. ~~A Credits/Licenses screen~~ Done: the About screen (main menu) shows the engine's license and links to the logs folder. A fuller credits list (assets, fonts) waits for the assets.
 3. An installer and code signing (a zip exists) (an unsigned exe triggers Windows SmartScreen warnings for new publishers).
 4. Mac export (needs a Mac or a build service for notarization), then Android and iOS for Dynasty Mode only (decision D-030).
 5. Crash logs the player can send (privacy review first).
