@@ -67,6 +67,34 @@ static func restructure_amount(debt: int, valuation: int, cap: int, finished_yea
 	return maxi(0, debt - roundi(float(k["restructure_ceiling_share"]) * base))
 
 
+## True for a club that owes more than `distress_debt_share` x its value (floored like the restructuring rule). An AI club in
+## distress stops signing anyone above the minimum (FcOffseason), so payroll falls as its contracts end instead of the club
+## spending its way into ever more debt; found by the 50-season economy check, which showed small-market AI clubs owing
+## 9-12 times the cap.
+func is_distressed(team_id: int, cap: int) -> bool:
+	var business: FcTeamBusiness = world.businesses.get_by_id(team_id)
+	if business == null or business.debt <= 0:
+		return false
+	var base := maxi(business.valuation, roundi(float(k["restructure_floor_cap_share"]) * cap))
+	return float(business.debt) > float(k["distress_debt_share"]) * base
+
+
+## The most payroll an AI club in debt will commit to: `indebted_payroll_revenue_share` x its latest season's revenue.
+## A club with no debt (or no books yet) has no such limit (-1). Clubs that lose money must live within their means,
+## so small-market clubs stop adding to their debt instead of spending to the cap regardless of what they earn.
+func payroll_ceiling(team_id: int) -> int:
+	var business: FcTeamBusiness = world.businesses.get_by_id(team_id)
+	if business == null or business.debt <= 0:
+		return -1
+	var latest: FcFinanceRecord = null
+	for rec in world.finances.all():
+		if rec.team_id == team_id and (latest == null or rec.year > latest.year):
+			latest = rec
+	if latest == null:
+		return -1
+	return roundi(float(k["indebted_payroll_revenue_share"]) * latest.total_revenue())
+
+
 ## Grows the economy and moves the cap, then lets the AI clubs use their cash. Call once per offseason,
 ## after the season's books are settled and before contracts are renewed. Returns
 ## {"growth", "margin", "cap_before", "cap_after", "projects", "dividends"}.
@@ -98,7 +126,7 @@ func advance(league_id: int, finished_year: int, human_team_ids: Array[int] = []
 			own.marketing_budget = roundi(own.marketing_budget * ratio)
 	var spent := _clubs_use_cash(league_id, finished_year, finance.scale_for(rules), rules.cap.salary_cap, human_team_ids)
 	var restructured: Array = []
-	for tid in human_team_ids:
+	for tid in world.leagues.get_by_id(league_id).all_team_ids():   # the rule is the same for AI clubs (no reputation to lose)
 		var owned: FcTeamBusiness = world.businesses.get_by_id(tid)
 		if owned == null:
 			continue
@@ -111,7 +139,8 @@ func advance(league_id: int, finished_year: int, human_team_ids: Array[int] = []
 				if rec.team_id == tid and rec.year == finished_year:
 					rec.restructuring_writeoff += written_off
 					rec.debt_end = owned.debt
-			world.add_news(FcDate.new(finished_year + 1, 6, 1), "staff", "Lenders restructured the debt of %s: $%.1fM was written off. The owner's reputation suffers and new loans are frozen for a while." % [world.team_display_name(tid), written_off / 1e6], tid)
+			var tail := " The owner's reputation suffers and new loans are frozen for a while." if human_team_ids.has(tid) else ""
+			world.add_news(FcDate.new(finished_year + 1, 6, 1), "staff", "Lenders restructured the debt of %s: $%.1fM was written off.%s" % [world.team_display_name(tid), written_off / 1e6, tail], tid)
 			restructured.append({"team": tid, "written_off": written_off})
 	var report := {"restructured": restructured, "growth": growth, "margin": margin, "cap_before": cap_before, "cap_after": rules.cap.salary_cap,
 		"projects": spent["projects"], "dividends": spent["dividends"]}

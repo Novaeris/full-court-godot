@@ -56,7 +56,7 @@ func test_recovery_means_no_more_restructuring() -> void:
 
 # --- in the game ---------------------------------------------------------------------------------
 
-func test_advance_writes_off_debt_but_adds_no_cash_and_touches_only_the_owner() -> void:
+func test_advance_writes_off_debt_but_adds_no_cash() -> void:
 	var g := _game()
 	g.sim_playoffs()
 	var w := g.state.world
@@ -72,13 +72,15 @@ func test_advance_writes_off_debt_but_adds_no_cash_and_touches_only_the_owner() 
 	var ai: FcTeamBusiness = w.businesses.get_by_id(ai_tid)
 	ai.debt = cap * 10
 	var valuation_before := maxi(b.valuation, roundi(float(k["restructure_floor_cap_share"]) * cap))
+	var ai_valuation := maxi(ai.valuation, roundi(float(k["restructure_floor_cap_share"]) * cap))
 	var report := FcEconomy.new(w).advance(1, 2026, [g.state.user_team_id] as Array[int])
-	assert_eq(report["restructured"].size(), 1)
+	assert_eq(report["restructured"].size(), 2, "the owner's club and the indebted AI club")
 	assert_eq(b.debt, roundi(float(k["restructure_ceiling_share"]) * valuation_before), "ceiling from the value before the rescue")
 	assert_eq(b.cash, cash_before, "solvency, not profit: no cash is added")
 	assert_eq(b.restructured_total, cap * 10 - b.debt)
 	assert_eq(b.restructured_year, 2026)
-	assert_eq(ai.debt, cap * 10, "AI clubs are not rescued by this rule")
+	assert_eq(ai.debt, roundi(float(k["restructure_ceiling_share"]) * ai_valuation), "AI clubs follow the same rule")
+	assert_eq(g.state.owner_career["reputation"], 40, "the reputation is only the owner's business: advance() does not touch it")
 	var rec := FcFinanceEngine.new(w).record_of(g.state.user_team_id, 2026)
 	assert_eq(rec.restructuring_writeoff, b.restructured_total, "recorded apart from revenue and expenses")
 	var profit_before := rec.profit()
@@ -175,3 +177,42 @@ func test_a_club_that_never_recovers_keeps_its_owner_in_control() -> void:
 	# and the saved game still loads
 	var again := FcGameState.from_dict(JSON.parse_string(JSON.stringify(g.state.to_dict())), FcDefinitionSet.load_default())
 	assert_eq(again.owner_career["restructurings"], g.state.owner_career["restructurings"])
+
+
+# --- AI clubs in debt ----------------------------------------------------------------------------
+
+func test_a_club_is_distressed_when_its_debt_is_large_for_its_value() -> void:
+	var g := _game()
+	var w := g.state.world
+	var economy := FcEconomy.new(w)
+	var cap := w.rules_of_league(1).cap.salary_cap
+	var tid := 2
+	var b: FcTeamBusiness = w.businesses.get_by_id(tid)
+	b.debt = 0
+	assert_true(not economy.is_distressed(tid, cap), "no debt is never distress")
+	b.valuation = 0
+	b.debt = roundi(float(k["distress_debt_share"]) * float(k["restructure_floor_cap_share"]) * cap) - 1000
+	assert_true(not economy.is_distressed(tid, cap), "just under the floor-based threshold")
+	b.debt += 2000
+	assert_true(economy.is_distressed(tid, cap), "a collapsed value uses the floor, not zero")
+
+
+func test_an_ai_club_in_debt_signs_only_minimum_contracts() -> void:
+	var g := _game(812)
+	var w := g.state.world
+	var rules := w.rules_of_league(1)
+	var broke_id := 2
+	w.businesses.get_by_id(broke_id).debt = rules.cap.salary_cap * 5
+	assert_true(FcEconomy.new(w).is_distressed(broke_id, rules.cap.salary_cap))
+	g.sim_playoffs()
+	var team: FcTeam = w.teams.get_by_id(broke_id)
+	# make room under the cap and in the roster so the club would like to sign someone
+	for pid in team.roster.player_ids.slice(0, 5):
+		var c := w.active_contract_of(pid)
+		c.status = FcContract.Status.TERMINATED
+		team.roster.remove(pid)
+	var before := w.contracts.count()
+	FcOffseason.new(w).free_agency(1, 2027, FcRng.new(5))
+	for c in w.contracts.all().slice(before):
+		if c.team_id == broke_id:
+			assert_true(c.years[0].salary <= rules.cap.min_player_salary, "a club deep in debt signs minimum contracts only (%d)" % c.years[0].salary)

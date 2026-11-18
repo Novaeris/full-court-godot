@@ -289,3 +289,34 @@ func test_old_contracts_are_forgotten_so_long_leagues_stay_fast() -> void:
 	assert_true(counts[5] < counts[2] * 1.6, "the number of contracts stops growing (%s)" % str(counts))
 	for c in world.contracts.all():
 		assert_true(c.status == FcContract.Status.ACTIVE or c.end_season() >= 2032 - 2, "only recent history is kept")
+
+
+func test_cutting_to_the_hard_limit_leaves_room_for_the_minimum_players_who_refill_the_roster() -> void:
+	# found by a 50-season run: a club cut to just under the limit, then signing minimum players to refill its roster
+	# pushed its payroll over the limit again
+	var data := FcGenerationData.load_default()
+	var cfg := FcGenerationConfig.load_default(data)
+	cfg.team_count = 8
+	cfg.conference_count = 2
+	cfg.divisions_per_conference = 1
+	cfg.roster_size = 13
+	cfg.free_agent_count = 20
+	var world := FcWorldGenerator.new(data, FcDefinitionSet.load_default(), cfg).generate(4711)
+	var rules := world.rules_of_league(1)
+	var limit := rules.cap.effective_limit()
+	var team: FcTeam = world.teams.get_by_id(1)
+	var year := 2027
+	var ratings := FcPlayerRatings.load_default()
+	var off := FcOffseason.new(world)
+	# the least valuable player gets a giant contract (so he is the first to go); the other twelve fill the limit to within half a minimum salary
+	var ids: Array = team.roster.player_ids.duplicate()
+	ids.sort_custom(func(a, b): return off.market.value(world.players.get_by_id(a), 27) < off.market.value(world.players.get_by_id(b), 27))
+	var each := roundi((limit - rules.cap.min_player_salary / 2.0) / (ids.size() - 1) / 10000.0) * 10000
+	for i in ids.size():
+		var c := world.active_contract_of(ids[i])
+		c.years = [FcContractYear.new(year, rules.cap.max_player_salary if i == 0 else each)]
+	assert_true(off.payroll(1, year) > limit, "the club starts over the limit")
+	off.enforce_hard_limit(1, year)
+	off.fill_rosters(1, year, FcRng.new(3))
+	assert_true(off.payroll(1, year) <= limit, "after cutting AND refilling the club is within the limit (%d vs %d)" % [off.payroll(1, year), limit])
+	assert_true(team.roster.size() >= rules.roster_min)

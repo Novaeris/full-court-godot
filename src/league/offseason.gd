@@ -38,6 +38,7 @@ var ratings := FcPlayerRatings.load_default()
 var market: FcPlayerMarket
 var progression: FcPlayerProgression
 var generator: FcPlayerGenerator
+var economy: FcEconomy
 var _gen_data := FcGenerationData.load_default()
 var _used_names: Dictionary = {}
 
@@ -47,6 +48,7 @@ func _init(game_world: FcWorld) -> void:
 	market = FcPlayerMarket.new(ratings)
 	progression = FcPlayerProgression.new(world.definitions, ratings)
 	generator = FcPlayerGenerator.new(_gen_data, world.definitions)
+	economy = FcEconomy.new(world)
 
 
 ## Runs the whole offseason after `finished` (a COMPLETE FcSeason). `new_year` is
@@ -232,6 +234,8 @@ func re_sign(league_id: int, new_year: int, rng: FcRng) -> int:
 		var agreed := human_team_ids.has(team.id) and agreed_re_signs.has(p.id)
 		if human_team_ids.has(team.id) and not agreed:
 			continue
+		var broke := not human_team_ids.has(team.id) and economy.is_distressed(team.id, rules.cap.salary_cap)
+		var ceiling := -1 if human_team_ids.has(team.id) else economy.payroll_ceiling(team.id)
 		if team.roster.size() >= rules.roster_max:
 			continue
 		var age := _age(p, new_year)
@@ -241,6 +245,10 @@ func re_sign(league_id: int, new_year: int, rng: FcRng) -> int:
 		if not agreed and not rng.chance(wants):
 			continue
 		var ask := market.asking_salary(p, age, rules.cap)
+		if broke and ask > int(rules.cap.min_player_salary * 1.35):
+			continue   # a club deep in debt lets everyone but its cheapest players go
+		if ceiling >= 0 and payroll(team.id, new_year) + ask > ceiling and ask > int(rules.cap.min_player_salary * 1.35):
+			continue   # a club in debt lives within its means
 		var years := market.desired_years(age, rules.cap)
 		if agreed and agreed_terms.has(p.id):
 			# agreed before the offseason began: the league minimum may have risen since (see FcEconomy)
@@ -519,6 +527,11 @@ func free_agency(league_id: int, new_year: int, rng: FcRng) -> int:
 	pool.sort_custom(func(a: FcPlayer, b: FcPlayer): return values[a.id] > values[b.id])
 	var mle_used := {}
 	var signed := 0
+	var distressed := {}
+	var ceilings := {}
+	for tid in league.all_team_ids():
+		ceilings[tid] = -1 if human_team_ids.has(tid) else economy.payroll_ceiling(tid)
+		distressed[tid] = not human_team_ids.has(tid) and economy.is_distressed(tid, rules.cap.salary_cap)
 	for round_number in MARKET_ROUNDS:
 		var order: Array[int] = league.all_team_ids()
 		order.sort_custom(func(a: int, b: int): return rules.cap.cap_space(payroll(a, new_year)) > rules.cap.cap_space(payroll(b, new_year)))
@@ -544,8 +557,10 @@ func free_agency(league_id: int, new_year: int, rng: FcRng) -> int:
 					offer = rules.cap.min_player_salary
 					if rules.cap.check_signing(spent, offer, FcCapRules.SigningKind.MINIMUM).allowed:
 						kind = FcCapRules.SigningKind.MINIMUM
-				if kind < 0:
-					continue
+				if kind < 0 or (distressed[team_id] and kind != FcCapRules.SigningKind.MINIMUM):
+					continue   # a club deep in debt signs minimum contracts only
+				if int(ceilings[team_id]) >= 0 and kind != FcCapRules.SigningKind.MINIMUM and spent + offer > int(ceilings[team_id]):
+					continue   # a club in debt lives within its means
 				_sign(team, p, offer, market.desired_years(age, rules.cap), new_year, today, rules)
 				pool.erase(p)
 				signed += 1
@@ -715,7 +730,9 @@ func enforce_hard_limit(league_id: int, new_year: int) -> int:
 	var cuts := 0
 	for team_id in _league(league_id).all_team_ids():
 		var team: FcTeam = world.teams.get_by_id(team_id)
-		while payroll(team_id, new_year) > limit and team.roster.size() > rules.roster_min - 2:
+		# the club must also fit the minimum contracts it will have to sign to refill its roster (found by a 50-season run:
+		# cutting down to the limit and then refilling pushed a club over it), so each missing player reserves a minimum salary
+		while payroll(team_id, new_year) + maxi(0, rules.roster_min - team.roster.size()) * rules.cap.min_player_salary > limit and team.roster.size() > rules.roster_min - 4:
 			var victim := 0
 			var worst_ratio := -INF
 			for pid in team.roster.player_ids:
