@@ -1,0 +1,61 @@
+# The slow checks: 50-season economy runs and the owner stress test. Run by hand or every Sunday.
+name: Long checks
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 5 * * 0"
+
+env:
+  GODOT_VERSION: "4.7.2-stable"
+
+jobs:
+  economy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        teams: [12, 30]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Godot
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux
+      - name: Download Godot (official release)
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot && cd ~/godot
+          curl -fsSL -o godot.zip "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}_linux.x86_64" godot
+          chmod +x godot
+      - run: ~/godot/godot --headless --path . --import --quit
+      - name: 50-season economy check (exit code 1 on a breach)
+        run: ~/godot/godot --headless --path . --script res://tools/economy_check.gd -- seasons=50 teams=${{ matrix.teams }} seed=2026 every=10
+
+  owner-stress:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Godot
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux
+      - name: Download Godot (official release)
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot && cd ~/godot
+          curl -fsSL -o godot.zip "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}_linux.x86_64" godot
+          chmod +x godot
+      - run: ~/godot/godot --headless --path . --import --quit
+      - name: Owner stress test, 30 seasons, careful / naive / reckless (exit code 1 if a run breaks)
+        run: ~/godot/godot --headless --path . --script res://tools/owner_stress.gd -- seasons=30 teams=12 seeds=101,102

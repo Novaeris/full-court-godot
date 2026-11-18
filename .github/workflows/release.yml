@@ -1,0 +1,60 @@
+# Builds the Windows game and checks the packaged exe on a Windows machine. Runs when a version tag (v*) is pushed
+# or by hand. It only uploads the zip as a workflow artifact: it does not publish a release.
+name: Windows build
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: "4.7.2-stable"
+  TEMPLATES_DIR: "4.7.2.stable"
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Godot and the Windows export templates (official releases)
+        shell: pwsh
+        run: |
+          $base = "https://github.com/godotengine/godot-builds/releases/download/$env:GODOT_VERSION"
+          Invoke-WebRequest "$base/Godot_v$($env:GODOT_VERSION)_win64.exe.zip" -OutFile godot.zip
+          Expand-Archive godot.zip -DestinationPath "$HOME/godot"
+          Invoke-WebRequest "$base/Godot_v$($env:GODOT_VERSION)_export_templates.tpz" -OutFile templates.zip
+          Expand-Archive templates.zip -DestinationPath "$HOME/tpl"
+          $dest = Join-Path $env:APPDATA "Godot/export_templates/$env:TEMPLATES_DIR"
+          New-Item -ItemType Directory -Force $dest | Out-Null
+          Copy-Item "$HOME/tpl/templates/windows_*.exe" $dest
+          Copy-Item "$HOME/tpl/templates/version.txt" $dest
+
+      - name: Import and export (release)
+        shell: pwsh
+        run: |
+          $godot = (Get-ChildItem "$HOME/godot" -Filter "*_console.exe" | Select-Object -First 1).FullName
+          & $godot --headless --path . --import --quit
+          New-Item -ItemType Directory -Force builds/windows | Out-Null
+          & $godot --headless --path . --export-release "Windows Desktop" builds/windows/FullCourt.exe
+          if (-not (Test-Path builds/windows/FullCourt.exe)) { throw "the export did not produce FullCourt.exe" }
+
+      - name: Self-test of the packaged exe (exit code 0 = it created, played, validated and saved a league)
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath builds/windows/FullCourt.exe -ArgumentList "--headless","--","--selftest" -Wait -PassThru -NoNewWindow
+          if ($p.ExitCode -ne 0) { throw "self-test failed with exit code $($p.ExitCode)" }
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force builds/package | Out-Null
+          Copy-Item builds/windows/FullCourt.exe builds/package/
+          Copy-Item LICENSE builds/package/LICENSE.txt
+          Compress-Archive -Path builds/package/* -DestinationPath FullCourt-windows.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FullCourt-windows
+          path: FullCourt-windows.zip

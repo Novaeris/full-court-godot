@@ -8,6 +8,7 @@ extends SceneTree
 ##   ./tools/simulate_games.ps1 era=late_2010s    early_2010s | mid_2010s (default) | late_2010s
 ##   ./tools/simulate_games.ps1 box              print one full box score
 ##   ./tools/simulate_games.ps1 mirror           equal teams: measures home-court advantage
+##   ./tools/simulate_games.ps1 strict=1         exit code 1 if any league-average check is out of range (used by CI)
 ## It builds the default league, plays random matchups, and prints league
 ## averages next to realistic target ranges (OK / CHECK), the spread of
 ## scores, how well better teams win, and sample extremes.
@@ -41,7 +42,11 @@ func _initialize() -> void:
 	var era := ""
 	var tune := {}
 	var leaders := false
+	var strict := false
 	for arg in OS.get_cmdline_user_args():
+		if arg == "strict=1" or arg == "strict":
+			strict = true   # exit code 1 if any league-average check is outside its range (for CI)
+			continue
 		if arg == "leaders":
 			leaders = true
 			continue
@@ -185,7 +190,7 @@ func _initialize() -> void:
 	print("  correlation of team rating and win%%: %.2f" % _correlation(rows.map(func(r): return r["rating"]), rows.map(func(r): return r["win_pct"])))
 	print("")
 	print("%d of %d checks outside the realistic range." % [flagged, ROWS.size()])
-	quit(0)
+	quit(1 if strict and flagged > 0 else 0)
 
 
 ## Plays one full season (every pair of teams as often as the schedule rules say, with

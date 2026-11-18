@@ -2,3 +2,4 @@
 # Usage:  ./tools/economy_check.ps1 [seasons=50] [seed=2026] [teams=12] [every=5]
 $project = Split-Path -Parent $PSScriptRoot
 godot_console --headless --path $project --script res://tools/economy_check.gd -- @args
+exit $LASTEXITCODE
