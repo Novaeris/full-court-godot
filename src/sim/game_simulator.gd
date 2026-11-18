@@ -147,6 +147,17 @@ func _play_possession(o: int) -> void:
 	var first := true
 	while _clock > 0.0:
 		var dur := _sample_duration() if first else clampf(_rng.gaussian(float(_t["putback_seconds"]), 2.0), 2.0, 10.0)
+		if first and _fouling_to_stop_the_clock(o, d):
+			dur = minf(float(_t["intentional_foul_seconds"]), _clock)
+			_use_time(dur)
+			_commit_foul(d, _pick_fouler(d))
+			var outcome := END
+			if _team_fouls[d] >= int(_t["bonus_fouls"]):
+				outcome = _free_throws(o, d, _pick_scorer(o), 2)
+			first = false
+			if outcome == END:
+				return
+			continue
 		if first and _chasing_a_tie(o):
 			dur = _clock   # a team that can still tie holds the ball for the last shot
 		dur = minf(dur, _clock)
@@ -355,6 +366,18 @@ func _chasing_a_tie(o: int) -> bool:
 		return false
 	var behind: int = _score[1 - o] - _score[o]
 	return behind >= 1 and behind <= 3
+
+
+## Late in a close game the trailing team fouls on purpose to stop the clock and get the ball back: 4th quarter,
+## under `intentional_foul_window_seconds`, the defense trails by 1-`intentional_foul_max_deficit` and does it with
+## probability `intentional_foul_chance`. The leading team then shoots free throws (in the bonus) and can miss them.
+func _fouling_to_stop_the_clock(o: int, d: int) -> bool:
+	if _period != int(_t["quarters"]) or _clock > float(_t["intentional_foul_window_seconds"]):
+		return false
+	var deficit: int = _score[o] - _score[d]
+	if deficit < 1 or deficit > int(_t["intentional_foul_max_deficit"]):
+		return false
+	return _rng.chance(float(_t["intentional_foul_chance"]))
 
 
 ## The shot a team takes with the last possession when it trails: a three when down 3, a two when down 2 (or 1).

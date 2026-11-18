@@ -73,6 +73,10 @@
 	"minutes_soft_cap_seconds": 2340,
 	"position_balance_bonus": 8.0,
 	"late_tie_window_seconds": 24,
+	"intentional_foul_window_seconds": 40,
+	"intentional_foul_max_deficit": 6,
+	"intentional_foul_chance": 0.5,
+	"intentional_foul_seconds": 3.0,
 
 	"home_win_target_note": "Equal teams should win about 57-60% at home."
 }

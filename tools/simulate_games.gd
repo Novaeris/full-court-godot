@@ -159,6 +159,8 @@ func _initialize() -> void:
 	print("Margin of victory: median %d, 90th percentile %d, blowouts (25+) %.1f%%" % [
 		margins[floori(margins.size() / 2.0)], margins[floori(margins.size() * 0.9)],
 		100.0 * margins.filter(func(m): return m >= 25).size() / games])
+	print("Close games: decided by 3 or fewer %.1f%% (real about 12-15%%), by 5 or fewer %.1f%% (real about 20-24%%)" % [
+		100.0 * margins.filter(func(m): return m <= 3).size() / games, 100.0 * margins.filter(func(m): return m <= 5).size() / games])
 	print("Team scores: lowest %d, highest %d; best individual scoring night: %d points" % [lowest, highest, top_scorer])
 
 	var rows: Array = []
