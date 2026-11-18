@@ -208,3 +208,9 @@ Built on the founder's instruction to continue; the following product choices we
 - The owner still cannot lose the franchise (D-029). When debt passes 1.0x the club's value (floored at 0.5x the cap), lenders cut it to 40% of the pre-adjustment value; at most once per 3 seasons; no cash is added; reputation -15; loans frozen for 3 seasons; the write-off is tracked apart from operating profit.
 - AI clubs follow the same rule, and an AI club in debt signs minimum contracts only and keeps payroll within 65% of its revenue.
 - Alternatives rejected: warnings only (the $16B spiral stays possible) and a forced transfer (changes what "cannot lose" means).
+
+## D-037 Small-market economy follow-up (2026-11-18, Claude's recommended choices because the founder was away)
+- Revenue sharing doubled; the owner's GM keeps payroll within 65% of revenue unless the budget is aggressive; a plain distress warning is shown to the owner. Result: restructurings in small-market seeds halved, not eliminated (`docs/STABILITY_REPORT.md`). Reversible: the numbers are in `data/simulation/finance.json` and `FcGameController.gm_payroll_limit`.
+
+## D-038 Career Mode architecture (2026-11-18, recommended answers; see `docs/CAREER_MODE_PLAN.md`)
+- One shared player type (`FcPlayer`) plus a sidecar `FcCareerProfile`; the shared 0-100 attribute catalog is kept (builds validate into 25-99); save data version 2 with a real migration; pure rules in `src/career`; no multiplayer backend. Phases 1 (domain) and 2 (creator) built; progression, the calendar and games are next and need no further decision unless the founder wants changes.

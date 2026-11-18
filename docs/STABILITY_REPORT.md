@@ -2,6 +2,20 @@
 
 Written after every run below had finished; every number is from an actual run on the commit named. Nothing here is a forecast. Commit under test: `805b22d` (plus this report). Machine: the developer's Windows PC (16 cores); GitHub-hosted runners for CI.
 
+## Follow-up 2026-11-18 (after the founder asked for the open items to be closed with recommended answers)
+- **Small-market decision taken (recommended option):** revenue sharing doubled (`revenue_sharing_amount` 120M to 240M), the GM now keeps payroll within 65% of last season's revenue unless the budget is aggressive (before: only once in debt), and the owner sees a plain **distress warning** on the Overview tab (`FcGameController.distress_warning`, tested).
+- **Result, same five seeds, same settings (inflation pricing, balanced, normal budget, levers off):**
+| Seed | Before: restructurings (written off) / final debt | After: restructurings (written off) / final debt |
+|---|---|---|
+| 41 | 0 / $148M | 0 / $0 (cash $2.33B) |
+| 42 | 4 ($3.67B) / $1.58B | 2 ($2.25B) / $1.04B |
+| 43 | 5 ($5.08B) / $1.07B | 2 ($2.61B) / $1.23B |
+| 44 | 0 / $0 | 0 / $0 (cash $1.38B) |
+| 45 | 1 ($1.46B) / $953M | 1 ($1.04B) / $1.91B |
+All five: 0 integrity problems. Restructurings in the three small-market seeds fell from 10 to 5 and the amounts written off from $10.2B to $5.9B, but small-market owners are still rescued once or twice in 50 seasons and end in debt: revenue minus the other costs leaves little room once interest on a large debt (6%) compounds. This is better, not solved; further options are lower interest, a payroll floor relief for small markets, or a larger revenue pool. Needs the founder's judgment.
+- **64-team economy rerun** with the final economy (seed 5, 2,622 s): passes. Debt average $332M, largest $2.33B (2.84x the cap), at most 50% of a club's assets; cash largest $1.89B; margin 6.5%; 23 different champions, most by one club 4.
+- **Unit suite:** 627 tests pass (the report's table below was measured at 597 before the Career Mode work).
+
 ## Verdict
 **Conditional sign-off.** The foundation is stable in the sense the review asked for: tests, CI, long economy runs and the stress scenarios all pass, no run produced an integrity problem, and every defect the new tests found was fixed with a regression test. One finding is **not** resolved and needs a founder decision (section 4): in 3 of 5 seeds an owner who lets the general manager run a small-market club ends up in debt and is restructured several times in 50 seasons, even with sensible settings. The game stays valid and playable (D-029), but that is a balance question, not a bug.
 
@@ -73,7 +87,7 @@ All five pass the checks. The 64-team league was last run (2,403 s) BEFORE the d
 
 ## 7. Known risks and not done
 - Small-market owners and AI clubs rely on restructuring (section 4). Decision needed.
-- 64-team economy not rerun after the debt rules.
+- Small-market owners still need one or two rescues in 50 seasons (follow-up above).
 - Games are a bit too close (decided by 5 or fewer: 26% against 20-24% real) and overtime is about 3.7% (real 5-6%).
 - The unit suite needs about 7 minutes locally (CI: about 10-14 minutes). It is not split into parallel jobs.
 - Career and Dynasty Modes are draft designs only; the visual redesign was deliberately kept out of this milestone; no release tag was created.
@@ -87,5 +101,5 @@ All five pass the checks. The 64-team league was last run (2,403 s) BEFORE the d
 - [x] Multi-seed AI economy at 12 and 30 teams
 - [x] Docs reconciled
 - [x] CI with exit-code failure conditions, verified green on GitHub
-- [ ] Founder decision on the small-market finding (section 4)
-- [ ] 64-team rerun
+- [x] Small-market finding: recommended option applied (see the follow-up); halved but not eliminated; further tuning is the founder's call
+- [x] 64-team rerun (see the follow-up)
