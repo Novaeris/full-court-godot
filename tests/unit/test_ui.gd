@@ -275,3 +275,20 @@ func test_table_alignment_follows_the_content() -> void:
 	assert_eq(tree.get_column_title_alignment(2), HORIZONTAL_ALIGNMENT_RIGHT, "money is right-aligned")
 	assert_eq(tree.get_column_title_alignment(3), HORIZONTAL_ALIGNMENT_LEFT, "words are left-aligned")
 	tree.free()
+
+
+func test_every_owner_lever_on_the_finance_and_staff_tabs_has_a_tooltip() -> void:
+	_start_small_game()
+	var missing: Array = []
+	var found := 0
+	for tab_name in ["Finances", "Staff"]:
+		var stack: Array = [app.build_tab(tab_name)]
+		while not stack.is_empty():
+			var n: Node = stack.pop_back()
+			if n is SpinBox or n is OptionButton or (n is CheckBox) or (n is Button and (n as Button).toggle_mode):
+				found += 1
+				if (n as Control).tooltip_text == "":
+					missing.append(n.get_class())
+			stack.append_array(n.get_children())
+	assert_true(found >= 15, "the levers are there (%d)" % found)
+	assert_eq(missing, [], "every spin box, choice and toggle explains itself")

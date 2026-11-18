@@ -161,7 +161,28 @@ func show_main_menu() -> void:
 		preferences.reset_tutorial()
 		_say("The tutorial will open when you start your next Owner Mode game.")))
 	box.add_child(settings)
+	box.add_child(FcUiTables.button("About, licenses and logs", show_about))
 	box.add_child(FcUiTables.button("Quit", func(): get_tree().quit()))
+
+
+## The About screen: version, the engine's licenses (the MIT notice the engine requires in every game made with it) and
+## shortcuts to the folders with logs and saves, so a player can send a log when something goes wrong.
+func show_about() -> void:
+	var box := _reset("About Full Court")
+	box.add_child(FcUiTables.label("Full Court %s: a basketball management simulation. Original teams, players and staff; real cities." % FcVersion.GAME_VERSION, 16))
+	var info := Engine.get_version_info()
+	box.add_child(FcUiTables.label("Made with the Godot Engine %s (MIT license). Copyright (c) 2014-present Godot Engine contributors, Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.  https://godotengine.org" % info.get("string", ""), 14))
+	var text := TextEdit.new()
+	text.editable = false
+	text.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	text.text = Engine.get_license_text()
+	box.add_child(text)
+	var row := HBoxContainer.new()
+	row.add_child(FcUiTables.button("Open the logs folder", func(): OS.shell_open(ProjectSettings.globalize_path("user://logs"))))
+	row.add_child(FcUiTables.button("Open the saves folder", func(): OS.shell_open(ProjectSettings.globalize_path("user://"))))
+	row.add_child(FcUiTables.button("Back", show_main_menu))
+	box.add_child(row)
+	box.add_child(FcUiTables.label("If something goes wrong, send the newest file in the logs folder together with a description. Nothing is sent automatically.", 14))
 
 
 func on_continue() -> void:
@@ -1319,10 +1340,12 @@ func _tab_roster() -> Control:
 	for e in controller.expiring_players():
 		expiring[e["player"].id] = e
 	var ext_salary := SpinBox.new()
+	ext_salary.tooltip_text = "The yearly salary you offer, in millions, to keep this player. He accepts a little less than he asks."
 	ext_salary.min_value = 0.1
 	ext_salary.max_value = 100
 	ext_salary.step = 0.05
 	var ext_years := SpinBox.new()
+	ext_years.tooltip_text = "Length of the new contract in years. Players want long deals when young and short ones when older."
 	ext_years.min_value = 1
 	ext_years.max_value = 5
 	table.item_selected.connect(func():
@@ -1419,12 +1442,14 @@ func _tab_finances() -> Control:
 	var row := HBoxContainer.new()
 	row.add_child(FcUiTables.label("Ticket price $"))
 	var price := SpinBox.new()
+	price.tooltip_text = "The price of a regular ticket. 'Use suggestion' sets the price that just fills your arena. Higher earns more per fan but empties seats; lower fills seats but earns less."
 	price.min_value = 5
 	price.max_value = 2000
 	price.value = b.ticket_price
 	row.add_child(price)
 	row.add_child(FcUiTables.label("  Marketing $M"))
 	var marketing := SpinBox.new()
+	marketing.tooltip_text = "Yearly marketing spend in millions. It builds your brand, which lifts sponsors and merchandise. Money spent beyond what your market can use is wasted."
 	marketing.min_value = 0
 	marketing.max_value = 100
 	marketing.step = 0.5
@@ -1447,6 +1472,7 @@ func _tab_finances() -> Control:
 	var season_row := HBoxContainer.new()
 	season_row.add_child(FcUiTables.label("Season tickets % of seats"))
 	var season_share := SpinBox.new()
+	season_share.tooltip_text = "The share of your seats sold as season tickets. Holders pay 12% less but always come. Good when seats would stay empty, a loss when the arena sells out anyway."
 	season_share.min_value = 0
 	season_share.max_value = 60
 	season_share.step = 5
@@ -1454,6 +1480,7 @@ func _tab_finances() -> Control:
 	season_row.add_child(season_share)
 	season_row.add_child(FcUiTables.label("  Promotion nights"))
 	var promo_nights := SpinBox.new()
+	promo_nights.tooltip_text = "Home games with half-price tickets that fill the arena. Each costs a little to stage and adds fans and fan interest. Only worth it when seats would otherwise be empty."
 	promo_nights.min_value = 0
 	promo_nights.max_value = 10
 	promo_nights.value = b.promotion_nights
@@ -1471,6 +1498,7 @@ func _tab_finances() -> Control:
 	var shop := HBoxContainer.new()
 	shop.add_child(FcUiTables.label("Concession prices %"))
 	var concessions := SpinBox.new()
+	concessions.tooltip_text = "Food and drink prices as a percent of normal. Higher earns more per fan but lowers fan interest a little."
 	concessions.min_value = 70
 	concessions.max_value = 150
 	concessions.step = 5
@@ -1478,6 +1506,7 @@ func _tab_finances() -> Control:
 	shop.add_child(concessions)
 	shop.add_child(FcUiTables.label("   Playoff ticket price %"))
 	var playoff_price := SpinBox.new()
+	playoff_price.tooltip_text = "Playoff ticket prices as a percent of the regular price. Playoff demand is higher, so a higher premium earns more until the arena stops selling out."
 	playoff_price.min_value = 100
 	playoff_price.max_value = 300
 	playoff_price.step = 10
@@ -1485,6 +1514,7 @@ func _tab_finances() -> Control:
 	shop.add_child(playoff_price)
 	shop.add_child(FcUiTables.label("   Merchandise range"))
 	var merch := OptionButton.new()
+	merch.tooltip_text = "The merchandise range. Limited is cheap but sells less; Premium sells most but costs a lot of stock and only works for a strong brand."
 	for name in FcTeamBusiness.MERCH_TIERS:
 		merch.add_item(name)
 	merch.selected = b.merch_tier
@@ -1511,6 +1541,7 @@ func _tab_finances() -> Control:
 		var offer_row := HBoxContainer.new()
 		offer_row.add_child(FcUiTables.label("Offers:"))
 		var offer_pick := OptionButton.new()
+		offer_pick.tooltip_text = "Sponsors that want to sign with you. Fixed deals pay a steady amount; bonus deals pay less up front and more for playoff rounds won."
 		for o in offers:
 			offer_pick.add_item("%s: %s/yr x %d%s" % [o["sponsor"], FcUiTables.money(o["amount"]), o["years"], " + %s per playoff round" % FcUiTables.money(o["bonus"]) if o["bonus"] > 0 else ""])
 		offer_row.add_child(offer_pick)
@@ -1523,6 +1554,7 @@ func _tab_finances() -> Control:
 	var style_row := HBoxContainer.new()
 	style_row.add_child(FcUiTables.label("Style of the rest of your sponsorship income:"))
 	var plan := OptionButton.new()
+	plan.tooltip_text = "How the part of your sponsorship money not covered by signed deals is paid. Steady pays less but is guaranteed; Performance pays more only if you win."
 	for name in FcTeamBusiness.SPONSOR_PLANS:
 		plan.add_item(name)
 	plan.selected = b.sponsor_plan
@@ -1535,6 +1567,7 @@ func _tab_finances() -> Control:
 	var loans := HBoxContainer.new()
 	loans.add_child(FcUiTables.label("Loan $M"))
 	var amount := SpinBox.new()
+	amount.tooltip_text = "The amount, in millions, to borrow or repay. Debt costs 6% interest a season and your borrowing limit is a share of your franchise value."
 	amount.min_value = 1
 	amount.max_value = 500
 	amount.value = 10
@@ -1555,6 +1588,7 @@ func _tab_finances() -> Control:
 	var payouts := HBoxContainer.new()
 	payouts.add_child(FcUiTables.label("Dividend $M"))
 	var dividend := SpinBox.new()
+	dividend.tooltip_text = "Cash to pay yourself, in millions. The club must keep a reserve and cannot have debt. It does not change how the team plays."
 	dividend.min_value = 1
 	dividend.max_value = 5000
 	dividend.value = 10
@@ -1580,6 +1614,7 @@ func _tab_finances() -> Control:
 	build.add_child(FcUiTables.label("Building project:"))
 	var options := controller.arena_project_options()
 	var project_pick := OptionButton.new()
+	project_pick.tooltip_text = "Arena projects are paid up front and finish after a few seasons. Each kind can run once at a time."
 	for o in options:
 		project_pick.add_item("%s (%s, %d season%s)%s" % [o["name"], FcUiTables.money(o["cost"]), o["seasons"], "" if o["seasons"] == 1 else "s", " - under way" if o["running"] else ""])
 	build.add_child(project_pick)
@@ -1634,6 +1669,7 @@ func _tab_staff() -> Control:
 				var check := Button.new()
 				check.toggle_mode = true
 				check.button_pressed = controller.delegation_on(entry[0])
+				check.tooltip_text = {"contracts": "Your general manager re-signs the players you would keep, at fair terms.", "draft": "Your general manager picks for you in the draft, using the scouts' board.", "free_agency": "Your general manager signs free agents within the budget you set.", "trades": "Your general manager looks for trades that fit your philosophy.", "injuries": "Your general manager signs replacements when injuries leave you short."}.get(entry[0], "")
 				var title: String = entry[1]
 				check.text = ("[x] " if check.button_pressed else "[ ] ") + title
 				check.toggled.connect(func(on):
@@ -1644,12 +1680,14 @@ func _tab_staff() -> Control:
 			var direction_row := HBoxContainer.new()
 			direction_row.add_child(FcUiTables.label("Philosophy:"))
 			var philosophy_pick := OptionButton.new()
+			philosophy_pick.tooltip_text = "Tells your general manager what to value: win now (today's ability, veterans), balanced, or rebuild (youth and potential)."
 			for name in ["Win now (value today's ability, buy veterans)", "Balanced", "Rebuild (value youth and potential, sell veterans)"]:
 				philosophy_pick.add_item(name)
 			philosophy_pick.selected = FcGameState.PHILOSOPHIES.find(controller.philosophy())
 			direction_row.add_child(philosophy_pick)
 			direction_row.add_child(FcUiTables.label("   Budget:"))
 			var budget_pick := OptionButton.new()
+			budget_pick.tooltip_text = "How much payroll your general manager may commit: frugal stays below the cap, normal uses it, aggressive goes above it but under the tax line."
 			for name in ["Frugal (92% of the cap)", "Normal (the cap)", "Aggressive (up to 115%, below the tax line)"]:
 				budget_pick.add_item(name)
 			budget_pick.selected = FcGameState.BUDGETS.find(controller.state.direction["budget"])
@@ -1674,10 +1712,12 @@ func _tab_staff() -> Control:
 				_say("Fired.")
 			show_dashboard()))
 		var role_picker := OptionButton.new()
+		role_picker.tooltip_text = "The job you want to fill. A general manager and head coach are one each; you can have several assistants and scouts."
 		for role in [FcStaffRole.Id.GENERAL_MANAGER, FcStaffRole.Id.HEAD_COACH, FcStaffRole.Id.ASSISTANT_COACH, FcStaffRole.Id.SCOUT, FcStaffRole.Id.MEDICAL, FcStaffRole.Id.BUSINESS_EXECUTIVE]:
 			role_picker.add_item(FcStaffRole.display_name(role))
 			role_picker.set_item_metadata(role_picker.item_count - 1, role)
 		var person_picker := OptionButton.new()
+		person_picker.tooltip_text = "Available people with their reputation, asking salary and the staff chemistry you would have if you hired them."
 		var fill := func():
 			person_picker.clear()
 			var role: int = role_picker.get_item_metadata(role_picker.selected)
@@ -1690,10 +1730,12 @@ func _tab_staff() -> Control:
 		row.add_child(role_picker)
 		row.add_child(person_picker)
 		var hire_salary := SpinBox.new()
+		hire_salary.tooltip_text = "The yearly salary you offer, in millions. A person accepts a little less than they ask, and a better negotiating general manager gets a bigger discount."
 		hire_salary.min_value = 0.05
 		hire_salary.max_value = 30
 		hire_salary.step = 0.05
 		var hire_years := SpinBox.new()
+		hire_years.tooltip_text = "Contract length in years. Longer deals make people accept a slightly lower salary."
 		hire_years.min_value = 1
 		hire_years.max_value = 5
 		hire_years.value = 3
@@ -1718,10 +1760,12 @@ func _tab_staff() -> Control:
 		var extend_row := HBoxContainer.new()
 		extend_row.add_child(FcUiTables.label("Contract extension for the selected staff member: $M"))
 		var ext_pay := SpinBox.new()
+		ext_pay.tooltip_text = "The yearly salary you offer, in millions, to keep this staff member."
 		ext_pay.min_value = 0.05
 		ext_pay.max_value = 30
 		ext_pay.step = 0.05
 		var ext_len := SpinBox.new()
+		ext_len.tooltip_text = "Length of the new contract in years."
 		ext_len.min_value = 1
 		ext_len.max_value = 5
 		ext_len.value = 3

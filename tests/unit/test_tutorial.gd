@@ -120,3 +120,12 @@ func test_text_size_is_a_setting_that_changes_the_theme_and_is_remembered() -> v
 	app.apply_text_size(99)
 	assert_eq(app.preferences.text_size, FcUiTheme.SIZES.size() - 1, "out-of-range choices are clamped")
 	assert_true(app.theme.has_stylebox("normal", "Button") and app.theme.has_stylebox("tab_selected", "TabContainer"), "the look is defined by the theme")
+
+
+func test_the_about_screen_shows_the_licenses_and_log_buttons() -> void:
+	app.show_about()
+	var text := _labels_text(app)
+	assert_true("About Full Court" in text and "MIT license" in text)
+	assert_true(_has_button("Open the logs folder") and _has_button("Back"))
+	app.show_main_menu()
+	assert_true(_has_button("About, licenses and logs"))

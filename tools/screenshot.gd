@@ -4,6 +4,7 @@ extends SceneTree
 ##   godot_console --path . --script res://tools/screenshot.gd -- screen=Roster out=C:/temp/roster.png days=20
 ## screen: menu | new_league | Overview | Standings | Schedule | Roster | Finances | Staff | Market | Trades | History | News | League
 ## days: how many days to play first (so tables have data).
+## size=1024x700 (default 1280x800): the window size to render at, to check a screen at several sizes.
 ## offseason=draft: play the season out and stop at the owner's draft; offseason=window: the free-agency window after it.
 
 var _app: FcApp
@@ -12,6 +13,7 @@ var _out := "user://screenshot.png"
 var _days := 14
 var _frames := 0
 var _offseason := ""
+var _size := Vector2i(1280, 800)
 
 
 func _initialize() -> void:
@@ -24,7 +26,9 @@ func _initialize() -> void:
 			"out": _out = kv[1]
 			"days": _days = int(kv[1])
 			"offseason": _offseason = kv[1]
-	root.size = Vector2i(1280, 800)
+			"size": _size = Vector2i(int(kv[1].get_slice("x", 0)), int(kv[1].get_slice("x", 1)))
+	root.size = _size
+	DisplayServer.window_set_size(_size)
 	_app = FcApp.new()
 	_app.preferences = FcPreferences.new("user://test_preferences.cfg")
 	_app.preferences.tutorial_done = true   # the tutorial has its own tests
