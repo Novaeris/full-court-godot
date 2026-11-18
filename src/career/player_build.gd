@@ -61,8 +61,11 @@ static func attribute_ceiling(key: String, spec: Dictionary) -> int:
 
 
 ## The build values of an existing player that decide his ceilings (height, weight, wingspan, potential).
-static func spec_of(player: FcPlayer) -> Dictionary:
-	return {"height_cm": player.physical.height_cm, "weight_kg": player.physical.weight_kg, "wingspan_cm": player.physical.wingspan_cm, "potential": player.development.potential}
+## `build_potential` (from the career profile, 0 = use the player's current potential) keeps the ceilings from shrinking as the
+## league ages the player.
+static func spec_of(player: FcPlayer, build_potential: int = 0) -> Dictionary:
+	return {"height_cm": player.physical.height_cm, "weight_kg": player.physical.weight_kg, "wingspan_cm": player.physical.wingspan_cm,
+		"potential": build_potential if build_potential > 0 else player.development.potential}
 
 
 ## Points spent above (or saved below) the baseline: the sum of (value - baseline) over every attribute.
@@ -209,6 +212,7 @@ static func create(world: FcWorld, spec: Dictionary, year: int, rng: FcRng) -> D
 	profile.archetype_key = str(spec["archetype"])
 	profile.appearance = (spec["appearance"] as Dictionary).duplicate()
 	profile.jersey_number = int(spec["jersey_number"])
+	profile.build_potential = int(spec["potential"])
 	profile.build_version = ruleset_version()
 	profile.ruleset_version = ruleset_version()
 	return {"player": p, "profile": profile}

@@ -753,6 +753,11 @@ func enforce_hard_limit(league_id: int, new_year: int) -> int:
 	return cuts
 
 
+## Releases the team's lowest-value player to make room on a full roster.
+func make_room(team: FcTeam, new_year: int) -> void:
+	_waive_worst(team, new_year)
+
+
 ## Releases the team's lowest-value player (his contract is terminated).
 func _waive_worst(team: FcTeam, new_year: int) -> void:
 	var worst_id := 0

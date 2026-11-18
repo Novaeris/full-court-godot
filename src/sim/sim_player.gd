@@ -35,11 +35,16 @@ var injury_games: int = 0
 var injury_name: String = ""
 
 
-func _init(player: FcPlayer, rating_calculator: FcPlayerRatings, team_id: int) -> void:
+## `composite_bonus` ({composite name: points}) is only given for a Career Mode player's equipped badges (already capped by
+## FcCareerRules); it adds to the named composite ratings, never to the overall. Empty for everyone else.
+func _init(player: FcPlayer, rating_calculator: FcPlayerRatings, team_id: int, composite_bonus: Dictionary = {}) -> void:
 	id = player.id
 	name = player.identity.full_name()
 	position = player.primary_position
 	ratings = rating_calculator.compute(player)
+	for composite in composite_bonus:
+		if ratings.has(composite):
+			ratings[composite] = clampf(float(ratings[composite]) + float(composite_bonus[composite]), 0.0, 100.0)
 	overall = ratings["overall"]
 	tend_three = player.tendencies.get_value("three_point_tendency")
 	tend_mid = player.tendencies.get_value("mid_range_tendency")

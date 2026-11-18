@@ -30,6 +30,9 @@ var currency: int = 0
 ## Badge keys owned and equipped (definitions come with the progression phase).
 var badges_owned: Array[String] = []
 var badges_equipped: Array[String] = []
+## The potential the player was created with. Ceilings come from this, not from the player's current `potential`, which the
+## league's yearly aging may lower: a career's limits must not shrink behind the player's back.
+var build_potential: int = 0
 var build_version: int = 1
 var ruleset_version: int = 1
 ## Milestone keys already claimed (each pays once) and training sessions used per season ({"2026": 3}).
@@ -84,7 +87,7 @@ func to_dict() -> Dictionary:
 		"appearance": appearance.duplicate(), "jersey_number": jersey_number, "stage": stage, "xp": xp, "level": level,
 		"development_points": development_points, "skill_points": skill_points, "reputation": reputation, "currency": currency,
 		"badges_owned": badges_owned.duplicate(), "badges_equipped": badges_equipped.duplicate(), "milestones": milestones.duplicate(), "training_used": training_used.duplicate(),
-		"build_version": build_version, "ruleset_version": ruleset_version,
+		"build_potential": build_potential, "build_version": build_version, "ruleset_version": ruleset_version,
 		"decisions": decisions.duplicate(true), "history": history.duplicate(true), "owner_account": owner_account,
 	}
 
@@ -116,6 +119,7 @@ static func from_dict(d: Dictionary) -> FcCareerProfile:
 	if used is Dictionary:
 		for year in used:
 			p.training_used[str(year)] = int(used[year])
+	p.build_potential = int(d.get("build_potential", 0))
 	p.build_version = int(d.get("build_version", 1))
 	p.ruleset_version = int(d.get("ruleset_version", 1))
 	for row in d.get("decisions", []):

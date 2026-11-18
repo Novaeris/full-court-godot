@@ -48,6 +48,13 @@ static func resume(game_state: FcGameState) -> FcGameController:
 	return c
 
 
+## Career Mode: the team being followed changes (the career player was signed or moved).
+func follow_team(team_id: int) -> void:
+	state.user_team_id = team_id
+	league_id = state.world.league_of_team(team_id).id
+	engine.watched_teams = [team_id] as Array[int]
+
+
 func _prepare_engine() -> void:
 	engine = FcSeasonEngine.for_league(state.world, league_id)
 	engine.human_teams = [state.user_team_id] as Array[int] if state.mode == FcGameState.MODE_OWNER else ([] as Array[int])

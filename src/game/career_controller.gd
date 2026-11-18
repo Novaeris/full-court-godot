@@ -8,6 +8,10 @@ extends RefCounted
 ## same rules can run on a server. This class holds no rules of its own.
 
 var state: FcGameState
+## The league's calendar and season flow (FcGameController), created once the player is on a team.
+var _game: FcGameController
+## Box scores already turned into career rewards: {key: true}, so a reloaded or repeated look never pays a game twice.
+var _seen: Dictionary = {}
 
 
 ## Creates a new career: a generated league (a small one by default so seasons are quick), the player from a validated build,
@@ -60,7 +64,7 @@ func card() -> Dictionary:
 	var p := player()
 	var profile := profile()
 	var ratings := FcPlayerRatings.load_default()
-	var spec := {"height_cm": p.physical.height_cm, "weight_kg": p.physical.weight_kg, "wingspan_cm": p.physical.wingspan_cm, "potential": p.development.potential}
+	var spec := FcPlayerBuild.spec_of(p, profile.build_potential)
 	var groups := {}
 	for key in state.world.definitions.attributes.keys():
 		var def = state.world.definitions.attributes.get_def(key)
@@ -82,6 +86,225 @@ func card() -> Dictionary:
 		"wingspan_cm": p.physical.wingspan_cm, "overall": roundi(ratings.overall(p)), "potential": p.development.potential,
 		"level": profile.level, "xp": profile.xp, "jersey": profile.jersey_number, "team": team_name,
 		"profile_id": profile.profile_id, "groups": out_groups}
+
+
+# --- joining a team and playing seasons (Phase 4) ---------------------------------------------------------------
+
+## The league game flow, or null while the player has no team.
+func game() -> FcGameController:
+	if _game == null and state.user_team_id > 0:
+		_game = FcGameController.resume(state)
+		for entry in _game.season().recent_boxes:
+			_seen[_box_key(entry)] = true   # games played before this look were already rewarded
+		_sync_badges()
+	return _game
+
+
+func is_signed() -> bool:
+	return state.user_team_id > 0 and state.world.team_of_player(profile().player_id) != null
+
+
+## True once the player has retired: the career is over (stage Legacy) and no more games are played.
+func is_retired() -> bool:
+	return player().status == FcPlayer.Status.RETIRED
+
+
+## A team chosen by a seeded "draft" (the same for the same career and season): the player may also pick a team himself.
+func draft_team() -> int:
+	var ids := state.world.teams.ids()
+	var rng := state.rng.fork("career-draft:%d" % state.current_season)
+	return ids[rng.range_int(0, ids.size() - 1)]
+
+
+## Signs the player to a team with a rookie contract (a full roster releases its weakest player). Returns {"ok", "reason"}.
+func join_team(team_id: int) -> Dictionary:
+	if is_signed():
+		return {"ok": false, "reason": "You already have a team."}
+	var team: FcTeam = state.world.teams.get_by_id(team_id)
+	if team == null:
+		return {"ok": false, "reason": "That team does not exist."}
+	var league := state.world.league_of_team(team_id)
+	var rules := state.world.rules_of_league(league.id)
+	var year := state.current_season
+	if team.roster.size() >= rules.roster_max:
+		FcOffseason.new(state.world).make_room(team, year)
+	var salary := rules.cap.rookie_salary(15, 30)
+	var contract := FcPlayerMarket.make_contract(state.world.ids.next_id(FcWorld.KIND_CONTRACT), profile().player_id, team_id, year,
+		rules.cap.rookie_contract_years, salary, rules.cap, FcDate.new(year, 7, 1))
+	state.world.contracts.add(contract)
+	team.roster.add(profile().player_id)
+	state.user_team_id = team_id
+	if profile().stage < FcCareerProfile.Stage.PROFESSIONAL_ENTRY:
+		profile().stage = FcCareerProfile.Stage.PROFESSIONAL_ENTRY
+	_game = null
+	game()
+	state.world.add_news(state.current_date, "signing", "%s signed with %s." % [player().identity.full_name(), state.world.team_display_name(team_id)], team_id)
+	return {"ok": true, "reason": "You signed with %s on a %d-year rookie contract." % [state.world.team_display_name(team_id), rules.cap.rookie_contract_years]}
+
+
+## The next game of the player's team: {"date", "opponent", "home"} or {} (season over or no team).
+func next_game() -> Dictionary:
+	var g := game()
+	if g == null:
+		return {}
+	var next := g.next_user_game()
+	if next == null:
+		return {}
+	var home := next.home_id == state.user_team_id
+	return {"date": g.season().date_of_day(next.day).to_iso(), "opponent": state.world.team_display_name(next.away_id if home else next.home_id), "home": home}
+
+
+## Plays one day of the league. Returns {"ok", "games": [what the player did], "phase"}; each entry has the box score line, the
+## result and the career rewards it paid.
+func advance_day() -> Dictionary:
+	if is_retired():
+		return {"ok": false, "reason": "Your career is over.", "games": []}
+	var g := game()
+	if g == null:
+		return {"ok": false, "reason": "Join a team first.", "games": []}
+	g.advance_day()
+	return {"ok": true, "games": _collect_games(), "phase": g.phase()}
+
+
+## Plays up to `count` days (stops when the season is over).
+func advance_days(count: int) -> Dictionary:
+	if is_retired():
+		return {"ok": false, "reason": "Your career is over.", "games": []}
+	var g := game()
+	if g == null:
+		return {"ok": false, "reason": "Join a team first.", "games": []}
+	var games: Array = []
+	for i in count:
+		if g.phase() == FcGameController.PHASE_COMPLETE:
+			break
+		g.advance_day()
+		games.append_array(_collect_games())
+	return {"ok": true, "games": games, "phase": g.phase()}
+
+
+## Plays everything left of the season, playoffs included, then records the season: history row, the season milestone, and
+## the automatic league offseason into the next season (contracts, draft, free agency). Returns {"ok", "summary", "games"}.
+func finish_season() -> Dictionary:
+	if is_retired():
+		return {"ok": false, "reason": "Your career is over.", "games": []}
+	var g := game()
+	if g == null:
+		return {"ok": false, "reason": "Join a team first.", "games": []}
+	var games: Array = []
+	while g.phase() != FcGameController.PHASE_COMPLETE:
+		g.advance_day()
+		games.append_array(_collect_games())
+	var year := state.current_season
+	var row := _record_season(year)
+	var milestone := FcCareerRules.claim_milestone(profile(), "season_complete")
+	g.start_next_season()
+	_after_offseason()
+	return {"ok": true, "summary": row, "milestone": milestone.get("reason", ""), "games": games}
+
+
+## The player's totals for a season from the league's own statistics: {"games", "points", "rebounds", "assists", ...} per game.
+func season_line(year: int = 0) -> Dictionary:
+	var g := game()
+	if g == null:
+		return {}
+	var season := g.season() if year == 0 else null
+	if season == null:
+		for s in state.world.seasons.all():
+			if s.year == year:
+				season = s
+	if season == null or not season.stats.lines.has(profile().player_id):
+		return {"games": 0}
+	var s: FcSeasonStats = season.stats
+	var pid := profile().player_id
+	return {"games": s.games_played(pid), "points": s.per_game(pid, "points"), "rebounds": s.per_game(pid, "rebounds"),
+		"assists": s.per_game(pid, "ast"), "steals": s.per_game(pid, "stl"), "blocks": s.per_game(pid, "blk"), "minutes": s.per_game(pid, "seconds") / 60.0}
+
+
+func _record_season(year: int) -> Dictionary:
+	var line := season_line(year)
+	var wins := 0
+	var losses := 0
+	var standings := game().standings()
+	if standings != null and standings.records.has(state.user_team_id):
+		wins = int(standings.records[state.user_team_id]["w"])
+		losses = int(standings.records[state.user_team_id]["l"])
+	var row := {"year": year, "team_id": state.user_team_id, "games": int(line.get("games", 0)), "points": snappedf(float(line.get("points", 0.0)), 0.1),
+		"rebounds": snappedf(float(line.get("rebounds", 0.0)), 0.1), "assists": snappedf(float(line.get("assists", 0.0)), 0.1), "wins": wins, "losses": losses, "awards": []}
+	for existing in profile().history:
+		if int(existing.get("year", 0)) == year:
+			return existing
+	profile().history.append(row)
+	return row
+
+
+## After the league's offseason: follow the player to the team he is on now, and if no team kept him he signs with the draft's team
+## (agents and negotiations come with the career RPG phase).
+func _after_offseason() -> void:
+	_clamp_to_ceilings()
+	if is_retired():
+		profile().stage = FcCareerProfile.Stage.LEGACY   # the league retired him in the offseason: the career ends here
+		state.world.add_news(state.current_date, "retirement", "%s has retired after %d seasons." % [player().identity.full_name(), profile().history.size()], state.user_team_id)
+		return
+	var team := state.world.team_of_player(profile().player_id)
+	if team == null:
+		state.user_team_id = 0
+		_game = null
+		var picked := draft_team()
+		join_team(picked)
+		return
+	if team.id != state.user_team_id:
+		_game.follow_team(team.id)
+	_seen.clear()
+	for entry in _game.season().recent_boxes:
+		_seen[_box_key(entry)] = true
+
+
+## The league's yearly aging may raise an attribute past what the player's body and potential allow; the ceiling is a hard limit,
+## so anything above it is brought back to it (decline from age is left alone).
+func _clamp_to_ceilings() -> void:
+	var spec := FcPlayerBuild.spec_of(player(), profile().build_potential)
+	for key in state.world.definitions.attributes.keys():
+		var ceiling := FcPlayerBuild.attribute_ceiling(key, spec)
+		if player().attributes.get_value(key) > ceiling:
+			player().attributes.set_value(key, ceiling)
+	if _game != null:
+		_game.engine.refresh_teams()
+
+
+func _box_key(entry: Dictionary) -> String:
+	var box: Dictionary = entry["box"]
+	return "%d:%d:%d:%d:%d" % [state.current_season, int(entry["day"]), int(entry["series"]), int(box["team_ids"][0]), int(box["team_ids"][1])]
+
+
+func _collect_games() -> Array:
+	var out: Array = []
+	var pid := profile().player_id
+	for entry in _game.season().recent_boxes:
+		var key := _box_key(entry)
+		if _seen.has(key):
+			continue
+		_seen[key] = true
+		var box: Dictionary = entry["box"]
+		for row in box["players"]:
+			if int(row["player_id"]) != pid or int(row["seconds"]) <= 0:
+				continue
+			var side := 0 if int(box["team_ids"][0]) == state.user_team_id else 1
+			var won: bool = int(box["scores"][side]) > int(box["scores"][1 - side])
+			var line := {"minutes": float(row["seconds"]) / 60.0, "points": int(row["points"]), "rebounds": int(row["oreb"]) + int(row["dreb"]),
+				"assists": int(row["ast"]), "steals": int(row["stl"]), "blocks": int(row["blk"]), "turnovers": int(row["tov"]), "won": won}
+			var reward := FcCareerRules.apply_game(profile(), line)
+			out.append({"day": int(entry["day"]), "opponent": str(box["team_names"][1 - side]), "score": "%d-%d" % [int(box["scores"][side]), int(box["scores"][1 - side])],
+				"won": won, "line": line, "xp": int(reward["xp"]), "levels_gained": int(reward["levels_gained"]), "milestones": reward["milestones"]})
+	return out
+
+
+## Gives the equipped badges' capped bonuses to the career player's simulated ratings (and only his).
+func _sync_badges() -> void:
+	if _game == null:
+		return
+	var bonus := badge_bonus()
+	_game.engine.composite_bonuses = {profile().player_id: bonus} if not bonus.is_empty() else {}
+	_game.engine.refresh_teams()
 
 
 # --- progression (all rules live in FcCareerRules; these only apply them to this career) -----------------------
@@ -109,7 +332,10 @@ func train() -> Dictionary:
 
 ## Spends development points to raise one attribute by 1 (cost grows with the value; the body's ceiling is a hard limit).
 func raise_attribute(key: String) -> Dictionary:
-	return FcCareerRules.raise_attribute(profile(), player(), key)
+	var result := FcCareerRules.raise_attribute(profile(), player(), key)
+	if result["ok"] and _game != null:
+		_game.engine.refresh_teams()   # the simulation reads the player's attributes when it builds a team
+	return result
 
 
 ## Every badge with whether it is owned/equipped and why it cannot be unlocked yet ("" = it can).
@@ -127,7 +353,10 @@ func unlock_badge(key: String) -> Dictionary:
 
 
 func equip_badge(key: String, equipped: bool) -> Dictionary:
-	return FcCareerRules.set_badge_equipped(profile(), key, equipped)
+	var result := FcCareerRules.set_badge_equipped(profile(), key, equipped)
+	if result["ok"]:
+		_sync_badges()
+	return result
 
 
 ## Composite rating bonuses of the equipped badges (used by the simulation integration in a later phase).

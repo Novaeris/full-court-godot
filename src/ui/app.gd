@@ -20,6 +20,8 @@ var controller: FcGameController
 ## The open Career Mode game (null in Owner Mode).
 var career: FcCareerController
 var _last_career_tab := 0
+## The player's most recent games (newest first), shown on the Season tab.
+var _career_log: Array = []
 var saves := FcSaveManager.new()
 ## The player's settings (the tutorial is shown once, to a new Owner Mode game).
 var preferences := FcPreferences.new()
@@ -246,13 +248,16 @@ func show_career_hub() -> void:
 	var card_tab := _career_card_tab(card)
 	card_tab.name = "Card"
 	tabs.add_child(card_tab)
+	var season_tab := _career_season_tab()
+	season_tab.name = "Season"
+	tabs.add_child(season_tab)
 	var develop_tab := _career_develop_tab(card, progress)
 	develop_tab.name = "Develop"
 	tabs.add_child(develop_tab)
 	var skills_tab := _career_skills_tab(progress)
 	skills_tab.name = "Skills"
 	tabs.add_child(skills_tab)
-	tabs.current_tab = clampi(_last_career_tab, 0, 2)
+	tabs.current_tab = clampi(_last_career_tab, 0, 3)
 	tabs.tab_changed.connect(func(i): _last_career_tab = i)
 	box.add_child(tabs)
 	box.add_child(FcUiTables.label("Career id %s. Saved to slot career_1; load it from the main menu. The calendar and games arrive in the next phase." % card["profile_id"], 14))
@@ -262,6 +267,102 @@ func show_career_hub() -> void:
 		_say("Saved." if r.is_ok() else "Save failed: " + r.message)))
 	row.add_child(FcUiTables.button("Main Menu", show_main_menu))
 	box.add_child(row)
+
+
+## Plays days for the career player and keeps the newest results for the Season tab.
+func on_career_play(days: int) -> Dictionary:
+	var result := career.advance_days(days)
+	if result["ok"]:
+		for game in result["games"]:
+			_career_log.push_front(game)
+		_career_log = _career_log.slice(0, 12)
+	show_career_hub()
+	if result["ok"]:
+		var xp := 0
+		for game in result["games"]:
+			xp += int(game["xp"])
+		_say("%d game%s played, +%d XP." % [result["games"].size(), "" if result["games"].size() == 1 else "s", xp])
+	else:
+		_say(str(result.get("reason", "")))
+	return result
+
+
+func on_career_finish_season() -> Dictionary:
+	var result := career.finish_season()
+	if result["ok"]:
+		for game in result["games"]:
+			_career_log.push_front(game)
+		_career_log = _career_log.slice(0, 12)
+	show_career_hub()
+	if result["ok"]:
+		var s: Dictionary = result["summary"]
+		_say("Season %d finished: %d games, %.1f points a game. %s %s" % [s["year"], s["games"], s["points"], result["milestone"], "You have retired: your career is complete." if career.is_retired() else "The new season has begun."])
+	return result
+
+
+func _career_season_tab() -> Control:
+	var box := VBoxContainer.new()
+	if career.is_retired():
+		box.add_child(FcUiTables.label("Your career is over: you retired after %d seasons. Your legacy is below." % career.profile().history.size(), 18, true))
+		box.add_child(_career_history_table())
+		return box
+	if not career.is_signed():
+		box.add_child(FcUiTables.label("You do not have a team yet. Choose one, or let the draft decide.", 16, true))
+		var row := HBoxContainer.new()
+		var picker := OptionButton.new()
+		for tid in career.state.world.teams.ids():
+			picker.add_item(career.state.world.team_display_name(tid))
+			picker.set_item_metadata(picker.item_count - 1, tid)
+		picker.tooltip_text = "Pick the team you want to sign a rookie contract with."
+		row.add_child(picker)
+		row.add_child(FcUiTables.button("Sign with this team", func():
+			var r := career.join_team(picker.get_item_metadata(picker.selected))
+			_say(r["reason"])
+			show_career_hub()))
+		row.add_child(FcUiTables.button("Let the draft decide", func():
+			var r2 := career.join_team(career.draft_team())
+			_say(r2["reason"])
+			show_career_hub()))
+		box.add_child(row)
+		return box
+	var g := career.game()
+	var next := career.next_game()
+	box.add_child(FcUiTables.label("%s    Season %d-%02d" % [career.state.world.team_display_name(career.state.user_team_id), career.state.current_season, (career.state.current_season + 1) % 100], 16, true))
+	if next.is_empty():
+		box.add_child(FcUiTables.label("No regular-season game left. Finish the season to move on.", 14))
+	else:
+		box.add_child(FcUiTables.label("Next game: %s %s on %s" % ["vs" if next["home"] else "at", next["opponent"], next["date"]], 15))
+	var buttons := HBoxContainer.new()
+	var done: bool = g.phase() == FcGameController.PHASE_COMPLETE
+	var day := FcUiTables.button("Play next day", func(): on_career_play(1))
+	day.disabled = done
+	buttons.add_child(day)
+	var week := FcUiTables.button("Play next week", func(): on_career_play(7))
+	week.disabled = done
+	buttons.add_child(week)
+	var finish := FcUiTables.button("Finish the season", on_career_finish_season)
+	finish.tooltip_text = "Plays everything left, records your season, and runs the league offseason into the next season."
+	buttons.add_child(finish)
+	box.add_child(buttons)
+	var line := career.season_line()
+	if int(line.get("games", 0)) > 0:
+		box.add_child(FcUiTables.label("This season: %d games, %.1f points, %.1f rebounds, %.1f assists, %.1f minutes a game" % [line["games"], line["points"], line["rebounds"], line["assists"], line["minutes"]], 15))
+	var rows: Array = []
+	for game in _career_log:
+		var l: Dictionary = game["line"]
+		rows.append([game["opponent"], "W" if game["won"] else "L", game["score"], "%d" % l["minutes"], l["points"], l["rebounds"], l["assists"], "+%d" % game["xp"], ", ".join(game["milestones"]).replace("_", " ")])
+	box.add_child(FcUiTables.label("Recent games", 16, true))
+	box.add_child(FcUiTables.table(["Opponent", "", "Score", "Min", "Pts", "Reb", "Ast", "XP", "Milestones"], rows, [0, 30, 70, 40, 40, 40, 40, 50, 0]))
+	box.add_child(FcUiTables.label("Career history", 16, true))
+	box.add_child(_career_history_table())
+	return box
+
+
+func _career_history_table() -> Control:
+	var history: Array = []
+	for h in career.profile().history:
+		history.append(["%d-%02d" % [h["year"], (int(h["year"]) + 1) % 100], career.state.world.team_display_name(int(h["team_id"])), h["games"], "%.1f" % h["points"], "%.1f" % h["rebounds"], "%.1f" % h["assists"], "%d-%d" % [h["wins"], h["losses"]]])
+	return FcUiTables.table(["Season", "Team", "GP", "PPG", "RPG", "APG", "Team record"], history, [80, 0, 50, 60, 60, 60, 100])
 
 
 func _career_card_tab(card: Dictionary) -> Control:

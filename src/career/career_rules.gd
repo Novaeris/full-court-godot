@@ -168,7 +168,7 @@ static func raise_attribute(profile: FcCareerProfile, player: FcPlayer, key: Str
 	if not player.attributes.get_catalog().has_key(key):
 		return {"ok": false, "reason": "Unknown attribute."}
 	var value := player.attributes.get_value(key)
-	var ceiling := FcPlayerBuild.attribute_ceiling(key, FcPlayerBuild.spec_of(player))
+	var ceiling := FcPlayerBuild.attribute_ceiling(key, FcPlayerBuild.spec_of(player, profile.build_potential))
 	if value >= ceiling:
 		return {"ok": false, "reason": "%s is at the most your body and potential allow (%d)." % [player.attributes.get_catalog().get_def(key).display_name, ceiling]}
 	var cost := attribute_cost(value)
