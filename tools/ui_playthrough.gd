@@ -5,14 +5,17 @@ extends SceneTree
 ## and loading) while checking that the game state stays valid.
 ##
 ## auto=1: the owner decides nothing: the general manager handles every area every season (contracts, draft,
-## free agency, trades, injuries), the meeting is voted by the owner's own interests only, prices follow the suggestion.
-## Run:  godot_console --headless --path . --script res://tools/ui_playthrough.gd -- seasons=3 teams=30 seed=7 [reprice=1] [expand=1] [relocate=1] [auto=1] [philosophy=win_now|balanced|rebuild] [budget=frugal|normal|aggressive]
+## free agency, trades, injuries), the meeting is voted by the owner's own interests only. auto=1 says NOTHING about prices.
+## pricing=inflation (default): the script never touches the owner's ticket price; it only moves with inflation (FcEconomy
+## indexes the owner's price and marketing budget each offseason). pricing=suggested: every season the script also sets the
+## price to the controller's suggested price (the price that just fills the arena). reprice=1 is an alias of pricing=suggested.
+## Run:  godot_console --headless --path . --script res://tools/ui_playthrough.gd -- seasons=3 teams=30 seed=7 [pricing=inflation|suggested] [reprice=1] [expand=1] [relocate=1] [auto=1] [philosophy=win_now|balanced|rebuild] [budget=frugal|normal|aggressive]
 ## It prints one line per stage and a list of problems; exit code 1 if any problem was found.
 
 var _app: FcApp
 var _problems: Array[String] = []
 var _t0 := 0
-var _reprice := false
+var _pricing := "inflation"
 var _expand := false
 var _relocate := false
 var _auto := false
@@ -32,12 +35,17 @@ func _initialize() -> void:
 			"seasons": seasons = int(kv[1])
 			"teams": teams = int(kv[1])
 			"seed": seed_text = kv[1]
-			"reprice": _reprice = kv[1] == "1"
+			"reprice": _pricing = "suggested" if kv[1] == "1" else _pricing
+			"pricing": _pricing = kv[1]
 			"expand": _expand = kv[1] == "1"
 			"relocate": _relocate = kv[1] == "1"
 			"auto": _auto = kv[1] == "1"
 			"philosophy": _philosophy = kv[1]
 			"budget": _budget = kv[1]
+	if not ["inflation", "suggested"].has(_pricing):
+		push_error("pricing must be inflation or suggested")
+		quit(2)
+		return
 	_t0 = Time.get_ticks_msec()
 	_app = FcApp.new()
 	_app.preferences = FcPreferences.new("user://test_preferences.cfg")
@@ -54,6 +62,7 @@ func _initialize() -> void:
 		return
 	_app.on_start_game(_app._pending_state.world.teams.ids()[3])
 	var c := _app.controller
+	_log("RUN: seasons=%d teams=%d seed=%s pricing=%s auto=%s expand=%s relocate=%s philosophy=%s budget=%s" % [seasons, teams, seed_text, _pricing, _auto, _expand, _relocate, _philosophy, _budget])
 	_check("start")
 	for year in seasons:
 		_log("=== season %d ===" % c.state.current_season)
@@ -104,7 +113,7 @@ func _initialize() -> void:
 
 
 func _play_regular_season(c: FcGameController) -> void:
-	if _reprice:
+	if _pricing == "suggested":
 		c.set_ticket_price(c.suggested_ticket_price())
 	_app.on_advance(30)
 	_check("30 days in")
