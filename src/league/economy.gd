@@ -51,6 +51,22 @@ func league_margin(league_id: int, year: int, fallback: float) -> float:
 	return profit / revenue if revenue > 0.0 else fallback
 
 
+## The debt a lender would write off for a club (0 = no restructuring). Pure so it can be tested on its own.
+## `valuation` is the club's value BEFORE any adjustment; it is floored at `restructure_floor_cap_share` x the cap so a
+## club whose value has collapsed (value is net of debt) cannot divide by zero or get an absurd ceiling. Debt above
+## `restructure_trigger_share` x that value is cut down to `restructure_ceiling_share` x it. Within the cooldown
+## (`restructure_cooldown_seasons` after the last one) nothing happens: D-029 says the owner cannot lose, not that
+## debt is forgiven every year.
+static func restructure_amount(debt: int, valuation: int, cap: int, finished_year: int, last_restructured_year: int, k: Dictionary) -> int:
+	if last_restructured_year > 0 and finished_year - last_restructured_year < int(k["restructure_cooldown_seasons"]):
+		return 0
+	var floor_value := roundi(float(k["restructure_floor_cap_share"]) * cap)
+	var base := maxi(valuation, floor_value)
+	if float(debt) <= float(k["restructure_trigger_share"]) * base:
+		return 0
+	return maxi(0, debt - roundi(float(k["restructure_ceiling_share"]) * base))
+
+
 ## Grows the economy and moves the cap, then lets the AI clubs use their cash. Call once per offseason,
 ## after the season's books are settled and before contracts are renewed. Returns
 ## {"growth", "margin", "cap_before", "cap_after", "projects", "dividends"}.
@@ -81,7 +97,23 @@ func advance(league_id: int, finished_year: int, human_team_ids: Array[int] = []
 			own.ticket_price = clampi(roundi(own.ticket_price * ratio), 1, 5000)
 			own.marketing_budget = roundi(own.marketing_budget * ratio)
 	var spent := _clubs_use_cash(league_id, finished_year, finance.scale_for(rules), rules.cap.salary_cap, human_team_ids)
-	var report := {"growth": growth, "margin": margin, "cap_before": cap_before, "cap_after": rules.cap.salary_cap,
+	var restructured: Array = []
+	for tid in human_team_ids:
+		var owned: FcTeamBusiness = world.businesses.get_by_id(tid)
+		if owned == null:
+			continue
+		var written_off := restructure_amount(owned.debt, owned.valuation, rules.cap.salary_cap, finished_year, owned.restructured_year, k)
+		if written_off > 0:
+			owned.debt -= written_off
+			owned.restructured_total += written_off
+			owned.restructured_year = finished_year
+			for rec in world.finances.all():
+				if rec.team_id == tid and rec.year == finished_year:
+					rec.restructuring_writeoff += written_off
+					rec.debt_end = owned.debt
+			world.add_news(FcDate.new(finished_year + 1, 6, 1), "staff", "Lenders restructured the debt of %s: $%.1fM was written off. The owner's reputation suffers and new loans are frozen for a while." % [world.team_display_name(tid), written_off / 1e6], tid)
+			restructured.append({"team": tid, "written_off": written_off})
+	var report := {"restructured": restructured, "growth": growth, "margin": margin, "cap_before": cap_before, "cap_after": rules.cap.salary_cap,
 		"projects": spent["projects"], "dividends": spent["dividends"]}
 	world.add_news(FcDate.new(finished_year + 1, 6, 1), "staff", "The league economy grew %.1f%%. The salary cap moves from $%.1fM to $%.1fM." % [
 		100.0 * growth, cap_before / 1e6, rules.cap.salary_cap / 1e6])

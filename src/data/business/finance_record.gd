@@ -24,6 +24,9 @@ var brand_end: int = 0
 var cash_end: int = 0
 var debt_end: int = 0
 var valuation_end: int = 0
+## Debt written off by lenders in a restructuring after this season (not part of revenue or expenses, so profit() is
+## the operating profit).
+var restructuring_writeoff: int = 0
 ## Whether the team paid luxury tax this season (used for the repeater tax).
 var paid_tax: bool = false
 
@@ -80,7 +83,7 @@ func to_dict() -> Dictionary:
 		"wins": wins, "losses": losses, "playoff_rounds_won": playoff_rounds_won,
 		"average_attendance": average_attendance, "capacity": capacity, "ticket_price": ticket_price,
 		"fan_interest_end": fan_interest_end, "brand_end": brand_end, "cash_end": cash_end,
-		"debt_end": debt_end, "valuation_end": valuation_end, "paid_tax": paid_tax,
+		"debt_end": debt_end, "valuation_end": valuation_end, "paid_tax": paid_tax, "restructuring_writeoff": restructuring_writeoff,
 	}
 
 
@@ -96,4 +99,5 @@ static func from_dict(d: Dictionary) -> FcFinanceRecord:
 			"fan_interest_end", "brand_end", "cash_end", "debt_end", "valuation_end"]:
 		r.set(key, int(d.get(key, 0)))
 	r.paid_tax = bool(d.get("paid_tax", false))
+	r.restructuring_writeoff = maxi(0, int(d.get("restructuring_writeoff", 0)))
 	return r

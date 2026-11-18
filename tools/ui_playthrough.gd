@@ -50,7 +50,7 @@ func _initialize() -> void:
 	_app = FcApp.new()
 	_app.preferences = FcPreferences.new("user://test_preferences.cfg")
 	_app.preferences.tutorial_done = true   # the tutorial has its own tests
-	_app.saves = FcSaveManager.new("user://playthrough_saves")
+	_app.saves = FcSaveManager.new("user://playthrough_saves_%d" % OS.get_process_id())   # one folder per run, so parallel runs cannot overwrite each other
 	root.add_child(_app)
 	_app.setup()
 	var structure := {"conferences": 2, "divisions": 3}
@@ -273,7 +273,7 @@ func _offseason(c: FcGameController, year: int) -> void:
 
 ## Saves the game, loads it into a fresh controller and compares what matters.
 func _save_load_check(c: FcGameController, label: String) -> void:
-	var manager := FcSaveManager.new("user://playthrough_saves")
+	var manager := FcSaveManager.new("user://playthrough_saves_%d" % OS.get_process_id())   # one folder per run, so parallel runs cannot overwrite each other
 	var saved := c.autosave(manager)
 	if not saved.is_ok():
 		_fail("%s: save failed: %s" % [label, saved.message])
@@ -341,8 +341,10 @@ func _finish() -> void:
 	print("--- finished in %.0f s, %d problem(s)" % [seconds, _problems.size()])
 	for p in _problems:
 		print("  * " + p)
-	var dir := DirAccess.open("user://playthrough_saves")
+	var folder := "user://playthrough_saves_%d" % OS.get_process_id()
+	var dir := DirAccess.open(folder)
 	if dir != null:
 		for f in dir.get_files():
 			dir.remove(f)
+		DirAccess.remove_absolute(folder)
 	quit(1 if not _problems.is_empty() else 0)

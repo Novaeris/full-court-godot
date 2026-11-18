@@ -65,7 +65,7 @@ var meeting_log: Array = []
 ## The owner's career (Owner Mode): "reputation" 0-100 (starts at START_REPUTATION), "history"
 ## [[year, team id, approval, wins, title (0 or 1)], ...] one row per finished season, and
 ## "transfer_year" (the last season in which the owner changed teams, 0 = never).
-var owner_career: Dictionary = {"reputation": 40, "history": [], "transfer_year": 0}
+var owner_career: Dictionary = {"reputation": 40, "history": [], "transfer_year": 0, "restructurings": []}
 const START_REPUTATION := 40
 ## The draft while it is under way (stage 2), see FcOffseason.prepare_draft. Empty otherwise.
 var draft_state: Dictionary = {}
@@ -123,6 +123,15 @@ func to_dict() -> Dictionary:
 		"rng": rng.get_state(),
 		"world": world.to_dict(),
 	}
+
+
+static func _restructuring_rows(raw) -> Array:
+	var rows: Array = []
+	if raw is Array:
+		for entry in raw:
+			if entry is Array and entry.size() >= 3:
+				rows.append([int(entry[0]), int(entry[1]), int(entry[2])])
+	return rows
 
 
 func _terms_for_json(source: Dictionary = {}) -> Dictionary:
@@ -213,7 +222,7 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 		var rows: Array = []
 		for entry in raw_career.get("history", []):
 			rows.append([int(entry[0]), int(entry[1]), int(entry[2]), int(entry[3]), int(entry[4])])
-		s.owner_career = {"reputation": clampi(int(raw_career.get("reputation", START_REPUTATION)), 0, 100), "history": rows, "transfer_year": int(raw_career.get("transfer_year", 0))}
+		s.owner_career = {"reputation": clampi(int(raw_career.get("reputation", START_REPUTATION)), 0, 100), "history": rows, "transfer_year": int(raw_career.get("transfer_year", 0)), "restructurings": _restructuring_rows(raw_career.get("restructurings", []))}
 	var raw_draft = data.get("draft_state", {})
 	if raw_draft is Dictionary and not raw_draft.is_empty():
 		s.draft_state = _clean_draft_state(raw_draft)

@@ -21,6 +21,11 @@ var brand: int = 50
 var cash: int = 40000000
 var debt: int = 0
 var valuation: int = 0
+## Debt that lenders wrote off in restructurings (lifetime, dollars) and the season of the latest one (0 = never).
+## A restructuring restores solvency, not profit: see FcEconomy.restructure. Kept apart from the books so operating
+## profit is never mixed with a rescue.
+var restructured_total: int = 0
+var restructured_year: int = 0
 ## Cash the owner has taken out of the club over the years (dividends): the owner's own wealth.
 var distributions: int = 0
 ## Season in which the mid-level exception was last used (0 = never); it can be used once a season.
@@ -97,7 +102,7 @@ func to_dict() -> Dictionary:
 	return {
 		"schema": SCHEMA_VERSION, "id": id, "ticket_price": ticket_price,
 		"marketing_budget": marketing_budget, "facilities_level": facilities_level,
-		"fan_interest": fan_interest, "brand": brand, "cash": cash, "debt": debt, "valuation": valuation, "distributions": distributions, "mid_level_used_season": mid_level_used_season, "sponsor_plan": sponsor_plan, "projects": projects.duplicate(true), "suites_level": suites_level, "practice_level": practice_level, "medical_level": medical_level, "sponsor_deals": sponsor_deals.duplicate(true), "season_ticket_share": season_ticket_share, "promotion_nights": promotion_nights, "concession_price_pct": concession_price_pct, "playoff_premium_pct": playoff_premium_pct, "merch_tier": merch_tier,
+		"fan_interest": fan_interest, "brand": brand, "cash": cash, "debt": debt, "valuation": valuation, "distributions": distributions, "restructured_total": restructured_total, "restructured_year": restructured_year, "mid_level_used_season": mid_level_used_season, "sponsor_plan": sponsor_plan, "projects": projects.duplicate(true), "suites_level": suites_level, "practice_level": practice_level, "medical_level": medical_level, "sponsor_deals": sponsor_deals.duplicate(true), "season_ticket_share": season_ticket_share, "promotion_nights": promotion_nights, "concession_price_pct": concession_price_pct, "playoff_premium_pct": playoff_premium_pct, "merch_tier": merch_tier,
 	}
 
 
@@ -112,6 +117,8 @@ static func from_dict(d: Dictionary) -> FcTeamBusiness:
 	b.debt = int(d.get("debt", b.debt))
 	b.valuation = int(d.get("valuation", b.valuation))
 	b.distributions = maxi(0, int(d.get("distributions", 0)))
+	b.restructured_total = maxi(0, int(d.get("restructured_total", 0)))
+	b.restructured_year = maxi(0, int(d.get("restructured_year", 0)))
 	b.mid_level_used_season = int(d.get("mid_level_used_season", 0))
 	b.sponsor_plan = clampi(int(d.get("sponsor_plan", 0)), 0, 2)
 	b.suites_level = int(d.get("suites_level", 0))

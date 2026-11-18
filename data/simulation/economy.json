@@ -12,5 +12,11 @@
 	"cap_share_max": 1.7,
 	"reserve_cap_share": 0.8,
 	"dividend_cap_share": 1.6,
-	"projects_per_year": 2
+	"projects_per_year": 2,
+	"restructure_trigger_share": 1.0,
+	"restructure_ceiling_share": 0.4,
+	"restructure_floor_cap_share": 0.5,
+	"restructure_cooldown_seasons": 3,
+	"restructure_lockout_seasons": 3,
+	"restructure_reputation_penalty": 15
 }

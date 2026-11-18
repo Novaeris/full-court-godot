@@ -99,9 +99,9 @@ func test_pending_agreements_are_dropped_when_changing_teams() -> void:
 
 func test_owner_career_is_saved_and_old_saves_start_fresh() -> void:
 	var state := FcGameState.new(FcWorld.new(FcDefinitionSet.load_default()), FcRng.new(1))
-	state.owner_career = {"reputation": 71, "history": [[2026, 3, 64, 52, 1]], "transfer_year": 2026}
+	state.owner_career = {"reputation": 71, "history": [[2026, 3, 64, 52, 1]], "transfer_year": 2026, "restructurings": []}
 	var back := FcGameState.from_dict(JSON.parse_string(JSON.stringify(state.to_dict())), FcDefinitionSet.load_default())
-	assert_eq(back.owner_career, {"reputation": 71, "history": [[2026, 3, 64, 52, 1]], "transfer_year": 2026})
+	assert_eq(back.owner_career, {"reputation": 71, "history": [[2026, 3, 64, 52, 1]], "transfer_year": 2026, "restructurings": []})
 	var old := state.to_dict()
 	old.erase("owner_career")
 	assert_eq(FcGameState.from_dict(old, FcDefinitionSet.load_default()).owner_career["reputation"], FcGameState.START_REPUTATION)

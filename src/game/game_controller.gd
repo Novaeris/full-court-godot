@@ -181,6 +181,7 @@ func begin_offseason() -> Dictionary:
 		_report_so_far = all.duplicate()
 		return all
 	var report := offseason.run_before_draft(league_id, finished, state.rng)
+	_apply_restructuring(report.get("economy", {}), finished.year)
 	_report_so_far = report.duplicate()
 	state.agreed_extensions.clear()
 	state.agreed_terms.clear()
@@ -365,6 +366,24 @@ func _update_rapport(items: Array) -> void:
 
 
 # --- the owner's career: reputation and changing jobs -----------------------------------------
+
+## When lenders restructured the owner's debt in the offseason: the owner keeps the club (D-029) but loses reputation
+## and the restructuring is logged ([year, team id, dollars written off]).
+func _apply_restructuring(economy_report: Dictionary, year: int) -> void:
+	for entry in economy_report.get("restructured", []):
+		if int(entry["team"]) != state.user_team_id:
+			continue
+		var penalty := int(FcEconomy.load_constants()["restructure_reputation_penalty"])
+		state.owner_career["reputation"] = maxi(0, int(state.owner_career["reputation"]) - penalty)
+		state.owner_career["restructurings"].append([year, state.user_team_id, int(entry["written_off"])])
+		_gm_log.append("Lenders restructured your debt ($%.1fM written off). Your reputation fell by %d and new loans are frozen for %d seasons." % [int(entry["written_off"]) / 1e6, penalty, int(FcEconomy.load_constants()["restructure_lockout_seasons"])])
+
+
+## True while new loans are frozen after a restructuring.
+func loans_frozen() -> bool:
+	var b := business()
+	return b.restructured_year > 0 and state.current_season - b.restructured_year < int(FcEconomy.load_constants()["restructure_lockout_seasons"])
+
 
 ## The owner's reputation (0-100): built from how owners of the franchise did each season.
 func owner_reputation() -> int:
@@ -1462,6 +1481,8 @@ func set_sponsor_plan(plan: int) -> bool:
 
 ## The most the owner may owe in total: a share of the franchise's value.
 func loan_limit() -> int:
+	if loans_frozen():
+		return 0
 	var b := business()
 	var value := b.valuation
 	if value <= 0:   # saves made before valuations were set at the start
@@ -1476,6 +1497,8 @@ func borrow(amount: int) -> Dictionary:
 	var b := business()
 	if amount <= 0:
 		return {"ok": false, "reason": "Enter an amount above zero."}
+	if loans_frozen():
+		return {"ok": false, "reason": "Lenders froze new loans after restructuring your debt (the freeze ends in %d seasons)." % (int(FcEconomy.load_constants()["restructure_lockout_seasons"]) - (state.current_season - b.restructured_year))}
 	if b.debt + amount > loan_limit():
 		return {"ok": false, "reason": "Lenders will not let you owe more than $%.1fM (you owe $%.1fM)." % [loan_limit() / 1e6, b.debt / 1e6]}
 	b.cash += amount
@@ -1677,6 +1700,7 @@ func owner_report() -> Dictionary:
 		"valuation_change": valuation_change, "cash": rec.cash_end, "debt": rec.debt_end,
 		"wins": rec.wins, "games": games, "expected_wins": roundi(expected), "playoff_rounds_won": rec.playoff_rounds_won,
 		"approval": clampi(roundi(approval), 0, 100),
+		"restructured_total": business().restructured_total, "loans_frozen": loans_frozen(),
 	}
 
 
