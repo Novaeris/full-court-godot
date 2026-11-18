@@ -17,6 +17,8 @@ const GAMES_CHOICES := [["Short: about 40 games", 40], ["Medium: about 60 games"
 const TAB_NAMES := ["Overview", "Standings", "Schedule", "Roster", "Finances", "Staff", "Draft", "Market", "Trades", "Meeting", "History", "News", "League"]
 
 var controller: FcGameController
+## The open Career Mode game (null in Owner Mode).
+var career: FcCareerController
 var saves := FcSaveManager.new()
 ## The player's settings (the tutorial is shown once, to a new Owner Mode game).
 var preferences := FcPreferences.new()
@@ -181,17 +183,80 @@ func show_main_menu() -> void:
 	box.add_child(FcUiTables.button("Quit", func(): get_tree().quit()))
 
 
-## Career Mode's home. The player foundation is built step by step (docs/CAREER_MODE_PLAN.md); until the player creator
-## exists this screen says so plainly instead of pretending.
+## Career Mode's home: create a player (or continue from the saved games list on the main menu). Progression, the
+## calendar and games come in later phases (docs/CAREER_MODE_PLAN.md); this screen says so plainly.
 func show_career_home() -> void:
 	var box := _reset("Career Mode")
 	var text := FcUiTables.label("Create one player (name, body, position, strengths) and take them through a career of about 20 seasons: development, contracts, teams, rivalries, a legacy. Later, the same player can go online.
 
-Status: in development. The shared player foundation comes first, then the player creator, then progression and playing seasons. See docs/CAREER_MODE_PLAN.md.", 16)
+Status: in development. You can create a player and see their card; progression and playing seasons are the next steps. See docs/CAREER_MODE_PLAN.md.", 16)
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text.custom_minimum_size = Vector2(400, 0)
 	box.add_child(text)
-	box.add_child(FcUiTables.button("Back to the main menu", show_main_menu))
+	var row := HBoxContainer.new()
+	row.add_child(FcUiTables.button("Create a player", show_career_creator))
+	row.add_child(FcUiTables.button("Back to the main menu", show_main_menu))
+	box.add_child(row)
+
+
+## The player creator (FcCareerCreator). A valid build makes the player and opens the Career Hub.
+func show_career_creator() -> void:
+	var box := _reset("Career Mode: create your player")
+	var creator := FcCareerCreator.new(_defs)
+	creator.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	creator.create_requested.connect(on_create_career)
+	var scroll := ScrollContainer.new()   # the whole form scrolls, so the buttons stay reachable in a small window
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.add_child(creator)
+	box.add_child(scroll)
+	creator.build()   # safe to call twice; makes sure the form exists even when _ready has not run yet
+	_form["career_creator"] = creator
+	box.add_child(FcUiTables.button("Back", show_career_home))
+
+
+## Creates the career from a validated build, saves it to slot career_1 and shows the hub. Returns false (and says why) if the
+## build is not valid.
+func on_create_career(spec: Dictionary, seed_value: int = -1) -> bool:
+	var seed_number := seed_value if seed_value >= 0 else int(Time.get_unix_time_from_system()) % 1000000
+	var made := FcCareerController.new_career(spec, seed_number)
+	if made.has("errors"):
+		_say("Cannot create this player: " + "; ".join(made["errors"]))
+		return false
+	career = made["controller"]
+	var saved := career.save(saves)
+	show_career_hub()
+	_say("Player created." if saved.is_ok() else "Player created, but the save failed: " + saved.message)
+	return true
+
+
+## The Career Hub: the player's card. (Next phases add the calendar, training, objectives and history.)
+func show_career_hub() -> void:
+	var card := career.card()
+	var box := _reset("%s   #%d" % [card["name"], card["jersey"]])
+	box.add_child(FcUiTables.label("%s%s   %s   Age %d   %d cm, %d kg, wingspan %d cm   Team: %s" % [
+		card["position"], "/" + card["secondary"] if card["secondary"] != "" else "", card["archetype"], card["age"],
+		card["height_cm"], card["weight_kg"], card["wingspan_cm"], card["team"]], 16))
+	box.add_child(FcUiTables.label("Overall %d    Potential %d (your ceiling)    Level %d    XP %d" % [card["overall"], card["potential"], card["level"], card["xp"]], 18, true))
+	var columns := HBoxContainer.new()
+	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	box.add_child(columns)
+	for group in card["groups"]:
+		var rows: Array = []
+		for row in group["rows"]:
+			rows.append([row[0], row[1], row[2]])
+		var part := VBoxContainer.new()
+		part.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		part.add_child(FcUiTables.label(group["name"], 16, true))
+		part.add_child(FcUiTables.table(["Attribute", "Now", "Can reach"], rows, [0, 50, 70]))
+		columns.add_child(part)
+	box.add_child(FcUiTables.label("Career id %s. Saved to slot career_1; load it from the main menu. The calendar, training and games arrive in the next phases." % card["profile_id"], 14))
+	var row := HBoxContainer.new()
+	row.add_child(FcUiTables.button("Save", func():
+		var r := career.save(saves)
+		_say("Saved." if r.is_ok() else "Save failed: " + r.message)))
+	row.add_child(FcUiTables.button("Main Menu", show_main_menu))
+	box.add_child(row)
 
 
 ## Dynasty Mode's home: planned, not built (docs/DYNASTY_MODE_DRAFT.md).
@@ -249,6 +314,15 @@ func _load_slot(slot_id: String) -> void:
 	var result := saves.load_slot(slot_id, _defs)
 	if not result.is_ok():
 		_say("Could not load: " + result.message)
+		return
+	if result.state.mode == FcGameState.MODE_CAREER:
+		career = FcCareerController.resume(result.state)
+		if career == null:
+			_say("That career save has no player in it.")
+			return
+		show_career_hub()
+		if result.recovered_from != "":
+			_say("The save was damaged; an older copy (%s) was loaded." % result.recovered_from)
 		return
 	controller = FcGameController.resume(result.state)
 	show_dashboard()

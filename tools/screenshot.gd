@@ -40,6 +40,19 @@ func _initialize() -> void:
 	if _screen == "new_league":
 		_app.show_new_league()
 		return
+	if _screen == "career_menu":
+		_app.show_career_home()
+		return
+	if _screen == "career_creator" or _screen == "career_hub":
+		if _screen == "career_creator":
+			_app.show_career_creator()
+		else:
+			var spec := FcPlayerBuild.default_spec("two_way_wing", 3, _app._defs)
+			spec["first_name"] = "Maya"
+			spec["last_name"] = "Okoro"
+			spec["jersey_number"] = 11
+			_app.on_create_career(spec, 4)
+		return
 	_app.on_create_league({"teams": 12, "conferences": 2, "divisions": 1, "free_agents": 12, "seed": "5", "name": "Screenshot League"})
 	_app.on_start_game(_app._pending_state.world.teams.ids()[2])
 	_app.on_advance(_days)
