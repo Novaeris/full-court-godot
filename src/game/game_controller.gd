@@ -782,13 +782,20 @@ func philosophy() -> String:
 
 
 ## The most payroll the GM may commit: a share of the cap by budget (frugal 92%, normal 100%,
-## aggressive 115% but never above the luxury tax line).
+## aggressive 115% but never above the luxury tax line), and while the club is in debt no more than 65% of its
+## revenue (never below the league's minimum payroll) unless the budget is aggressive.
 func gm_payroll_limit() -> int:
 	var cap := state.world.rules_of_league(league_id).cap
 	var share: float = {"frugal": 0.92, "normal": 1.0, "aggressive": 1.15}[state.direction["budget"]]
 	var limit := roundi(cap.salary_cap * share)
 	if state.direction["budget"] == "aggressive" and cap.luxury_tax_line > 0:
 		limit = mini(limit, cap.luxury_tax_line)
+	# a club in debt lives within its means, like the AI clubs (FcEconomy.payroll_ceiling): a frugal or normal budget is
+	# held to 65% of last season's revenue; only an "aggressive" budget, the owner's explicit choice, ignores the debt
+	if state.direction["budget"] != "aggressive":
+		var ceiling := FcEconomy.new(state.world).payroll_ceiling(state.user_team_id)
+		if ceiling >= 0:
+			limit = mini(limit, maxi(ceiling, cap.minimum_payroll))
 	return limit
 
 

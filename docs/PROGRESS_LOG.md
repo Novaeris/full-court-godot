@@ -44,7 +44,7 @@ mid-draft). Everything is committed locally; nothing is published.
 - **League**: history, champions, awards, records, Hall of Fame, all-time leaders, news.
 
 ### Known gaps (also see the older list below)
-- (Updated 2026-11-18) Overtime games are about 4.4% (real about 5-6%) after two sim changes; close games are slightly too frequent.
+- (Updated 2026-11-18) Overtime games are about 3.5-4.4% (4.4% before the 2026-11-18 turnover recalibration, about 3.7% after) (real about 5-6%) after two sim changes; close games are slightly too frequent.
 - (Updated 2026-11-18) The UI has a central dark theme, text sizes, a tutorial and tooltips; it is still plain tables and buttons, desktop only, and the real look waits for the founder's references. Staff chemistry, season tickets, promotion nights and playoff prices exist.
 - A small-market owner who starts with a high payroll loses money in season 1 (valid challenge, recovered by season 3 in testing).
 - Career Mode (RPG player career) and Dynasty Mode (card collecting) are defined (D-029) but not built. The old watch-only mode that was called "dynasty" in the code is now "Spectator".
@@ -84,7 +84,7 @@ Era presets and star usage; league balance (team spread tightened); no draft lot
 - **UI is a first plain version**: no box score viewer, no draft / free agency / trade screens, no theme polish, no mobile layout.
 - Dynasties: in one 6-season test (30 teams, seed 2026) a team won 4 titles with a 71-9 record, but eight-season runs of 20-team leagues with two other seeds spread the titles across 4-5 champions, so it looks seed-specific. The AI now makes simple one-for-one offseason trades; keep watching parity.
 - League average age drifts young (about 24.6 after six seasons; real is about 26). Retirement and the draft supply are the levers.
-- (Superseded 2026-11-17: see "Overtime rate" and "Late-game fouling" below; the rate is now about 4.4%.) Overtime games were about 2.6% (real about 5-6%). Tried (2026-11-16): late-game intentional fouling by the trailing team plus hurry/stall tempo. Over 8,000 games it left the rate unchanged (about 2.7%) and raised pace and fouls, so it was reverted. The gap is probably in how final margins cluster (ties need a heavier peak near zero); a different approach (e.g. last-possession logic, closer-game variance) is needed.
+- (Superseded 2026-11-17: see "Overtime rate" and "Late-game fouling" below; the rate is now about 3.5-4.4% (4.4% before the 2026-11-18 turnover recalibration, about 3.7% after).) Overtime games were about 2.6% (real about 5-6%). Tried (2026-11-16): late-game intentional fouling by the trailing team plus hurry/stall tempo. Over 8,000 games it left the rate unchanged (about 2.7%) and raised pace and fouls, so it was reverted. The gap is probably in how final margins cluster (ties need a heavier peak near zero); a different approach (e.g. last-possession logic, closer-game variance) is needed.
 - Market tab (free agents + latest draft) is read-only; no signing or draft interaction yet.
 - Human trades work (Trades tab, one-for-many swaps under the cap rules); the AI never proposes trades to the user.
 - Hall of Fame and record book exist (History tab); a records page for team records and retired numbers is not built.

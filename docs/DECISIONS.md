@@ -202,7 +202,7 @@ Built on the founder's instruction to continue; the following product choices we
 - Inflation about 3% a year with seeded variation; the cap follows league profit toward a 6% average margin and never falls; surplus cash goes into building projects (AI automatically) and dividends; a new-arena project exists.
 - AI clubs remember trades (wariness) and meeting votes (rapport); a team moving into a region costs its neighbours fans.
 - Season tickets and promotion nights are owner levers (default off). Staff chemistry changes player development by up to about +/-6 coaching points. The general manager's negotiation moves salaries by up to 5% and trade profit by up to 8 points.
-- Overtime: trailing teams play for the last shot (about 4.0% overtime games; late fouling added the same day brought it to about 4.4%).
+- Overtime: trailing teams play for the last shot (about 4.0% overtime games; late fouling added the same day brought it to about 4.4%; the turnover recalibration of 2026-11-18 lowered it again to about 3.7%).
 
 ## D-036 Debt restructuring keeps the owner in the game (2026-11-18, founder chose "keep 'cannot lose' + restructuring")
 - The owner still cannot lose the franchise (D-029). When debt passes 1.0x the club's value (floored at 0.5x the cap), lenders cut it to 40% of the pre-adjustment value; at most once per 3 seasons; no cash is added; reputation -15; loans frozen for 3 seasons; the write-off is tracked apart from operating profit.

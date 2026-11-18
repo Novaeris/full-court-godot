@@ -16,6 +16,9 @@ var _app: FcApp
 var _problems: Array[String] = []
 var _t0 := 0
 var _pricing := "inflation"
+## levers=0 turns off the extra lever script (_use_more_levers: season tickets, promotion nights, projects, ...), which
+## deliberately includes settings that lose money (half-price nights in a sold-out arena); use it to see the base game.
+var _more_levers := true
 var _expand := false
 var _relocate := false
 var _auto := false
@@ -37,6 +40,7 @@ func _initialize() -> void:
 			"seed": seed_text = kv[1]
 			"reprice": _pricing = "suggested" if kv[1] == "1" else _pricing
 			"pricing": _pricing = kv[1]
+			"levers": _more_levers = kv[1] != "0"
 			"expand": _expand = kv[1] == "1"
 			"relocate": _relocate = kv[1] == "1"
 			"auto": _auto = kv[1] == "1"
@@ -62,7 +66,7 @@ func _initialize() -> void:
 		return
 	_app.on_start_game(_app._pending_state.world.teams.ids()[3])
 	var c := _app.controller
-	_log("RUN: seasons=%d teams=%d seed=%s pricing=%s auto=%s expand=%s relocate=%s philosophy=%s budget=%s" % [seasons, teams, seed_text, _pricing, _auto, _expand, _relocate, _philosophy, _budget])
+	_log("RUN: seasons=%d teams=%d seed=%s pricing=%s levers=%s auto=%s expand=%s relocate=%s philosophy=%s budget=%s" % [seasons, teams, seed_text, _pricing, _more_levers, _auto, _expand, _relocate, _philosophy, _budget])
 	_check("start")
 	for year in seasons:
 		_log("=== season %d ===" % c.state.current_season)
@@ -106,6 +110,13 @@ func _initialize() -> void:
 			league_top8 += sum8 / c.state.world.teams.count()
 		_ok("ROSTER: top-8 rating %.1f (league average %.1f), average age %.1f, philosophy %s, budget %s" % [top8, league_top8, ages / maxf(1.0, roster_ids.size()), c.philosophy(), c.state.direction["budget"]])
 		_ok("RESULT: %d wins (expected %d), profit %s, payroll %s, approval %d, GM grade %s, rounds won %d" % [report["wins"], report["expected_wins"], FcUiTables.money(report["profit"]), FcUiTables.money(c.state.world.payroll_of_team(c.state.user_team_id, c.state.current_season)), report["approval"], card.get("grade", "-"), report["playoff_rounds_won"]])
+		var fr := FcFinanceEngine.new(c.state.world).record_of(c.state.user_team_id, c.state.current_season)
+		var cap_rules := c.state.world.rules_of_league(c.league_id).cap
+		if fr != null:
+			_ok("BOOKS: revenue %s, payroll %s (cap %s, tax line %s), luxury tax %s, staff %s, marketing %s, interest %s, facilities %s, ops %s, debt end %s, attendance %d of %d" % [
+				FcUiTables.money(fr.total_revenue()), FcUiTables.money(fr.expenses["payroll"]), FcUiTables.money(cap_rules.salary_cap), FcUiTables.money(cap_rules.luxury_tax_line),
+				FcUiTables.money(fr.expenses["luxury_tax"]), FcUiTables.money(fr.expenses["staff"]), FcUiTables.money(fr.expenses["marketing"]), FcUiTables.money(fr.expenses["interest"]),
+				FcUiTables.money(fr.expenses["facilities"]), FcUiTables.money(fr.expenses["arena_operations"]), FcUiTables.money(fr.debt_end), fr.average_attendance, fr.capacity])
 		_offseason(c, year)
 	_log("final: season %d, %s; %d teams in the league, %d franchise moves, %d expansions" % [c.state.current_season, _summary(c), c.state.world.leagues.get_by_id(c.league_id).team_count(), c.state.relocation_log.size(), 1 if c.state.last_expansion_year > 0 else 0])
 	var rescued := 0
@@ -155,7 +166,8 @@ func _use_in_season_features(c: FcGameController) -> void:
 	var worst := team.roster.player_ids[team.roster.size() - 1]
 	_ok("trade check: %s" % c.propose_trade(rival, [worst], [], true)["reason"])
 	_ok("pick gift check: %s" % c.propose_trade(rival, [], [], true, [[c.first_tradable_pick_year(), 2, c.state.user_team_id]], [])["reason"])
-	_use_more_levers(c)
+	if _more_levers:
+		_use_more_levers(c)
 	_check("in-season features")
 
 

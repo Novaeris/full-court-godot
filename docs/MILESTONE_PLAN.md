@@ -20,7 +20,7 @@ What changed since v2, in the order of the founder's work list:
 - **M4 (UI polish): second pass done.** A central theme, three text sizes, a first-time tutorial with a Help button, a plain-language tooltip on every owner lever (a test checks it), an About screen with the engine's license and shortcuts to the logs and saves folders, and screenshots at other window sizes (`screenshot.ps1 size=1024x700`; Finances and Staff checked at 1024x700). Still waiting for the founder's look-and-feel references (`docs/LOOK_AND_FEEL.md`). Not done: volume (there is no audio yet), a separate save/load screen (the main menu already lists, loads and deletes saves), richer box-score and standings screens.
 - **M5 (platforms): Windows export and a tester zip are done** (`export_presets.cfg`, `tools/export_windows.ps1`, `tools/package_windows.ps1`, `docs/RELEASE.md`, a `--selftest` check). Logs and licenses are reachable from the About screen. Not done: the game icon (needs art), an installer and code signing (need a certificate), Mac (needs a Mac), automated builds, mobile (Dynasty only).
 - **M6 and M7: drafted, not started.** `docs/CAREER_MODE_DRAFT.md` and `docs/DYNASTY_MODE_DRAFT.md` propose a design with recommended answers and list the questions only the founder can answer; no code until the founder approves them (project rule: do not build Career or Dynasty until scheduled).
-- **M3 (continued):** late-game fouling added (overtime about 4.4%); close games are a little more frequent than real.
+- **M3 (continued):** late-game fouling added (overtime about 3.5-4.4% (4.4% before the 2026-11-18 turnover recalibration, about 3.7% after)); close games are a little more frequent than real.
 - **M8 (pre-release): a legal checklist now exists** (`docs/LEGAL_CHECKLIST.md`): license, names, loot boxes, AI art, privacy, stores. It needs a lawyer.
 
 Review notes on the plan itself (Claude's recommendations; the order is unchanged unless the founder says otherwise):
@@ -82,7 +82,7 @@ Open M2 item found 2026-11-16: owner profit grows without limit over a long run 
 
 ## M3. Simulation depth (size L)
 Goal: games feel like real basketball at the level a manager can notice.
-Scope: overtime rate (about 4.4% now vs 5-6% real; two fixes built, see `docs/ARCHITECTURE.md`), timeouts, matchups and positions,
+Scope: overtime rate (about 3.5-4.4% (4.4% before the 2026-11-18 turnover recalibration, about 3.7% after) now vs 5-6% real; two fixes built, see `docs/ARCHITECTURE.md`), timeouts, matchups and positions,
 end-of-game situations, fouls and foul trouble, pace and style choices that matter, home-court detail, more
 realistic injuries. Each change is recalibrated with `tools/simulate_games.ps1` (the 16 league checks stay in range).
 Done when: all league-average checks pass in all three eras AND the overtime rate, clutch scoring and close-game
