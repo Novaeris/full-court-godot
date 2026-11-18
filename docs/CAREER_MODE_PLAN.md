@@ -59,7 +59,7 @@ Existing files extended: `game_state.gd` (mode, career section, validation), `ve
 2. **Character creator** *(done 2026-11-18: form, validation, hub card, save and resume; the league wizard shortcut and portraits are later)*: screens to create, validate, save and reload a player; appearance and jersey; hybrid builds; league wizard shortcut to place the player as a rookie.
 3. **Progression** *(done 2026-11-18: rules, data, controller, Develop and Skills tabs; badge effects are applied to the simulation in phase 4)*: XP, levels, development points, attribute allocation under ceilings, badge and skill frameworks, training rewards; deterministic tests.
 4. **Career simulation** *(done 2026-11-18 as a first slice: team placement, calendar, games, stats, rewards, history, save and resume, badge bonus in the sim, retirement; role and usage control still open)*: team placement, calendar, games with role control, stats and history, post-game rewards, save and resume; Owner regression with fixed seeds.
-5. **Career RPG:** agents, contracts, coach relations, chemistry, rivalries, media, endorsements; each decision with a mechanical consequence.
+5. **Career RPG** *(first slice done 2026-11-18: seeded decisions with real effects and tags; agents/contracts, relationships, rivalries, sponsorships and role negotiation remain)*: agents, contracts, coach relations, chemistry, rivalries, media, endorsements; each decision with a mechanical consequence.
 6. **Multiplayer preparation** *(done 2026-11-18 as a document: `docs/CAREER_MODE_MULTIPLAYER_READINESS.md`... see CAREER_MULTIPLAYER_READINESS.md)*: audit and document the authoritative-server contract (below); no networking.
 
 ## 7. Testing strategy

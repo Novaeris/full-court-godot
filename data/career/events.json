@@ -1,0 +1,39 @@
+{
+	"schema": 1,
+	"note": "Career decisions. One eligible event is offered each season after the offseason; the player must answer it before playing on. Every choice has real effects on the career (XP, development and skill points, reputation, currency) and may add a tag the rest of the game can read. No choice is cosmetic. Effects never take reputation or currency below zero. Add events here only.",
+	"events": [
+		{"key": "agent_pitch", "title": "Two agents want to represent you", "text": "A loyal veteran agent promises steady growth. A flashy agent promises a big payday now.",
+			"when": {"min_level": 1},
+			"choices": [
+				{"key": "loyal", "label": "Sign with the loyal veteran", "effects": {"reputation": 3, "xp": 40}, "tag": "agent_loyal", "note": "Steady: +3 reputation, +40 XP."},
+				{"key": "flashy", "label": "Sign with the flashy agent", "effects": {"currency": 400, "reputation": -2}, "tag": "agent_flashy", "note": "Money now: +400 currency, -2 reputation."},
+				{"key": "none", "label": "Represent yourself", "effects": {"xp": 90}, "note": "Focus on basketball: +90 XP."}]},
+		{"key": "training_camp", "title": "Summer camp invitations", "text": "You can work on your game, rest your body, or study film.",
+			"when": {"min_level": 2},
+			"choices": [
+				{"key": "skills", "label": "Skills camp", "effects": {"development_points": 2}, "note": "+2 development points."},
+				{"key": "rest", "label": "Rest and recover", "effects": {"xp": 80}, "tag": "rested", "note": "+80 XP."},
+				{"key": "film", "label": "Study film", "effects": {"skill_points": 1}, "note": "+1 skill point."}]},
+		{"key": "media_day", "title": "Media day", "text": "Reporters want to know what kind of player you are.",
+			"when": {"min_level": 3},
+			"choices": [
+				{"key": "humble", "label": "Stay humble", "effects": {"reputation": 4}, "note": "+4 reputation."},
+				{"key": "bold", "label": "Make bold predictions", "effects": {"reputation": 1, "currency": 300}, "tag": "outspoken", "note": "+1 reputation, +300 currency."},
+				{"key": "decline", "label": "Decline interviews", "effects": {"xp": 20}, "note": "+20 XP."}]},
+		{"key": "coach_meeting", "title": "A meeting with your coach", "text": "The coach asks how you see your role.",
+			"when": {"min_level": 4},
+			"choices": [
+				{"key": "push", "label": "Ask for a bigger role", "effects": {"xp": 100, "reputation": -1}, "tag": "role_push", "note": "+100 XP, -1 reputation."},
+				{"key": "accept", "label": "Accept the current role", "effects": {"reputation": 2, "development_points": 1}, "note": "+2 reputation, +1 development point."}]},
+		{"key": "charity_event", "title": "Community event", "text": "The team invites you to a charity night.",
+			"when": {"min_level": 5},
+			"choices": [
+				{"key": "host", "label": "Host it and donate", "effects": {"currency": -200, "reputation": 6}, "tag": "community", "note": "-200 currency, +6 reputation."},
+				{"key": "skip", "label": "Skip it", "effects": {}, "note": "Nothing changes."}]},
+		{"key": "rival_challenge", "title": "A rival calls you out", "text": "A rival says you are overrated and challenges you publicly.",
+			"when": {"min_level": 10},
+			"choices": [
+				{"key": "accept", "label": "Accept the challenge", "effects": {"xp": 150, "reputation": 2}, "tag": "rival", "note": "+150 XP, +2 reputation."},
+				{"key": "ignore", "label": "Ignore it", "effects": {"development_points": 1}, "note": "+1 development point."}]}
+	]
+}

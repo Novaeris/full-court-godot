@@ -43,6 +43,9 @@ func _initialize() -> void:
 		if c.is_retired():
 			print("Retired after %d seasons (stage %d)." % [c.profile().history.size(), c.profile().stage])
 			break
+		var pending := c.pending_event()
+		if not pending.is_empty():   # decisions: take the first choice (the playthrough only checks the rules hold)
+			c.answer_event(pending["choices"][0]["key"])
 		var result := c.finish_season()
 		if not result["ok"]:
 			_fail("season %d could not be played" % (i + 1))

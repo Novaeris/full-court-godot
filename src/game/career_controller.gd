@@ -138,6 +138,7 @@ func join_team(team_id: int) -> Dictionary:
 		profile().stage = FcCareerProfile.Stage.PROFESSIONAL_ENTRY
 	_game = null
 	game()
+	_roll_event()
 	state.world.add_news(state.current_date, "signing", "%s signed with %s." % [player().identity.full_name(), state.world.team_display_name(team_id)], team_id)
 	return {"ok": true, "reason": "You signed with %s on a %d-year rookie contract." % [state.world.team_display_name(team_id), rules.cap.rookie_contract_years]}
 
@@ -162,6 +163,8 @@ func advance_day() -> Dictionary:
 	var g := game()
 	if g == null:
 		return {"ok": false, "reason": "Join a team first.", "games": []}
+	if profile().pending_event != "":
+		return {"ok": false, "reason": "You have a decision to make before you play on.", "games": []}
 	g.advance_day()
 	return {"ok": true, "games": _collect_games(), "phase": g.phase()}
 
@@ -173,6 +176,8 @@ func advance_days(count: int) -> Dictionary:
 	var g := game()
 	if g == null:
 		return {"ok": false, "reason": "Join a team first.", "games": []}
+	if profile().pending_event != "":
+		return {"ok": false, "reason": "You have a decision to make before you play on.", "games": []}
 	var games: Array = []
 	for i in count:
 		if g.phase() == FcGameController.PHASE_COMPLETE:
@@ -190,6 +195,8 @@ func finish_season() -> Dictionary:
 	var g := game()
 	if g == null:
 		return {"ok": false, "reason": "Join a team first.", "games": []}
+	if profile().pending_event != "":
+		return {"ok": false, "reason": "You have a decision to make before you play on.", "games": []}
 	var games: Array = []
 	while g.phase() != FcGameController.PHASE_COMPLETE:
 		g.advance_day()
@@ -257,6 +264,34 @@ func _after_offseason() -> void:
 	_seen.clear()
 	for entry in _game.season().recent_boxes:
 		_seen[_box_key(entry)] = true
+	_roll_event()
+
+
+## The decision waiting for an answer, as {"key", "title", "text", "choices": [{"key", "label", "note"}]} or {} if none.
+func pending_event() -> Dictionary:
+	var key := profile().pending_event
+	if key == "":
+		return {}
+	var event := FcCareerEvents.get_event(key)
+	if event.is_empty():
+		return {}
+	return {"key": key, "title": event["title"], "text": event["text"],
+		"choices": event["choices"].map(func(c): return {"key": c["key"], "label": c["label"], "note": c.get("note", "")})}
+
+
+## Answers the waiting decision. The choice's effects apply to the career immediately. Returns {"ok", "reason"}.
+func answer_event(choice_key: String) -> Dictionary:
+	if profile().pending_event == "":
+		return {"ok": false, "reason": "There is nothing to decide right now."}
+	return FcCareerEvents.apply_choice(profile(), profile().pending_event, choice_key, state.current_season)
+
+
+## Offers a new decision for the season that is starting (a seeded pick among the events the career qualifies for).
+func _roll_event() -> void:
+	if profile().pending_event != "":
+		return
+	var rng := state.rng.fork("career-event:%s:%d" % [profile().profile_id, state.current_season])
+	profile().pending_event = FcCareerEvents.pick(profile(), state.current_season, rng)
 
 
 ## The league's yearly aging may raise an attribute past what the player's body and potential allow; the ceiling is a hard limit,

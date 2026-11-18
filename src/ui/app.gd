@@ -325,6 +325,27 @@ func _career_season_tab() -> Control:
 			show_career_hub()))
 		box.add_child(row)
 		return box
+	var pending := career.pending_event()
+	if not pending.is_empty():
+		var card := PanelContainer.new()
+		var inner := VBoxContainer.new()
+		card.add_child(inner)
+		inner.add_child(FcUiTables.label("A decision: " + pending["title"], 18, true))
+		var story := FcUiTables.label(pending["text"], 15)
+		story.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		story.custom_minimum_size = Vector2(400, 0)
+		inner.add_child(story)
+		var choices := HBoxContainer.new()
+		for choice in pending["choices"]:
+			var button := FcUiTables.button(choice["label"], func():
+				var r := career.answer_event(choice["key"])
+				_say(r["reason"])
+				show_career_hub())
+			button.tooltip_text = choice["note"]
+			choices.add_child(button)
+		inner.add_child(choices)
+		inner.add_child(FcUiTables.label("Hover a choice to see exactly what it does. You must decide before you play on.", 13))
+		box.add_child(card)
 	var g := career.game()
 	var next := career.next_game()
 	box.add_child(FcUiTables.label("%s    Season %d-%02d" % [career.state.world.team_display_name(career.state.user_team_id), career.state.current_season, (career.state.current_season + 1) % 100], 16, true))

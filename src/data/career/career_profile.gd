@@ -38,6 +38,10 @@ var ruleset_version: int = 1
 ## Milestone keys already claimed (each pays once) and training sessions used per season ({"2026": 3}).
 var milestones: Array[String] = []
 var training_used: Dictionary = {}
+## The decision waiting for an answer (an event key, "" = none) and the tags earlier choices left (what kind of person the
+## player has become: "agent_loyal", "outspoken", ...).
+var pending_event: String = ""
+var tags: Array[String] = []
 ## Career decisions: [{"year", "key", "choice"}] (filled by the career RPG phase).
 var decisions: Array = []
 ## One row per season: {"year", "team_id", "games", "points", "rebounds", "assists", "awards": []}.
@@ -86,7 +90,7 @@ func to_dict() -> Dictionary:
 		"schema": SCHEMA_VERSION, "profile_id": profile_id, "player_id": player_id, "archetype": archetype_key,
 		"appearance": appearance.duplicate(), "jersey_number": jersey_number, "stage": stage, "xp": xp, "level": level,
 		"development_points": development_points, "skill_points": skill_points, "reputation": reputation, "currency": currency,
-		"badges_owned": badges_owned.duplicate(), "badges_equipped": badges_equipped.duplicate(), "milestones": milestones.duplicate(), "training_used": training_used.duplicate(),
+		"badges_owned": badges_owned.duplicate(), "badges_equipped": badges_equipped.duplicate(), "pending_event": pending_event, "tags": tags.duplicate(), "milestones": milestones.duplicate(), "training_used": training_used.duplicate(),
 		"build_potential": build_potential, "build_version": build_version, "ruleset_version": ruleset_version,
 		"decisions": decisions.duplicate(true), "history": history.duplicate(true), "owner_account": owner_account,
 	}
@@ -113,6 +117,9 @@ static func from_dict(d: Dictionary) -> FcCareerProfile:
 		p.badges_owned.append(str(key))
 	for key in d.get("badges_equipped", []):
 		p.badges_equipped.append(str(key))
+	p.pending_event = str(d.get("pending_event", ""))
+	for key in d.get("tags", []):
+		p.tags.append(str(key))
 	for key in d.get("milestones", []):
 		p.milestones.append(str(key))
 	var used = d.get("training_used", {})

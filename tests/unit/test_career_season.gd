@@ -25,7 +25,15 @@ func _career(seed_value: int = 51) -> FcCareerController:
 func _signed(seed_value: int = 51) -> FcCareerController:
 	var c := _career(seed_value)
 	assert_true(c.join_team(c.state.world.teams.ids()[2])["ok"])
+	_decide(c)
 	return c
+
+
+## Answers the waiting career decision with its first choice (the career will not play on until it is answered).
+func _decide(c: FcCareerController) -> void:
+	var pending := c.pending_event()
+	if not pending.is_empty():
+		assert_true(c.answer_event(pending["choices"][0]["key"])["ok"])
 
 
 # --- joining a team --------------------------------------------------------------------------------------------
@@ -97,6 +105,8 @@ func test_a_season_is_recorded_and_the_next_one_begins() -> void:
 	assert_true(c.profile().milestones.has("season_complete"))
 	assert_true(c.is_signed(), "he is still on a team")
 	assert_eq(c.state.validate(), [] as Array[String], str(c.state.validate()))
+	assert_true(not c.finish_season()["ok"], "the new season starts with a decision to make")
+	_decide(c)
 	var again := c.finish_season()
 	assert_true(again["ok"])
 	assert_eq(c.profile().history.size(), 2)
@@ -207,6 +217,10 @@ func test_the_hub_season_tab_plays_days_and_shows_results() -> void:
 	assert_true(app.on_create_career(spec, 12))
 	assert_true("do not have a team yet" in _labels_text(app), "a new career starts without a team")
 	assert_true(app.career.join_team(app.career.draft_team())["ok"])
+	app.show_career_hub()
+	assert_true("A decision" in _labels_text(app), "the first decision is waiting")
+	assert_true(not app.on_career_play(3)["ok"], "no playing before deciding")
+	_decide(app.career)
 	app.show_career_hub()
 	assert_true("Next game" in _labels_text(app) and "Career history" in _labels_text(app))
 	var result := app.on_career_play(14)
