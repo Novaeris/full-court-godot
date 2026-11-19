@@ -410,13 +410,19 @@ func _career_season_tab() -> Control:
 	var rel_label := FcUiTables.label("Coach: %s (%d)    Teammates: %s (%d)    Reputation %d    Currency %d" % [rel["coach_label"], rel["coach_trust"], rel["chemistry_label"], rel["chemistry"], career.profile().reputation, career.profile().currency], 14)
 	rel_label.tooltip_text = "The coach trusts players who are among his best and who play; teammates bond over winning and community work. Trust changes what role you can ask for and how hard you can bargain; a close team earns a development point each season."
 	box.add_child(rel_label)
+	var rival := career.rival()
+	if not rival.is_empty():
+		box.add_child(FcUiTables.label("Rival: %s (%s, overall %d)    Head to head: %d-%d" % [rival["name"], rival["team"], rival["overall"], rival["wins"], rival["losses"]], 14))
 	var line := career.season_line()
 	if int(line.get("games", 0)) > 0:
 		box.add_child(FcUiTables.label("This season: %d games, %.1f points, %.1f rebounds, %.1f assists, %.1f minutes a game" % [line["games"], line["points"], line["rebounds"], line["assists"], line["minutes"]], 15))
 	var rows: Array = []
 	for game in _career_log:
 		var l: Dictionary = game["line"]
-		rows.append([game["opponent"], "W" if game["won"] else "L", game["score"], "%d" % l["minutes"], l["points"], l["rebounds"], l["assists"], "+%d" % game["xp"], ", ".join(game["milestones"]).replace("_", " ")])
+		var duel_text := ""
+		if game.has("duel"):
+			duel_text = "Duel %s vs %s (%d pts)" % ["won" if game["duel"]["won"] else "lost", game["duel"]["rival"], game["duel"]["rival_points"]]
+		rows.append([game["opponent"], "W" if game["won"] else "L", game["score"], "%d" % l["minutes"], l["points"], l["rebounds"], l["assists"], "+%d" % game["xp"], ", ".join(game["milestones"]).replace("_", " ") + (" " if duel_text != "" and not game["milestones"].is_empty() else "") + duel_text])
 	box.add_child(FcUiTables.label("Recent games", 16, true))
 	box.add_child(FcUiTables.table(["Opponent", "", "Score", "Min", "Pts", "Reb", "Ast", "XP", "Milestones"], rows, [0, 30, 70, 40, 40, 40, 40, 50, 0]))
 	box.add_child(FcUiTables.label("Career history", 16, true))
@@ -517,6 +523,56 @@ func _career_develop_tab(card: Dictionary, progress: Dictionary) -> Control:
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.add_child(grid)
 	box.add_child(scroll)
+	box.add_child(_career_business_row())
+	return box
+
+
+## Sponsors and looks: the money side of the career (currency buys looks only, never ability).
+func _career_business_row() -> Control:
+	var box := VBoxContainer.new()
+	var deal: Dictionary = career.profile().sponsor_deal
+	if not deal.is_empty():
+		var current := HBoxContainer.new()
+		current.add_child(FcUiTables.label("Sponsor: %s, %d currency a season, %d season%s left%s" % [deal["sponsor"], deal["amount"], deal["years_left"], "" if deal["years_left"] == 1 else "s", " (bold brand: costs reputation each season)" if deal["edge"] == "bold" else ""]))
+		current.add_child(FcUiTables.button("End the deal", func():
+			_say(career.drop_sponsor()["reason"])
+			show_career_hub()))
+		box.add_child(current)
+	else:
+		var offers := career.sponsor_offers()
+		if offers.is_empty():
+			box.add_child(FcUiTables.label("No sponsor knows you yet: build some reputation first (5 or more).", 14))
+		else:
+			var row := HBoxContainer.new()
+			row.add_child(FcUiTables.label("Sponsor offers:"))
+			for offer in offers:
+				var button := FcUiTables.button("%s: %d a season x %d%s" % [offer["sponsor"], offer["amount"], offer["years"], " (bold)" if offer["edge"] == "bold" else ""], func():
+					_say(career.sign_sponsor(offer["sponsor"])["reason"])
+					show_career_hub())
+				button.tooltip_text = "A bold brand pays 60% more but its image costs you 1 reputation and 1 chemistry every season." if offer["edge"] == "bold" else "A steady deal with no downside."
+				row.add_child(button)
+			box.add_child(row)
+	var look := HBoxContainer.new()
+	look.add_child(FcUiTables.label("New look (%d currency, you have %d):" % [FcCareerRules.COSMETIC_COST, career.profile().currency]))
+	var part := OptionButton.new()
+	var appearance: Dictionary = FcBuildRules.rules()["appearance"]
+	for key in appearance:
+		part.add_item(str(key).replace("_", " "))
+		part.set_item_metadata(part.item_count - 1, key)
+	var option := OptionButton.new()
+	var fill := func():
+		option.clear()
+		for o in appearance[part.get_item_metadata(part.selected)]:
+			option.add_item(str(o).replace("_", " "))
+			option.set_item_metadata(option.item_count - 1, o)
+	part.item_selected.connect(func(_i): fill.call())
+	fill.call()
+	look.add_child(part)
+	look.add_child(option)
+	look.add_child(FcUiTables.button("Buy", func():
+		_say(career.change_appearance(part.get_item_metadata(part.selected), option.get_item_metadata(option.selected))["reason"])
+		show_career_hub()))
+	box.add_child(look)
 	return box
 
 

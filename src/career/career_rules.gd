@@ -181,6 +181,124 @@ static func raise_attribute(profile: FcCareerProfile, player: FcPlayer, key: Str
 
 # --- role: what the player asks of his coach ---------------------------------------------------------------------------
 
+# --- sponsorships ----------------------------------------------------------------------------------------------------------
+
+const SPONSOR_MIN_REPUTATION := 5
+const COSMETIC_COST := 150
+
+## Offers for a season (derived from the profile and year, so nothing is stored): up to three {"sponsor", "amount", "years", "edge"}.
+## Nobody sponsors an unknown player (reputation under 5). A "safe" brand pays steadily; a "bold" brand pays 60% more for fewer
+## years but costs the player 1 reputation and 1 chemistry every season (its image is controversial).
+static func sponsor_offers(profile: FcCareerProfile, year: int, rng: FcRng, names: Array) -> Array:
+	var out: Array = []
+	if profile.reputation < SPONSOR_MIN_REPUTATION or names.is_empty():
+		return out
+	var base := mini(2500, 150 + 25 * profile.reputation)
+	var pool := names.duplicate()
+	for i in 3:
+		if pool.is_empty():
+			break
+		var name := str(pool.pop_at(rng.range_int(0, pool.size() - 1)))
+		if profile.sponsor_deal.get("sponsor", "") == name:
+			continue
+		var bold := i == 2
+		out.append({"sponsor": name, "amount": roundi(base * (1.6 if bold else 1.0) * rng.range_float(0.9, 1.1) / 10.0) * 10,
+			"years": rng.range_int(1, 2) if bold else rng.range_int(2, 3), "edge": "bold" if bold else "safe"})
+	return out
+
+
+## Signs one of the offers. One deal at a time. Returns {"ok", "reason"}.
+static func sign_sponsor(profile: FcCareerProfile, offer: Dictionary) -> Dictionary:
+	if not profile.sponsor_deal.is_empty():
+		return {"ok": false, "reason": "You already have a sponsor: %s." % profile.sponsor_deal["sponsor"]}
+	profile.sponsor_deal = {"sponsor": offer["sponsor"], "amount": int(offer["amount"]), "years_left": int(offer["years"]), "edge": str(offer["edge"])}
+	return {"ok": true, "reason": "Signed with %s: %d currency a season for %d season%s." % [offer["sponsor"], int(offer["amount"]), int(offer["years"]), "" if int(offer["years"]) == 1 else "s"]}
+
+
+## One season of the deal: pays the amount, applies the brand's image (a bold brand costs reputation and chemistry) and runs the
+## contract down. Paid once per season (guarded by `sponsor_paid_year`). Returns {"paid", "reputation", "chemistry"}.
+static func pay_sponsor(profile: FcCareerProfile, year: int) -> Dictionary:
+	var result := {"paid": 0, "reputation": 0, "chemistry": 0}
+	if profile.sponsor_deal.is_empty() or profile.sponsor_paid_year == year:
+		return result
+	profile.sponsor_paid_year = year
+	profile.currency += int(profile.sponsor_deal["amount"])
+	result["paid"] = int(profile.sponsor_deal["amount"])
+	if profile.sponsor_deal["edge"] == "bold":
+		var rep_before := profile.reputation
+		profile.reputation = maxi(0, profile.reputation - 1)
+		profile.chemistry = maxi(0, profile.chemistry - 1)
+		result["reputation"] = profile.reputation - rep_before
+		result["chemistry"] = -1
+	profile.sponsor_deal["years_left"] = int(profile.sponsor_deal["years_left"]) - 1
+	if int(profile.sponsor_deal["years_left"]) <= 0:
+		profile.sponsor_deal = {}
+	return result
+
+
+## Ends the deal early: the brand is unhappy, so it costs 1 reputation.
+static func drop_sponsor(profile: FcCareerProfile) -> Dictionary:
+	if profile.sponsor_deal.is_empty():
+		return {"ok": false, "reason": "You have no sponsor."}
+	var name := str(profile.sponsor_deal["sponsor"])
+	profile.sponsor_deal = {}
+	profile.reputation = maxi(0, profile.reputation - 1)
+	return {"ok": true, "reason": "You ended the deal with %s. Breaking it cost 1 reputation." % name}
+
+
+## Spends currency on a new look (a cosmetic: it never changes the player's ability). Returns {"ok", "reason"}.
+static func change_appearance(profile: FcCareerProfile, part: String, option: String) -> Dictionary:
+	var options: Dictionary = FcBuildRules.rules()["appearance"]
+	if not options.has(part) or not (options[part] as Array).has(option):
+		return {"ok": false, "reason": "That is not an available look."}
+	if str(profile.appearance.get(part, "")) == option:
+		return {"ok": false, "reason": "You already have that look."}
+	if profile.currency < COSMETIC_COST:
+		return {"ok": false, "reason": "A new look costs %d currency and you have %d." % [COSMETIC_COST, profile.currency]}
+	profile.currency -= COSMETIC_COST
+	profile.appearance[part] = option
+	return {"ok": true, "reason": "New look: %s %s." % [part.replace("_", " "), option.replace("_", " ")]}
+
+
+# --- rivalries -----------------------------------------------------------------------------------------------------------
+
+## A game score for comparing two players' nights: points plus the other things that win.
+static func game_score(line: Dictionary) -> float:
+	return float(line.get("points", 0)) + 1.2 * float(line.get("rebounds", 0)) + 1.5 * float(line.get("assists", 0)) \
+		+ 2.0 * float(line.get("steals", 0)) + 2.0 * float(line.get("blocks", 0)) - 1.5 * float(line.get("turnovers", 0))
+
+
+## Chooses a rival from [[player id, overall], ...] (players on OTHER teams): a seeded pick among the three closest to
+## `my_overall`, so a rival is a real peer. Returns 0 if there are no candidates.
+static func pick_rival(candidates: Array, my_overall: float, rng: FcRng) -> int:
+	if candidates.is_empty():
+		return 0
+	var sorted := candidates.duplicate()
+	sorted.sort_custom(func(a, b):
+		var da := absf(float(a[1]) - my_overall)
+		var db := absf(float(b[1]) - my_overall)
+		return da < db if da != db else int(a[0]) < int(b[0]))
+	var top := sorted.slice(0, mini(3, sorted.size()))
+	return int(top[rng.range_int(0, top.size() - 1)][0])
+
+
+## Scores a night against the rival: the better game score wins the duel. A win pays XP (and every third win a point of
+## reputation); a loss costs nothing but the record. Returns {"won", "xp", "reputation"}.
+static func duel(profile: FcCareerProfile, my_line: Dictionary, rival_line: Dictionary) -> Dictionary:
+	var won := game_score(my_line) > game_score(rival_line)
+	var result := {"won": won, "xp": 0, "reputation": 0}
+	if won:
+		profile.rival_wins += 1
+		result["xp"] = 30
+		award_xp(profile, 30)
+		if profile.rival_wins % 3 == 0:
+			profile.reputation += 1
+			result["reputation"] = 1
+	else:
+		profile.rival_losses += 1
+	return result
+
+
 ## How the season changes the relationships. `context` = {"rank": his rank by overall on his team (1 = best), "win_pct": the
 ## team's winning share, "games": games he played}. The coach trusts a player who is among his best (and plays); a player who sits
 ## below the rotation loses trust. Teammates bond over winning and over community work, and are put off by an outspoken player.

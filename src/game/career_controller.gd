@@ -216,6 +216,9 @@ func finish_season() -> Dictionary:
 		var rel := FcCareerRules.relationships_after_season(profile(), {"rank": _team_rank(), "win_pct": float(row["wins"]) / maxf(1.0, row["wins"] + row["losses"]), "games": int(line.get("games", 0))})
 		row["trust_change"] = rel["coach_trust"]
 		row["chemistry_change"] = rel["chemistry"]
+	var sponsor := FcCareerRules.pay_sponsor(profile(), year)
+	if sponsor["paid"] > 0:
+		row["sponsor_paid"] = sponsor["paid"]
 	if profile().contract_resolved_year != year:
 		var contract := state.world.active_contract_of(profile().player_id)
 		if contract != null and contract.end_season() <= year:
@@ -344,6 +347,8 @@ func _record_season(year: int) -> Dictionary:
 ## (agents and negotiations come with the career RPG phase).
 func _after_offseason() -> void:
 	_clamp_to_ceilings()
+	if profile().rival_player_id > 0 and rival().is_empty():
+		profile().rival_player_id = 0   # the rival retired: a new challenge may bring another
 	if is_retired():
 		profile().stage = FcCareerProfile.Stage.LEGACY   # the league retired him in the offseason: the career ends here
 		state.world.add_news(state.current_date, "retirement", "%s has retired after %d seasons." % [player().identity.full_name(), profile().history.size()], state.user_team_id)
@@ -361,6 +366,57 @@ func _after_offseason() -> void:
 	for entry in _game.season().recent_boxes:
 		_seen[_box_key(entry)] = true
 	_roll_event()
+
+
+## Sponsorship offers for this season (empty until the player has some reputation).
+func sponsor_offers() -> Array:
+	var rng := FcRng.new(hash("career-sponsors:%s:%d" % [profile().profile_id, state.current_season]))
+	return FcCareerRules.sponsor_offers(profile(), state.current_season, rng, FcFinanceEngine.sponsor_names())
+
+
+func sign_sponsor(sponsor_name: String) -> Dictionary:
+	for offer in sponsor_offers():
+		if offer["sponsor"] == sponsor_name:
+			return FcCareerRules.sign_sponsor(profile(), offer)
+	return {"ok": false, "reason": "That sponsor is not offering a deal."}
+
+
+func drop_sponsor() -> Dictionary:
+	return FcCareerRules.drop_sponsor(profile())
+
+
+## Spends currency on a new look. The appearance is the profile's own record, so nothing else changes.
+func change_appearance(part: String, option: String) -> Dictionary:
+	return FcCareerRules.change_appearance(profile(), part, option)
+
+
+## The rival as {"name", "team", "overall", "wins", "losses"} or {} (none, or he has retired).
+func rival() -> Dictionary:
+	var id := profile().rival_player_id
+	if id == 0:
+		return {}
+	var rival_player: FcPlayer = state.world.players.get_by_id(id)
+	if rival_player == null or rival_player.status != FcPlayer.Status.ACTIVE:
+		return {}
+	var team := state.world.team_of_player(id)
+	return {"name": rival_player.identity.full_name(), "team": state.world.team_display_name(team.id) if team != null else "free agent",
+		"overall": roundi(FcPlayerRatings.load_default().overall(rival_player)), "wins": profile().rival_wins, "losses": profile().rival_losses}
+
+
+## Picks a rival: a player of a similar level on another team (seeded by the career and the season).
+func _assign_rival() -> void:
+	var ratings := FcPlayerRatings.load_default()
+	var mine := state.world.team_of_player(profile().player_id)
+	var candidates: Array = []
+	for t in state.world.teams.all():
+		if mine != null and t.id == mine.id:
+			continue
+		for pid in t.roster.player_ids:
+			candidates.append([pid, ratings.overall(state.world.players.get_by_id(pid))])
+	var rng := state.rng.fork("career-rival:%s:%d" % [profile().profile_id, state.current_season])
+	profile().rival_player_id = FcCareerRules.pick_rival(candidates, ratings.overall(player()), rng)
+	profile().rival_wins = 0
+	profile().rival_losses = 0
 
 
 ## How the coach and the teammates see the player: {"coach_trust", "chemistry", "coach_label", "chemistry_label"}.
@@ -387,7 +443,14 @@ func pending_event() -> Dictionary:
 func answer_event(choice_key: String) -> Dictionary:
 	if profile().pending_event == "":
 		return {"ok": false, "reason": "There is nothing to decide right now."}
-	return FcCareerEvents.apply_choice(profile(), profile().pending_event, choice_key, state.current_season)
+	var event_key := profile().pending_event
+	var result := FcCareerEvents.apply_choice(profile(), event_key, choice_key, state.current_season)
+	if result["ok"] and event_key == "rival_challenge" and choice_key == "accept":
+		_assign_rival()
+		var r := rival()
+		if not r.is_empty():
+			result["reason"] += " Your rival: %s of %s." % [r["name"], r["team"]]
+	return result
 
 
 ## Offers a new decision for the season that is starting (a seeded pick among the events the career qualifies for).
@@ -432,8 +495,17 @@ func _collect_games() -> Array:
 			var line := {"minutes": float(row["seconds"]) / 60.0, "points": int(row["points"]), "rebounds": int(row["oreb"]) + int(row["dreb"]),
 				"assists": int(row["ast"]), "steals": int(row["stl"]), "blocks": int(row["blk"]), "turnovers": int(row["tov"]), "won": won}
 			var reward := FcCareerRules.apply_game(profile(), line)
-			out.append({"day": int(entry["day"]), "opponent": str(box["team_names"][1 - side]), "score": "%d-%d" % [int(box["scores"][side]), int(box["scores"][1 - side])],
-				"won": won, "line": line, "xp": int(reward["xp"]), "levels_gained": int(reward["levels_gained"]), "milestones": reward["milestones"]})
+			var game := {"day": int(entry["day"]), "opponent": str(box["team_names"][1 - side]), "score": "%d-%d" % [int(box["scores"][side]), int(box["scores"][1 - side])],
+				"won": won, "line": line, "xp": int(reward["xp"]), "levels_gained": int(reward["levels_gained"]), "milestones": reward["milestones"]}
+			# a night against the rival is also a duel
+			for other in box["players"]:
+				if profile().rival_player_id > 0 and int(other["player_id"]) == profile().rival_player_id and int(other["team_id"]) != state.user_team_id and int(other["seconds"]) > 0:
+					var rival_line := {"points": int(other["points"]), "rebounds": int(other["oreb"]) + int(other["dreb"]), "assists": int(other["ast"]),
+						"steals": int(other["stl"]), "blocks": int(other["blk"]), "turnovers": int(other["tov"])}
+					var d := FcCareerRules.duel(profile(), line, rival_line)
+					game["duel"] = {"won": d["won"], "rival": str(other["name"]), "rival_points": int(other["points"]), "xp": d["xp"]}
+					game["xp"] = int(game["xp"]) + int(d["xp"])
+			out.append(game)
 	return out
 
 
