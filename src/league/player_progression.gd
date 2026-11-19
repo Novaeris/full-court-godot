@@ -26,22 +26,37 @@ func _init(defs: FcDefinitionSet, ratings: FcPlayerRatings) -> void:
 	_cfg = parsed if parsed is Dictionary else {}
 
 
+## The growth, in attribute points per attribute, a player would receive this offseason before his peak (0 after it). This is the
+## exact expression `progress` has always used (it now calls this), made public so Career Mode can turn that growth into
+## development points the player spends himself. It uses no random numbers.
+func growth_points_for(player: FcPlayer, age: int, coach_development: float) -> float:
+	var dev := player.development
+	if age > dev.peak_age:
+		return 0.0
+	var before := _ratings.overall(player)
+	var years_left := dev.peak_age - age + 1
+	var growth_points := clampf((dev.potential - before) / years_left, 0.0, float(_cfg["growth_cap"]))
+	growth_points *= dev.development_rate
+	growth_points *= 1.0 + (coach_development - 50.0) / 50.0 * float(_cfg["coach_effect"])
+	growth_points *= 1.0 + (player.attributes.get_value("work_ethic") - 50.0) / 50.0 * float(_cfg["work_ethic_effect"])
+	return growth_points
+
+
 ## Changes the player's attributes for one year of aging. `age` is his age at
 ## the start of the new season; `coach_development` is the average player-
 ## development skill (0-100) of his team's coaches (50 = neutral).
-## Returns {"before": overall, "after": overall}.
-func progress(player: FcPlayer, age: int, coach_development: float, rng: FcRng) -> Dictionary:
+## `apply_growth` false (Career Mode's player, who spends the growth as points) skips the automatic growth only: decline and the
+## random noise are unchanged, and the same random numbers are drawn, so nobody else's results move.
+## Returns {"before": overall, "after": overall, "growth_points": the growth he would have received}.
+func progress(player: FcPlayer, age: int, coach_development: float, rng: FcRng, apply_growth: bool = true) -> Dictionary:
 	var before := _ratings.overall(player)
 	var dev := player.development
-	var growth_points := 0.0
+	var growth_points := growth_points_for(player, age, coach_development)
+	var growth_available := growth_points
+	if not apply_growth:
+		growth_points = 0.0
 	var decline_points := 0.0
-	if age <= dev.peak_age:
-		var years_left := dev.peak_age - age + 1
-		growth_points = clampf((dev.potential - before) / years_left, 0.0, float(_cfg["growth_cap"]))
-		growth_points *= dev.development_rate
-		growth_points *= 1.0 + (coach_development - 50.0) / 50.0 * float(_cfg["coach_effect"])
-		growth_points *= 1.0 + (player.attributes.get_value("work_ethic") - 50.0) / 50.0 * float(_cfg["work_ethic_effect"])
-	else:
+	if age > dev.peak_age:
 		decline_points = (age - dev.peak_age) * float(_cfg["decline_per_year"])
 		var late := maxi(0, age - int(_cfg["late_decline_after_age"]))
 		decline_points *= 1.0 + late * float(_cfg["late_decline_extra"])
@@ -65,7 +80,7 @@ func progress(player: FcPlayer, age: int, coach_development: float, rng: FcRng) 
 	dev.potential = maxi(dev.potential, clampi(roundi(after), 0, 100))
 	if age > dev.peak_age:
 		dev.potential = clampi(roundi(after), 0, 100)
-	return {"before": before, "after": after}
+	return {"before": before, "after": after, "growth_points": growth_available}
 
 
 ## Chance (0-1) that the player retires after this season.

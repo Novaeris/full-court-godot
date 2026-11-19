@@ -214,3 +214,10 @@ Built on the founder's instruction to continue; the following product choices we
 
 ## D-038 Career Mode architecture (2026-11-18, recommended answers; see `docs/CAREER_MODE_PLAN.md`)
 - One shared player type (`FcPlayer`) plus a sidecar `FcCareerProfile`; the shared 0-100 attribute catalog is kept (builds validate into 25-99); save data version 2 with a real migration; pure rules in `src/career`; no multiplayer backend. Phases 1 (domain) and 2 (creator) built; progression, the calendar and games are next and need no further decision unless the founder wants changes.
+
+## D-039 Career Mode: potential is the cap on overall, growth is player-directed (2026-11-18, founder chose "player-directed growth")
+- Goal of a career: reach the maximum overall (potential) without maxing every skill. Overall is a weighted average, so skills that weigh more (defense 7; shooting, finishing, handling, passing 6) move it most; durability, leadership and work ethic weigh 1.
+- The career player no longer gets the offseason's automatic growth. The same growth number (`FcPlayerProgression.growth_points_for`, the exact original expression) is converted to development points (`growth_to_points`, measured and set to 17). Decline and the 28 noise draws per player still happen, so no other player's random stream moves; Owner Mode and AI players are unchanged.
+- `raise_preview` is the single calculation behind the Develop tab and the real raise. A raise is blocked if the displayed (rounded) overall would pass potential; blocked rows say why. Banked points stay spendable (for example to hold the rating through decline).
+- **Deviation to note:** besides `growth_to_points`, the cost schedule was flattened from 1/2/3/4 (at 0/60/75/85) to 1 until 92, then 2, and `ceiling_base` went 55 to 65. With the old curve cheap low-weight skills beat the heavy ones, so focused and even spending ended equal. Measured results are in `docs/ARCHITECTURE.md`.
+- Reaching potential claims a one-time milestone (`potential_reached`: XP, a skill point, currency), shows a banner and a news line; nothing ends there.

@@ -120,6 +120,8 @@ static func claim_milestone(profile: FcCareerProfile, key: String) -> Dictionary
 	var granted := award_xp(profile, int(def.get("xp", 0)))
 	profile.development_points += int(def.get("development_points", 0))
 	granted["development_points"] += int(def.get("development_points", 0))
+	profile.skill_points += int(def.get("skill_points", 0))
+	granted["skill_points"] += int(def.get("skill_points", 0))
 	profile.currency += int(def.get("currency", 0))
 	granted["currency"] = int(def.get("currency", 0))
 	return {"ok": true, "reason": "Milestone: %s." % def["name"], "granted": granted}
@@ -163,20 +165,109 @@ static func attribute_cost(value: int) -> int:
 	return cost
 
 
-## Raises one attribute of the career player by 1 if the points and the body's ceiling allow. Returns {"ok", "reason", "value", "cost"}.
-static func raise_attribute(profile: FcCareerProfile, player: FcPlayer, key: String) -> Dictionary:
+## The overall a build is capped at: the potential the player was created with (or his current one for a player with no profile value).
+static func overall_cap(profile: FcCareerProfile, player: FcPlayer) -> int:
+	return profile.build_potential if profile.build_potential > 0 else player.development.potential
+
+
+## The player's overall as the screens show it (rounded, the same number the cap and the milestone use).
+static func overall_now(player: FcPlayer) -> int:
+	return roundi(FcPlayerRatings.load_default().overall(player))
+
+
+## What raising one attribute by 1 would do, computed once and used by both the preview and the real raise so they cannot disagree:
+## {"ok", "reason", "blocked" ("" | "unknown" | "ceiling" | "potential" | "points"), "cost", "value", "overall_now", "overall_after", "gain"}.
+## `gain` is the real change in the (unrounded) overall; the cap uses the rounded overall after the raise, so a player can never
+## show more than his potential.
+static func raise_preview(profile: FcCareerProfile, player: FcPlayer, key: String) -> Dictionary:
+	var out := {"ok": false, "reason": "", "blocked": "", "cost": 0, "value": 0, "overall_now": 0.0, "overall_after": 0.0, "gain": 0.0}
 	if not player.attributes.get_catalog().has_key(key):
-		return {"ok": false, "reason": "Unknown attribute."}
+		out["reason"] = "Unknown attribute."
+		out["blocked"] = "unknown"
+		return out
+	var ratings := FcPlayerRatings.load_default()
 	var value := player.attributes.get_value(key)
+	var name: String = player.attributes.get_catalog().get_def(key).display_name
+	var before := ratings.overall(player)
+	out["value"] = value
+	out["cost"] = attribute_cost(value)
+	out["overall_now"] = before
 	var ceiling := FcPlayerBuild.attribute_ceiling(key, FcPlayerBuild.spec_of(player, profile.build_potential))
 	if value >= ceiling:
-		return {"ok": false, "reason": "%s is at the most your body and potential allow (%d)." % [player.attributes.get_catalog().get_def(key).display_name, ceiling]}
-	var cost := attribute_cost(value)
-	if profile.development_points < cost:
-		return {"ok": false, "reason": "That costs %d development points and you have %d." % [cost, profile.development_points]}
-	profile.development_points -= cost
+		out["reason"] = "%s is at the most your body allows (%d)." % [name, ceiling]
+		out["blocked"] = "ceiling"
+		out["overall_after"] = before
+		return out
 	player.attributes.set_value(key, value + 1)
-	return {"ok": true, "reason": "Raised to %d." % (value + 1), "value": value + 1, "cost": cost}
+	var after := ratings.overall(player)
+	player.attributes.set_value(key, value)   # a preview never changes the player
+	out["overall_after"] = after
+	out["gain"] = after - before
+	var cap := overall_cap(profile, player)
+	if roundi(after) > cap:
+		out["reason"] = "You are at your potential overall (%d): raising %s would pass it. Raise a skill that matters less, or keep your points for later when age lowers your rating." % [cap, name]
+		out["blocked"] = "potential"
+		return out
+	if profile.development_points < int(out["cost"]):
+		out["reason"] = "That costs %d development points and you have %d." % [int(out["cost"]), profile.development_points]
+		out["blocked"] = "points"
+		return out
+	out["ok"] = true
+	out["reason"] = "+1 %s for %d point%s: overall %+.1f." % [name, int(out["cost"]), "" if int(out["cost"]) == 1 else "s", float(out["gain"])]
+	return out
+
+
+## Raises one attribute of the career player by 1 if the preview allows it. Returns {"ok", "reason", "value", "cost"}.
+static func raise_attribute(profile: FcCareerProfile, player: FcPlayer, key: String) -> Dictionary:
+	var preview := raise_preview(profile, player, key)
+	if not preview["ok"]:
+		return {"ok": false, "reason": preview["reason"]}
+	profile.development_points -= int(preview["cost"])
+	player.attributes.set_value(key, int(preview["value"]) + 1)
+	return {"ok": true, "reason": "Raised to %d." % (int(preview["value"]) + 1), "value": int(preview["value"]) + 1, "cost": int(preview["cost"])}
+
+
+## The most useful upgrade now: the highest overall gain per development point among attributes the body and the potential still
+## allow (affordable or not; ties go to the attribute whose key sorts first). Returns {} when nothing can be raised.
+static func best_next_upgrade(profile: FcCareerProfile, player: FcPlayer) -> Dictionary:
+	var best := {}
+	var best_score := -1.0
+	var keys: Array = player.attributes.get_catalog().keys()
+	keys.sort()
+	for key in keys:
+		var p := raise_preview(profile, player, key)
+		if p["blocked"] in ["unknown", "ceiling", "potential"]:
+			continue
+		var score := float(p["gain"]) / float(p["cost"])
+		if score > best_score + 0.000001:
+			best_score = score
+			best = {"key": key, "name": player.attributes.get_catalog().get_def(key).display_name, "gain": p["gain"], "cost": p["cost"], "affordable": p["ok"]}
+	return best
+
+
+## Progress toward potential: {"overall", "potential", "to_go", "fraction", "at_potential"}. At potential means within the
+## milestone threshold (1 point) of it.
+static func potential_progress(profile: FcCareerProfile, player: FcPlayer) -> Dictionary:
+	var overall := overall_now(player)
+	var potential := overall_cap(profile, player)
+	return {"overall": overall, "potential": potential, "to_go": maxi(0, potential - overall), "fraction": clampf(float(overall) / maxf(1.0, potential), 0.0, 1.0),
+		"at_potential": overall >= potential - int(rules()["potential_threshold"])}
+
+
+## Claims the one-time "max potential reached" milestone when the player is within the threshold of his potential, and flags the
+## banner for the screens. Returns the claim result, or {"ok": false} if it is not due (or was already claimed).
+static func check_potential(profile: FcCareerProfile, player: FcPlayer) -> Dictionary:
+	if profile.milestones.has("potential_reached") or not potential_progress(profile, player)["at_potential"]:
+		return {"ok": false, "reason": ""}
+	var claimed := claim_milestone(profile, "potential_reached")
+	if claimed["ok"]:
+		profile.potential_banner_pending = true
+	return claimed
+
+
+## The development points a season's automatic growth is worth to the player: growth points times `growth_to_points`, rounded.
+static func growth_to_points(growth_points: float) -> int:
+	return roundi(growth_points * float(rules()["growth_to_points"]))
 
 
 # --- role: what the player asks of his coach ---------------------------------------------------------------------------

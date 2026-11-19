@@ -329,6 +329,22 @@ func _career_season_tab() -> Control:
 			show_career_hub()))
 		box.add_child(row)
 		return box
+	if career.profile().potential_banner_pending:
+		var banner := PanelContainer.new()
+		var banner_box := VBoxContainer.new()
+		banner.add_child(banner_box)
+		var title := FcUiTables.label("MAX POTENTIAL REACHED", 26, true)
+		title.add_theme_color_override("font_color", FcUiTheme.ACCENT)
+		banner_box.add_child(title)
+		var story := FcUiTables.label("You've reached your ceiling. Your hard work has unlocked everything your natural potential had to offer. Now it's time to build your legacy.", 16)
+		story.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		story.custom_minimum_size = Vector2(400, 0)
+		banner_box.add_child(story)
+		banner_box.add_child(FcUiTables.label("Reward: XP, a skill point and currency. Your points stay banked; keep playing, keep your rating up and chase records, titles and your legacy.", 14))
+		banner_box.add_child(FcUiTables.button("Continue my career", func():
+			career.dismiss_potential_banner()
+			show_career_hub()))
+		box.add_child(banner)
 	var offer := career.contract_offer()
 	if not offer.is_empty():
 		var talks := PanelContainer.new()
@@ -485,8 +501,26 @@ func _career_card_tab(card: Dictionary) -> Control:
 	return columns
 
 
-func _career_develop_tab(card: Dictionary, progress: Dictionary) -> Control:
+func _career_develop_tab(_card: Dictionary, progress: Dictionary) -> Control:
 	var box := VBoxContainer.new()
+	var view := career.development_view()
+	var pot: Dictionary = view["progress"]
+	var head := FcUiTables.label("Overall %d of your %d potential%s    Development points: %d" % [pot["overall"], pot["potential"], "  (at your ceiling)" if pot["at_potential"] else "  (%d to go)" % pot["to_go"], progress["development_points"]], 17, true)
+	head.tooltip_text = "Potential is the highest overall you can reach. You get there by choosing which skills to raise: skills that count more in overall give more per point."
+	box.add_child(head)
+	var bar := ProgressBar.new()
+	bar.min_value = 0
+	bar.max_value = 100
+	bar.value = pot["fraction"] * 100.0
+	bar.show_percentage = false
+	bar.custom_minimum_size = Vector2(300, 14)
+	box.add_child(bar)
+	var best: Dictionary = view["best"]
+	if not best.is_empty():
+		var hint := "Best next upgrade: %s (+%.2f overall for %d point%s)%s" % [best["name"], best["gain"], best["cost"], "" if best["cost"] == 1 else "s", "" if best["affordable"] else ". You need more points for it."]
+		box.add_child(FcUiTables.label(hint, 15))
+	else:
+		box.add_child(FcUiTables.label("Nothing more can be raised right now. Keep your points: age will lower your rating and you can spend them to hold it.", 15))
 	var train_row := HBoxContainer.new()
 	var train_button := FcUiTables.button("Train (%d sessions left this season)" % progress["training_left"], func():
 		var r := career.train()
@@ -495,30 +529,32 @@ func _career_develop_tab(card: Dictionary, progress: Dictionary) -> Control:
 	train_button.tooltip_text = "A training session gives XP. Each season has a few, and each is worth a little less than the last: training is a choice, not a grind."
 	train_row.add_child(train_button)
 	box.add_child(train_row)
-	var intro := FcUiTables.label("Spend development points to raise an attribute by 1. The cost grows as the attribute gets higher, and your body and potential set the most each one can reach. Points come from levels; XP comes from games, training and milestones.", 14)
+	var intro := FcUiTables.label("Raise the skills that matter for the player you want to be. Each row shows the cost and exactly what the upgrade does to your overall; a blocked row says why. You do not have to raise everything: a few strong skills can take you to your potential.", 14)
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	intro.custom_minimum_size = Vector2(400, 0)
 	box.add_child(intro)
 	var grid := GridContainer.new()
-	grid.columns = 8
+	grid.columns = 6
 	grid.add_theme_constant_override("h_separation", 12)
-	var keys: Array[String] = _defs.attributes.keys()
-	for group in card["groups"]:
-		for row in group["rows"]:
-			var key := ""
-			for k in keys:
-				if _defs.attributes.get_def(k).display_name == row[0]:
-					key = k
-			var cost := FcCareerRules.attribute_cost(int(row[1]))
-			grid.add_child(FcUiTables.label(row[0]))
-			grid.add_child(FcUiTables.label("%d / %d" % [row[1], row[2]]))
-			var raise := FcUiTables.button("+1 (%d)" % cost, func():
-				var r := career.raise_attribute(key)
-				_say(r["reason"])
-				show_career_hub())
-			raise.disabled = int(row[1]) >= int(row[2]) or progress["development_points"] < cost
-			raise.tooltip_text = "Raise %s by 1 for %d development points." % [row[0], cost]
-			grid.add_child(raise)
+	for h in ["Skill", "Now / most", "Cost", "Overall +", "", "Why not"]:
+		grid.add_child(FcUiTables.label(h, 14, true))
+	for row in view["rows"]:
+		grid.add_child(FcUiTables.label(row["name"]))
+		grid.add_child(FcUiTables.label("%d / %d" % [row["value"], row["ceiling"]]))
+		grid.add_child(FcUiTables.label("%d" % row["cost"]))
+		grid.add_child(FcUiTables.label("%+.2f" % row["gain"] if row["blocked"] in ["", "points"] else "-"))
+		var key: String = row["key"]
+		var raise := FcUiTables.button("+1", func():
+			var r := career.raise_attribute(key)
+			_say(r["reason"])
+			show_career_hub())
+		raise.disabled = not row["ok"]
+		raise.tooltip_text = row["reason"]
+		grid.add_child(raise)
+		var why := FcUiTables.label("" if row["ok"] else row["reason"], 13)
+		why.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		why.custom_minimum_size = Vector2(260, 0)
+		grid.add_child(why)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.add_child(grid)

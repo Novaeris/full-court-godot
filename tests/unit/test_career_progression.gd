@@ -143,13 +143,13 @@ func test_training_is_limited_per_season_and_worth_less_each_time() -> void:
 
 # --- attributes under ceilings ------------------------------------------------------------------------------
 
-func test_attribute_costs_rise_with_the_value() -> void:
-	assert_eq(FcCareerRules.attribute_cost(30), 1)
-	assert_eq(FcCareerRules.attribute_cost(59), 1)
-	assert_eq(FcCareerRules.attribute_cost(60), 2)
-	assert_eq(FcCareerRules.attribute_cost(75), 3)
-	assert_eq(FcCareerRules.attribute_cost(85), 4)
-	assert_eq(FcCareerRules.attribute_cost(98), 4)
+func test_attribute_costs_are_flat_until_the_elite_range() -> void:
+	## D-039: the old 1/2/3/4 schedule made cheap low-weight skills beat the skills that count; every raise now costs 1 point
+	## until 92, then 2 (the overall weights decide what is worth buying).
+	for v in [30, 59, 60, 75, 85, 91]:
+		assert_eq(FcCareerRules.attribute_cost(v), 1, "value %d" % v)
+	for v in [92, 98]:
+		assert_eq(FcCareerRules.attribute_cost(v), 2, "value %d" % v)
 
 
 func test_raising_an_attribute_spends_points_and_respects_the_ceiling() -> void:
@@ -167,18 +167,15 @@ func test_raising_an_attribute_spends_points_and_respects_the_ceiling() -> void:
 	assert_eq(p.attributes.get_value(key), value + 1)
 	assert_eq(profile.development_points, 5 - FcCareerRules.attribute_cost(value))
 	assert_true(not c.raise_attribute("bogus")["ok"], "unknown attributes are refused")
-	# with unlimited points the ceiling still stops growth, and nothing ever goes above 99
+	# with unlimited points nothing goes past the attribute ceilings or the potential overall
 	profile.development_points = 100000
-	var ceiling := FcPlayerBuild.attribute_ceiling(key, FcPlayerBuild.spec_of(p))
-	for i in 100:
-		c.raise_attribute(key)
-	assert_eq(p.attributes.get_value(key), ceiling, "growth stops exactly at the ceiling")
-	var refused := c.raise_attribute(key)
-	assert_true(not refused["ok"] and "most your body and potential allow" in refused["reason"])
 	for k in defs.attributes.keys():
 		for i in 120:
 			c.raise_attribute(k)
-		assert_true(p.attributes.get_value(k) <= FcPlayerBuild.attribute_ceiling(k, FcPlayerBuild.spec_of(p)) and p.attributes.get_value(k) <= 99, k)
+		assert_true(p.attributes.get_value(k) <= FcPlayerBuild.attribute_ceiling(k, FcPlayerBuild.spec_of(p, profile.build_potential)) and p.attributes.get_value(k) <= 99, k)
+	assert_true(FcCareerRules.overall_now(p) <= FcCareerRules.overall_cap(profile, p), "the overall never passes the potential")
+	var refused := c.raise_attribute(key)
+	assert_true(not refused["ok"] and ("potential" in refused["reason"] or "most your body allows" in refused["reason"]), refused["reason"])
 
 
 # --- badges ----------------------------------------------------------------------------------------------------

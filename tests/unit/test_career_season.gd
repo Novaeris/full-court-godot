@@ -252,11 +252,16 @@ func _labels_text(node: Node) -> String:
 func test_the_leagues_yearly_progression_cannot_push_attributes_past_the_ceilings() -> void:
 	var c := _signed(95)
 	var spec := FcPlayerBuild.spec_of(c.player(), c.profile().build_potential)
-	var ceiling := FcPlayerBuild.attribute_ceiling("three_point", spec)
-	c.player().attributes.set_value("three_point", 99)   # as if the league's growth had overshot
-	assert_true(99 > ceiling)
+	var key := "speed"
+	var ceiling := FcPlayerBuild.attribute_ceiling(key, spec)
+	for k in defs.attributes.keys():   # the attribute this body limits most
+		if FcPlayerBuild.attribute_ceiling(k, spec) < ceiling:
+			key = k
+			ceiling = FcPlayerBuild.attribute_ceiling(k, spec)
+	c.player().attributes.set_value(key, 99)   # as if something had overshot the body's limit
+	assert_true(99 > ceiling, "a limited attribute exists for this body")
 	c.finish_season()
-	assert_true(c.player().attributes.get_value("three_point") <= ceiling, "the ceiling is a hard limit after the offseason too")
+	assert_true(c.player().attributes.get_value(key) <= ceiling, "the ceiling is a hard limit after the offseason too")
 	assert_eq(c.state.validate(), [] as Array[String])
 
 

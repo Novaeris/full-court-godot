@@ -9,13 +9,16 @@
 	"bonus_development_every_levels": 5,
 	"bonus_development_points": 2,
 	"skill_point_every_levels": 2,
-	"attribute_cost": [[0, 1], [60, 2], [75, 3], [85, 4]],
+	"attribute_cost": [[0, 1], [92, 2]],
+	"growth_to_points": 17,
+	"potential_threshold": 1,
 	"game_xp": {"base": 15, "points": 1.2, "rebounds": 1.0, "assists": 1.5, "steals": 2.0, "blocks": 2.0, "turnovers": -1.5, "win": 12, "minutes_scale_at": 30, "floor": 8, "cap": 120},
 	"training": {"sessions_per_season": 6, "xp": 40, "diminishing": 0.85},
 	"milestones": {
 		"first_game": {"name": "First game", "xp": 50},
 		"ten_point_game": {"name": "Scored 10 or more points in a game", "xp": 40},
 		"double_double": {"name": "A double-double", "xp": 80, "currency": 200},
-		"season_complete": {"name": "Finished a season", "xp": 150, "development_points": 1, "currency": 300}
+		"season_complete": {"name": "Finished a season", "xp": 150, "development_points": 1, "currency": 300},
+		"potential_reached": {"name": "Max potential reached", "xp": 400, "skill_points": 1, "currency": 600}
 	}
 }

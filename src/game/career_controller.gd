@@ -225,11 +225,13 @@ func finish_season() -> Dictionary:
 			profile().contract_pending = true
 			return {"ok": true, "summary": row, "milestone": milestone.get("reason", ""), "games": games, "contract_pending": true}
 	g.career_player_id = profile().player_id
-	g.start_next_season()
+	var report := g.start_next_season()
 	state.agreed_extensions.clear()
 	state.agreed_terms.clear()
+	var granted := _grant_growth(report, year)
 	_after_offseason()
-	return {"ok": true, "summary": row, "milestone": milestone.get("reason", ""), "games": games, "contract_pending": false}
+	_check_potential()
+	return {"ok": true, "summary": row, "milestone": milestone.get("reason", ""), "games": games, "contract_pending": false, "growth_points": granted}
 
 
 ## The contract talks waiting for an answer, or {} : {"team", "salary", "max_salary", "years", "market_ask", "agent", "season"}.
@@ -313,6 +315,41 @@ func season_line(year: int = 0) -> Dictionary:
 	var pid := profile().player_id
 	return {"games": s.games_played(pid), "points": s.per_game(pid, "points"), "rebounds": s.per_game(pid, "rebounds"),
 		"assists": s.per_game(pid, "ast"), "steals": s.per_game(pid, "stl"), "blocks": s.per_game(pid, "blk"), "minutes": s.per_game(pid, "seconds") / 60.0}
+
+
+## The offseason's automatic growth, turned into development points for the player to spend (once per season, even across a save).
+func _grant_growth(report: Dictionary, year: int) -> int:
+	if profile().growth_granted_year == year:
+		return 0
+	profile().growth_granted_year = year
+	var growth: Dictionary = report.get("career_growth", {})
+	var points := FcCareerRules.growth_to_points(float(growth.get(profile().player_id, 0.0)))
+	profile().development_points += points
+	return points
+
+
+## Claims the "max potential reached" milestone when it is due and puts a line in the news.
+func _check_potential() -> void:
+	var claimed := FcCareerRules.check_potential(profile(), player())
+	if claimed["ok"]:
+		state.world.add_news(state.current_date, "milestone", "%s has reached his full potential (overall %d)." % [player().identity.full_name(), FcCareerRules.overall_now(player())], state.user_team_id)
+
+
+## What the Develop tab shows for every attribute and the header: {"progress", "best", "rows": [{"key", "name", "value", "ceiling",
+## "cost", "gain", "ok", "reason", "blocked"}]}. Built from the same preview the real raise uses.
+func development_view() -> Dictionary:
+	var rows: Array = []
+	var spec := FcPlayerBuild.spec_of(player(), profile().build_potential)
+	for key in state.world.definitions.attributes.keys():
+		var p := FcCareerRules.raise_preview(profile(), player(), key)
+		rows.append({"key": key, "name": state.world.definitions.attributes.get_def(key).display_name, "category": state.world.definitions.attributes.get_def(key).category,
+			"value": p["value"], "ceiling": FcPlayerBuild.attribute_ceiling(key, spec), "cost": p["cost"], "gain": p["gain"], "ok": p["ok"], "reason": p["reason"], "blocked": p["blocked"]})
+	return {"progress": FcCareerRules.potential_progress(profile(), player()), "best": FcCareerRules.best_next_upgrade(profile(), player()), "rows": rows}
+
+
+## Hides the "max potential reached" panel after the player has seen it.
+func dismiss_potential_banner() -> void:
+	profile().potential_banner_pending = false
 
 
 ## His rank by overall on his team's roster (1 = the best).
@@ -569,6 +606,8 @@ func raise_attribute(key: String) -> Dictionary:
 	var result := FcCareerRules.raise_attribute(profile(), player(), key)
 	if result["ok"] and _game != null:
 		_game.engine.refresh_teams()   # the simulation reads the player's attributes when it builds a team
+	if result["ok"]:
+		_check_potential()
 	return result
 
 

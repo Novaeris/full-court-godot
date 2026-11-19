@@ -177,6 +177,7 @@ func progress_and_retire(league_id: int, finished_year: int, new_year: int, rng:
 	var coach_cache := {}
 	var retired := 0
 	var progressed := 0
+	var career_growth := {}   # Career Mode: {player id: growth points he would have received}, turned into development points
 	for p in world.players.all():
 		if p.status != FcPlayer.Status.ACTIVE:
 			continue
@@ -190,7 +191,10 @@ func progress_and_retire(league_id: int, finished_year: int, new_year: int, rng:
 		if team_id > 0 and not coach_cache.has(team_id):
 			coach_cache[team_id] = _coach_development(team_id, new_year)
 		var coach: float = coach_cache.get(team_id, 50.0)
-		progression.progress(p, age, coach, rng)
+		var career := career_player_ids.has(p.id)
+		var result := progression.progress(p, age, coach, rng, not career)
+		if career:
+			career_growth[p.id] = float(result["growth_points"])
 		progressed += 1
 		if progression.should_retire(p, age, rng):
 			p.status = FcPlayer.Status.RETIRED
@@ -200,7 +204,10 @@ func progress_and_retire(league_id: int, finished_year: int, new_year: int, rng:
 			_remove_from_roster(p.id)
 			_terminate_contract(p.id, FcContract.Status.TERMINATED)
 			retired += 1
-	return {"progressed": progressed, "retired": retired}
+	var report := {"progressed": progressed, "retired": retired}
+	if not career_growth.is_empty():
+		report["career_growth"] = career_growth
+	return report
 
 
 # --- 2. contract expiry --------------------------------------------------------------

@@ -9,7 +9,7 @@
 	"budget_points": 380,
 	"potential_min": 40,
 	"potential_max": 99,
-	"ceiling_base": 55,
+	"ceiling_base": 65,
 	"ceiling_per_potential": 0.44,
 	"physical": {
 		"height_cm": [165, 232],

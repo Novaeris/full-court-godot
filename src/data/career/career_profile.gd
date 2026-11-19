@@ -60,6 +60,10 @@ var rival_losses: int = 0
 ## The sponsorship deal in force ({} = none): {"sponsor", "amount" a season in currency, "years_left", "edge"}, and the last season it was paid.
 var sponsor_deal: Dictionary = {}
 var sponsor_paid_year: int = 0
+## The last season whose automatic growth was handed to the player as development points (a season is granted once, even across
+## a save), and whether the "max potential reached" moment is waiting to be shown.
+var growth_granted_year: int = 0
+var potential_banner_pending: bool = false
 ## The decision waiting for an answer (an event key, "" = none) and the tags earlier choices left (what kind of person the
 ## player has become: "agent_loyal", "outspoken", ...).
 var pending_event: String = ""
@@ -118,7 +122,7 @@ func to_dict() -> Dictionary:
 		"schema": SCHEMA_VERSION, "profile_id": profile_id, "player_id": player_id, "archetype": archetype_key,
 		"appearance": appearance.duplicate(), "jersey_number": jersey_number, "stage": stage, "xp": xp, "level": level,
 		"development_points": development_points, "skill_points": skill_points, "reputation": reputation, "currency": currency,
-		"badges_owned": badges_owned.duplicate(), "badges_equipped": badges_equipped.duplicate(), "role": role, "minutes_pref": minutes_pref, "usage_pref": usage_pref, "sponsor_deal": sponsor_deal.duplicate(), "sponsor_paid_year": sponsor_paid_year, "rival_player_id": rival_player_id, "rival_wins": rival_wins, "rival_losses": rival_losses, "coach_trust": coach_trust, "chemistry": chemistry, "relationships_year": relationships_year, "contract_pending": contract_pending, "contract_resolved_year": contract_resolved_year, "pending_event": pending_event, "tags": tags.duplicate(), "milestones": milestones.duplicate(), "training_used": training_used.duplicate(),
+		"badges_owned": badges_owned.duplicate(), "badges_equipped": badges_equipped.duplicate(), "role": role, "minutes_pref": minutes_pref, "usage_pref": usage_pref, "growth_granted_year": growth_granted_year, "potential_banner_pending": potential_banner_pending, "sponsor_deal": sponsor_deal.duplicate(), "sponsor_paid_year": sponsor_paid_year, "rival_player_id": rival_player_id, "rival_wins": rival_wins, "rival_losses": rival_losses, "coach_trust": coach_trust, "chemistry": chemistry, "relationships_year": relationships_year, "contract_pending": contract_pending, "contract_resolved_year": contract_resolved_year, "pending_event": pending_event, "tags": tags.duplicate(), "milestones": milestones.duplicate(), "training_used": training_used.duplicate(),
 		"build_potential": build_potential, "build_version": build_version, "ruleset_version": ruleset_version,
 		"decisions": decisions.duplicate(true), "history": history.duplicate(true), "owner_account": owner_account,
 	}
@@ -148,6 +152,8 @@ static func from_dict(d: Dictionary) -> FcCareerProfile:
 	p.role = str(d.get("role", "auto"))
 	p.minutes_pref = clampi(int(d.get("minutes_pref", 0)), -1, 1)
 	p.usage_pref = clampi(int(d.get("usage_pref", 0)), -1, 1)
+	p.growth_granted_year = int(d.get("growth_granted_year", 0))
+	p.potential_banner_pending = bool(d.get("potential_banner_pending", false))
 	var deal = d.get("sponsor_deal", {})
 	if deal is Dictionary and not deal.is_empty():
 		p.sponsor_deal = {"sponsor": str(deal.get("sponsor", "")), "amount": int(deal.get("amount", 0)), "years_left": int(deal.get("years_left", 0)), "edge": str(deal.get("edge", "safe"))}
