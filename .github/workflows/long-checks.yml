@@ -59,3 +59,29 @@ jobs:
       - run: ~/godot/godot --headless --path . --import --quit
       - name: Owner stress test, 30 seasons, careful / naive / reckless (exit code 1 if a run breaks)
         run: ~/godot/godot --headless --path . --script res://tools/owner_stress.gd -- seasons=30 teams=12 seeds=101,102
+
+  career:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Godot
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux
+      - name: Download Godot (official release)
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot && cd ~/godot
+          curl -fsSL -o godot.zip "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}_linux.x86_64" godot
+          chmod +x godot
+      - run: ~/godot/godot --headless --path . --import --quit
+      - name: A full Career Mode career (exit code 1 if the league or a rule breaks)
+        run: ~/godot/godot --headless --path . --script res://tools/career_playthrough.gd -- seasons=20 seed=7
+      - name: Career balance across archetypes (exit code 1 if an archetype is out of band)
+        run: ~/godot/godot --headless --path . --script res://tools/career_balance.gd -- seeds=2
+
