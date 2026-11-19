@@ -210,6 +210,12 @@ func finish_season() -> Dictionary:
 	var year := state.current_season
 	var row := _record_season(year)
 	var milestone := FcCareerRules.claim_milestone(profile(), "season_complete")
+	if profile().relationships_year != year:
+		profile().relationships_year = year
+		var line := season_line(year)
+		var rel := FcCareerRules.relationships_after_season(profile(), {"rank": _team_rank(), "win_pct": float(row["wins"]) / maxf(1.0, row["wins"] + row["losses"]), "games": int(line.get("games", 0))})
+		row["trust_change"] = rel["coach_trust"]
+		row["chemistry_change"] = rel["chemistry"]
 	if profile().contract_resolved_year != year:
 		var contract := state.world.active_contract_of(profile().player_id)
 		if contract != null and contract.end_season() <= year:
@@ -306,6 +312,17 @@ func season_line(year: int = 0) -> Dictionary:
 		"assists": s.per_game(pid, "ast"), "steals": s.per_game(pid, "stl"), "blocks": s.per_game(pid, "blk"), "minutes": s.per_game(pid, "seconds") / 60.0}
 
 
+## His rank by overall on his team's roster (1 = the best).
+func _team_rank() -> int:
+	var ratings := FcPlayerRatings.load_default()
+	var mine := ratings.overall(player())
+	var rank := 1
+	for pid in state.world.teams.get_by_id(state.user_team_id).roster.player_ids:
+		if pid != profile().player_id and ratings.overall(state.world.players.get_by_id(pid)) > mine:
+			rank += 1
+	return rank
+
+
 func _record_season(year: int) -> Dictionary:
 	var line := season_line(year)
 	var wins := 0
@@ -344,6 +361,14 @@ func _after_offseason() -> void:
 	for entry in _game.season().recent_boxes:
 		_seen[_box_key(entry)] = true
 	_roll_event()
+
+
+## How the coach and the teammates see the player: {"coach_trust", "chemistry", "coach_label", "chemistry_label"}.
+func relationships() -> Dictionary:
+	var p := profile()
+	return {"coach_trust": p.coach_trust, "chemistry": p.chemistry,
+		"coach_label": "Trusted" if p.coach_trust >= 70 else ("Doubtful" if p.coach_trust < 35 else "Neutral"),
+		"chemistry_label": "Close-knit" if p.chemistry >= 70 else ("Strained" if p.chemistry < 35 else "Fine")}
 
 
 ## The decision waiting for an answer, as {"key", "title", "text", "choices": [{"key", "label", "note"}]} or {} if none.

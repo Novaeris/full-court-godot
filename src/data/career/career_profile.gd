@@ -46,6 +46,12 @@ var usage_pref: int = 0
 ## Contract talks: true while the player's contract ends this season and he has not decided; the season of the last talks.
 var contract_pending: bool = false
 var contract_resolved_year: int = 0
+## Relationships, 0-100 (50 = neutral): how much the coach trusts the player and how well he fits with his teammates.
+## They change each season (FcCareerRules.relationships_after_season) and feed back into role requests, contract talks and growth.
+var coach_trust: int = 50
+var chemistry: int = 50
+## The last season whose relationship changes were applied (a season is scored once, even across a save).
+var relationships_year: int = 0
 ## The decision waiting for an answer (an event key, "" = none) and the tags earlier choices left (what kind of person the
 ## player has become: "agent_loyal", "outspoken", ...).
 var pending_event: String = ""
@@ -84,6 +90,8 @@ func validate() -> Array[String]:
 		errors.append("career stage %d is not valid" % stage)
 	if xp < 0 or level < 1 or development_points < 0 or skill_points < 0 or reputation < 0 or currency < 0:
 		errors.append("xp, points, reputation and currency cannot be negative and the level starts at 1")
+	if coach_trust < 0 or coach_trust > 100 or chemistry < 0 or chemistry > 100:
+		errors.append("relationships are 0-100")
 	if not ["auto", "starter", "bench"].has(role):
 		errors.append("role must be auto, starter or bench")
 	if absi(minutes_pref) > 1 or absi(usage_pref) > 1:
@@ -102,7 +110,7 @@ func to_dict() -> Dictionary:
 		"schema": SCHEMA_VERSION, "profile_id": profile_id, "player_id": player_id, "archetype": archetype_key,
 		"appearance": appearance.duplicate(), "jersey_number": jersey_number, "stage": stage, "xp": xp, "level": level,
 		"development_points": development_points, "skill_points": skill_points, "reputation": reputation, "currency": currency,
-		"badges_owned": badges_owned.duplicate(), "badges_equipped": badges_equipped.duplicate(), "role": role, "minutes_pref": minutes_pref, "usage_pref": usage_pref, "contract_pending": contract_pending, "contract_resolved_year": contract_resolved_year, "pending_event": pending_event, "tags": tags.duplicate(), "milestones": milestones.duplicate(), "training_used": training_used.duplicate(),
+		"badges_owned": badges_owned.duplicate(), "badges_equipped": badges_equipped.duplicate(), "role": role, "minutes_pref": minutes_pref, "usage_pref": usage_pref, "coach_trust": coach_trust, "chemistry": chemistry, "relationships_year": relationships_year, "contract_pending": contract_pending, "contract_resolved_year": contract_resolved_year, "pending_event": pending_event, "tags": tags.duplicate(), "milestones": milestones.duplicate(), "training_used": training_used.duplicate(),
 		"build_potential": build_potential, "build_version": build_version, "ruleset_version": ruleset_version,
 		"decisions": decisions.duplicate(true), "history": history.duplicate(true), "owner_account": owner_account,
 	}
@@ -132,6 +140,9 @@ static func from_dict(d: Dictionary) -> FcCareerProfile:
 	p.role = str(d.get("role", "auto"))
 	p.minutes_pref = clampi(int(d.get("minutes_pref", 0)), -1, 1)
 	p.usage_pref = clampi(int(d.get("usage_pref", 0)), -1, 1)
+	p.coach_trust = clampi(int(d.get("coach_trust", 50)), 0, 100)
+	p.chemistry = clampi(int(d.get("chemistry", 50)), 0, 100)
+	p.relationships_year = int(d.get("relationships_year", 0))
 	p.contract_pending = bool(d.get("contract_pending", false))
 	p.contract_resolved_year = int(d.get("contract_resolved_year", 0))
 	p.pending_event = str(d.get("pending_event", ""))
@@ -152,7 +163,7 @@ static func from_dict(d: Dictionary) -> FcCareerProfile:
 	for row in d.get("history", []):
 		if row is Dictionary:
 			var clean: Dictionary = row.duplicate(true)
-			for key in ["year", "team_id", "games", "wins", "losses"]:   # JSON turns whole numbers into floats
+			for key in ["year", "team_id", "games", "wins", "losses", "trust_change", "chemistry_change"]:   # JSON turns whole numbers into floats
 				if clean.has(key):
 					clean[key] = int(clean[key])
 			p.history.append(clean)

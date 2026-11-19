@@ -103,6 +103,7 @@ func test_a_counter_within_the_ceiling_wins_more_and_one_above_it_is_refused() -
 	var c := _expiring(85, "agent_flashy")
 	c.profile().reputation = 20
 	c.finish_season()
+	c.profile().coach_trust = 80   # the season just scored may have moved it: fix it so the ceiling is clearly above 5%
 	var offer := c.contract_offer()
 	assert_true(offer["max_salary"] > offer["salary"])
 	var too_much := c.answer_contract("counter", int(offer["max_salary"]) + 1000000)

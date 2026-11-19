@@ -181,6 +181,46 @@ static func raise_attribute(profile: FcCareerProfile, player: FcPlayer, key: Str
 
 # --- role: what the player asks of his coach ---------------------------------------------------------------------------
 
+## How the season changes the relationships. `context` = {"rank": his rank by overall on his team (1 = best), "win_pct": the
+## team's winning share, "games": games he played}. The coach trusts a player who is among his best (and plays); a player who sits
+## below the rotation loses trust. Teammates bond over winning and over community work, and are put off by an outspoken player.
+## Returns {"coach_trust", "chemistry", "development_points"} (the changes); a close team (chemistry 70+) also grants a development point.
+static func relationships_after_season(profile: FcCareerProfile, context: Dictionary) -> Dictionary:
+	var rank := int(context.get("rank", 8))
+	var trust := 0
+	if rank <= 5:
+		trust += 3
+	elif rank <= 8:
+		trust += 1
+	else:
+		trust -= 2
+	if int(context.get("games", 0)) < 10:
+		trust -= 2
+	if profile.tags.has("role_push"):
+		trust -= 1
+	if profile.tags.has("hardball"):
+		trust -= 1
+	var bond := 0
+	var win_pct := float(context.get("win_pct", 0.5))
+	if win_pct >= 0.55:
+		bond += 3
+	elif win_pct < 0.40:
+		bond -= 2
+	if profile.tags.has("community"):
+		bond += 2
+	if profile.tags.has("outspoken"):
+		bond -= 2
+	var before_trust := profile.coach_trust
+	var before_chemistry := profile.chemistry
+	profile.coach_trust = clampi(profile.coach_trust + trust, 0, 100)
+	profile.chemistry = clampi(profile.chemistry + bond, 0, 100)
+	var points := 0
+	if profile.chemistry >= 70:
+		points = 1
+		profile.development_points += 1
+	return {"coach_trust": profile.coach_trust - before_trust, "chemistry": profile.chemistry - before_chemistry, "development_points": points}
+
+
 ## Why the coach refuses a request ("" = accepted). A player must have earned a bigger role: to start he must be within
 ## `START_MARGIN` overall points of his team's fifth best player (a coach-meeting "role push" earlier widens that by
 ## `ROLE_PUSH_BONUS`), and to shoot first (+1 usage) or play more minutes (+1) he needs some reputation. Asking to come off
@@ -197,7 +237,7 @@ static func role_problem(profile: FcCareerProfile, player_overall: float, team_o
 		sorted.sort()
 		sorted.reverse()
 		var fifth := float(sorted[mini(4, sorted.size() - 1)]) if not sorted.is_empty() else 0.0
-		var margin := START_MARGIN + (ROLE_PUSH_BONUS if profile.tags.has("role_push") else 0.0)
+		var margin := START_MARGIN + (ROLE_PUSH_BONUS if profile.tags.has("role_push") else 0.0) + float(profile.coach_trust - 50) / 10.0   # trust: +-5 points
 		if player_overall < fifth - margin:
 			return "The coach says you are not ready to start: you are rated %d and his fifth starter is %d." % [roundi(player_overall), roundi(fifth)]
 	if (usage_pref > 0 or minutes_pref > 0) and profile.reputation < REPUTATION_FOR_MORE:
@@ -236,7 +276,7 @@ static func contract_terms(profile: FcCareerProfile, market_ask: int, player_ove
 	var eighth := float(sorted[mini(7, sorted.size() - 1)]) if not sorted.is_empty() else player_overall
 	var scale := 0.9 + 0.2 * clampf((player_overall - eighth) / 20.0, 0.0, 1.0)
 	var offer := clampi(roundi(market_ask * scale / 10000.0) * 10000, cap.min_player_salary, cap.max_player_salary)
-	var push := (agent_negotiation(profile) - 50.0) / 50.0 * 0.08 + float(profile.reputation) / 100.0 * 0.05
+	var push := (agent_negotiation(profile) - 50.0) / 50.0 * 0.08 + float(profile.reputation) / 100.0 * 0.05 + float(profile.coach_trust - 50) / 50.0 * 0.03
 	var ceiling := clampi(roundi(offer * (1.0 + push) / 10000.0) * 10000, offer, cap.max_player_salary)
 	return {"salary": offer, "max_salary": maxi(offer, ceiling), "years": years}
 

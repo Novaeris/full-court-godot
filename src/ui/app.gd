@@ -406,6 +406,10 @@ func _career_season_tab() -> Control:
 	finish.tooltip_text = "Plays everything left, records your season, and runs the league offseason into the next season."
 	buttons.add_child(finish)
 	box.add_child(buttons)
+	var rel := career.relationships()
+	var rel_label := FcUiTables.label("Coach: %s (%d)    Teammates: %s (%d)    Reputation %d    Currency %d" % [rel["coach_label"], rel["coach_trust"], rel["chemistry_label"], rel["chemistry"], career.profile().reputation, career.profile().currency], 14)
+	rel_label.tooltip_text = "The coach trusts players who are among his best and who play; teammates bond over winning and community work. Trust changes what role you can ask for and how hard you can bargain; a close team earns a development point each season."
+	box.add_child(rel_label)
 	var line := career.season_line()
 	if int(line.get("games", 0)) > 0:
 		box.add_child(FcUiTables.label("This season: %d games, %.1f points, %.1f rebounds, %.1f assists, %.1f minutes a game" % [line["games"], line["points"], line["rebounds"], line["assists"], line["minutes"]], 15))
