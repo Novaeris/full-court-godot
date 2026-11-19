@@ -134,10 +134,10 @@ func test_the_about_screen_shows_the_licenses_and_log_buttons() -> void:
 func test_the_main_menu_offers_the_three_modes_and_each_one_opens() -> void:
 	app.show_main_menu()
 	var text := _labels_text(app)
-	assert_true("Owner Mode  (Available)" in text and "Career Mode  (In development)" in text and "Dynasty Mode  (Planned)" in text)
+	assert_true("Owner Mode  (Available)" in text and "Career Mode  (Playable)" in text and "Dynasty Mode  (Planned)" in text)
 	assert_true(_has_button("Owner Mode") and _has_button("Career Mode") and _has_button("Dynasty Mode"))
 	app.show_career_home()
-	assert_true("Career Mode" in _labels_text(app) and "in development" in _labels_text(app) and _has_button("Back to the main menu"))
+	assert_true("Career Mode" in _labels_text(app) and "choosing which skills to raise" in _labels_text(app) and _has_button("Back to the main menu"))
 	app.show_dynasty_home()
 	assert_true("planned" in _labels_text(app))
 	app.show_main_menu()

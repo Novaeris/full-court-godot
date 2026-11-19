@@ -110,11 +110,31 @@ func is_retired() -> bool:
 	return player().status == FcPlayer.Status.RETIRED
 
 
-## A team chosen by a seeded "draft" (the same for the same career and season): the player may also pick a team himself.
-func draft_team() -> int:
-	var ids := state.world.teams.ids()
+## The scouting report: how the league rates this prospect, where he is projected to go and which team holds that pick. Teams pick
+## weakest roster first (the worst team has pick 1). Seeded by career and season, so it is the same every time it is asked.
+## Returns {"overall", "potential", "score", "pick", "picks", "team_id", "note"}.
+func draft_outlook() -> Dictionary:
+	var world := state.world
+	var ratings := FcPlayerRatings.load_default()
+	var strength: Dictionary = {}
+	for tid in world.teams.ids():
+		var total := 0.0
+		for pid in world.teams.get_by_id(tid).roster.player_ids:
+			total += ratings.overall(world.players.get_by_id(pid))
+		strength[tid] = total
+	var order: Array = world.teams.ids().duplicate()
+	order.sort_custom(func(a, b): return strength[a] < strength[b] if strength[a] != strength[b] else a < b)
+	var overall := FcCareerRules.overall_now(player())
+	var potential := profile().build_potential
+	var score := FcCareerRules.prospect_score(overall, potential)
 	var rng := state.rng.fork("career-draft:%d" % state.current_season)
-	return ids[rng.range_int(0, ids.size() - 1)]
+	var pick := FcCareerRules.projected_pick(score, order.size(), rng.range_int(-2, 2))
+	return {"overall": overall, "potential": potential, "score": score, "pick": pick, "picks": order.size(), "team_id": order[pick - 1], "note": FcCareerRules.scouting_note(pick, order.size())}
+
+
+## The team that drafts the player (see draft_outlook).
+func draft_team() -> int:
+	return int(draft_outlook()["team_id"])
 
 
 ## Signs the player to a team with a rookie contract (a full roster releases its weakest player). Returns {"ok", "reason"}.
@@ -129,7 +149,8 @@ func join_team(team_id: int) -> Dictionary:
 	var year := state.current_season
 	if team.roster.size() >= rules.roster_max:
 		FcOffseason.new(state.world).make_room(team, year)
-	var salary := rules.cap.rookie_salary(15, 30)
+	var outlook := draft_outlook()
+	var salary := rules.cap.rookie_salary(int(outlook["pick"]), int(outlook["picks"]))
 	var contract := FcPlayerMarket.make_contract(state.world.ids.next_id(FcWorld.KIND_CONTRACT), profile().player_id, team_id, year,
 		rules.cap.rookie_contract_years, salary, rules.cap, FcDate.new(year, 7, 1))
 	state.world.contracts.add(contract)
@@ -142,7 +163,7 @@ func join_team(team_id: int) -> Dictionary:
 	_game.career_player_id = profile().player_id
 	_roll_event()
 	state.world.add_news(state.current_date, "signing", "%s signed with %s." % [player().identity.full_name(), state.world.team_display_name(team_id)], team_id)
-	return {"ok": true, "reason": "You signed with %s on a %d-year rookie contract." % [state.world.team_display_name(team_id), rules.cap.rookie_contract_years]}
+	return {"ok": true, "reason": "You signed with %s on a %d-year rookie contract (pick %d)." % [state.world.team_display_name(team_id), rules.cap.rookie_contract_years, int(outlook["pick"])]}
 
 
 ## The next game of the player's team: {"date", "opponent", "home"} or {} (season over or no team).

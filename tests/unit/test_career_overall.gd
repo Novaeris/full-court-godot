@@ -279,3 +279,35 @@ func test_the_spending_strategies_rank_as_designed() -> void:
 	assert_true(low["final"] < even["final"] and template["final"] < even["final"], "low-weight and strengths-only spending finish clearly lower")
 	assert_true(focused["unspent"] <= 5, "no large idle bank when spending sensibly")
 	assert_true(focused["age"] == 0 or focused["age"] >= 24, "potential is not reached unrealistically early")
+
+
+# --- the prospect step: scouting and draft position -----------------------------------------------------------------
+
+func test_a_better_prospect_goes_higher_and_the_pick_is_pure() -> void:
+	var low := FcCareerRules.prospect_score(50, 55)
+	var high := FcCareerRules.prospect_score(70, 85)
+	assert_true(FcCareerRules.projected_pick(high, 30, 0) < FcCareerRules.projected_pick(low, 30, 0))
+	assert_eq(FcCareerRules.projected_pick(90.0, 30, 0), 1, "a star goes first")
+	assert_eq(FcCareerRules.projected_pick(40.0, 30, 0), 30, "a weak prospect goes last")
+	assert_eq(FcCareerRules.projected_pick(90.0, 30, -2), 1, "the surprise never leaves the board")
+	assert_eq(FcCareerRules.projected_pick(40.0, 30, 2), 30)
+	assert_eq(FcCareerRules.projected_pick(70.0, 30, 1), FcCareerRules.projected_pick(70.0, 30, 1))
+	assert_true(FcCareerRules.scouting_note(1, 30) != FcCareerRules.scouting_note(30, 30))
+
+
+func test_the_scouting_report_is_stable_and_the_rookie_contract_follows_the_pick() -> void:
+	var spec := FcPlayerBuild.default_spec("two_way_wing", 3, defs)
+	spec["first_name"] = "Maya"
+	spec["last_name"] = "Okoro"
+	var c: FcCareerController = FcCareerController.new_career(spec, 151)["controller"]
+	var outlook := c.draft_outlook()
+	assert_eq(outlook, c.draft_outlook(), "the same report every time it is asked")
+	assert_true(outlook["pick"] >= 1 and outlook["pick"] <= outlook["picks"])
+	assert_eq(c.draft_team(), outlook["team_id"])
+	assert_true(not outlook["note"].is_empty())
+	var result := c.join_team(outlook["team_id"])
+	assert_true(result["ok"] and ("pick %d" % outlook["pick"]) in result["reason"])
+	var team := c.state.world.team_of_player(c.profile().player_id)
+	var rules := c.state.world.rules_of_league(c.state.world.league_of_team(team.id).id)
+	var contract = c.state.world.contracts.all().filter(func(k): return k.player_id == c.profile().player_id)[0]
+	assert_eq(contract.salary_for(c.state.current_season), rules.cap.rookie_salary(outlook["pick"], outlook["picks"]), "paid by the slot he was drafted in")

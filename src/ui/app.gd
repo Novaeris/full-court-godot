@@ -140,7 +140,7 @@ func show_main_menu() -> void:
 	modes.add_theme_constant_override("separation", 12)
 	for entry in [
 			["Owner Mode", "Run every part of a franchise for up to 50 seasons: money, people, players, the draft, the league's rules.", show_new_league, "Available"],
-			["Career Mode", "Create one player and take them through a career. Draft, contracts, teams, rivalries.", show_career_home, "In development"],
+			["Career Mode", "Create one player and take them through a career. Draft, contracts, teams, rivalries.", show_career_home, "Playable"],
 			["Dynasty Mode", "Collect hand-made player cards, build a lineup and compete.", show_dynasty_home, "Planned"]]:
 		var card := PanelContainer.new()
 		var inner := VBoxContainer.new()
@@ -190,9 +190,9 @@ func show_main_menu() -> void:
 ## calendar and games come in later phases (docs/CAREER_MODE_PLAN.md); this screen says so plainly.
 func show_career_home() -> void:
 	var box := _reset("Career Mode")
-	var text := FcUiTables.label("Create one player (name, body, position, strengths) and take them through a career of about 20 seasons: development, contracts, teams, rivalries, a legacy. Later, the same player can go online.
+	var text := FcUiTables.label("Create one player (name, body, position, strengths) and take them through a career of about 20 seasons: scouting and the draft, decisions, contracts, relationships, rivalries, sponsorships and a legacy. You reach your potential by choosing which skills to raise. Later, the same player can go online.
 
-Status: in development. You can create a player and see their card; progression and playing seasons are the next steps. See docs/CAREER_MODE_PLAN.md.", 16)
+See docs/CAREER_MODE_PLAN.md.", 16)
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text.custom_minimum_size = Vector2(400, 0)
 	box.add_child(text)
@@ -312,6 +312,8 @@ func _career_season_tab() -> Control:
 		return box
 	if not career.is_signed():
 		box.add_child(FcUiTables.label("You do not have a team yet. Choose one, or let the draft decide.", 16, true))
+		var outlook := career.draft_outlook()
+		box.add_child(FcUiTables.label("Scouting report: overall %d, potential %d. Projected pick %d of %d, to %s. %s" % [outlook["overall"], outlook["potential"], outlook["pick"], outlook["picks"], career.state.world.team_display_name(outlook["team_id"]), outlook["note"]], 15))
 		var row := HBoxContainer.new()
 		var picker := OptionButton.new()
 		for tid in career.state.world.teams.ids():

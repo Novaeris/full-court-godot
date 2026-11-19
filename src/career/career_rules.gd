@@ -270,6 +270,34 @@ static func growth_to_points(growth_points: float) -> int:
 	return roundi(growth_points * float(rules()["growth_to_points"]))
 
 
+# --- prospect: scouting and draft position ---------------------------------------------------------------------------
+
+## How highly scouts rate a prospect: mostly what he is now, some of what he can become (0.6 overall, 0.4 potential).
+static func prospect_score(overall: int, potential: int) -> float:
+	return 0.6 * float(overall) + 0.4 * float(potential)
+
+
+## The pick a prospect is projected to go (1 = first) among `picks` picks: a score of 50 or less goes last, 85 or more first,
+## and the seeded `jitter` (a whole number, usually -2 to 2) is the draft-night surprise. Pure, so the same player always gets the same range.
+static func projected_pick(score: float, picks: int, jitter: int) -> int:
+	if picks <= 1:
+		return 1
+	var share := clampf((score - 50.0) / 35.0, 0.0, 1.0)
+	return clampi(1 + roundi((1.0 - share) * float(picks - 1)) + jitter, 1, picks)
+
+
+## A plain scouting line for the prospect screen.
+static func scouting_note(pick: int, picks: int) -> String:
+	var share := float(pick - 1) / float(maxi(picks - 1, 1))
+	if share <= 0.15:
+		return "Scouts see a future star: a top pick."
+	if share <= 0.5:
+		return "A solid first-round talent."
+	if share <= 0.85:
+		return "A late pick: you will have to earn your place."
+	return "Scouts doubt you: expect to go last. Prove them wrong."
+
+
 # --- role: what the player asks of his coach ---------------------------------------------------------------------------
 
 # --- sponsorships ----------------------------------------------------------------------------------------------------------

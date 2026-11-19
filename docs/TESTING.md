@@ -163,3 +163,6 @@ Career Mode (2026-11-18): `test_career_foundation.gd` (archetypes valid and with
 `test_career_rival.gd` (6 tests): game score, seeded peer rivals, duel scoring and rewards, the challenge picks a rival on another team, a real duel scored once from the league's box score, saving and a retired rival. `test_career_sponsor.gd` (7 tests): no offers for unknown players and scaling, one deal at a time paid once a season, the bold brand's cost, dropping a deal, cosmetic looks, an end-to-end season and saving.
 
 - `tests/unit/test_career_overall.gd` (11 tests): growth equals the original algorithm, other players bit-identical, once-per-season grant, preview equals action, rounding cap, banked points, best next upgrade, milestone once and saved, offensive star vs defensive specialist, strategy ranking.
+
+## Career click test (tools/career_click_test.ps1)
+`tools/career_click_test.gd` drives the real Career screens with simulated mouse clicks: Career Mode, Create a player, Check my build, Create my player, Let the draft decide (the team must match the scouting report), the first decision, Play next week, +1 on a skill, Train, Finish the season, Save. 18 clicks, 0 problems (2026-11-19). Two tests in `test_career_overall.gd` cover the scouting report.

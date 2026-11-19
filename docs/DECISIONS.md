@@ -221,3 +221,6 @@ Built on the founder's instruction to continue; the following product choices we
 - `raise_preview` is the single calculation behind the Develop tab and the real raise. A raise is blocked if the displayed (rounded) overall would pass potential; blocked rows say why. Banked points stay spendable (for example to hold the rating through decline).
 - **Deviation to note:** besides `growth_to_points`, the cost schedule was flattened from 1/2/3/4 (at 0/60/75/85) to 1 until 92, then 2, and `ceiling_base` went 55 to 65. With the old curve cheap low-weight skills beat the heavy ones, so focused and even spending ended equal. Measured results are in `docs/ARCHITECTURE.md`.
 - Reaching potential claims a one-time milestone (`potential_reached`: XP, a skill point, currency), shows a banner and a news line; nothing ends there.
+
+## D-040 Career Mode: a light prospect step (2026-11-19, Claude's recommended choice, founder away)
+- Instead of a second league (college or development league), the prospect stage is a scouting report: `prospect_score` (0.6 overall + 0.4 potential) gives a projected pick, a seeded draft-night surprise of up to 2 picks, and the team holding that pick (weakest roster picks first). The rookie contract follows the pick slot. A full pre-professional league stays unbuilt until there is a reason to simulate one.
