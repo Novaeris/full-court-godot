@@ -179,6 +179,68 @@ static func raise_attribute(profile: FcCareerProfile, player: FcPlayer, key: Str
 	return {"ok": true, "reason": "Raised to %d." % (value + 1), "value": value + 1, "cost": cost}
 
 
+# --- role: what the player asks of his coach ---------------------------------------------------------------------------
+
+## Why the coach refuses a request ("" = accepted). A player must have earned a bigger role: to start he must be within
+## `START_MARGIN` overall points of his team's fifth best player (a coach-meeting "role push" earlier widens that by
+## `ROLE_PUSH_BONUS`), and to shoot first (+1 usage) or play more minutes (+1) he needs some reputation. Asking to come off
+## the bench, to play less or to pass first is always allowed.
+const START_MARGIN := 4.0
+const ROLE_PUSH_BONUS := 5.0
+const REPUTATION_FOR_MORE := 5
+
+static func role_problem(profile: FcCareerProfile, player_overall: float, team_overalls: Array, role: String, minutes_pref: int, usage_pref: int) -> String:
+	if not ["auto", "starter", "bench"].has(role) or absi(minutes_pref) > 1 or absi(usage_pref) > 1:
+		return "That is not a valid request."
+	if role == "starter":
+		var sorted := team_overalls.duplicate()
+		sorted.sort()
+		sorted.reverse()
+		var fifth := float(sorted[mini(4, sorted.size() - 1)]) if not sorted.is_empty() else 0.0
+		var margin := START_MARGIN + (ROLE_PUSH_BONUS if profile.tags.has("role_push") else 0.0)
+		if player_overall < fifth - margin:
+			return "The coach says you are not ready to start: you are rated %d and his fifth starter is %d." % [roundi(player_overall), roundi(fifth)]
+	if (usage_pref > 0 or minutes_pref > 0) and profile.reputation < REPUTATION_FOR_MORE:
+		return "The coach wants you to earn it first: shooting first or playing more needs %d reputation (you have %d)." % [REPUTATION_FOR_MORE, profile.reputation]
+	return ""
+
+
+## The simulation inputs for a role request: {"role_bonus", "minutes_pref", "usage_pref"}.
+static func role_inputs(profile: FcCareerProfile) -> Dictionary:
+	var bonus := 0.0
+	if profile.role == "starter":
+		bonus = 15.0
+	elif profile.role == "bench":
+		bonus = -40.0
+	return {"role_bonus": bonus, "minutes_pref": float(profile.minutes_pref), "usage_pref": float(profile.usage_pref)}
+
+
+# --- contracts: the offer and what an agent can win ----------------------------------------------------------------------
+
+## The player's negotiating strength (0-100): a veteran agent is solid, a flashy agent aggressive, no agent weaker.
+static func agent_negotiation(profile: FcCareerProfile) -> float:
+	if profile.tags.has("agent_flashy"):
+		return 75.0
+	if profile.tags.has("agent_loyal"):
+		return 60.0
+	return 40.0
+
+
+## The team's offer for a new contract and the most it would pay if pushed:
+## {"salary", "max_salary", "years"}. The offer is the market price for his value scaled 90-110% by how he ranks in the team's
+## rotation (a clear rotation player gets full value); the agent and the player's reputation raise the ceiling by a few percent.
+static func contract_terms(profile: FcCareerProfile, market_ask: int, player_overall: float, team_overalls: Array, years: int, cap: FcCapRules) -> Dictionary:
+	var sorted := team_overalls.duplicate()
+	sorted.sort()
+	sorted.reverse()
+	var eighth := float(sorted[mini(7, sorted.size() - 1)]) if not sorted.is_empty() else player_overall
+	var scale := 0.9 + 0.2 * clampf((player_overall - eighth) / 20.0, 0.0, 1.0)
+	var offer := clampi(roundi(market_ask * scale / 10000.0) * 10000, cap.min_player_salary, cap.max_player_salary)
+	var push := (agent_negotiation(profile) - 50.0) / 50.0 * 0.08 + float(profile.reputation) / 100.0 * 0.05
+	var ceiling := clampi(roundi(offer * (1.0 + push) / 10000.0) * 10000, offer, cap.max_player_salary)
+	return {"salary": offer, "max_salary": maxi(offer, ceiling), "years": years}
+
+
 # --- badges ----------------------------------------------------------------------------------------------------
 
 ## Why a badge cannot be unlocked now ("" = it can). Checks level, attribute minimums, prerequisite badges and skill points.

@@ -38,6 +38,14 @@ var ruleset_version: int = 1
 ## Milestone keys already claimed (each pays once) and training sessions used per season ({"2026": 3}).
 var milestones: Array[String] = []
 var training_used: Dictionary = {}
+## What the player asks of his coach: "auto" (the coach decides), "starter" or "bench"; minutes and usage preferences from -1 to +1.
+## The coach can refuse a request the player has not earned (see FcCareerRules.role_problem).
+var role: String = "auto"
+var minutes_pref: int = 0
+var usage_pref: int = 0
+## Contract talks: true while the player's contract ends this season and he has not decided; the season of the last talks.
+var contract_pending: bool = false
+var contract_resolved_year: int = 0
 ## The decision waiting for an answer (an event key, "" = none) and the tags earlier choices left (what kind of person the
 ## player has become: "agent_loyal", "outspoken", ...).
 var pending_event: String = ""
@@ -76,6 +84,10 @@ func validate() -> Array[String]:
 		errors.append("career stage %d is not valid" % stage)
 	if xp < 0 or level < 1 or development_points < 0 or skill_points < 0 or reputation < 0 or currency < 0:
 		errors.append("xp, points, reputation and currency cannot be negative and the level starts at 1")
+	if not ["auto", "starter", "bench"].has(role):
+		errors.append("role must be auto, starter or bench")
+	if absi(minutes_pref) > 1 or absi(usage_pref) > 1:
+		errors.append("minutes and usage preferences are -1, 0 or +1")
 	var maximum := int(FcBuildRules.rules().get("max_badges_equipped", 5))
 	if badges_equipped.size() > maximum:
 		errors.append("at most %d badges can be equipped" % maximum)
@@ -90,7 +102,7 @@ func to_dict() -> Dictionary:
 		"schema": SCHEMA_VERSION, "profile_id": profile_id, "player_id": player_id, "archetype": archetype_key,
 		"appearance": appearance.duplicate(), "jersey_number": jersey_number, "stage": stage, "xp": xp, "level": level,
 		"development_points": development_points, "skill_points": skill_points, "reputation": reputation, "currency": currency,
-		"badges_owned": badges_owned.duplicate(), "badges_equipped": badges_equipped.duplicate(), "pending_event": pending_event, "tags": tags.duplicate(), "milestones": milestones.duplicate(), "training_used": training_used.duplicate(),
+		"badges_owned": badges_owned.duplicate(), "badges_equipped": badges_equipped.duplicate(), "role": role, "minutes_pref": minutes_pref, "usage_pref": usage_pref, "contract_pending": contract_pending, "contract_resolved_year": contract_resolved_year, "pending_event": pending_event, "tags": tags.duplicate(), "milestones": milestones.duplicate(), "training_used": training_used.duplicate(),
 		"build_potential": build_potential, "build_version": build_version, "ruleset_version": ruleset_version,
 		"decisions": decisions.duplicate(true), "history": history.duplicate(true), "owner_account": owner_account,
 	}
@@ -117,6 +129,11 @@ static func from_dict(d: Dictionary) -> FcCareerProfile:
 		p.badges_owned.append(str(key))
 	for key in d.get("badges_equipped", []):
 		p.badges_equipped.append(str(key))
+	p.role = str(d.get("role", "auto"))
+	p.minutes_pref = clampi(int(d.get("minutes_pref", 0)), -1, 1)
+	p.usage_pref = clampi(int(d.get("usage_pref", 0)), -1, 1)
+	p.contract_pending = bool(d.get("contract_pending", false))
+	p.contract_resolved_year = int(d.get("contract_resolved_year", 0))
 	p.pending_event = str(d.get("pending_event", ""))
 	for key in d.get("tags", []):
 		p.tags.append(str(key))

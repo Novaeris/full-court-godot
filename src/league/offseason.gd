@@ -24,6 +24,9 @@ const PRACTICE_BONUS_PER_LEVEL := 5.0
 ## Teams run by a human: their expiring players are NOT re-signed automatically
 ## (the owner decides with FcGameController.extend_contract; the rest become free agents).
 var human_team_ids: Array[int] = []
+## Career Mode: players whose own contract talks the player handles himself. The league's AI never re-signs them; they are
+## re-signed only on agreed terms (agreed_re_signs / agreed_terms), otherwise they go to free agency.
+var career_player_ids: Array[int] = []
 ## Players the human owner agreed to keep: they are re-signed at their asking price (if still legal).
 var agreed_re_signs: Array[int] = []
 ## The agreed terms: player id -> [first-year salary, years] (missing = the asking price).
@@ -231,8 +234,9 @@ func re_sign(league_id: int, new_year: int, rng: FcRng) -> int:
 		var team: FcTeam = world.teams.get_by_id(entry[1])
 		if p == null or team == null or p.status != FcPlayer.Status.ACTIVE:
 			continue
-		var agreed := human_team_ids.has(team.id) and agreed_re_signs.has(p.id)
-		if human_team_ids.has(team.id) and not agreed:
+		var career := career_player_ids.has(p.id)
+		var agreed := (human_team_ids.has(team.id) or career) and agreed_re_signs.has(p.id)
+		if (human_team_ids.has(team.id) or career) and not agreed:
 			continue
 		var broke := not human_team_ids.has(team.id) and economy.is_distressed(team.id, rules.cap.salary_cap)
 		var ceiling := -1 if human_team_ids.has(team.id) else economy.payroll_ceiling(team.id)

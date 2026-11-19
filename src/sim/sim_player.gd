@@ -35,10 +35,22 @@ var injury_games: int = 0
 var injury_name: String = ""
 
 
+## Career Mode role inputs for the flagged player (all 0.0 for everyone else, so normal games are unchanged):
+## `role_bonus` is added to his score when the starting five is chosen (a starter request or a bench request),
+## `minutes_pref` (-1 fewer, +1 more) shifts when he is subbed out and in, `usage_pref` (-1 pass first, +1 shoot first)
+## scales how often he is the one who shoots.
+var role_bonus: float = 0.0
+var minutes_pref: float = 0.0
+var usage_pref: float = 0.0
+
+
 ## `composite_bonus` ({composite name: points}) is only given for a Career Mode player's equipped badges (already capped by
 ## FcCareerRules); it adds to the named composite ratings, never to the overall. Empty for everyone else.
-func _init(player: FcPlayer, rating_calculator: FcPlayerRatings, team_id: int, composite_bonus: Dictionary = {}) -> void:
+func _init(player: FcPlayer, rating_calculator: FcPlayerRatings, team_id: int, composite_bonus: Dictionary = {}, role: Dictionary = {}) -> void:
 	id = player.id
+	role_bonus = float(role.get("role_bonus", 0.0))
+	minutes_pref = float(role.get("minutes_pref", 0.0))
+	usage_pref = float(role.get("usage_pref", 0.0))
 	name = player.identity.full_name()
 	position = player.primary_position
 	ratings = rating_calculator.compute(player)

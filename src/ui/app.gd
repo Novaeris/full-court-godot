@@ -289,6 +289,10 @@ func on_career_play(days: int) -> Dictionary:
 
 func on_career_finish_season() -> Dictionary:
 	var result := career.finish_season()
+	if result.get("contract_pending", false):
+		show_career_hub()
+		_say("Your season is done. Your contract ends: settle the talks to move on.")
+		return result
 	if result["ok"]:
 		for game in result["games"]:
 			_career_log.push_front(game)
@@ -325,6 +329,42 @@ func _career_season_tab() -> Control:
 			show_career_hub()))
 		box.add_child(row)
 		return box
+	var offer := career.contract_offer()
+	if not offer.is_empty():
+		var talks := PanelContainer.new()
+		var inner_talks := VBoxContainer.new()
+		talks.add_child(inner_talks)
+		inner_talks.add_child(FcUiTables.label("Contract talks with %s" % offer["team"], 18, true))
+		var terms := FcUiTables.label("Your contract ends. The team offers $%.2fM a year for %d years (market value for you: $%.2fM). With your agent (%s) and your reputation you can push up to $%.2fM. Or let it run out and go to free agency: the league's teams decide, and you may land somewhere else." % [
+			offer["salary"] / 1e6, offer["years"], offer["market_ask"] / 1e6, offer["agent"], offer["max_salary"] / 1e6], 15)
+		terms.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		terms.custom_minimum_size = Vector2(400, 0)
+		inner_talks.add_child(terms)
+		var talk_row := HBoxContainer.new()
+		talk_row.add_child(FcUiTables.button("Accept the offer", func():
+			var r := career.answer_contract("accept")
+			_say(r["reason"])
+			on_career_finish_season()))
+		var counter := SpinBox.new()
+		counter.min_value = 0.1
+		counter.max_value = 100
+		counter.step = 0.05
+		counter.value = offer["max_salary"] / 1e6
+		counter.tooltip_text = "The yearly salary you ask for, in millions. The team refuses anything above its ceiling."
+		talk_row.add_child(counter)
+		talk_row.add_child(FcUiTables.button("Ask for this salary ($M)", func():
+			var r2 := career.answer_contract("counter", roundi(counter.value * 1e6 / 10000.0) * 10000)
+			_say(r2["reason"])
+			if r2["ok"]:
+				on_career_finish_season()
+			else:
+				show_career_hub()))
+		talk_row.add_child(FcUiTables.button("Let it run out (free agency)", func():
+			var r3 := career.answer_contract("expire")
+			_say(r3["reason"])
+			on_career_finish_season()))
+		inner_talks.add_child(talk_row)
+		box.add_child(talks)
 	var pending := career.pending_event()
 	if not pending.is_empty():
 		var card := PanelContainer.new()
@@ -353,6 +393,7 @@ func _career_season_tab() -> Control:
 		box.add_child(FcUiTables.label("No regular-season game left. Finish the season to move on.", 14))
 	else:
 		box.add_child(FcUiTables.label("Next game: %s %s on %s" % ["vs" if next["home"] else "at", next["opponent"], next["date"]], 15))
+	box.add_child(_career_role_row())
 	var buttons := HBoxContainer.new()
 	var done: bool = g.phase() == FcGameController.PHASE_COMPLETE
 	var day := FcUiTables.button("Play next day", func(): on_career_play(1))
@@ -384,6 +425,40 @@ func _career_history_table() -> Control:
 	for h in career.profile().history:
 		history.append(["%d-%02d" % [h["year"], (int(h["year"]) + 1) % 100], career.state.world.team_display_name(int(h["team_id"])), h["games"], "%.1f" % h["points"], "%.1f" % h["rebounds"], "%.1f" % h["assists"], "%d-%d" % [h["wins"], h["losses"]]])
 	return FcUiTables.table(["Season", "Team", "GP", "PPG", "RPG", "APG", "Team record"], history, [80, 0, 50, 60, 60, 60, 100])
+
+
+## The role request: the coach may refuse what the player has not earned.
+func _career_role_row() -> Control:
+	var row := HBoxContainer.new()
+	row.add_child(FcUiTables.label("Role"))
+	var role := OptionButton.new()
+	for entry in [["Coach decides", "auto"], ["Starter", "starter"], ["Bench", "bench"]]:
+		role.add_item(entry[0])
+		role.set_item_metadata(role.item_count - 1, entry[1])
+	role.selected = ["auto", "starter", "bench"].find(career.profile().role)
+	role.tooltip_text = "Ask to start or to come off the bench. The coach refuses a start you have not earned."
+	row.add_child(role)
+	row.add_child(FcUiTables.label("  Minutes"))
+	var minutes := OptionButton.new()
+	for entry in [["Fewer", -1], ["Normal", 0], ["More", 1]]:
+		minutes.add_item(entry[0])
+		minutes.set_item_metadata(minutes.item_count - 1, entry[1])
+	minutes.selected = career.profile().minutes_pref + 1
+	minutes.tooltip_text = "Playing more needs some reputation."
+	row.add_child(minutes)
+	row.add_child(FcUiTables.label("  Style"))
+	var usage := OptionButton.new()
+	for entry in [["Pass first", -1], ["Balanced", 0], ["Shoot first", 1]]:
+		usage.add_item(entry[0])
+		usage.set_item_metadata(usage.item_count - 1, entry[1])
+	usage.selected = career.profile().usage_pref + 1
+	usage.tooltip_text = "How often you are the one who shoots. Shooting first needs some reputation."
+	row.add_child(usage)
+	row.add_child(FcUiTables.button("Ask the coach", func():
+		var r := career.set_role(role.get_item_metadata(role.selected), minutes.get_item_metadata(minutes.selected), usage.get_item_metadata(usage.selected))
+		_say(r["reason"])
+		show_career_hub()))
+	return row
 
 
 func _career_card_tab(card: Dictionary) -> Control:

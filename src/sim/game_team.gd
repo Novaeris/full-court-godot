@@ -23,8 +23,9 @@ func sort_by_overall() -> void:
 	players.sort_custom(func(a: FcSimPlayer, b: FcSimPlayer): return a.overall > b.overall)
 
 
-## `composite_bonuses` maps player ids to rating bonuses (Career Mode badges); empty for every normal game.
-static func from_world(world: FcWorld, team_id: int, ratings: FcPlayerRatings, composite_bonuses: Dictionary = {}) -> FcGameTeam:
+## `composite_bonuses` maps player ids to rating bonuses (Career Mode badges) and `role_inputs` to role requests
+## ({"role_bonus", "minutes_pref", "usage_pref"}); both are empty for every normal game.
+static func from_world(world: FcWorld, team_id: int, ratings: FcPlayerRatings, composite_bonuses: Dictionary = {}, role_inputs: Dictionary = {}) -> FcGameTeam:
 	var team: FcTeam = world.teams.get_by_id(team_id)
 	var g := FcGameTeam.new()
 	g.team_id = team_id
@@ -39,7 +40,7 @@ static func from_world(world: FcWorld, team_id: int, ratings: FcPlayerRatings, c
 		if p.games_out > 0:
 			injured.append(p)
 		else:
-			g.players.append(FcSimPlayer.new(p, ratings, team_id, composite_bonuses.get(pid, {})))
+			g.players.append(FcSimPlayer.new(p, ratings, team_id, composite_bonuses.get(pid, {}), role_inputs.get(pid, {})))
 	# a team always has at least 8 players: the least hurt return early if needed
 	injured.sort_custom(func(a: FcPlayer, b: FcPlayer): return a.games_out < b.games_out)
 	while g.players.size() < 8 and not injured.is_empty():

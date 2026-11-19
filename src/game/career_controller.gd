@@ -94,6 +94,7 @@ func card() -> Dictionary:
 func game() -> FcGameController:
 	if _game == null and state.user_team_id > 0:
 		_game = FcGameController.resume(state)
+		_game.career_player_id = profile().player_id
 		for entry in _game.season().recent_boxes:
 			_seen[_box_key(entry)] = true   # games played before this look were already rewarded
 		_sync_badges()
@@ -138,6 +139,7 @@ func join_team(team_id: int) -> Dictionary:
 		profile().stage = FcCareerProfile.Stage.PROFESSIONAL_ENTRY
 	_game = null
 	game()
+	_game.career_player_id = profile().player_id
 	_roll_event()
 	state.world.add_news(state.current_date, "signing", "%s signed with %s." % [player().identity.full_name(), state.world.team_display_name(team_id)], team_id)
 	return {"ok": true, "reason": "You signed with %s on a %d-year rookie contract." % [state.world.team_display_name(team_id), rules.cap.rookie_contract_years]}
@@ -188,7 +190,9 @@ func advance_days(count: int) -> Dictionary:
 
 
 ## Plays everything left of the season, playoffs included, then records the season: history row, the season milestone, and
-## the automatic league offseason into the next season (contracts, draft, free agency). Returns {"ok", "summary", "games"}.
+## the automatic league offseason into the next season (contracts, draft, free agency). If the player's contract ends this
+## season the offseason waits for his decision: the result then has "contract_pending": true until `answer_contract` is called
+## and `finish_season` is called again. Returns {"ok", "summary", "games"}.
 func finish_season() -> Dictionary:
 	if is_retired():
 		return {"ok": false, "reason": "Your career is over.", "games": []}
@@ -197,6 +201,8 @@ func finish_season() -> Dictionary:
 		return {"ok": false, "reason": "Join a team first.", "games": []}
 	if profile().pending_event != "":
 		return {"ok": false, "reason": "You have a decision to make before you play on.", "games": []}
+	if profile().contract_pending:
+		return {"ok": false, "reason": "Settle your contract talks first.", "games": []}
 	var games: Array = []
 	while g.phase() != FcGameController.PHASE_COMPLETE:
 		g.advance_day()
@@ -204,9 +210,82 @@ func finish_season() -> Dictionary:
 	var year := state.current_season
 	var row := _record_season(year)
 	var milestone := FcCareerRules.claim_milestone(profile(), "season_complete")
+	if profile().contract_resolved_year != year:
+		var contract := state.world.active_contract_of(profile().player_id)
+		if contract != null and contract.end_season() <= year:
+			profile().contract_pending = true
+			return {"ok": true, "summary": row, "milestone": milestone.get("reason", ""), "games": games, "contract_pending": true}
+	g.career_player_id = profile().player_id
 	g.start_next_season()
+	state.agreed_extensions.clear()
+	state.agreed_terms.clear()
 	_after_offseason()
-	return {"ok": true, "summary": row, "milestone": milestone.get("reason", ""), "games": games}
+	return {"ok": true, "summary": row, "milestone": milestone.get("reason", ""), "games": games, "contract_pending": false}
+
+
+## The contract talks waiting for an answer, or {} : {"team", "salary", "max_salary", "years", "market_ask", "agent", "season"}.
+## The offer is what the team will pay; with the agent and reputation the player may push up to `max_salary`.
+func contract_offer() -> Dictionary:
+	if not profile().contract_pending:
+		return {}
+	var team := state.world.team_of_player(profile().player_id)
+	var rules := state.world.rules_of_league(state.world.league_of_team(state.user_team_id).id)
+	var market := FcPlayerMarket.new(FcPlayerRatings.load_default())
+	var age := player().age_on(FcDate.new(state.current_season + 1, 7, 1))
+	var overalls: Array = []
+	var ratings := FcPlayerRatings.load_default()
+	for pid in state.world.teams.get_by_id(state.user_team_id).roster.player_ids:
+		overalls.append(ratings.overall(state.world.players.get_by_id(pid)))
+	var ask := market.asking_salary(player(), age, rules.cap)
+	var terms := FcCareerRules.contract_terms(profile(), ask, ratings.overall(player()), overalls, market.desired_years(age, rules.cap), rules.cap)
+	var agent := "none"
+	if profile().tags.has("agent_flashy"):
+		agent = "flashy"
+	elif profile().tags.has("agent_loyal"):
+		agent = "loyal"
+	return {"team": state.world.team_display_name(state.user_team_id) if team != null else "", "salary": terms["salary"], "max_salary": terms["max_salary"],
+		"years": terms["years"], "market_ask": ask, "agent": agent, "season": state.current_season}
+
+
+## Answers the contract talks: "accept" (the team's offer), "counter" (ask for `salary`, up to the ceiling) or "expire" (let the
+## contract run out and go to free agency, where the league's teams decide). Returns {"ok", "reason"}. A refused counter leaves
+## the talks open.
+func answer_contract(action: String, salary: int = 0) -> Dictionary:
+	var offer := contract_offer()
+	if offer.is_empty():
+		return {"ok": false, "reason": "There are no contract talks right now."}
+	var pid := profile().player_id
+	var signed := 0
+	var message := ""
+	match action:
+		"accept":
+			signed = int(offer["salary"])
+			message = "You accepted %s's offer: $%.2fM a year for %d years." % [offer["team"], signed / 1e6, int(offer["years"])]
+		"counter":
+			if salary <= int(offer["salary"]):
+				signed = int(offer["salary"])
+				message = "%s agreed at its own offer, $%.2fM." % [offer["team"], signed / 1e6]
+			elif salary > int(offer["max_salary"]):
+				return {"ok": false, "reason": "%s will not pay that: the most it would go to is $%.2fM." % [offer["team"], int(offer["max_salary"]) / 1e6]}
+			else:
+				signed = salary
+				message = "You pushed %s up to $%.2fM a year for %d years." % [offer["team"], signed / 1e6, int(offer["years"])]
+				if salary > int(offer["salary"]) * 1.05:
+					profile().reputation = maxi(0, profile().reputation - 1)
+					if not profile().tags.has("hardball"):
+						profile().tags.append("hardball")
+					message += " Hard bargaining costs 1 reputation."
+		"expire":
+			message = "You let your contract run out and head into free agency."
+		_:
+			return {"ok": false, "reason": "Choose accept, counter or expire."}
+	if signed > 0:
+		state.agreed_extensions.append(pid)
+		state.agreed_terms[pid] = [signed, int(offer["years"])]
+	profile().decisions.append({"year": state.current_season, "key": "contract", "choice": "%s %d" % [action, signed]})
+	profile().contract_pending = false
+	profile().contract_resolved_year = state.current_season
+	return {"ok": true, "reason": message}
 
 
 ## The player's totals for a season from the league's own statistics: {"games", "points", "rebounds", "assists", ...} per game.
@@ -333,12 +412,35 @@ func _collect_games() -> Array:
 	return out
 
 
+## Asks the coach for a role. Returns {"ok", "reason"}; a refused request changes nothing. `role` is "auto", "starter" or "bench";
+## `minutes_pref` and `usage_pref` are -1, 0 or +1.
+func set_role(role: String, minutes_pref: int, usage_pref: int) -> Dictionary:
+	var g := game()
+	var overalls: Array = []
+	var ratings := FcPlayerRatings.load_default()
+	var me := ratings.overall(player())
+	if g != null and state.user_team_id > 0:
+		for pid in state.world.teams.get_by_id(state.user_team_id).roster.player_ids:
+			overalls.append(ratings.overall(state.world.players.get_by_id(pid)))
+	var problem := FcCareerRules.role_problem(profile(), me, overalls, role, minutes_pref, usage_pref)
+	if problem != "":
+		return {"ok": false, "reason": problem}
+	profile().role = role
+	profile().minutes_pref = minutes_pref
+	profile().usage_pref = usage_pref
+	_sync_badges()
+	return {"ok": true, "reason": "The coach agrees: %s, minutes %+d, usage %+d." % [role, minutes_pref, usage_pref]}
+
+
 ## Gives the equipped badges' capped bonuses to the career player's simulated ratings (and only his).
 func _sync_badges() -> void:
 	if _game == null:
 		return
 	var bonus := badge_bonus()
 	_game.engine.composite_bonuses = {profile().player_id: bonus} if not bonus.is_empty() else {}
+	var inputs := FcCareerRules.role_inputs(profile())
+	var any_role: bool = inputs["role_bonus"] != 0.0 or inputs["minutes_pref"] != 0.0 or inputs["usage_pref"] != 0.0
+	_game.engine.role_inputs = {profile().player_id: inputs} if any_role else {}
 	_game.engine.refresh_teams()
 
 

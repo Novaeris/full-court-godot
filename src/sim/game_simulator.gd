@@ -396,7 +396,7 @@ func _pick_scorer(o: int) -> FcSimPlayer:
 	var weights: Array = []
 	for p in _court[o]:
 		var w: float = pow(clampf(p.ratings["scoring"], 5.0, float(_t["usage_max_rating"])) / 50.0, float(_t["usage_exponent"])) * (0.6 + 0.8 * (1.0 - p.tend_pass / 100.0))
-		weights.append(w * (0.5 + 0.5 * p.freshness()))
+		weights.append(w * (0.5 + 0.5 * p.freshness()) * (1.0 + 0.35 * p.usage_pref))
 	return _pick_weighted(_court[o], weights)
 
 
@@ -534,7 +534,7 @@ func _select_lineup(team: FcGameTeam) -> Array[FcSimPlayer]:
 		var best: FcSimPlayer = null
 		var best_score := -INF
 		for p in pool:
-			var s: float = p.overall + _position_bonus(chosen, p)
+			var s: float = p.overall + _position_bonus(chosen, p) + p.role_bonus
 			if s > best_score:
 				best_score = s
 				best = p
@@ -596,8 +596,8 @@ func _substitutions(side: int) -> void:
 			in_trouble = p.fouls >= int(_t["foul_trouble_early"])
 		elif not late_close:
 			in_trouble = p.fouls >= int(_t["foul_out"]) - 1
-		var tired: bool = p.energy < out_threshold \
-			or (p.seconds_f > float(_t["minutes_soft_cap_seconds"]) and not late_close)
+		var tired: bool = p.energy < out_threshold - 8.0 * p.minutes_pref \
+			or (p.seconds_f > float(_t["minutes_soft_cap_seconds"]) * (1.0 + 0.08 * p.minutes_pref) and not late_close)
 		if not in_trouble and not tired:
 			continue
 		var key: float = p.energy - (1000.0 if in_trouble else 0.0)
@@ -645,7 +645,7 @@ func _best_replacement(side: int, leaving: FcSimPlayer, bench: Array[FcSimPlayer
 	for p in bench:
 		if p.energy < min_energy:
 			continue
-		var score := p.overall * (0.65 + 0.35 * p.freshness()) + _position_bonus(remaining, p)
+		var score := p.overall * (0.65 + 0.35 * p.freshness()) + _position_bonus(remaining, p) + 6.0 * p.minutes_pref
 		if score > best_score:
 			best_score = score
 			best = p

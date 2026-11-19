@@ -47,6 +47,12 @@ func _initialize() -> void:
 		if not pending.is_empty():   # decisions: take the first choice (the playthrough only checks the rules hold)
 			c.answer_event(pending["choices"][0]["key"])
 		var result := c.finish_season()
+		if result.get("contract_pending", false):   # the contract ends: negotiate (push to the ceiling, else accept), then roll over
+			var talks := c.contract_offer()
+			var counter := c.answer_contract("counter", int(talks["max_salary"]))
+			if not counter["ok"]:
+				c.answer_contract("accept")
+			result = c.finish_season()
 		if not result["ok"]:
 			_fail("season %d could not be played" % (i + 1))
 			break

@@ -21,6 +21,8 @@ var human_teams: Array[int] = []
 var watched_teams: Array[int] = []
 ## Career Mode: {player id: {composite: bonus}} for the career player's equipped badges (empty in every other mode).
 var composite_bonuses: Dictionary = {}
+## Career Mode: {player id: {"role_bonus", "minutes_pref", "usage_pref"}} for the career player (empty elsewhere).
+var role_inputs: Dictionary = {}
 
 
 func _init(world: FcWorld, era: String = "") -> void:
@@ -282,7 +284,7 @@ func _record_news_and_box(season: FcSeason, g: FcScheduledGame, box: FcBoxScore)
 
 func _team(team_id: int) -> FcGameTeam:
 	if not _teams.has(team_id):
-		_teams[team_id] = FcGameTeam.from_world(_world, team_id, _ratings, composite_bonuses)
+		_teams[team_id] = FcGameTeam.from_world(_world, team_id, _ratings, composite_bonuses, role_inputs)
 	return _teams[team_id]
 
 

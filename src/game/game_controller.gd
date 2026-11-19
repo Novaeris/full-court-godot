@@ -28,6 +28,8 @@ const SEASON_START_DAY := 20
 var state: FcGameState
 var league_id: int = 0
 var engine: FcSeasonEngine
+## Career Mode: the player whose contract is negotiated by the career, not by the league's AI (0 elsewhere).
+var career_player_id: int = 0
 
 
 ## A brand-new game from a generator: the user controls `user_team_index`.
@@ -155,6 +157,8 @@ func start_next_season() -> Dictionary:
 func _new_offseason() -> FcOffseason:
 	var offseason := FcOffseason.new(state.world)
 	offseason.human_team_ids = [state.user_team_id] as Array[int] if state.mode == FcGameState.MODE_OWNER else ([] as Array[int])
+	if state.mode == FcGameState.MODE_CAREER and career_player_id > 0:
+		offseason.career_player_ids = [career_player_id] as Array[int]
 	offseason.agreed_re_signs = state.agreed_extensions.duplicate()
 	offseason.agreed_terms = state.agreed_terms.duplicate(true)
 	offseason.agreed_staff_terms = state.agreed_staff_terms.duplicate(true)
