@@ -39,6 +39,8 @@ static func convert_duplicate(profile: FcDynastyProfile, config: FcDynastyConfig
 	var paid := FcDynastyEconomy.apply(profile, "convert_duplicate", card_id, {"shards": shards}, [card_id], request_id)
 	if not paid.ok:
 		return paid
+	if bool(paid.data.get("replayed", false)):
+		return FcDynastyResult.success({"txn": paid.data["txn"], "repeated": true})   # already done: change nothing again
 	profile.cards[card_id]["quantity"] = profile.quantity_of(card_id) - 1
 	paid.data["shards"] = shards
 	return paid
@@ -60,6 +62,8 @@ static func apply_mastery(profile: FcDynastyProfile, config: FcDynastyConfig, ca
 	var paid := FcDynastyEconomy.apply(profile, "mastery", card_id, {"shards": -cost}, [card_id], request_id)
 	if not paid.ok:
 		return paid
+	if bool(paid.data.get("replayed", false)):
+		return FcDynastyResult.success({"txn": paid.data["txn"], "repeated": true})   # already done: change nothing again
 	profile.cards[card_id]["quantity"] = profile.quantity_of(card_id) - 1
 	profile.cards[card_id]["mastery"] = level + 1
 	paid.data["level"] = level + 1

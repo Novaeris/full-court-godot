@@ -1,0 +1,31 @@
+COMMAND: godot_console --headless --path . --script res://tools/career_playthrough.gd -- seasons=20 seed=7
+COMMIT BASE: c26301f (plus the uncommitted hardening changes)
+STARTED: 2026-11-20T13:52:41-05:00
+-----
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+=== two_way_wing career, seed 7, 12 teams: You signed with Houston Huntsmen on a 4-year rookie contract (pick 10). ===
+Season  Team    GP  Ovr   PPG   RPG   APG  Lvl     XP Badges Record
+2026    HOU      4   50   2.8   1.5   0.3    2    304      0 25-9
+2027    HOU      8   52   3.4   1.5   0.0    3    408      1 22-12
+2028    HOU     23   55  10.2   1.9   0.3    5   1043      1 16-18
+2029    HOU     31   57  11.6   1.7   0.2    7   2013      2 18-16
+2030    HOU     34   60  14.5   2.8   0.4    9   3444      2 17-17
+2031    HOU     34   63  17.5   2.7   0.6   12   5098      3 14-20
+2032    HOU     32   65  18.7   4.0   0.5   14   7037      4 17-17
+2033    HOU     34   66  22.6   9.0   0.9   18   9706      4 23-11
+2034    HOU     34   65  19.0  11.0   0.5   20  12208      4 23-11
+2035    HOU     34   65  19.9  10.5   0.6   23  14679      4 21-13
+2036    HOU     34   64  13.1   6.9   0.4   25  16804      4 24-10
+2037    HOU     34   63  11.3   5.8   0.3   26  18145      4 20-14
+2038    HOU     34   60  18.3   7.6   0.4   28  19979      4 14-20
+2039    HOU     33   57   8.5   4.8   0.2   29  21014      4 18-16
+2040    HOU      7   52   4.6   3.1   0.3   29  21190      4 16-18
+2041    HOU      2   46   5.0   2.0   0.0   29  21395      4 22-12
+2042    HOU     10   39   3.1   0.6   0.0   29  21564      4 20-14
+Retired after 17 seasons (stage 6).
+Finished 17 seasons in 53 s. Level 29, 4 badges, overall 39.
+--- 0 problem(s)
+-----
+EXIT CODE: 0
+DURATION SECONDS: 54

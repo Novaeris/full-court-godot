@@ -17,7 +17,83 @@ const OBJECTIVE_TYPES := ["stat", "wins", "win_margin", "collection"]
 const REWARD_KEYS := ["credits", "tokens", "shards", "card_ids", "pack_ids"]
 const COLLECTION_METRICS := ["unique_cards", "rarity_cards", "duplicates"]
 const TOURNAMENT_TEAMS := 7
+## A Dynasty team needs 13 different real players (5 starters, 7 bench, 1 reserve) and the five starters must cover PG, SG, SF, PF and C.
+const MIN_PLAYABLE_PLAYERS := 13
+const STARTER_POSITIONS := ["PG", "SG", "SF", "PF", "C"]
 const PLACEMENTS := ["champion", "finalist", "semifinal", "quarterfinal"]
+
+
+# --- can a release field a legal starting lineup? ----------------------------------------------------------------------
+# ONE rule, shared by the publish validator, FcDynastyCatalog.is_playable and the automatic lineup (FcDynastyLineup.recommend), so they
+# can never disagree. It is pure and deterministic: it only looks at {player_id, position, secondary} dictionaries (positions are
+# abbreviations; secondary may be "" or missing).
+#   - a starter may play a slot whose position is his primary OR secondary position;
+#   - one real player fills at most one slot (several editions of one player count once; the first one listed is used);
+#   - the bench and the reserve may be anyone, so only the five starters are matched.
+
+## For each of the five starter slots (PG, SG, SF, PF, C in order) the index into `candidates` of the player who fills it, or -1 if no
+## assignment can fill it. This is a maximum matching (a player is never used twice), found with augmenting paths in candidate order,
+## so earlier candidates are preferred: pass the best players first.
+static func match_starters(candidates: Array) -> Array[int]:
+	var seen_players := {}
+	var usable: Array[int] = []   # indices into candidates, first edition of each real player only
+	for i in candidates.size():
+		var pid = candidates[i].get("player_id", i)
+		if not seen_players.has(pid):
+			seen_players[pid] = true
+			usable.append(i)
+	var owner_of := {}   # candidate index -> slot it fills
+	for slot in STARTER_POSITIONS.size():
+		_augment(slot, candidates, usable, owner_of, {})
+	var out: Array[int] = []
+	out.resize(STARTER_POSITIONS.size())
+	out.fill(-1)
+	for cand in owner_of:
+		out[owner_of[cand]] = cand
+	return out
+
+
+static func _fits(candidate: Dictionary, slot: int) -> bool:
+	var want: String = STARTER_POSITIONS[slot]
+	return str(candidate.get("position", "")) == want or str(candidate.get("secondary", "")) == want
+
+
+static func _augment(slot: int, candidates: Array, usable: Array[int], owner_of: Dictionary, visited: Dictionary) -> bool:
+	for i in usable:
+		if visited.has(i) or not _fits(candidates[i], slot):
+			continue
+		visited[i] = true
+		if not owner_of.has(i) or _augment(int(owner_of[i]), candidates, usable, owner_of, visited):
+			owner_of[i] = slot
+			return true
+	return false
+
+
+## "" if the players can field a legal team: at least MIN_PLAYABLE_PLAYERS different players and a starter for every position.
+## Otherwise a plain-language, actionable explanation.
+static func lineup_problem(players: Array) -> String:
+	var distinct := {}
+	for p in players:
+		distinct[p.get("player_id", distinct.size())] = true
+	if distinct.size() < MIN_PLAYABLE_PLAYERS:
+		return "The release has %d different players; Dynasty needs at least %d to field a team (5 starters, 7 bench, 1 reserve)." % [distinct.size(), MIN_PLAYABLE_PLAYERS]
+	var matched := match_starters(players)
+	var missing: Array[String] = []
+	for slot in matched.size():
+		if matched[slot] < 0:
+			missing.append(STARTER_POSITIONS[slot])
+	if missing.is_empty():
+		return ""
+	var counts: Array[String] = []
+	for slot in STARTER_POSITIONS.size():
+		var n := 0
+		var seen := {}
+		for p in players:
+			if _fits(p, slot) and not seen.has(p.get("player_id", -1)):
+				seen[p.get("player_id", -1)] = true
+				n += 1
+		counts.append("%s %d" % [STARTER_POSITIONS[slot], n])
+	return "The release cannot field a legal starting lineup: only %d of the 5 starting positions can be filled at once (nobody left for %s). Each starter must have the position as his primary or secondary position, and one player fills one slot. Players able to start at each position: %s. Add players whose primary or secondary position is %s." % [5 - missing.size(), ", ".join(missing), ", ".join(counts), " or ".join(missing)]
 
 
 static func rarity_rank(rarity: String) -> int:

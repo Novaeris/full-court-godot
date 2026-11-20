@@ -1,0 +1,13 @@
+01_import: exit=0 duration=4s
+02_unit_tests: exit=0 duration=602s
+03_live_tests: exit=0 duration=15s
+04_dynasty_check: exit=0 duration=3s
+05_simulate_games: exit=0 duration=12s
+06_economy_check: exit=0 duration=44s
+07_click_test: exit=0 duration=10s
+08_career_click_test: exit=0 duration=6s
+09_studio_smoke: exit=0 duration=1s
+10_career_playthrough: exit=0 duration=54s
+11_owner_stress: exit=0 duration=680s
+12_career_balance: exit=0 duration=1796s
+ALL STEPS FINISHED

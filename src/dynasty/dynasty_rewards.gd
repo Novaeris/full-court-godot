@@ -27,6 +27,9 @@ static func grant(profile: FcDynastyProfile, catalog: FcDynastyCatalog, rewards:
 	var paid := FcDynastyEconomy.apply(profile, kind, ref, deltas, card_ids, request_id)
 	if not paid.ok:
 		return paid
+	if bool(paid.data.get("replayed", false)):
+		# already granted: report it, grant nothing again
+		return FcDynastyResult.success({"txn": paid.data["txn"], "cards": [], "openings": [], "rewards": rewards, "repeated": true})
 	var txn_id: String = paid.data["txn"]["txn_id"]
 	for id in card_ids:
 		FcDynastyCollection.grant_card(profile, str(id), int(catalog.view(str(id))["revision"]), catalog.snapshot_of(str(id)), txn_id)

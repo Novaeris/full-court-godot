@@ -6,7 +6,7 @@ extends RefCounted
 ##
 ## Card overall is the simulation's own rating (FcPlayerRatings.overall of the card's attributes), rounded for display.
 
-const MIN_PLAYABLE_CARDS := 13
+const MIN_PLAYABLE_CARDS := FcDynastyContentRules.MIN_PLAYABLE_PLAYERS
 
 var content: FcContentCatalog
 var defs: FcDefinitionSet
@@ -133,7 +133,19 @@ func distinct_players() -> int:
 
 ## Whether the release has enough cards to field a team and opponents (see onboarding in the hub).
 func is_playable() -> bool:
-	return _views.size() >= MIN_PLAYABLE_CARDS and distinct_players() >= MIN_PLAYABLE_CARDS
+	return _views.size() >= MIN_PLAYABLE_CARDS and distinct_players() >= MIN_PLAYABLE_CARDS and lineup_problem() == ""
+
+
+## The shared rule (FcDynastyContentRules.lineup_problem) applied to this release's players: "" when it can field a legal team.
+func lineup_problem() -> String:
+	var players: Array = []
+	var seen := {}
+	for id in _views:
+		var v: Dictionary = _views[id]
+		if not seen.has(v["player_id"]):
+			seen[v["player_id"]] = true
+			players.append({"player_id": v["player_id"], "position": v.get("position", ""), "secondary": v.get("secondary", "")})
+	return FcDynastyContentRules.lineup_problem(players)
 
 
 ## Why the release is not playable, or "" if it is.
@@ -142,9 +154,9 @@ func playable_problem() -> String:
 		return "No content release is loaded."
 	if _views.is_empty():
 		return "The loaded content release has no player cards yet. Publish cards from Creator Studio to start."
-	if not is_playable():
+	if _views.size() < MIN_PLAYABLE_CARDS or distinct_players() < MIN_PLAYABLE_CARDS:
 		return "The loaded content release has %d cards from %d players; Dynasty needs at least %d different players to field a team." % [_views.size(), distinct_players(), MIN_PLAYABLE_CARDS]
-	return ""
+	return lineup_problem()
 
 
 # --- building players for the simulation ----------------------------------------------------------------------

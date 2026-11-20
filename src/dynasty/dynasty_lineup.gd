@@ -125,6 +125,18 @@ static func recommend(profile: FcDynastyProfile, catalog: FcDynastyCatalog) -> A
 				used_players[v["player_id"]] = true
 				used_cards[v["card_id"]] = true
 				break
+	# the greedy pass can strand a slot when a legal five exists (it picks the best card per slot); the shared rule finds one
+	var incomplete := false
+	for slot in FcDynastyRoster.STARTERS:
+		incomplete = incomplete or out[slot] == ""
+	if incomplete:
+		var matched := FcDynastyContentRules.match_starters(pool)
+		if not matched.has(-1):
+			out.fill("")
+			used_players.clear()
+			for slot in FcDynastyRoster.STARTERS:
+				out[slot] = pool[matched[slot]]["card_id"]
+				used_players[pool[matched[slot]]["player_id"]] = true
 	var next := FcDynastyRoster.STARTERS
 	for v in pool:
 		if next >= FcDynastyRoster.SIZE:

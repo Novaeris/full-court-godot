@@ -1,0 +1,14 @@
+COMMAND: godot_console --headless --path . --script res://tools/dynasty_check.gd
+COMMIT BASE: c26301f (plus the uncommitted hardening changes)
+STARTED: 2026-11-20T13:51:25-05:00
+-----
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+catalog + profile (32 cards): 330 ms
+1000 pack rolls: 55 ms
+50 simulated games with saves: 1243 ms (won 28 of 50 against even teams)
+one tournament: 136 ms, placed quarterfinal
+load profile (55 ledger lines): 2 ms, ok=true
+-----
+EXIT CODE: 0
+DURATION SECONDS: 3

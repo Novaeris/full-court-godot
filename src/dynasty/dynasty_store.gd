@@ -26,19 +26,38 @@ static func is_valid_slot(slot: String) -> bool:
 	return re.search(slot) != null
 
 
+## Every file a slot can be recovered from, in recovery order: the saved file, the finished-but-not-installed temp file (newer than
+## the backup), then the previous save. load_slot() uses the first one that passes verification.
+const SUFFIXES := ["", ".tmp", ".bak"]
+
+
+## True if ANY recoverable version of the slot exists (the saved file, the temp file or the backup). Existence only: whether a file
+## is intact is decided by load_slot(). A new profile must never be given a slot name for which this is true, or it could overwrite
+## a recoverable file.
 func has_slot(slot: String) -> bool:
-	return is_valid_slot(slot) and (FileAccess.file_exists(_path(slot)) or FileAccess.file_exists(_path(slot) + ".bak"))
+	if not is_valid_slot(slot):
+		return false
+	for suffix in SUFFIXES:
+		if FileAccess.file_exists(_path(slot) + suffix):
+			return true
+	return false
 
 
-## Slot names that have a profile file, sorted.
+## Slot names that have at least one recoverable file (.dyn, .dyn.tmp or .dyn.bak), each listed once, sorted. Names that are not
+## valid slot names are ignored. Discovery only reads the folder: it never deletes, repairs or renames anything.
 func list_slots() -> Array[String]:
 	var out: Array[String] = []
 	var dir := DirAccess.open(base_dir)
 	if dir == null:
 		return out
 	for f in dir.get_files():
-		if f.ends_with(EXTENSION) and is_valid_slot(f.trim_suffix(EXTENSION)):
-			out.append(f.trim_suffix(EXTENSION))
+		for suffix in SUFFIXES:
+			var tail: String = EXTENSION + suffix
+			if f.ends_with(tail):
+				var name := f.trim_suffix(tail)
+				if is_valid_slot(name) and not out.has(name):
+					out.append(name)
+				break
 	out.sort()
 	return out
 
@@ -73,6 +92,9 @@ func save(slot: String, profile: FcDynastyProfile) -> FcDynastyResult:
 	return FcDynastyResult.success()
 
 
+## Loads a profile. Recovery priority is explicit: <slot>.dyn, then <slot>.dyn.tmp, then <slot>.dyn.bak; the first that passes the
+## checksum, size and format checks wins. (If both the saved file and a newer verified temp file exist, the saved file wins: it is the
+## last save that was fully installed.) Nothing is deleted or rewritten by loading.
 ## On success data["profile"] is the FcDynastyProfile and data["recovered_from"] is "", "temp" or "backup".
 func load_slot(slot: String) -> FcDynastyResult:
 	if not is_valid_slot(slot):

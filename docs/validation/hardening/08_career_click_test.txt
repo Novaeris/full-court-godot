@@ -1,0 +1,23 @@
+COMMAND: godot_console --headless --path . --script res://tools/career_click_test.gd
+COMMIT BASE: c26301f (plus the uncommitted hardening changes)
+STARTED: 2026-11-20T13:52:34-05:00
+-----
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+  ok   the Career Mode home opened
+  ok   the creator opened
+  ok   the default build with a name is valid
+  ok   Create my player made the career
+  ok   he starts without a team
+  ok   the draft signed him with the team the scouting report showed
+  ok   answering the decision with a click cleared it
+  ok   Play next week moved the calendar
+  ok   a +1 click spent development points (12 -> 11)
+  ok   and did not lower the overall
+  ok   Train gave XP
+  ok   Finish the season recorded the season
+  ok   Save wrote the career to disk
+--- 18 mouse clicks sent, 0 problem(s)
+-----
+EXIT CODE: 0
+DURATION SECONDS: 6

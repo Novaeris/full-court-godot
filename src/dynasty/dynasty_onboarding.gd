@@ -29,6 +29,8 @@ static func grant_starter(profile: FcDynastyProfile, catalog: FcDynastyCatalog) 
 	var paid := FcDynastyEconomy.apply(profile, "starter", "starter_collection", deltas, card_ids, "starter_grant")
 	if not paid.ok:
 		return paid
+	if bool(paid.data.get("replayed", false)):
+		return FcDynastyResult.failure("duplicate_request", "The starter collection was already granted.")
 	var txn_id: String = paid.data["txn"]["txn_id"]
 	for id in card_ids:
 		FcDynastyCollection.grant_card(profile, str(id), int(catalog.view(str(id)).get("revision", 1)), catalog.snapshot_of(str(id)), txn_id)

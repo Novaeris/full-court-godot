@@ -41,7 +41,8 @@ static func _json(dir: String, rel: String, data: Dictionary) -> void:
 
 
 ## Writes the invented release's definition files. `variant` changes one thing so two releases differ.
-static func write_content(dir: String, variant: int = 0) -> void:
+## `layout` (optional) replaces the players' positions: layout[i] = [primary, secondary or ""] for player i (players beyond it keep the default).
+static func write_content(dir: String, variant: int = 0, layout: Array = []) -> void:
 	var defs := FcDefinitionSet.load_default()
 	var keys := defs.attributes.keys()
 	for i in PLAYER_COUNT:
@@ -54,6 +55,11 @@ static func write_content(dir: String, variant: int = 0) -> void:
 		}
 		if i % 4 == 0:
 			pdef["secondary_position"] = POSITIONS[(i + 1) % 5]
+		if i < layout.size():
+			pdef["position"] = layout[i][0]
+			pdef.erase("secondary_position")
+			if str(layout[i][1]) != "":
+				pdef["secondary_position"] = layout[i][1]
 		if i % 5 == 0:
 			pdef["badges"] = ["catch_and_shoot"]
 		_json(dir, "players/%s.json" % player_id(i), pdef)
@@ -126,16 +132,18 @@ static func write_content(dir: String, variant: int = 0) -> void:
 
 
 ## Builds a sealed release from the fixture and returns an FcDynastyCatalog for it, or null if it did not validate.
-static func catalog(variant: int = 0, release_id: String = "fcr_0123456789abcdef") -> FcDynastyCatalog:
+## `layout` as in write_content. `validate` false builds the catalog even if the publish validator would reject the release (to prove
+## the game side refuses such a release by itself).
+static func catalog(variant: int = 0, release_id: String = "fcr_0123456789abcdef", layout: Array = [], validate: bool = true) -> FcDynastyCatalog:
 	var draft := ROOT.path_join("draft_%d" % variant)
 	var release := ROOT.path_join("release_%d" % variant)
 	FcSafeFile.remove_tree(draft)
 	FcSafeFile.remove_tree(release)
-	write_content(draft, variant)
+	write_content(draft, variant, layout)
 	var m := FcContentFixture.build_release(draft, release, release_id, "", 1 + variant)
 	var defs := FcDefinitionSet.load_default()
 	var checked := FcContentValidator.check_definitions(release, _paths(m), defs)
-	if not checked["problems"].is_empty():
+	if validate and not checked["problems"].is_empty():
 		push_error("fixture invalid: %s" % str(checked["problems"]))
 		return null
 	return FcDynastyCatalog.build(FcContentCatalog.build(m, release, checked["defs"]), defs)

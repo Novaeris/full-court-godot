@@ -1,0 +1,23 @@
+COMMAND: godot_console --headless --path . --script res://tools/economy_check.gd -- seasons=15 teams=12 every=5
+COMMIT BASE: c26301f (plus the uncommitted hardening changes)
+STARTED: 2026-11-20T13:51:40-05:00
+-----
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+=== Economy, 12 teams, seed 2026, 15 seasons ===
+Season       Cap  Revenue  Payroll  AvgProf  MaxProf  MaxCash AvgCash    Value  Price Margin  Loss
+2026        140M     288M     142M     6.1M    60.0M     100M     46M     911M    293   2.1%     6
+2031        189M     378M     159M    49.8M   117.4M     409M    219M    1260M    373  13.2%     1
+2036        239M     467M     230M    30.3M   102.3M     485M    250M    1578M    438   6.5%     3
+2040        267M     544M     280M    27.7M   150.4M     578M    293M    1798M    488   5.1%     2
+Time: 43 s
+Highest league margin (after season 5) 13.2%; in the last 10 seasons: biggest single-team profit 0.71x the cap, biggest cash pile 2.31x the cap, average payroll within 16% of the cap.
+DEBT:      average $62M, largest $673M (largest in the last 10 seasons: 2.52x the cap); highest debt share of a club's assets in the last 10 seasons: 38%
+CASH:      average $293M, largest $578M
+PROFIT:    average $27.7M (margin 5.1%), best club $150M
+VALUATION: average $1798M
+TITLES:    6 different champions in 15 seasons, most by one club 6
+RESULT: ok
+-----
+EXIT CODE: 0
+DURATION SECONDS: 44

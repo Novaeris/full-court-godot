@@ -1,0 +1,24 @@
+COMMAND: godot_console --headless --path . --script res://tools/career_balance.gd -- seeds=3
+COMMIT BASE: c26301f (plus the uncommitted hardening changes)
+STARTED: 2026-11-20T14:04:55-05:00
+-----
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Spending strategy: focused
+Archetype            Peak    Pot PeakAge Seasons BestPPG  Level Unspent
+custom               73.3   75.0   27.0   16.7   22.5   30.3    0.0
+floor_general        74.3   75.0   27.0   16.7   21.3   33.3    0.0
+scoring_guard        74.0   75.0   27.0   16.7   24.8   31.3    0.0
+shot_creator         74.0   75.0   27.0   16.7   22.3   31.7    0.0
+sharpshooter         75.7   77.0   27.0   16.7   22.2   32.7    0.0
+two_way_wing         75.7   77.0   27.0   16.7   22.9   32.0    0.0
+point_forward        76.7   78.0   27.0   16.7   21.8   32.3    0.0
+stretch_four         78.0   80.0   27.0   16.7   22.4   34.0    0.0
+defensive_anchor     78.3   80.0   27.0   16.7   23.3   33.7    0.0
+rim_protector        78.3   80.0   27.0   16.7   23.8   34.7    0.0
+post_scorer          78.3   80.0   27.0   16.7   24.5   33.7    0.0
+Spread between archetypes: 5.0 overall points (lowest 73.3, highest 78.3)
+--- 0 problem(s)
+-----
+EXIT CODE: 0
+DURATION SECONDS: 1796

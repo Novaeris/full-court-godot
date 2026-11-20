@@ -37,4 +37,6 @@ static func record_game(profile: FcDynastyProfile, catalog: FcDynastyCatalog, su
 	var paid := FcDynastyEconomy.apply(profile, "game_reward", "game_%d" % n, {"credits": reward} if reward > 0 else {}, [], "game:%d" % n)
 	if not paid.ok:
 		return paid
+	if bool(paid.data.get("replayed", false)):
+		return FcDynastyResult.failure("duplicate_request", "This game was already recorded.")
 	return FcDynastyResult.success({"reward": reward, "txn": paid.data["txn"], "game_number": n})

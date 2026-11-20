@@ -113,6 +113,8 @@ static func _open(profile: FcDynastyProfile, catalog: FcDynastyCatalog, pack_id:
 	var paid := FcDynastyEconomy.spend(profile, kind, pack_id, cost, ids, request_id)
 	if not paid.ok:
 		return paid
+	if bool(paid.data.get("replayed", false)):
+		return FcDynastyResult.failure("duplicate_request", "This pack request was already processed.")   # normally caught earlier by opening_for_request
 	var txn_id: String = paid.data["txn"]["txn_id"]
 	var entries: Array = []
 	for id in ids:

@@ -27,6 +27,8 @@ static func acquire(profile: FcDynastyProfile, catalog: FcDynastyCatalog, card_i
 	var paid := FcDynastyEconomy.spend(profile, "acquire_card", card_id, cost, [card_id], request_id)
 	if not paid.ok:
 		return paid
+	if bool(paid.data.get("replayed", false)):
+		return FcDynastyResult.success({"txn": paid.data["txn"], "repeated": true})   # already done: change nothing again
 	var got := FcDynastyCollection.grant_card(profile, card_id, int(v["revision"]), catalog.snapshot_of(card_id), paid.data["txn"]["txn_id"])
 	paid.data["new"] = got["new"]
 	collection_changed(profile, catalog)

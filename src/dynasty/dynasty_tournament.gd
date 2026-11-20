@@ -47,6 +47,8 @@ static func enter(profile: FcDynastyProfile, catalog: FcDynastyCatalog, tourname
 	var paid := FcDynastyEconomy.spend(profile, "tournament_entry", tournament_id, cost, [], "enter:%s" % run_id)
 	if not paid.ok:
 		return paid
+	if bool(paid.data.get("replayed", false)):
+		return FcDynastyResult.failure("duplicate_request", "This tournament entry was already processed.")
 	var seed_value := hash("%d:tournament:%d" % [profile.rng_seed, run_number])
 	var rng := FcRng.new(seed_value)
 	var teams: Array = [{"name": profile.team_name, "abbreviation": profile.abbreviation, "user": true, "slots": []}]

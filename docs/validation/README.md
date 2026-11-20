@@ -1,5 +1,7 @@
 # Validation records
 
+`hardening/` holds the Dynasty hardening and test-runner milestone (D-052): one text file per validation command with the exact command, exit code and duration, and `SUMMARY.txt` listing all twelve (all exit 0: import; 1006 unit tests; 43 live tests; Dynasty check; 1000-game simulation check; economy check; Owner and Career click tests; Creator Studio smoke; Career playthrough; Owner stress, 30 seasons; Career balance, 3 seeds). Run on the working tree before commit.
+
 `ui/` holds the UI/UX polish milestone: `ui/milestone1_results.txt` (test results and layout numbers) and the screenshot sets `ui/before` (original code) and `ui/milestone1` (after Phases 0 to 2). The folder has a `.gdignore` so Godot does not import the pictures.
 
 # Validation record: 2026-11-19 stabilization run

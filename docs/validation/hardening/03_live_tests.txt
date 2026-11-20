@@ -1,0 +1,11 @@
+COMMAND: godot_console --headless --path . --script res://tests/run_live_tests.gd
+COMMIT BASE: c26301f (plus the uncommitted hardening changes)
+STARTED: 2026-11-20T13:51:11-05:00
+-----
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+
+Live tests: 43 passed, 0 failed
+-----
+EXIT CODE: 0
+DURATION SECONDS: 15

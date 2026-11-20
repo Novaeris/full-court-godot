@@ -128,7 +128,27 @@ static func check_definitions(dir: String, paths: Array[String], definitions: Fc
 		FcDynastyContentRules.check_season("seasonal/%s.json" % id, defs["seasonal"][id], defs["card"], defs["pack"], defs["challenge"], errors)
 	for id in defs["support"]:
 		FcDynastyContentRules.check_support("support/%s.json" % id, defs["support"][id], defs["card"], defs["pack"], errors)
+	_check_lineup_coverage(defs, errors)
 	return {"problems": errors, "defs": defs}
+
+
+## A release with enough different players for a team (13 or more) must also be able to field a legal starting lineup. Smaller
+## releases stay publishable (a release may legitimately carry little or no Dynasty content), and the game catalog still refuses to
+## treat them as playable. Uses the same rule as the game (FcDynastyContentRules.lineup_problem).
+static func _check_lineup_coverage(defs: Dictionary, errors: Array[String]) -> void:
+	var players: Array = []
+	var seen := {}
+	for id in defs["card"]:
+		var pid := str(defs["card"][id].get("player_id", ""))
+		if pid == "" or seen.has(pid) or not defs["player"].has(pid):
+			continue
+		seen[pid] = true
+		var p: Dictionary = defs["player"][pid]
+		players.append({"player_id": pid, "position": str(p.get("position", "")), "secondary": str(p.get("secondary_position", ""))})
+	if players.size() >= FcDynastyContentRules.MIN_PLAYABLE_PLAYERS:
+		var problem := FcDynastyContentRules.lineup_problem(players)
+		if problem != "":
+			errors.append("release: " + problem)
 
 
 ## The card identity rules between a release and the one before it (empty = fine):
