@@ -1,0 +1,11 @@
+{
+	"card_ids": [
+		"starter_guard_base",
+		"starter_big_base"
+	],
+	"name": "Starter Pack",
+	"pack_id": "starter_pack",
+	"requires_features": [
+		"pack_fixed_v1"
+	]
+}

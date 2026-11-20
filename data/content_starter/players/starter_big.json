@@ -1,0 +1,10 @@
+{
+	"attributes": {
+		"close_finishing": 68,
+		"interior_defense": 70,
+		"rebounding": 74
+	},
+	"display_name": "Starter Big",
+	"player_id": "starter_big",
+	"position": "C"
+}

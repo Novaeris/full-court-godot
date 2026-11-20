@@ -10,6 +10,26 @@ var path: String
 var tutorial_done: bool = false
 ## The text size: 0 small, 1 normal, 2 large (see FcUiTheme).
 var text_size: int = 1
+## The shared content folder chosen by the player ("" = the default, Documents/FullCourtContent).
+var content_root: String = ""
+
+
+## Where content releases are looked for when no folder has been chosen.
+static func default_content_root() -> String:
+	var docs := OS.get_system_dir(OS.SYSTEM_DIR_DOCUMENTS)
+	return docs.path_join("FullCourtContent") if not docs.is_empty() else "user://content"
+
+
+## Only an absolute folder (or user://) with no ".." parts is accepted as a content folder.
+static func is_valid_content_root(path: String) -> bool:
+	if path.strip_edges().is_empty() or path.contains("\\..") or path.contains("/..") or path.begins_with(".."):
+		return false
+	return path.begins_with("user://") or path.is_absolute_path()
+
+
+## The folder to use: the chosen one if it is valid, otherwise the default (never fails).
+func effective_content_root() -> String:
+	return content_root if is_valid_content_root(content_root) else default_content_root()
 
 
 func _init(file_path: String = DEFAULT_PATH) -> void:
@@ -22,6 +42,7 @@ func load_file() -> void:
 	if cfg.load(path) == OK:
 		tutorial_done = bool(cfg.get_value("tutorial", "done", false))
 		text_size = clampi(int(cfg.get_value("display", "text_size", 1)), 0, 2)
+		content_root = str(cfg.get_value("content", "root", ""))
 
 
 ## Writes the settings. Returns false if the file could not be written (the game goes on regardless).
@@ -29,6 +50,7 @@ func save_file() -> bool:
 	var cfg := ConfigFile.new()
 	cfg.set_value("tutorial", "done", tutorial_done)
 	cfg.set_value("display", "text_size", text_size)
+	cfg.set_value("content", "root", content_root)
 	return cfg.save(path) == OK
 
 

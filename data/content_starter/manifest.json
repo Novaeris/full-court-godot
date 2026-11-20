@@ -1,0 +1,49 @@
+{
+	"approval_note": "Bundled starter content (fallback when no release loads)",
+	"approved_by": "Full Court build tool",
+	"content_version": 1,
+	"files": [
+		{
+			"bytes": 172,
+			"kind": "card",
+			"path": "cards/starter_big_base.json",
+			"sha256": "ea2a02e09cd90e0c48f0fd4a28a8455ed12482ad9d47e5afdddcddbecc33c9ed"
+		},
+		{
+			"bytes": 178,
+			"kind": "card",
+			"path": "cards/starter_guard_base.json",
+			"sha256": "a445d4ba3a20739916ba036067303c2da1e8dc4a40c7b3f12b7fe98179556544"
+		},
+		{
+			"bytes": 165,
+			"kind": "pack",
+			"path": "packs/starter_pack.json",
+			"sha256": "dd4afc438eaf10e98975bed77c8c15c35b1fccf84c98ad47c8deb4f5918def15"
+		},
+		{
+			"bytes": 172,
+			"kind": "player",
+			"path": "players/starter_big.json",
+			"sha256": "a95c382bd8728169c17c5533fcb0a4683a8b6d5e933ba3201ef3aac9e71b8e44"
+		},
+		{
+			"bytes": 167,
+			"kind": "player",
+			"path": "players/starter_guard.json",
+			"sha256": "e3d75fa248d23798ec0bf2a4197a9ba840ed3ae2b983e4cd6cc6e68d51bf51e1"
+		}
+	],
+	"format": "fc_content_release",
+	"manifest_checksum": "97996998059cfc487e5cc02efd23e493687bffeec7621184f1b35159cf5f55a3",
+	"min_game_version": "0.1.0",
+	"previous_release_id": "",
+	"published_at": 1700000000,
+	"published_by": "Full Court build tool",
+	"release_id": "fcr_4d854324631cb325",
+	"requires_features": [
+		"card_rarity_v1",
+		"pack_fixed_v1"
+	],
+	"schema_version": 1
+}

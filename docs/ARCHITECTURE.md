@@ -443,3 +443,5 @@ Creator Studio (authoring) and the game (reading) share one versioned content fo
 **Supported features** (`FcContentFeatures.SUPPORTED`): `card_rarity_v1`, `pack_fixed_v1`. Add a name only together with the code behind it.
 
 **Not built**: remote hosting, authentication, online distribution, Dynasty gameplay, the full card editor.
+
+**Built so far (content milestones 1-4):** `FcContentFeatures`, `FcSafeFile`, `FcContentManifest`, `FcContentValidator`, `FcContentStore` / `FcLocalContentStore`, `FcApproval`, `FcPublisher`, `FcDraftWorkspace`, `FcContentLoader`, `FcContentCatalog`, `FcContentLoadReport`, `FcContentService` (held by `App.content`; the main menu warns when older content was loaded and About shows what loaded). The publisher lives in `src/content/` too so tests and the Studio share it; the game never calls it. The bundled starter release is `data/content_starter/` (rebuild with `tools/build_starter_content.ps1`; `.gitattributes` stops line-ending conversion so its checksums hold; the export filter includes `data/*/*/*.json`). Pointer reading uses `active.json`, then `active.json.bak`, never the unconfirmed `.tmp`.

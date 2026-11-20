@@ -25,6 +25,8 @@ var _career_log: Array = []
 var saves := FcSaveManager.new()
 ## The player's settings (the tutorial is shown once, to a new Owner Mode game).
 var preferences := FcPreferences.new()
+## Published content (Creator Studio releases, D-042): loaded at start-up; falls back safely and reports why.
+var content: FcContentService
 ## The open step of the tutorial (-1 = closed). Kept here because the dashboard is rebuilt often.
 var _tutorial_step: int = -1
 var _tutorial_steps: Array = []
@@ -99,6 +101,7 @@ func setup() -> void:
 	_root.add_theme_constant_override("separation", 10)
 	margin.add_child(_root)
 	apply_text_size(preferences.text_size)
+	content = FcContentService.new(preferences, _defs)
 	show_main_menu()
 
 
@@ -135,6 +138,10 @@ func _say(text: String) -> void:
 
 func show_main_menu() -> void:
 	var box := _reset("FULL COURT")
+	if content != null and content.report.is_degraded():
+		var warn := FcUiTables.label(content.report.summary(), 14)
+		warn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		box.add_child(warn)
 	box.add_child(FcUiTables.label("Basketball management simulation. Choose how you want to play:", 16))
 	var modes := HBoxContainer.new()
 	modes.add_theme_constant_override("separation", 12)
@@ -664,6 +671,8 @@ Status: planned. It is not scheduled yet; its design is a draft in docs/DYNASTY_
 func show_about() -> void:
 	var box := _reset("About Full Court")
 	box.add_child(FcUiTables.label("Full Court %s: a basketball management simulation. Original teams, players and staff; real cities." % FcVersion.GAME_VERSION, 16))
+	if content != null:
+		box.add_child(FcUiTables.label(content.report.summary(), 14))
 	var info := Engine.get_version_info()
 	box.add_child(FcUiTables.label("Made with the Godot Engine %s (MIT license). Copyright (c) 2014-present Godot Engine contributors, Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.  https://godotengine.org" % info.get("string", ""), 14))
 	var text := TextEdit.new()
@@ -674,6 +683,9 @@ func show_about() -> void:
 	var row := HBoxContainer.new()
 	row.add_child(FcUiTables.button("Open the logs folder", func(): OS.shell_open(ProjectSettings.globalize_path("user://logs"))))
 	row.add_child(FcUiTables.button("Open the saves folder", func(): OS.shell_open(ProjectSettings.globalize_path("user://"))))
+	row.add_child(FcUiTables.button("Open the content folder", func():
+		FcSafeFile.make_dir(preferences.effective_content_root())
+		OS.shell_open(ProjectSettings.globalize_path(preferences.effective_content_root()))))
 	row.add_child(FcUiTables.button("Back", show_main_menu))
 	box.add_child(row)
 	box.add_child(FcUiTables.label("If something goes wrong, send the newest file in the logs folder together with a description. Nothing is sent automatically.", 14))
