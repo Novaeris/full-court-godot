@@ -29,6 +29,26 @@
 		"font": 0,
 		"sized_label": 16
 	},
+	"res://src/ui/player/player_figure.gd": {
+		"color": 2,
+		"font": 0,
+		"sized_label": 0
+	},
+	"res://src/ui/player/player_portrait.gd": {
+		"color": 1,
+		"font": 0,
+		"sized_label": 0
+	},
+	"res://src/ui/player/player_visual.gd": {
+		"color": 4,
+		"font": 0,
+		"sized_label": 0
+	},
+	"res://src/ui/player/showcase_stage.gd": {
+		"color": 6,
+		"font": 0,
+		"sized_label": 0
+	},
 	"res://src/ui/ui_mode_skin.gd": {
 		"color": 1,
 		"font": 0,

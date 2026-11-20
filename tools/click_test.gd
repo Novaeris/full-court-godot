@@ -91,8 +91,11 @@ func _run() -> void:
 	await _click_tree_row(roster_tree, 1)
 	await _click_button("Player profile of selected player")
 	var dialog := _visible_dialog()
-	_expect(dialog != null, "the player profile popup appeared")
-	if dialog != null:
+	_expect(dialog != null or _app.host.modals.count() > 0, "the player profile appeared")
+	if _app.host.modals.count() > 0:
+		_app.host.modals.top().close(true)
+		await _frames(3)
+	elif dialog != null:
 		dialog.hide()
 		await _frames(2)
 	var team: FcTeam = c.state.world.teams.get_by_id(c.state.user_team_id)

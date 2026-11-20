@@ -1,0 +1,4 @@
+UI/UX polish, Phase 7 (player showcase and unified profile): validation record, 2026-11-20
+
+Unit suite: 1047 passed, 0 failed (25 new in test_player_identity.gd). Live tests: 55 passed (3 new in test_live_player.gd). Owner click test passes (it now opens the profile dialog).
+Screenshots: docs/validation/ui/phase7 (gallery players, Dynasty profile).

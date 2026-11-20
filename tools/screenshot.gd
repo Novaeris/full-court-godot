@@ -171,9 +171,12 @@ func _process(_delta: float) -> bool:
 	_frames += 1
 	if _frames == 4 and _screen == "gallery" and _section != "":
 		_app._form["gallery"].call("scroll_to_section", _section)
-	if _frames == 5 and _screen.begins_with("dynasty") and _demo in ["inspector", "compare"]:
+	if _frames == 5 and _screen.begins_with("dynasty") and _demo in ["inspector", "compare", "profile"]:
 		var first := FcDynastyFixture.card_id(0)
-		if _demo == "inspector":
+		if _demo == "profile":
+			var vm := FcPlayerPresentation.from_card(_app.dynasty.card_detail(first), _app.dynasty)
+			FcPlayerProfile.open_modal(_app, vm)
+		elif _demo == "inspector":
 			FcCardInspector.open_for(_app.dynasty_ui, first, [FcDynastyFixture.card_id(0), FcDynastyFixture.card_id(1), FcDynastyFixture.card_id(2)])
 		else:
 			FcCardCompare.open_for(_app.dynasty_ui, first, FcDynastyFixture.card_id(1))

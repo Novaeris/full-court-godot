@@ -49,6 +49,7 @@ func build() -> void:
 	_section_feedback()
 	_section_data()
 	_section_cards()
+	_section_players()
 	_section_broadcast()
 	_section_franchise()
 	_section_motion()
@@ -370,6 +371,25 @@ func _section_cards() -> void:
 	for kind in ["mini", "small", "standard", "detail", "hero"]:
 		var card := FcCardFace.new().setup(_demo_card("legendary", 94, "Maya Okoro"), {"size": FcCardFace.size_for(kind)})
 		sizes.add_child(_captioned(kind, card))
+
+
+func _section_players() -> void:
+	var s := _section("Players", "One resolver gives every player one look in every screen. Faces come from a hash of the player's key (never random); a Career player keeps the look he built; uniforms follow the team.")
+	var faces := _flow()
+	s.add_child(faces)
+	var teams := [{"name": "Harbor Kings", "abbreviation": "HBK", "primary": "#1F3A5F", "secondary": "#C8A951"}, {"name": "Sky City", "abbreviation": "SKY", "primary": "#7A1F2B", "secondary": "#FFFFFF"},
+		{"name": "Pine Wolves", "abbreviation": "PNW", "primary": "#1F5F3A", "secondary": "#EAF0FA"}]
+	for i in 12:
+		var subject := FcPlayerPresentation.subject("gallery_player:%d" % i, "Player %d" % i, teams[i % 3], 4 + i * 3)
+		faces.add_child(_captioned("#%d" % i, FcPlayerPortrait.new().setup(subject, 72)))
+	var showcase := _flow()
+	s.add_child(showcase)
+	var built := FcPlayerPresentation.subject("career_player:7", "Maya Okoro", teams[0], 11, {"skin": "tone_5", "hair": "locs", "face": "face_2", "facial_hair": "stubble"})
+	var stage := FcShowcaseStage.new().setup(built, 200)
+	showcase.add_child(_captioned("Showcase stage (a Career player's built look)", stage))
+	showcase.add_child(_captioned("Uniform", FcUniformPreview.new().setup(stage.visual, 90)))
+	var other := FcShowcaseStage.new().setup(FcPlayerPresentation.subject("owner_player:12", "Lena Voss", teams[1], 23), 200)
+	showcase.add_child(_captioned("Showcase stage (derived look)", other))
 
 
 func _section_broadcast() -> void:

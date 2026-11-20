@@ -1,0 +1,18 @@
+{
+	"_comment": "How the simulation's composite ratings are named for players. A player's STYLE SUMMARY is a display label derived from his two strongest composites (at least 'minimum'); it is never fed back into any game logic.",
+	"minimum": 58,
+	"labels": {
+		"three": {"name": "Sharpshooter", "text": "Spaces the floor and makes threes."},
+		"mid": {"name": "Mid-range Scorer", "text": "Scores from the elbows and the pull-up."},
+		"finishing": {"name": "Rim Finisher", "text": "Gets to the basket and finishes."},
+		"creation": {"name": "Shot Creator", "text": "Makes his own shot off the dribble."},
+		"playmaking": {"name": "Playmaker", "text": "Sees the floor and sets teammates up."},
+		"ball_security": {"name": "Ball Handler", "text": "Controls the ball under pressure."},
+		"free_throw": {"name": "Free-Throw Shooter", "text": "Reliable from the line."},
+		"perimeter_d": {"name": "Perimeter Stopper", "text": "Locks up guards and wings."},
+		"interior_d": {"name": "Rim Protector", "text": "Anchors the defense inside."},
+		"steal": {"name": "Ball Hawk", "text": "Gets his hands on passes and dribbles."},
+		"block": {"name": "Shot Blocker", "text": "Erases shots at the rim."},
+		"rebound": {"name": "Glass Cleaner", "text": "Wins the rebound battle."}
+	}
+}

@@ -18,6 +18,8 @@ const SIZE_HERO := Vector2(300, 428)
 const SWEEP_SHADER := "res://assets/shaders/card_sweep.gdshader"
 
 var row: Dictionary = {}
+## The player's resolved look (FcPlayerVisual): the same description every other screen gets for this player.
+var visual: Dictionary = {}
 var tag: String = ""
 var caption: String = ""
 var face_down: bool = false
@@ -56,6 +58,7 @@ func _init() -> void:
 ## Shows a card. `options`: size (Vector2), tag, caption, face_down, on_click (Callable), selected, inspected.
 func setup(card_row: Dictionary, options: Dictionary = {}) -> FcCardFace:
 	row = card_row
+	visual = FcPlayerVisual.resolve(FcPlayerPresentation.subject_for_card(card_row)) if not card_row.is_empty() else {}
 	custom_minimum_size = options.get("size", SIZE_STANDARD)
 	tag = str(options.get("tag", ""))
 	caption = str(options.get("caption", ""))
@@ -269,20 +272,11 @@ func _ray_length(origin: Vector2, angle: float, art: Rect2) -> float:
 
 
 func _draw_portrait(art: Rect2, color: Color, s: float) -> void:
-	var tex := FcDynastyStyle.art_texture(str(row.get("art_path", "")))
-	if tex != null:
-		var tw := float(tex.get_width())
-		var th := float(tex.get_height())
-		var scale_fit := maxf(art.size.x / tw, art.size.y / th)
-		var src_size := art.size / scale_fit
-		var src := Rect2((Vector2(tw, th) - src_size) / 2.0, src_size)
-		draw_texture_rect_region(tex, art, src)
+	if visual.is_empty():
 		return
-	var font := _font(FcUiFonts.display(700))
-	var initials := FcDynastyStyle.initials(str(row.get("name", "?")))
-	var fs := int(46 * s)
-	var width := font.get_string_size(initials, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	draw_string(font, Vector2(art.position.x + (art.size.x - width) / 2.0, art.position.y + art.size.y * 0.66), initials, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(color, 0.85))
+	# the portrait art when there is one, otherwise the player's procedural figure: the same look as everywhere else he appears
+	draw_rect(art, Color(color, 0.0))
+	FcPlayerFigure.draw(self, Rect2(art.position + Vector2(art.size.x * 0.1, art.size.y * 0.04), art.size * Vector2(0.8, 0.96)) if int(visual["tier"]) != FcPlayerVisual.TIER_PORTRAIT else art, visual)
 
 
 func _draw_frame(frame: String, rect: Rect2, color: Color, radius: int, s: float) -> void:

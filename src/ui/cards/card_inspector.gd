@@ -116,6 +116,7 @@ func _left_column(row: Dictionary) -> Control:
 		column.add_child(FcStatLine.make("Mastery (cosmetic)", "level %d, frame %s" % [row["mastery"], ctl.catalog.config.mastery_frame(row["mastery"])]))
 		if bool(row["available"]):
 			column.add_child(_duplicate_actions(row))
+	column.add_child(FcButton.make("Player profile", FcButton.Variant.SECONDARY, func() -> void: FcPlayerProfile.open_modal(_ui.app, FcPlayerPresentation.from_card(row, _ui.ctl)), "user"))
 	column.add_child(FcButton.make("Compare with another card", FcButton.Variant.SECONDARY, func() -> void: FcCardCompare.open_for(_ui, str(row["card_id"])), "arrow-up-down"))
 	return column
 

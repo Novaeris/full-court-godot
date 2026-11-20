@@ -2121,7 +2121,7 @@ func _tab_roster() -> Control:
 		if item == null:
 			_say("Select a player first.")
 			return
-		_show_text_popup("Player profile", player_profile_text(ids[item.get_index()]))))
+		FcPlayerProfile.open_modal(self, FcPlayerPresentation.from_player(controller.state.world, ids[item.get_index()], controller.state.current_season, controller.league_id))))
 	box.add_child(row)
 	return box
 
