@@ -250,3 +250,18 @@ Built on the founder's instruction to continue; the following product choices we
 
 ## D-046 Dynasty uses the simulator unchanged (2026-11-20)
 - The roster becomes a hand-built `FcGameTeam`: starters are forced with `role_bonus`, the rotation uses `minutes_pref`, badges use the Career composite bonus. No change to `FcGameSimulator`. Card overall = the existing `FcPlayerRatings.overall` of the card's attributes; team overall is a weighted average of the 13 slots (`team_overall_weights` in the economy data).
+
+## D-047 UI/UX polish milestone: direction and phasing (2026-11-20, founder approval of the plan in `docs/UI_POLISH_PLAN.md`)
+- One design system ("Hardwood Night": Barlow Condensed for display, Inter for body, Lucide icons) with **three presentation personalities** applied as mode skins that may change only a whitelist (accent, background treatment, density, header style, motion intensity, numerals): **Broadcast** (post-game in every mode, and Career, D7), **Collectible** (Dynasty), **Franchise** (Owner). Components are shared, never forked per mode.
+- Desktop and mobile are separate presentation targets. Owner and Career are desktop-designed; smaller screens must stay usable (minimum window 800x600), not mobile-optimised (D6). Dynasty is the mobile release target.
+- Gameplay presentation is **results-first** (post-game screen); no live playback and no simulation change. Pack artwork is procedural. The Creator Studio entry point is development-only.
+- Phases 0 to 2 are one milestone; **Phase 3 and later need a report and the founder's go-ahead.**
+
+## D-048 UI-only state and preferences (2026-11-20, founder approval)
+- A UI-only sidecar store (`user://ui_state.cfg`) may hold presentation state such as "seen card" markers. It is not a save: no `DATA_VERSION` bump, safe to delete, and existing cards count as seen on first use. UI settings (reduce motion now; audio and haptics in Phase 11) are added to `preferences.cfg` additively.
+
+## D-049 Box-score pass-through for the post-game screen (2026-11-20, founder approval, conditional on Phase 0; **confirmed necessary**)
+- Phase 0 found that `FcDynastyController.last_game["summary"]` has only the user's side (no period scores, no opponent lines, few team totals). When Phase 9 is built, the transient `FcBoxScore` is passed through `last_game` (in memory only, not saved, no simulation change). Owner Mode already keeps full boxes.
+
+## D-050 Player visual identity (2026-11-20, founder requirement for Phase 7)
+- A player keeps **one visual identity everywhere** (roster, profile, post-game, trade, comparison, card). A single pure, deterministic resolver (`FcPlayerVisual`) is the only way screens obtain it: it hashes a stable key, consumes no game RNG, and reads or writes no player data. Tiers T0 (monogram), T1 (card art) and T2 (stylised procedural figure) are built; T3 (full-body pose sprites) and T4 (richer rendering) are designed as provider slots and **not implemented** (D5). Audio sourcing is deferred to Phase 11 and no unlicensed asset is ever added (D4).
