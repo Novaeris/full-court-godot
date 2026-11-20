@@ -134,10 +134,9 @@ func test_the_full_loop_through_the_screens_api() -> void:
 func test_card_detail_shows_real_attributes_and_badges() -> void:
 	_use_fixture()
 	app.dynasty_ui.on_create("Harbor Kings", "HBK")
-	var before := app.get_child_count()
 	app.dynasty_ui.show_card_detail(FcDynastyFixture.card_id(0))
-	assert_true(app.get_child_count() > before, "a detail window opened")
-	var dialog: Node = app.get_child(app.get_child_count() - 1)
+	assert_eq(app.host.modals.count(), 1, "the card inspector opened")
+	var dialog: Node = app.host.modals.top()
 	var t := _text(dialog)
 	assert_true("Catch and Shoot" in t, "badges listed")
 	assert_true("Three-Point Shooting" in t or "three" in t.to_lower(), "attributes listed")

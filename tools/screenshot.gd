@@ -14,6 +14,7 @@ extends SceneTree
 ## text=0|1|2: the text size setting (Small, Normal, Large).
 ## gallery only: skin=neutral|broadcast|collectible|franchise  section=Buttons (scroll to a section)  touch=1  reduce=1
 ## layout=auto|desktop|mobile: force the presentation target (mobile shows the bottom navigation and touch-sized controls).
+##   (dynasty screens) view=grid|carousel  demo=inspector|compare
 ##   demo=modal_info|modal_confirm|modal_destructive|toasts|loading (opens that overlay)
 ## offseason=draft: play the season out and stop at the owner's draft; offseason=window: the free-agency window after it.
 ## Dynasty screens use the test fixture content (tests/support/dynasty_fixture.gd), so the pictures do not depend on the machine.
@@ -33,6 +34,7 @@ var _touch := false
 var _reduce := false
 var _demo := ""
 var _layout := "auto"
+var _view := "grid"
 
 
 func _initialize() -> void:
@@ -54,6 +56,7 @@ func _initialize() -> void:
 			"reduce": _reduce = kv[1] == "1"
 			"demo": _demo = kv[1]
 			"layout": _layout = kv[1]
+			"view": _view = kv[1]
 	if not _stretch:
 		root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 	root.size = _size
@@ -149,6 +152,8 @@ func _build_dynasty() -> void:
 			if skip != null:
 				skip.pressed.emit()
 		return
+	if _app.ui_state != null:
+		_app.ui_state.set_value("collection", "view", _view)
 	_app.dynasty_ui.show_tab(_screen.trim_prefix("dynasty_"))
 
 
@@ -166,6 +171,12 @@ func _process(_delta: float) -> bool:
 	_frames += 1
 	if _frames == 4 and _screen == "gallery" and _section != "":
 		_app._form["gallery"].call("scroll_to_section", _section)
+	if _frames == 5 and _screen.begins_with("dynasty") and _demo in ["inspector", "compare"]:
+		var first := FcDynastyFixture.card_id(0)
+		if _demo == "inspector":
+			FcCardInspector.open_for(_app.dynasty_ui, first, [FcDynastyFixture.card_id(0), FcDynastyFixture.card_id(1), FcDynastyFixture.card_id(2)])
+		else:
+			FcCardCompare.open_for(_app.dynasty_ui, first, FcDynastyFixture.card_id(1))
 	if _frames == 5 and _screen == "gallery" and _demo != "":
 		_app._form["gallery"].call("show_demo", _demo)
 	if _frames == (40 if _demo != "" else 10):   # overlays get time to finish their animation

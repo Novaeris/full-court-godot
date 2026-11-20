@@ -58,6 +58,8 @@ var _form := {}
 var _message: Label
 ## The shell (docs/UI_POLISH_PLAN.md, Phase 3): the frame with the backdrop, the dialog and toast layers.
 var host: FcScreenHost
+## UI-only memory (seen cards, browse mode): not a save (D-048). Its file sits next to the preferences file.
+var ui_state: FcUiState
 ## Which screen is showing and where Back goes.
 var navigator := FcNavigator.new()
 ## Desktop or mobile presentation, and how much room there is.
@@ -109,6 +111,8 @@ func setup() -> void:
 	add_child(host)
 	_root = host.content
 	notifier.stack = host.toasts
+	if ui_state == null:
+		ui_state = FcUiState.new(preferences.path.replace("preferences", "ui_state"))
 	FcMotion.reduced = preferences.reduce_motion
 	layout.mobile_os = OS.has_feature("mobile")
 	layout.touch_available = DisplayServer.is_touchscreen_available()

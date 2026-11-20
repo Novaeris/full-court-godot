@@ -272,6 +272,9 @@ func _build_hub() -> Control:
 	id_box.add_child(FcUiTables.label("Record %d-%d    Points %d-%d    Streak %s" % [rec["wins"], rec["losses"], rec["points_for"], rec["points_against"], _streak(int(rec["streak"]))], 14))
 	top.add_child(id_box)
 	root.add_child(top)
+	var featured := featured_card()
+	if not featured.is_empty():
+		root.add_child(_featured_panel(featured))
 	# recommended next activity
 	var next := _recommended(s)
 	var rec_panel := PanelContainer.new()
@@ -328,6 +331,29 @@ func _build_hub() -> Control:
 		root.add_child(FcUiTables.label("%s   %s" % [_kind_name(str(t["kind"])), _deltas_text(t["deltas"])], 13))
 	root.add_child(note("Content release %s. Card ratings, attributes and badges are static: they never change from playing or duplicates." % s["release_id"], 600))
 	return root
+
+
+## The card the hub shows off: the highest-rated card the player owns that the loaded release still has (ties: the lower card id).
+## Chosen from existing data only; nothing is stored.
+func featured_card() -> Dictionary:
+	for row in ctl.collection_rows({"ownership": "owned"}, "overall_desc"):
+		if bool(row["available"]):
+			return row
+	return {}
+
+
+func _featured_panel(row: Dictionary) -> Control:
+	var box := HBoxContainer.new()
+	box.add_theme_constant_override("separation", 16)
+	box.add_child(FcCardView.build(row, {"size": FcCardFace.SIZE_STANDARD, "on_click": func() -> void: show_card_detail(str(row["card_id"]))}))
+	var words := VBoxContainer.new()
+	words.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var title := FcUiTables.label("Featured card", FcUiTokens.TYPE_H3, true)
+	words.add_child(title)
+	words.add_child(FcUiTables.label("%s (%s)" % [row["name"], row["edition"]], FcUiTokens.TYPE_BODY))
+	words.add_child(note("Your highest-rated card. Click it to inspect, compare or turn it over.", 320))
+	box.add_child(words)
+	return box
 
 
 func _recommended(s: Dictionary) -> Dictionary:

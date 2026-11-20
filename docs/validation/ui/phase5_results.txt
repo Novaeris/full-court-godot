@@ -1,0 +1,4 @@
+UI/UX polish, Phase 5 (collection, carousel, inspector, compare, completion): validation record, 2026-11-20
+
+Unit suite: 963 tests (961 passed in the run, the 2 ratchet failures fixed afterwards); 27 new in test_ui_collection.gd. Live tests: 43 passed (4 new). PERF: 500 cards 13 ms, 2000 cards 53 ms (headless, drawing excluded).
+Screenshots: docs/validation/ui/phase5. Changed on purpose: test_dynasty_ui expects the inspector in the dialog layer.

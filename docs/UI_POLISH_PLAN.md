@@ -125,8 +125,9 @@ Each phase lists objectives, files, dependencies, tasks, acceptance and tests.
 `FcCardView.build(row, options)` keeps its API; new `FcCardFace`, `FcRarityStyle` (registry with fallback), states hover / focus / **selected** / **inspected**, five sizes, flip, per-rarity treatments, owned / unowned / unavailable. Studio can reuse the face.
 - **Built (autonomous run, founder pre-approved all remaining phases):** new src/ui/cards (FcRarityStyle: five rarities each with its own frame, background pattern and effects, with a safe fallback for unknown rarities; FcCardFace: the whole card drawn in one node with hover lift, focus ring, selected, inspected, face-down back, flip, a shader light sweep on rare and up, mastery frames, NEW and other tags, accessible text). FcCardView.build keeps its API, so every Dynasty screen already uses the new cards. The gallery has a Cards section (all rarities, states, sizes). Card text is drawn, so tests read a card's accessible_text().
 
-### Phase 5: Collection, carousel, inspector, compare, completion
+### Phase 5: Collection, carousel, inspector, compare, completion (BUILT)
 Grid and carousel browse modes (virtualised; carousel builds the focused card plus 3 neighbours each side), inspector overlay (zoom, tilt, flip) replacing the `AcceptDialog`, side-by-side compare, completion rings by team / rarity / edition, NEW markers (sidecar store, D2), featured card on the hub chosen from existing data, shared-element transitions. No new content fields.
+- **Built (autonomous run, founder pre-approved all remaining phases):** FcUiState (user://ui_state.cfg, D-048: seen cards and browse mode; never in a save), FcCompletion and FcCompletionPanel (overall, by rarity and team), FcCardCarousel (nine pooled card nodes, keys, wheel, swipe), FcCardInspector (zoom, turn over, previous and next, attribute bars by rating tier, duplicate actions through the same controller calls), FcCardCompare (side by side, bars, badge split), NEW markers (first look baselines everything; opening a card clears its marker), a featured card on the hub, and a collection screen with a filter bar that rebuilds only the results. One node per card: 2,000 cards build in about 50 ms, so no virtualisation was needed (the plan's virtualised grid was dropped for that reason).
 
 ### Phase 6: Packs and reveal
 Procedural pack art tinted by tier, odds disclosure, reveal state machine that only reads the committed `opening`; effect strength by rarity; skip at any time; duplicate chip with shard value; final summary. **Integrity tests:** profile save identical before and after the reveal; reveal order equals `opening["cards"]`; only `acknowledge_opening` is called; skip and full playback give the same result.
@@ -209,3 +210,4 @@ Rebuild-on-navigate (the Phase 3 shim mitigates); Phase 7 scope (tiers ship inde
 
 - 2026-11-20: plan approved; milestone 1 (Phases 0 to 2) built and reported. The founder said "continue"; Phase 3 was built (report in `docs/PROGRESS_LOG.md`). **Phase 4 onward wait for the founder's go-ahead.**
 - 2026-11-20: Phase 4 built: card system
+- 2026-11-20: Phase 5 built: collection, carousel, inspector, compare, completion

@@ -16,149 +16,134 @@ static func build_collection(ui: FcDynastyUi) -> Control:
 	var prog := ctl.collection_progress()
 	root.add_child(ui.heading("Collection: %d of %d cards" % [prog["owned"], prog["total"]]))
 	if ctl.catalog.card_ids().is_empty() and ctl.profile().cards.is_empty():
-		root.add_child(ui.note(ctl.catalog.playable_problem()))
+		root.add_child(FcEmptyState.new("No cards yet", ctl.catalog.playable_problem()))
 		return root
+	var completion := FcCompletionPanel.build(FcCompletion.compute(ctl.collection_rows({}, "overall_desc")))
+	root.add_child(completion)
 	var f: Dictionary = ui.collection_filters
-	var bar := HFlowContainer.new()
-	bar.add_theme_constant_override("h_separation", 10)
-	var search := LineEdit.new()
-	search.placeholder_text = "Search name or edition"
-	search.text = str(f.get("search", ""))
-	search.custom_minimum_size = Vector2(190, 0)
-	search.text_submitted.connect(func(t: String) -> void:
-		f["search"] = t
-		ui.refresh())
-	bar.add_child(search)
-	bar.add_child(_option(f, "position", POSITIONS, "Any position", ui))
-	bar.add_child(_option(f, "rarity", RARITIES, "Any rarity", ui))
-	var teams := [""]
-	teams.append_array(FcCollectionQuery.teams(ctl.catalog))
-	bar.add_child(_option(f, "team", teams, "Any team", ui))
-	var own := OptionButton.new()
-	for i in OWNERSHIP.size():
-		own.add_item(OWNERSHIP[i][1])
-		if str(f.get("ownership", "all")) == OWNERSHIP[i][0]:
-			own.selected = i
-	own.item_selected.connect(func(i: int) -> void:
-		f["ownership"] = OWNERSHIP[i][0]
-		ui.refresh())
-	bar.add_child(own)
-	var min_ovr := SpinBox.new()
-	min_ovr.prefix = "Min OVR "
-	min_ovr.min_value = 0
-	min_ovr.max_value = 99
-	min_ovr.value = int(f.get("min_overall", 0))
-	min_ovr.value_changed.connect(func(v: float) -> void: f["min_overall"] = int(v))
-	min_ovr.get_line_edit().text_submitted.connect(func(_t: String) -> void: ui.refresh())
-	bar.add_child(min_ovr)
-	var sort := OptionButton.new()
-	for i in FcCollectionQuery.SORTS.size():
-		sort.add_item(FcCollectionQuery.SORT_NAMES[i])
-		if FcCollectionQuery.SORTS[i] == ui.collection_sort:
-			sort.selected = i
-	sort.item_selected.connect(func(i: int) -> void:
-		ui.collection_sort = FcCollectionQuery.SORTS[i]
-		ui.refresh())
-	bar.add_child(sort)
-	bar.add_child(FcUiTables.button("Apply", func() -> void:
-		f["search"] = search.text
-		ui.refresh()))
-	bar.add_child(FcUiTables.button("Clear filters", func() -> void:
-		ui.collection_filters = {}
-		ui.refresh()))
+	var bar := FcFilterBar.new()
+	bar.add_search("search", "Search name or edition")
+	bar.add_dropdown("position", "Any position", _pairs(POSITIONS.slice(1)))
+	bar.add_chips("rarity", _rarity_pairs(), false)
+	var teams := FcCollectionQuery.teams(ctl.catalog)
+	bar.add_dropdown("team", "Any team", _pairs(teams))
+	bar.add_dropdown("ownership", "All cards", [["Owned", "owned"], ["Not owned yet", "unowned"]])
+	bar.add_dropdown("min_overall", "Any overall", [["60+", 60], ["70+", 70], ["80+", 80], ["90+", 90]])
+	bar.add_clear_button("Clear filters")
+	bar.set_values(_to_bar(f))
 	root.add_child(bar)
-	var rows := ctl.collection_rows(f, ui.collection_sort)
+	var tools := HFlowContainer.new()
+	tools.add_theme_constant_override("h_separation", FcUiTokens.SPACE_3)
+	var sort := FcDropdown.new()
+	var sort_items: Array = []
+	for i in FcCollectionQuery.SORTS.size():
+		sort_items.append([FcCollectionQuery.SORT_NAMES[i], FcCollectionQuery.SORTS[i]])
+	sort.set_items(sort_items, ui.collection_sort)
+	tools.add_child(FcUiTables.label("Sort", FcUiTokens.TYPE_SMALL))
+	tools.add_child(sort)
+	var view := FcChoiceGroup.new()
+	view.set_options([["grid", "Grid"], ["carousel", "Carousel"]], str(ui.app.ui_state.get_value("collection", "view", "grid")))
+	tools.add_child(view)
+	root.add_child(tools)
+	var holder := VBoxContainer.new()
+	root.add_child(holder)
+	completion.visible = view.current_id != "carousel"   # the carousel needs the room
+	var refill := func(mode: String) -> void:
+		completion.visible = mode != "carousel"
+		_fill_results(ui, holder, mode)
+	bar.changed.connect(func(values: Dictionary) -> void:
+		ui.collection_filters = _to_query(values)
+		refill.call(view.current_id))
+	sort.chosen.connect(func(value) -> void:
+		ui.collection_sort = str(value)
+		refill.call(view.current_id))
+	view.selected.connect(func(id: String) -> void:
+		ui.app.ui_state.set_value("collection", "view", id)
+		refill.call(id))
+	refill.call(view.current_id)
+	return root
+
+
+static func _pairs(values: Array) -> Array:
+	var out: Array = []
+	for v in values:
+		out.append([str(v), v])
+	return out
+
+
+static func _rarity_pairs() -> Array:
+	var out: Array = []
+	for r in RARITIES.slice(1):
+		out.append([FcRarityStyle.label(r), r])
+	return out
+
+
+## The query filters (empty ones left out) as the filter bar's values, and back.
+static func _to_bar(query: Dictionary) -> Dictionary:
+	var out := {}
+	for key in ["search", "position", "rarity", "team", "ownership"]:
+		out[key] = str(query.get(key, "")) if str(query.get(key, "all")) != "all" else ""
+	out["min_overall"] = int(query["min_overall"]) if int(query.get("min_overall", 0)) > 0 else ""
+	return out
+
+
+static func _to_query(values: Dictionary) -> Dictionary:
+	var out := {}
+	for key in ["search", "position", "rarity", "team", "ownership"]:
+		if str(values.get(key, "")) != "":
+			out[key] = str(values[key])
+	if values.get("min_overall", "") is int and int(values["min_overall"]) > 0:
+		out["min_overall"] = int(values["min_overall"])
+	return out
+
+
+## Fills the results area (the grid or the carousel) for the current filters. Only this area is rebuilt when a filter changes, so
+## the search box keeps its focus while the player types.
+static func _fill_results(ui: FcDynastyUi, holder: VBoxContainer, mode: String) -> void:
+	var ctl := ui.ctl
+	for c in holder.get_children():
+		holder.remove_child(c)
+		c.queue_free()
+	var rows := ctl.collection_rows(ui.collection_filters, ui.collection_sort)
 	if rows.is_empty():
-		root.add_child(ui.note("No cards match these filters."))
-		return root
+		holder.add_child(FcEmptyState.new("No cards match", "Try fewer filters.", FcEmptyState.Kind.EMPTY, "search", "Clear filters", func() -> void:
+			ui.collection_filters = {}
+			ui.refresh()))
+		return
+	var profile_id := ctl.profile().profile_id
+	var owned_ids: Array = []
+	for r in ctl.collection_rows({"ownership": "owned"}):
+		owned_ids.append(r["card_id"])
+	var fresh := ui.app.ui_state.new_cards(profile_id, owned_ids)
+	var ids: Array = []
+	for r in rows:
+		ids.append(r["card_id"])
+	var open_card := func(card_id: String) -> void:
+		var modal := FcCardInspector.open_for(ui, card_id, ids)
+		modal.closed.connect(func() -> void: _fill_results(ui, holder, mode))   # NEW markers disappear for cards that were opened
+	if mode == "carousel":
+		var carousel := FcCardCarousel.new()
+		carousel.options_for = func(row: Dictionary) -> Dictionary: return {"tag": "NEW" if fresh.has(row["card_id"]) else ""}
+		carousel.set_rows(rows)
+		carousel.activated.connect(func(i: int) -> void: open_card.call(str(rows[i]["card_id"])))
+		holder.add_child(carousel)
+		FcMotion.fade_in(carousel)
+		return
 	var grid := HFlowContainer.new()
 	grid.add_theme_constant_override("h_separation", 10)
 	grid.add_theme_constant_override("v_separation", 10)
 	for row in rows:
-		grid.add_child(FcCardView.build(row, {"on_click": func() -> void: ui.show_card_detail(str(row["card_id"]))}))
-	root.add_child(grid)
-	return root
+		var card_id := str(row["card_id"])
+		grid.add_child(FcCardView.build(row, {"tag": "NEW" if fresh.has(card_id) else "", "on_click": func() -> void: open_card.call(card_id)}))
+	holder.add_child(grid)
+	FcMotion.fade_in(grid)
 
 
-static func _option(f: Dictionary, key: String, values: Array, any_text: String, ui: FcDynastyUi) -> OptionButton:
-	var o := OptionButton.new()
-	for i in values.size():
-		o.add_item(any_text if str(values[i]) == "" else str(values[i]).capitalize() if key == "rarity" else str(values[i]))
-		if str(f.get(key, "")) == str(values[i]):
-			o.selected = i
-	o.item_selected.connect(func(i: int) -> void:
-		f[key] = str(values[i])
-		ui.refresh())
-	return o
-
-
-## The card detail window: the actual attributes and badges the simulation uses, plus duplicate actions.
+## The card window: the inspector overlay (zoom, turn over, compare, previous and next).
 static func show_detail(ui: FcDynastyUi, card_id: String) -> void:
-	var ctl := ui.ctl
-	var row := ctl.card_detail(card_id)
-	if row.is_empty():
+	if ui.ctl.card_detail(card_id).is_empty():
 		return
-	var dialog := AcceptDialog.new()
-	dialog.title = "%s: %s" % [row["name"], row["edition"]]
-	dialog.min_size = Vector2i(820, 620)
-	var root := HBoxContainer.new()
-	root.add_theme_constant_override("separation", 16)
-	var left := VBoxContainer.new()
-	left.add_child(FcCardView.build(row, {"size": Vector2(190, 270)}))
-	if row["owned"]:
-		left.add_child(FcUiTables.label("Copies owned: %d" % row["quantity"]))
-		left.add_child(FcUiTables.label("Mastery (cosmetic): level %d, frame %s" % [row["mastery"], ctl.catalog.config.mastery_frame(row["mastery"])]))
-		if row["available"]:
-			var convert := FcUiTables.button("Convert a duplicate to %d shards" % ctl.catalog.config.shards_for(str(row["rarity"])), func() -> void:
-				var r := ctl.convert_duplicate(card_id)
-				dialog.queue_free()
-				ui.report(r, "Converted a duplicate." if r.ok else "")
-				ui.refresh())
-			convert.disabled = row["spare"] < 1
-			left.add_child(convert)
-			var level := int(row["mastery"])
-			var cost := ctl.catalog.config.mastery_cost(level)
-			var mastery := FcUiTables.button("Raise mastery (1 duplicate + %d shards)" % cost, func() -> void:
-				var r := ctl.apply_mastery(card_id)
-				dialog.queue_free()
-				ui.report(r, "Mastery raised. This changes how the card looks, never how it plays." if r.ok else "")
-				ui.refresh())
-			mastery.disabled = row["spare"] < 1 or level >= ctl.catalog.config.mastery_max() or ctl.profile().balance("shards") < cost
-			left.add_child(mastery)
-			left.add_child(ui.note("Duplicates become shards or cosmetic mastery. Ratings, attributes and badges never change.", 220))
-	root.add_child(left)
-	var right := VBoxContainer.new()
-	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	right.add_child(FcUiTables.label("%s   %s   %s overall" % [FcDynastyStyle.rarity_label(str(row["rarity"])), row["position"], row["overall"]], 18, true))
-	if str(row["team"]) != "":
-		right.add_child(FcUiTables.label("Team: %s" % row["team"]))
-	if not row["available"]:
-		right.add_child(ui.note("The loaded content release does not include this card. You still own it; it returns when a release brings it back.", 380))
-	else:
-		if bool(row["revision_changed"]):
-			right.add_child(ui.note("The card's definition was updated by a newer release (revision %d)." % row["revision"], 380))
-		var badges: Array = row["badges"]
-		if not badges.is_empty():
-			right.add_child(FcUiTables.label("Badges", 16, true))
-			for b in badges:
-				var def := FcBadges.get_badge(str(b))
-				right.add_child(ui.note("%s: %s" % [def.get("name", b), def.get("description", "")], 380))
-		var rows: Array = []
-		var attrs: Dictionary = row["attributes"]
-		for key in ctl.defs.attributes.keys():
-			rows.append([ctl.defs.attributes.get_def(key).display_name, attrs.get(key, 0), ctl.defs.attributes.get_def(key).category.capitalize()])
-		var tree := FcUiTables.table(["Attribute", "Rating", "Group"], rows, [200, 70, 0])
-		tree.custom_minimum_size = Vector2(380, 300)
-		right.add_child(tree)
-	var stats: Dictionary = ctl.profile().card_stats.get(card_id, {})
-	if not stats.is_empty() and int(stats["games"]) > 0:
-		right.add_child(FcUiTables.label("In your games: %d played, %.1f pts, %.1f reb, %.1f ast per game" % [stats["games"], float(stats["points"]) / stats["games"], float(stats["rebounds"]) / stats["games"], float(stats["assists"]) / stats["games"]]))
-	root.add_child(right)
-	dialog.add_child(root)
-	dialog.confirmed.connect(dialog.queue_free)
-	dialog.canceled.connect(dialog.queue_free)
-	ui.app.add_child(dialog)
-	dialog.popup_centered()
+	FcCardInspector.open_for(ui, card_id, [])
 
 
 # --- lineup -----------------------------------------------------------------------------------------------------
