@@ -37,6 +37,10 @@ func setup(view_model: Dictionary, team_colors: Array = []) -> FcPostGameScreen:
 func _ready() -> void:
 	for b in bars:
 		b.animate_in()
+	if str(vm["result"]) == "win":
+		FcAudio.cue("game_win")
+	elif str(vm["result"]) == "loss":
+		FcAudio.cue("game_loss")
 
 
 # --- the result ----------------------------------------------------------------------------------------------------------------

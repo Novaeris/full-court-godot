@@ -145,7 +145,8 @@ static func build_challenges(ui: FcDynastyUi) -> Control:
 		row.add_child(prog)
 		var claim := FcDynastyUi.btn("Claimed" if c["claimed"] else "Claim reward", func() -> void:
 			var r := ctl.claim_challenge(str(c["id"]))
-			ui.report(r, "Reward claimed: %s" % FcDynastyChallenges.rewards_text(c["rewards"]))
+			if ui.report(r, "Reward claimed: %s" % FcDynastyChallenges.rewards_text(c["rewards"])):
+				FcAudio.cue("reward")
 			ui.refresh())
 		claim.disabled = not c["completed"] or c["claimed"]
 		row.add_child(claim)

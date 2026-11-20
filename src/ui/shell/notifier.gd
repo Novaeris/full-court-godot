@@ -53,6 +53,7 @@ func _show(kind: FcToast.Kind, text: String) -> void:
 	if text.strip_edges() == "":
 		return
 	history.append({"kind": kind, "text": text})
+	FcAudio.cue("toast_" + str(FcToast.Kind.keys()[kind]).to_lower())
 	if history.size() > HISTORY_LIMIT:
 		history.pop_front()
 	if stack != null and is_instance_valid(stack):

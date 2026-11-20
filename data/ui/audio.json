@@ -1,0 +1,61 @@
+{
+	"_about": "The sound map. Identity: arena and hardwood. Every sound is an id on a bus (UI, SFX, Music). A sound plays the optional audio file when it exists, otherwise a short sound the game builds itself from the recipe in 'synth' (original, no third-party audio). A missing file or an unknown id is silent. Rarity stings climb in one key (C major): tap, bounce, chime, horn, arena horn.",
+	"buses": ["UI", "SFX", "Music"],
+	"sounds": {
+		"ui_click": {"bus": "UI", "gain_db": -8.0, "file": "res://assets/audio/ui_click.ogg", "synth": {"layers": [
+			{"wave": "sine", "freq": 190, "freq_to": 110, "ms": 70, "gain": 0.7, "decay": 38},
+			{"wave": "noise", "ms": 14, "gain": 0.35, "decay": 160, "lowpass": 0.55}]}},
+		"ui_back": {"bus": "UI", "gain_db": -9.0, "file": "res://assets/audio/ui_back.ogg", "synth": {"layers": [
+			{"wave": "sine", "freq": 150, "freq_to": 90, "ms": 80, "gain": 0.7, "decay": 34},
+			{"wave": "noise", "ms": 12, "gain": 0.3, "decay": 170, "lowpass": 0.6}]}},
+		"ui_open": {"bus": "UI", "gain_db": -9.0, "file": "res://assets/audio/ui_open.ogg", "synth": {"layers": [
+			{"wave": "triangle", "freq": 262, "ms": 120, "gain": 0.45, "decay": 22},
+			{"wave": "triangle", "freq": 392, "start_ms": 55, "ms": 140, "gain": 0.4, "decay": 20}]}},
+		"toast_info": {"bus": "UI", "gain_db": -11.0, "file": "res://assets/audio/toast_info.ogg", "synth": {"layers": [
+			{"wave": "sine", "freq": 523, "ms": 150, "gain": 0.4, "decay": 20}]}},
+		"toast_success": {"bus": "UI", "gain_db": -9.0, "file": "res://assets/audio/toast_success.ogg", "synth": {"layers": [
+			{"wave": "sine", "freq": 392, "ms": 120, "gain": 0.4, "decay": 18},
+			{"wave": "sine", "freq": 523, "start_ms": 90, "ms": 220, "gain": 0.45, "decay": 14}]}},
+		"toast_warning": {"bus": "UI", "gain_db": -9.0, "file": "res://assets/audio/toast_warning.ogg", "synth": {"layers": [
+			{"wave": "triangle", "freq": 330, "ms": 160, "gain": 0.45, "decay": 16},
+			{"wave": "triangle", "freq": 330, "start_ms": 170, "ms": 160, "gain": 0.45, "decay": 16}]}},
+		"toast_error": {"bus": "UI", "gain_db": -9.0, "file": "res://assets/audio/toast_error.ogg", "synth": {"layers": [
+			{"wave": "triangle", "freq": 220, "freq_to": 165, "ms": 240, "gain": 0.5, "decay": 10}]}},
+		"card_flip": {"bus": "SFX", "gain_db": -7.0, "file": "res://assets/audio/card_flip.ogg", "synth": {"layers": [
+			{"wave": "noise", "ms": 90, "gain": 0.5, "decay": 30, "lowpass": 0.25},
+			{"wave": "noise", "start_ms": 70, "ms": 24, "gain": 0.7, "decay": 120, "lowpass": 0.8}]}},
+		"pack_tear": {"bus": "SFX", "gain_db": -6.0, "file": "res://assets/audio/pack_tear.ogg", "synth": {"layers": [
+			{"wave": "noise", "ms": 320, "gain": 0.55, "decay": 7, "lowpass": 0.7, "attack_ms": 40},
+			{"wave": "noise", "start_ms": 280, "ms": 40, "gain": 0.7, "decay": 90, "lowpass": 0.9}]}},
+		"rarity_0": {"bus": "SFX", "gain_db": -8.0, "file": "res://assets/audio/rarity_0.ogg", "synth": {"layers": [
+			{"wave": "sine", "freq": 262, "freq_to": 200, "ms": 140, "gain": 0.6, "decay": 24},
+			{"wave": "noise", "ms": 16, "gain": 0.3, "decay": 150, "lowpass": 0.5}]}},
+		"rarity_1": {"bus": "SFX", "gain_db": -7.0, "file": "res://assets/audio/rarity_1.ogg", "synth": {"layers": [
+			{"wave": "sine", "freq": 262, "freq_to": 190, "ms": 120, "gain": 0.55, "decay": 26},
+			{"wave": "sine", "freq": 392, "start_ms": 60, "ms": 300, "gain": 0.45, "decay": 11}]}},
+		"rarity_2": {"bus": "SFX", "gain_db": -6.0, "file": "res://assets/audio/rarity_2.ogg", "synth": {"layers": [
+			{"wave": "sine", "freq": 523, "ms": 520, "gain": 0.5, "decay": 6},
+			{"wave": "sine", "freq": 659, "start_ms": 90, "ms": 500, "gain": 0.4, "decay": 6},
+			{"wave": "sine", "freq": 1047, "start_ms": 90, "ms": 400, "gain": 0.15, "decay": 8}]}},
+		"rarity_3": {"bus": "SFX", "gain_db": -6.0, "file": "res://assets/audio/rarity_3.ogg", "synth": {"layers": [
+			{"wave": "saw", "freq": 262, "ms": 700, "gain": 0.28, "decay": 3, "attack_ms": 25, "lowpass": 0.18},
+			{"wave": "saw", "freq": 392, "ms": 700, "gain": 0.24, "decay": 3, "attack_ms": 25, "lowpass": 0.18},
+			{"wave": "sine", "freq": 784, "start_ms": 120, "ms": 500, "gain": 0.2, "decay": 6}]}},
+		"rarity_4": {"bus": "SFX", "gain_db": -5.0, "file": "res://assets/audio/rarity_4.ogg", "synth": {"layers": [
+			{"wave": "saw", "freq": 196, "ms": 1100, "gain": 0.26, "decay": 2.2, "attack_ms": 40, "lowpass": 0.15},
+			{"wave": "saw", "freq": 294, "ms": 1100, "gain": 0.22, "decay": 2.2, "attack_ms": 40, "lowpass": 0.15},
+			{"wave": "saw", "freq": 392, "ms": 1100, "gain": 0.2, "decay": 2.2, "attack_ms": 40, "lowpass": 0.15},
+			{"wave": "noise", "start_ms": 100, "ms": 1000, "gain": 0.22, "decay": 3, "attack_ms": 300, "lowpass": 0.12},
+			{"wave": "sine", "freq": 1047, "start_ms": 300, "ms": 800, "gain": 0.18, "decay": 5}]}},
+		"reward": {"bus": "SFX", "gain_db": -7.0, "file": "res://assets/audio/reward.ogg", "synth": {"layers": [
+			{"wave": "sine", "freq": 392, "ms": 140, "gain": 0.45, "decay": 14},
+			{"wave": "sine", "freq": 523, "start_ms": 110, "ms": 140, "gain": 0.45, "decay": 14},
+			{"wave": "sine", "freq": 659, "start_ms": 220, "ms": 140, "gain": 0.45, "decay": 14},
+			{"wave": "sine", "freq": 784, "start_ms": 330, "ms": 420, "gain": 0.5, "decay": 7}]}},
+		"game_win": {"bus": "SFX", "gain_db": -7.0, "file": "res://assets/audio/game_win.ogg", "synth": {"layers": [
+			{"wave": "saw", "freq": 262, "ms": 420, "gain": 0.22, "decay": 5, "attack_ms": 20, "lowpass": 0.16},
+			{"wave": "saw", "freq": 392, "start_ms": 160, "ms": 520, "gain": 0.22, "decay": 4, "attack_ms": 20, "lowpass": 0.16}]}},
+		"game_loss": {"bus": "SFX", "gain_db": -9.0, "file": "res://assets/audio/game_loss.ogg", "synth": {"layers": [
+			{"wave": "triangle", "freq": 196, "freq_to": 147, "ms": 480, "gain": 0.45, "decay": 6}]}}
+	}
+}

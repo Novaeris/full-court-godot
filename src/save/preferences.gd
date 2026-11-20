@@ -14,6 +14,13 @@ var text_size: int = 1
 var reduce_motion: bool = false
 ## "auto", "desktop" or "mobile": which presentation target to use (Settings; auto follows the device and window).
 var layout_override: String = "auto"
+## Sound (Phase 11): volumes 0 to 100 for the master and each bus, one mute switch, and the phone vibration toggle.
+var audio_master: int = 80
+var audio_ui: int = 80
+var audio_sfx: int = 80
+var audio_music: int = 60
+var audio_muted: bool = false
+var haptics: bool = true
 ## The shared content folder chosen by the player ("" = the default, Documents/FullCourtContent).
 var content_root: String = ""
 
@@ -47,6 +54,12 @@ func load_file() -> void:
 		layout_override = str(cfg.get_value("display", "layout", "auto"))
 		if not layout_override in ["auto", "desktop", "mobile"]:
 			layout_override = "auto"
+		audio_master = clampi(int(cfg.get_value("audio", "master", 80)), 0, 100)
+		audio_ui = clampi(int(cfg.get_value("audio", "ui", 80)), 0, 100)
+		audio_sfx = clampi(int(cfg.get_value("audio", "sfx", 80)), 0, 100)
+		audio_music = clampi(int(cfg.get_value("audio", "music", 60)), 0, 100)
+		audio_muted = bool(cfg.get_value("audio", "muted", false))
+		haptics = bool(cfg.get_value("audio", "haptics", true))
 		content_root = str(cfg.get_value("content", "root", ""))
 
 
@@ -57,6 +70,12 @@ func save_file() -> bool:
 	cfg.set_value("display", "text_size", text_size)
 	cfg.set_value("display", "reduce_motion", reduce_motion)
 	cfg.set_value("display", "layout", layout_override)
+	cfg.set_value("audio", "master", audio_master)
+	cfg.set_value("audio", "ui", audio_ui)
+	cfg.set_value("audio", "sfx", audio_sfx)
+	cfg.set_value("audio", "music", audio_music)
+	cfg.set_value("audio", "muted", audio_muted)
+	cfg.set_value("audio", "haptics", haptics)
 	cfg.set_value("content", "root", content_root)
 	return cfg.save(path) == OK
 

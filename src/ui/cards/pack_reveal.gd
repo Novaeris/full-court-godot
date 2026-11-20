@@ -95,6 +95,9 @@ func reveal_next(animate: bool = true) -> void:
 	var tw := face.flip_to(false, FcUiTokens.DUR_SLOW if animate else 0.0)
 	if not quiet:
 		_celebrate(face, rarity, intensity)
+		FcAudio.cue("rarity_%d" % clampi(intensity, 0, 4))
+		if intensity >= 3 and FcAudio.current != null:
+			FcAudio.current.haptic(40)
 	if i + 1 < _faces.size():
 		_faces[i + 1].modulate.a = 1.0
 	card_revealed.emit(i, entries[i], intensity)
@@ -170,6 +173,7 @@ func _play_intro(pack_listing: Dictionary) -> void:
 	tw.tween_property(_intro, "rotation", 0.0, 0.07)
 	tw.tween_callback(func() -> void:
 		if is_instance_valid(_intro) and _intro.is_inside_tree():
+			FcAudio.cue("pack_tear")
 			_intro.tear(0.3))
 	tw.tween_interval(0.3)
 	tw.tween_callback(func() -> void:

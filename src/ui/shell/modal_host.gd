@@ -17,6 +17,7 @@ func open(modal: FcModal) -> FcModal:
 	if not _stack.is_empty():
 		_stack.back().process_mode = Node.PROCESS_MODE_DISABLED
 	_stack.append(modal)
+	FcAudio.cue("ui_open")
 	modal.closed.connect(func() -> void: _on_closed(modal))
 	modal.open(self)
 	return modal

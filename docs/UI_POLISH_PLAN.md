@@ -154,8 +154,9 @@ One shared screen for all modes in the Broadcast skin: final score hero, quarter
 Career creator as steps with a live card and figure preview; Career hub on the shared profile; Owner franchise skin (franchise colours, letterhead, KPI strips), the 13 tabs on the kit; small-window pass for Owner and Career; Studio adopts the theme and card face.
 - **Built (autonomous run, founder pre-approved all remaining phases):** Career creator is five steps (Identity, Body, Look, Skills, Review) with a live showcase preview built by the one visual resolver, one column so it fits a phone (744 px down to 360 px); the Career hub shows the player portrait and opens the shared profile; the Owner Overview uses KPI strips; Creator Studio adopts the game theme and fonts through a third junction (assets). The full 13-tab Owner conversion to the kit continues to be incremental (D6: Owner stays desktop-designed).
 
-### Phase 11: Audio
+### Phase 11: Audio (BUILT)
 `FcAudio` owned by `FcApp` (not an autoload); buses Master, UI, SFX, Music; data-driven sound map (`data/ui/audio.json`); missing files are silent. Identity "arena and hardwood": soft wood-and-leather taps for UI, paper-and-snap card flips, rarity stings in one key that climb (single bounce, chime, horn, crowd swell, arena horn and roar), a short ascending motif for rewards and achievements. Independent volumes and mutes, saved in `preferences.cfg`; the game is fully playable muted. Optional haptics toggle. **Sound sourcing is decided here (D4); nothing unlicensed is added.**
+- **Built (autonomous run, founder pre-approved all remaining phases):** FcAudio (owned by FcApp, FcAudio.cue), FcAudioSynth, data/ui/audio.json sound map with 17 sounds on UI/SFX/Music buses; rarity stings in C major climbing in five tiers; every button clicks; toasts, flips, pack tears, rewards and game results have cues; Sound panel in Settings with volumes, mute and vibration (preferences.cfg [audio]). No third-party audio (D-054).
 
 ### Phase 12: Onboarding, UX states, accessibility sweep
 First-run hints for Career and Dynasty; empty / loading / error / success audit; focus order and controller pass; contrast audit.
@@ -221,3 +222,4 @@ Rebuild-on-navigate (the Phase 3 shim mitigates); Phase 7 scope (tiers ship inde
 - 2026-11-20: Phase 8 built: remaining Dynasty screens and mobile layouts
 - 2026-11-20: Phase 9 built: post-game presentation
 - 2026-11-20: Phase 10 built: Career and Owner polish
+- 2026-11-20: Phase 11 built: audio

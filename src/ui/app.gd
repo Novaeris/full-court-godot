@@ -25,6 +25,8 @@ var _career_log: Array = []
 var saves := FcSaveManager.new()
 ## The player's settings (the tutorial is shown once, to a new Owner Mode game).
 var preferences := FcPreferences.new()
+## The game's sound (Phase 11); screens fire cues through FcAudio.cue.
+var audio: FcAudio
 ## Published content (Creator Studio releases, D-042): loaded at start-up; falls back safely and reports why.
 var content: FcContentService
 ## Dynasty Mode: the controller screens use and the screens' shell (built in setup).
@@ -111,6 +113,11 @@ func setup() -> void:
 	add_child(host)
 	_root = host.content
 	notifier.stack = host.toasts
+	audio = FcAudio.new(preferences)
+	add_child(audio)
+	FcAudio.current = audio
+	if is_inside_tree():
+		get_tree().node_added.connect(_on_node_added)   # every button makes the click sound; screens need no code for it
 	if ui_state == null:
 		ui_state = FcUiState.new(preferences.path.replace("preferences", "ui_state"))
 	FcMotion.reduced = preferences.reduce_motion
@@ -126,6 +133,20 @@ func setup() -> void:
 	dynasty_ui = FcDynastyUi.new(self, dynasty)
 	show_main_menu()
 	layout.update(size)
+
+
+func _exit_tree() -> void:
+	if audio != null and FcAudio.current == audio:
+		FcAudio.current = null
+
+
+func _on_node_added(node: Node) -> void:
+	if node is BaseButton and not node.has_meta("silent") and not (node as BaseButton).pressed.is_connected(_on_any_button):
+		(node as BaseButton).pressed.connect(_on_any_button)
+
+
+func _on_any_button() -> void:
+	FcAudio.cue("ui_click")
 
 
 ## Sets the text size (0 small, 1 normal, 2 large) for the whole game and remembers the choice.
@@ -369,6 +390,7 @@ func show_settings() -> void:
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	display.add(hint)
 	box.add_child(display)
+	box.add_child(_sound_panel())
 	var help := FcPanel.new("Help", FcPanel.Variant.SURFACE)
 	var replay := FcButton.make("Replay the tutorial next game", FcButton.Variant.SECONDARY, func() -> void:
 		preferences.reset_tutorial()
@@ -385,6 +407,39 @@ func show_settings() -> void:
 	var back := FcButton.make("Back", FcButton.Variant.SECONDARY, show_main_menu, "chevron-left")
 	back.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	box.add_child(back)
+
+
+## The Sound panel of Settings: a mute switch, a volume for everything and for each kind of sound, the phone vibration toggle and a
+## test button. Changes apply at once and are saved in preferences.cfg (the game is fully playable with the sound off).
+func _sound_panel() -> Control:
+	var panel := FcPanel.new("Sound", FcPanel.Variant.SURFACE)
+	panel.add(FcToggle.make("Mute everything", preferences.audio_muted, func(on: bool) -> void:
+		preferences.audio_muted = on
+		_save_audio_settings()))
+	for entry in [["Master volume", "audio_master"], ["Interface sounds", "audio_ui"], ["Effects (cards, packs, games)", "audio_sfx"], ["Music", "audio_music"]]:
+		panel.add(FcUiTables.label(entry[0], FcUiTokens.TYPE_SMALL))
+		var slider := FcSlider.new(0, 100, 5, "%")
+		slider.set_value_silent(float(preferences.get(entry[1])))
+		slider.value_changed.connect(func(v: float) -> void:
+			preferences.set(entry[1], int(v))
+			_save_audio_settings())
+		panel.add(slider)
+	panel.add(FcToggle.make("Vibration on phones", preferences.haptics, func(on: bool) -> void:
+		preferences.haptics = on
+		_save_audio_settings()))
+	var test := FcButton.make("Play a test sound", FcButton.Variant.SECONDARY, func() -> void: FcAudio.cue("reward"))
+	test.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	panel.add(test)
+	var note := FcUiTables.label("Music is not included yet. Sounds are made by the game itself.", FcUiTokens.TYPE_SMALL)
+	note.theme_type_variation = "MutedLabel"
+	panel.add(note)
+	return panel
+
+
+func _save_audio_settings() -> void:
+	preferences.save_file()
+	if audio != null:
+		audio.apply_settings()
 
 
 ## Deleting a save cannot be undone, so the Delete button asks first (the dialog starts on Cancel).

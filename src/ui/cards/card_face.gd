@@ -97,6 +97,7 @@ func accessible_text() -> String:
 func flip_to(show_back: bool, seconds: float = FcUiTokens.DUR_SLOW) -> Tween:
 	if face_down == show_back:
 		return null
+	FcAudio.cue("card_flip")
 	pivot_offset = size / 2.0
 	var d := FcMotion.duration(seconds)
 	if d <= 0.0 or not is_inside_tree():
