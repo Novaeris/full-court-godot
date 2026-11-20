@@ -428,7 +428,7 @@ See TESTING.md.
 - Tools: `tools/career_growth_study.gd` (strategies focused/even/template/low_weight), `tools/career_balance.gd strategy=...`.
 
 ## Content publishing (D-042)
-Creator Studio (authoring) and the game (reading) share one versioned content format. All format code lives in `src/content/`; Studio reaches it through the junctions `creator_studio/game_src` (to `src`) and `creator_studio/data` (to `data`); create them with `tools/link_studio.ps1` (a test fails if they are missing). After the links exist, run `godot_console --headless --path creator_studio --import --quit` twice the first time (the second pass finishes registering classes).
+Creator Studio (authoring) and the game (reading) share one versioned content format. All format code lives in `src/content/`; Studio reaches it through the junctions `creator_studio/game_src` (to `src`), `creator_studio/data` (to `data`) and `creator_studio/assets` (to `assets`, so Studio wears the game's theme and fonts; Phase 10); create them with `tools/link_studio.ps1` (a test fails if they are missing). After the links exist, run `godot_console --headless --path creator_studio --import --quit` twice the first time (the second pass finishes registering classes).
 
 **Content root** (`Documents/FullCourtContent` by default, setting `FcPreferences.content_root`):
 `active.json` (pointer), `releases/<release_id>/` (immutable; `manifest.json`, `players/ cards/ packs/ challenges/ seasonal/ support/`, `art/`), `drafts/` (Studio workspace, never read by the game), `tmp/` (unfinished writes, never read).

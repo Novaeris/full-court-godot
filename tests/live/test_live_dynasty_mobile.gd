@@ -166,7 +166,7 @@ func test_the_lineup_and_a_game_work_by_touch() -> void:
 	var seen: Array = []
 	screen.team_tab_changed.connect(func(side: int) -> void: seen.append(side))
 	var tb := screen.tabs.button_for(str(other))
-	await seconds(6.0)   # the "Game complete" toast sits over the bottom of the screen for a few seconds, and a tap on it only dismisses it
+	await seconds(10.0)   # the "Game complete" toast sits over the bottom of the screen for a few seconds, and a tap on it only dismisses it
 	await _tap(tb)
 	assert_eq(seen, [other], "a tap on the other team's tab shows its player lines")
 

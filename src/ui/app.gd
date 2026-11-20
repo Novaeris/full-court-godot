@@ -465,6 +465,11 @@ func show_career_hub() -> void:
 	var card := career.card()
 	var box := _reset("%s   #%d" % [card["name"], card["jersey"]], {"id": "career_hub", "skin": FcModeSkin.BROADCAST, "back": _confirm_leave_to_menu,
 		"header": {"kind": "lower_third", "subtitle": "%s   %s   Age %d" % [card["position"], card["archetype"], card["age"]]}})
+	var identity := HBoxContainer.new()   # the player, the same figure as on the profile, with the way into it
+	identity.add_theme_constant_override("separation", FcUiTokens.SPACE_3)
+	identity.add_child(FcPlayerPortrait.new().setup(FcPlayerPresentation.from_career(career)["subject"], 64))
+	identity.add_child(FcUiTables.button("Player profile", func() -> void: FcPlayerProfile.open_modal(self, FcPlayerPresentation.from_career(career))))
+	box.add_child(identity)
 	box.add_child(FcUiTables.label("%s%s   %s   Age %d   %d cm, %d kg, wingspan %d cm   Team: %s" % [
 		card["position"], "/" + card["secondary"] if card["secondary"] != "" else "", card["archetype"], card["age"],
 		card["height_cm"], card["weight_kg"], card["wingspan_cm"], card["team"]], 16))
@@ -1847,7 +1852,10 @@ func _tab_overview() -> Control:
 	var box := VBoxContainer.new()
 	var s := controller.season()
 	var rec := controller.user_record()
-	box.add_child(FcUiTables.label("Record: %d-%d    League rank: %d    Games left: %d    Streak: %s" % [rec["wins"], rec["losses"], rec["rank"], rec["games_left"], rec["streak"]], 18))
+	var kpis := FcKpiStrip.new()   # the franchise at a glance (Phase 10)
+	kpis.set_items([{"label": "Record", "value": "%d-%d" % [rec["wins"], rec["losses"]], "delta": str(rec["streak"])},
+		{"label": "League rank", "value": str(rec["rank"])}, {"label": "Games left", "value": str(rec["games_left"])}])
+	box.add_child(kpis)
 	var next := controller.next_user_game()
 	if next != null:
 		var opp := next.away_id if next.home_id == controller.state.user_team_id else next.home_id
@@ -1864,9 +1872,11 @@ func _tab_overview() -> Control:
 	var report := controller.owner_report()
 	if not report.is_empty():
 		box.add_child(FcUiTables.label("Owner report, %d-%02d season" % [report["year"], (report["year"] + 1) % 100], 18, true))
-		box.add_child(FcUiTables.label("Profit %s    Revenue %s    Franchise value %s (%s this season)    Cash %s    Debt %s" % [
-			FcUiTables.money(report["profit"]), FcUiTables.money(report["revenue"]), FcUiTables.money(report["valuation"]),
-			FcUiTables.money(report["valuation_change"]), FcUiTables.money(report["cash"]), FcUiTables.money(report["debt"])]))
+		var money := FcKpiStrip.new()
+		money.set_items([{"label": "Profit", "value": FcUiTables.money(report["profit"])}, {"label": "Revenue", "value": FcUiTables.money(report["revenue"])},
+			{"label": "Franchise value", "value": FcUiTables.money(report["valuation"]), "delta": FcUiTables.money(report["valuation_change"]) + " this season"},
+			{"label": "Cash", "value": FcUiTables.money(report["cash"])}, {"label": "Debt", "value": FcUiTables.money(report["debt"])}])
+		box.add_child(money)
 		box.add_child(FcUiTables.label("Wins %d (expected about %d)    Owner approval: %d / 100" % [report["wins"], report["expected_wins"], report["approval"]]))
 	if controller.state.mode == FcGameState.MODE_OWNER:
 		var history := controller.owner_history()

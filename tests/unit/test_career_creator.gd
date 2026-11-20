@@ -215,3 +215,63 @@ func test_the_career_screens_create_save_and_reload_a_player() -> void:
 	app._load_slot("career_1")
 	assert_true(app.career != null, "loading restores the career")
 	assert_true("Maya Okoro" in _labels_text(app), "loading the save opens the Career Hub")
+
+
+# --- Phase 10: steps and the live preview -------------------------------------------------------------------------------
+
+func test_the_creator_is_a_series_of_steps_with_one_page_showing() -> void:
+	var creator := FcCareerCreator.new(defs)
+	creator.build()
+	assert_eq(creator.step_ids(), ["identity", "body", "look", "skills", "review"])
+	assert_eq(creator.current_step(), "identity")
+	var visible := 0
+	for page in creator._pages.values():
+		if (page as Control).visible:
+			visible += 1
+	assert_eq(visible, 1, "one page at a time")
+	creator.show_step("skills")
+	assert_eq(creator.current_step(), "skills")
+	assert_true(not creator._next_button.disabled and not creator._back_button.disabled)
+	creator.show_step("review")
+	assert_true(creator._next_button.disabled, "no step after the last")
+	assert_true(creator._messages.text != "", "the review step checks the build")
+	creator.free()
+
+
+func test_the_preview_follows_the_build_and_is_the_same_figure_as_elsewhere() -> void:
+	var creator := FcCareerCreator.new(defs)
+	creator.build()
+	creator.set_field("first_name", "Maya")
+	creator.set_field("last_name", "Okoro")
+	creator.set_field("jersey_number", 11)
+	assert_true(str(creator._preview_words.text).contains("#11"), "the jersey number shows in the preview")
+	var before := JSON.stringify(creator._stage.visual)
+	var look: Dictionary = creator.current_spec()["appearance"]
+	var part := str(look.keys()[0])
+	var options: Array = FcBuildRules.rules()["appearance"][part]
+	var other := str(options[0]) if str(look[part]) != str(options[0]) else str(options[1])
+	var spec_look: Dictionary = creator.current_spec()["appearance"]
+	spec_look[part] = other
+	creator.set_field("appearance", spec_look)
+	creator._refresh_preview()
+	assert_true(JSON.stringify(creator._stage.visual) != before, "changing the look changes the figure")
+	var expected := FcPlayerVisual.resolve(creator._preview_subject())
+	assert_eq(creator._stage.visual, expected, "the preview comes from the one visual resolver")
+	creator.free()
+
+
+func test_the_steps_keep_every_input_the_old_form_had() -> void:
+	var creator := FcCareerCreator.new(defs)
+	creator.build()
+	for field in ["first_name", "last_name", "country", "jersey_number", "position", "secondary_position", "handedness", "archetype", "height_cm", "weight_kg", "wingspan_cm", "potential"]:
+		assert_true(creator._inputs.has(field), field)
+	assert_eq(creator._attribute_inputs.size(), defs.attributes.keys().size(), "every attribute has a box")
+	creator.free()
+
+
+func test_the_career_hub_opens_the_shared_player_profile() -> void:
+	assert_true(app.on_create_career(_spec(), 4))
+	assert_true(_has_button("Player profile"), "the hub has the profile button")
+	var vm := FcPlayerPresentation.from_career(app.career)
+	var modal := FcPlayerProfile.open_modal(app, vm)
+	assert_true(modal != null and app.host.modals.count() == 1, "the profile opens as a dialog")

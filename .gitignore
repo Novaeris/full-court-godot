@@ -32,3 +32,4 @@ desktop.ini
 # Creator Studio reaches the shared code and data through folder links; never commit the links (they would duplicate src and data)
 /creator_studio/game_src
 /creator_studio/data
+/creator_studio/assets

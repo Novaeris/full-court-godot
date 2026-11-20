@@ -127,7 +127,7 @@ func test_the_window_changing_to_a_phone_rebuilds_the_open_screen_as_mobile() ->
 func test_a_wide_screen_scrolls_sideways_in_a_small_window() -> void:
 	await frames(2)
 	host.size = Vector2(400, 600)
-	app.show_career_creator()   # needs about 740 px
+	app.show_new_league()   # needs about 775 px
 	await frames(3)
 	var scroll := app.host.content.get_parent() as ScrollContainer
 	assert_true(scroll.get_h_scroll_bar().max_value > scroll.size.x, "the screen scrolls sideways instead of being cut off")

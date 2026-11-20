@@ -27,6 +27,10 @@ Every Dynasty screen wraps its text and flows its columns so it fits a 412 px ph
 
 FcPostGameModel (pure view-model), FcPostGameScreen (score bug hero, line score, player of the game, performers, after-the-game, team comparison bars, team tabs) and FcPostGame adapters for Owner, Career and Dynasty; data/ui/pog.json; read-only box pass-through (D-053). Results: docs/validation/ui/phase9_results.txt.
 
+## 2026-11-20: UI/UX polish, Phase 10 (Career and Owner polish)
+
+Career creator is five steps (Identity, Body, Look, Skills, Review) with a live showcase preview built by the one visual resolver, one column so it fits a phone (744 px down to 360 px); the Career hub shows the player portrait and opens the shared profile; the Owner Overview uses KPI strips; Creator Studio adopts the game theme and fonts through a third junction (assets). The full 13-tab Owner conversion to the kit continues to be incremental (D6: Owner stays desktop-designed). Results: docs/validation/ui/phase10_results.txt.
+
 ## 2026-11-20: UI/UX polish, Phase 3 (shell, navigation, notifications, layout), D-051
 
 Built after the founder reviewed milestone 1 and said "continue". `src/ui/shell/` (`FcScreenHost`, `FcNavigator`, `FcModalHost`, `FcNotifier`, `FcLayoutProfile`) plus `FcNavBar`; `FcApp` now sits on the shell. Visible results: a redesigned main menu (mode cards with status chips; 820 px down to 393 px), a Settings screen (text size, reduce motion, layout override, tutorial, content folder), a confirmed Delete, toasts instead of the bottom message line, Escape and Android back, a loading overlay for slow actions, the three skins applied (Owner letterhead and team colours, Career lower third and grid, Dynasty spotlight), and Dynasty navigation as top tabs on desktop and a bottom bar with More on mobile. Dynasty collection and packs already fit a 412 px phone; the hub and lineup still scroll sideways (Phase 8). Owner and Career fit 800x600, and wider screens scroll sideways.

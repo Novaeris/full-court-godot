@@ -40,6 +40,7 @@ func setup(studio_settings: FcStudioSettings = null) -> void:
 	if _status != null:
 		return
 	settings = studio_settings if studio_settings != null else FcStudioSettings.new()
+	theme = FcUiTheme.build(1)   # the same look as the game (fonts, colours, buttons); the assets junction supplies the fonts
 	defs = FcDefinitionSet.load_default()
 	_open_store()
 	_build_ui()
@@ -187,6 +188,11 @@ func _say(text: String) -> void:
 
 func _build_ui() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var backdrop := ColorRect.new()
+	backdrop.color = FcUiTokens.BG
+	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(backdrop)
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	for side in ["left", "right", "top", "bottom"]:
