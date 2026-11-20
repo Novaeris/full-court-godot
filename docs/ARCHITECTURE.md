@@ -425,3 +425,21 @@ See TESTING.md.
 - Offseason: `FcOffseason.progress_and_retire` skips growth for `career_player_ids` and reports `career_growth`; `finish_season` grants points once per season (`growth_granted_year`).
 - Measured (balance sweep, 2 seeds, 20 seasons, `growth_to_points` 17): focused spending peaks 1-2 below potential for every archetype (e.g. custom 73.5/75, sharpshooter 76/77, stretch four 78/80), spread between archetypes 4.5. Even spending peaks 1.5-5.5 lower (custom 69.5/75, stretch four 74.5/80), spread 7.0. Peak age 27; no unspent bank.
 - Tools: `tools/career_growth_study.gd` (strategies focused/even/template/low_weight), `tools/career_balance.gd strategy=...`.
+
+## Content publishing (D-042)
+Creator Studio (authoring) and the game (reading) share one versioned content format. All format code lives in `src/content/`; Studio reaches it through the junction `creator_studio/shared_content` (create it with `tools/link_studio.ps1`; a test fails if it is missing).
+
+**Content root** (`Documents/FullCourtContent` by default, setting `FcPreferences.content_root`):
+`active.json` (pointer), `releases/<release_id>/` (immutable; `manifest.json`, `players/ cards/ packs/ challenges/ seasonal/ support/`, `art/`), `drafts/` (Studio workspace, never read by the game), `tmp/` (unfinished writes, never read).
+
+**Manifest**: `release_id` (`fcr_` + 16 hex), `content_version`, `schema_version`, `min_game_version`, `requires_features`, `previous_release_id`, publication metadata (`published_at`, `published_by`, `approved_by`, `approval_note`) and `files` (path, kind, bytes, SHA-256 of the raw bytes). `manifest_checksum` is the SHA-256 of the canonical manifest text (sorted keys, compact JSON, UTF-8) with that field removed. No floats.
+
+**Identity**: `player_id` (the fictional player), `card_id` (one card edition, stable forever), `release_id` (the release that carried it), `revision` (definition revision, starts at 1). Changing a published card needs a higher `revision`; same revision with different content is rejected. Saves will store ids only, never copies of definitions, so ownership survives any release; a card missing from the active release shows as unavailable and returns with a later release or a rollback.
+
+**Publishing** (`FcPublisher`): validate the draft, require an `FcApproval` (bound to the draft's content hash, single use), build in `tmp/`, verify, rename into `releases/<id>/` (never over an existing id), mark read-only, then swap the pointer (write temp, keep backup, rename, read back). A crash before the swap leaves the old release active.
+
+**Loading** (`FcContentLoader`): read the pointer, verify manifest, compatibility, every file checksum and every path (no absolute paths or `..`), build an `FcContentCatalog`. If that fails, follow `previous_release_id` (missing links and cycles stop the walk), then use the bundled starter release (`data/content_starter`). The `FcContentLoadReport` says what was requested, what loaded, and why each other release was rejected. `rollback_to(id)` validates the target and moves only the pointer.
+
+**Supported features** (`FcContentFeatures.SUPPORTED`): `card_rarity_v1`, `pack_fixed_v1`. Add a name only together with the code behind it.
+
+**Not built**: remote hosting, authentication, online distribution, Dynasty gameplay, the full card editor.

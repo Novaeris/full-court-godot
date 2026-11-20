@@ -28,3 +28,6 @@ desktop.ini
 *.key
 *.keystore
 *.jks
+
+# Creator Studio reaches the shared code through a folder link; never commit the link (it would duplicate src/content)
+/creator_studio/shared_content

@@ -1,0 +1,22 @@
+; Full Court Creator Studio: the separate tool that authors content and publishes it to the game.
+; It shares the game's src/content code through the "shared_content" folder link
+; (run tools/link_studio.ps1 once after cloning). See docs/ARCHITECTURE.md "Content publishing".
+
+config_version=5
+
+[application]
+
+config/name="Full Court Creator Studio"
+config/features=PackedStringArray("4.7")
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=800
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

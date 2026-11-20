@@ -39,3 +39,6 @@ Rough size: XL+ (months), mostly content, UI and online.
 - The first card set: how many players, what rarities, who supplies names, art and ratings, and which AI tool/licence?
 - Online at launch, or offline first?
 - The price model for paid features, and which platforms to launch on first.
+
+## Content pipeline (D-042)
+Dynasty cards and players are delivered as versioned content releases (see docs/ARCHITECTURE.md "Content publishing"), authored in Creator Studio and read by the game without a new build. Cards keep a stable `card_id`; owned cards are stored by id only.

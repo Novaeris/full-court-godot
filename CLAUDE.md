@@ -25,6 +25,8 @@ The developer is a solo, beginner programmer. Explain decisions in plain languag
 - `src/game/`  The game controller: the one API screens use. Screens must call it, never the engines directly.
 - `data/definitions/`  JSON definitions of attributes, personality traits, tendencies. Edit these to rebalance, not code.
 - `src/career/` + `src/data/career/` + `data/career/`  Career Mode (docs/CAREER_MODE_PLAN.md): pure build validation, progression rules and the career season rules, the career profile record, archetypes and build rules as data. The player itself is the shared `FcPlayer`; never create a second player type.
+- `src/content/`  Content publishing (D-042): release manifest, validator, local store, publisher, loader, catalog. The ONE shared copy used by the game and Creator Studio.
+- `creator_studio/`  Separate Godot project (Creator Studio) in this repo; reaches `src/content` through the git-ignored junction `shared_content` (`tools/link_studio.ps1`). Never copy `src/content` into it.
 - `src/...`     Further modules are added only when they hold real code (see docs/ARCHITECTURE.md).
 - `tests/`      Automated tests. `tests/unit/test_*.gd`; base class `FcTestCase`.
 - `tools/`      Dev scripts (test runner wrapper, later: season stress-test).
