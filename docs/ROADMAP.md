@@ -32,6 +32,7 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 - Career statistics and archiving of old seasons (370 tests)
 - Owner Mode depth, long-run economy and stability checks (see `docs/PROGRESS_LOG.md` and `docs/STABILITY_REPORT.md`)
 - Career Mode phases 1-6 (D-038 to D-040): build validation and creator, progression, season simulation, RPG layer (decisions, contracts, relationships, rivalries, sponsorships), potential-capped player-directed growth, scouting and draft pick; marked playable (710 tests at the 2026-11-19 stabilization run)
+- Content publishing (D-042, 758 tests): Creator Studio to game releases, local and offline: manifest and checksums, approval-gated publisher, immutable releases with crash-safe pointer, loader with visible fallback and rollback, bundled starter release. Remote hosting is not built.
 
 ## Current
 - Owner Mode depth (see `docs/PROGRESS_LOG.md`). A milestone plan is drafted in `docs/MILESTONE_PLAN.md` and is the plan of record; the "Next" list below is only a rough guide.

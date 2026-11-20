@@ -3,6 +3,12 @@
 Newest first. Written so someone returning after a break can see where things stand.
 The repository was published to GitHub on 2026-11-17 at the founder's request (public: https://github.com/Novaeris/full-court-godot, remote `origin`, branch `main`). Later commits stay local until the founder asks for a push.
 
+## 2026-11-20: content publishing (Creator Studio to the game), D-042
+
+Built in six milestones, each committed and pushed at the founder's request: the shared format (`src/content/`: manifest, canonical checksums over raw bytes, safe paths, validator, card revision rules), the immutable local store with a crash-safe active pointer, owner approval bound to one draft and single use, the publisher, the draft workspace, the game-side loader (fallback along `previous_release_id`, then the bundled starter release, with a visible report), rollback, ownership by stable ids, preferences, and `App.content`. Creator Studio is a separate Godot project (`creator_studio/`) reaching `src` and `data` through git-ignored junctions (`./tools/link_studio.ps1`); it has one screen with drafts, a check report, a confirmed approval button and a release list with rollback. Tests: 758 (48 new). Also verified: Studio smoke test, `./tools/publish_demo.ps1`, and a fresh clone (link script, import, full suite, Studio smoke).
+Not built (by design): remote hosting or accounts, Dynasty gameplay, a visual card editor (drafts are edited as files for now), a save-format change (ownership will be stored by id when Dynasty adds it, with a `DATA_VERSION` bump and migration).
+Notes for the founder: the bundled starter content (`data/content_starter`) is minimal placeholder data used only as the last fallback; Studio's default content folder is `Documents/FullCourtContent`; the first Studio run after cloning needs `--import` twice (see docs/ARCHITECTURE.md).
+
 ## 2026-11-19: Career Mode playable, then a stabilization pass
 
 Career Mode phases 1-6 are built (D-038 to D-040): creator, progression, season simulation, the RPG layer (decisions, contracts, relationships, rivalries, sponsorships), potential-capped player-directed growth, and a scouting report and draft pick. A whole career plays start to finish (`./tools/career_playthrough.ps1`), and `./tools/career_click_test.ps1` clicks through the Career screens.

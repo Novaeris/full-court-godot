@@ -40,7 +40,7 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 | FcGameState (validation, round trip incl. RNG position) | 4 |
 | Staff (definitions, roles, validation, retirement, round trip, contracts, world rules for unique roles / two jobs / dangling refs, old snapshots without staff) | 18 |
 | Save system (round trip, slot-name safety, backups, checksum/truncation/garbage detection, interrupted-save and crash recovery, version rejection, migrations, listing, delete, autosave, integrity warnings, staff persistence) | 19 |
-| Content publishing (manifest, canonical checksums, safe paths, validator, revision rules, publisher, approval, immutability, crash-safe pointer, draft workspace, loader, fallback chain with cycle detection, rollback, ownership by id, preferences, service, studio link) | 45 |
+| Content publishing (manifest, canonical checksums, safe paths, validator, revision rules, publisher, approval, immutability, crash-safe pointer, draft workspace, loader, fallback chain with cycle detection, rollback, ownership by id, preferences, service, studio link) | 48 |
 | FcIdGenerator (sequence, independence, save round-trip) | 3 |
 | FcDate (validity, leap years, ISO round trip, age math) | 4 |
 | Attribute system (shipped JSON valid, catalog errors, set validation, clamping, save compatibility, adding attributes) | 7 |
