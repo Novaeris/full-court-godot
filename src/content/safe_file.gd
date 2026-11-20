@@ -102,6 +102,14 @@ static func _walk(root: String, prefix: String, out: Array[String]) -> void:
 		_walk(root, prefix + d + "/", out)
 
 
+## One hash for a whole folder: every relative path with the hash of its raw bytes.
+static func hash_tree(root: String) -> String:
+	var lines: Array[String] = []
+	for p in list_files(root):
+		lines.append("%s:%s" % [p, hash_file(root.path_join(p))])
+	return hash_text("\n".join(lines))
+
+
 ## Marks a file read-only where the OS supports it (published releases are never edited).
 static func set_read_only(path: String, read_only: bool) -> void:
 	FileAccess.set_read_only_attribute(path, read_only)
