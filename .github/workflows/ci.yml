@@ -46,6 +46,9 @@ jobs:
       - name: Unit tests (exit code 1 on any failure)
         run: ~/godot/godot --headless --path . --script res://tests/run_tests.gd
 
+      - name: Live UI tests (tweens, timers, focus and input in a real scene tree; exit code 1 on any failure)
+        run: ~/godot/godot --headless --path . --script res://tests/run_live_tests.gd
+
       - name: Simulation check, 1000 games (exit code 1 if any league average is out of range)
         run: ~/godot/godot --headless --path . --script res://tools/simulate_games.gd -- games=1000 strict=1
 

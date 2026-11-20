@@ -10,6 +10,8 @@ var path: String
 var tutorial_done: bool = false
 ## The text size: 0 small, 1 normal, 2 large (see FcUiTheme).
 var text_size: int = 1
+## Reduced motion: animations are instant (fades at most 80 ms). Read by FcMotion; see docs/UI_POLISH_PLAN.md, section 6.
+var reduce_motion: bool = false
 ## The shared content folder chosen by the player ("" = the default, Documents/FullCourtContent).
 var content_root: String = ""
 
@@ -39,6 +41,7 @@ func load_file() -> void:
 	if cfg.load(path) == OK:
 		tutorial_done = bool(cfg.get_value("tutorial", "done", false))
 		text_size = clampi(int(cfg.get_value("display", "text_size", 1)), 0, 2)
+		reduce_motion = bool(cfg.get_value("display", "reduce_motion", false))
 		content_root = str(cfg.get_value("content", "root", ""))
 
 
@@ -47,6 +50,7 @@ func save_file() -> bool:
 	var cfg := ConfigFile.new()
 	cfg.set_value("tutorial", "done", tutorial_done)
 	cfg.set_value("display", "text_size", text_size)
+	cfg.set_value("display", "reduce_motion", reduce_motion)
 	cfg.set_value("content", "root", content_root)
 	return cfg.save(path) == OK
 

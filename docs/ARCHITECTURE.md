@@ -286,7 +286,8 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 ## User interface (`src/ui/`, `scenes/main.tscn`)
 - `FcApp` (the main scene's script) builds the screens in code: main menu (new / continue / load / delete), new league form (areas, valid team counts and layouts, cap style, era, mode, seed), team choice, and the dashboard with tabs Overview, Standings, Schedule, Roster, Finances, Staff, League. `FcUiTables` makes tables and formats money.
 - Screens only call `FcGameController`; no rules live in the UI. Public methods (`show_*`, `on_*`, `build_tab`) let tests click through the same paths a player does.
-- Status: first, plain version (tables and buttons) intended for testing the rules. Smoke tests prove every screen builds with real data, a whole season and the next one can be played, and saving/loading works; they cannot judge appearance, layout or usability, which needs a human. A News tab, a box score viewer (Schedule tab, last 20 games of your team) and a player profile (Roster tab: bio, ratings, personality, tendencies, contract, career) exist. Not yet: draft and free agency screens, trade screens, responsive/mobile layouts, a theme with real typography, icons and team logos.
+- **Design system (UI polish milestone, D-047, `docs/UI_POLISH_PLAN.md`).** `FcUiTokens` holds the colours, type scale, spacing, radii and motion times ("Hardwood Night"); `FcUiFonts` loads Inter (body) and Barlow Condensed (headings, numbers) from `assets/fonts`; `FcUiTheme.build(text_size, skin)` builds the Godot Theme with type-variations for the kit; `FcModeSkin` gives each mode its personality (Broadcast, Collectible, Franchise, Neutral) through a small whitelist of properties; `FcUiRatingTiers` colours ratings from `data/ui/rating_tiers.json`; `FcUiIcons` loads the Lucide icons in `assets/icons/lucide`; `FcMotion` is the only way components animate and honours the Reduce motion preference (`FcPreferences.reduce_motion`). Components live in `src/ui/kit/` (buttons, tabs, choice groups, dropdowns, toggles, sliders, progress, search, filter bars, modals, toasts, loading, empty states, data tables, rating badges, stat tiles, and the Broadcast and Franchise sets) and are shown in the development-only `FcComponentGallery`. Screens not yet migrated still use `FcUiTables`; `FcUiTables.label` now follows the text-size setting and `bold` makes a heading. The screen shell, navigation, notifications and responsive layouts (Phase 3) are not built yet.
+- Status: the original plain version (tables and buttons) intended for testing the rules, now wearing the new theme. Smoke tests prove every screen builds with real data, a whole season and the next one can be played, and saving/loading works; they cannot judge appearance, layout or usability, which needs a human. A News tab, a box score viewer (Schedule tab, last 20 games of your team) and a player profile (Roster tab: bio, ratings, personality, tendencies, contract, career) exist. Not yet: draft and free agency screens, trade screens, responsive/mobile layouts, a theme with real typography, icons and team logos.
 
 ## Game controller (`src/game/game_controller.gd`)
 The single object a screen talks to. It owns the `FcGameState` and drives everything; it has no UI code.
@@ -344,8 +345,8 @@ FcPlayerGameStats  one player's box score line
 ## Game mode architecture (planned)
 A mode defines a permission set (which actions the player does directly vs. delegates to AI staff) and which UI screens are available. Both modes call the same core services.
 
-## UI structure (planned)
-Godot Control scenes, reusable components, shared theme. PC and mobile get separate layouts from the same screen logic.
+## UI structure
+Code-built Control screens (`FcApp`, `FcDynastyUi`) on a shared theme and component kit (see "User interface" above). PC and mobile get separate presentation layouts from the same screen logic (Phase 3 adds the layout profile and the screen shell).
 
 ## Testing
 See TESTING.md.

@@ -1,0 +1,11 @@
+{
+	"_comment": "Colour ramp for ratings and attributes (slate, steel, cyan, orange, gold). Rating colours are never rarity colours. Each tier starts at its min.",
+	"tiers": [
+		{"min": 0, "name": "Reserve", "color": "A0AABF"},
+		{"min": 55, "name": "Depth", "color": "7FA2D6"},
+		{"min": 65, "name": "Rotation", "color": "4CC3D9"},
+		{"min": 75, "name": "Starter", "color": "F58C29"},
+		{"min": 85, "name": "Star", "color": "FFC857"},
+		{"min": 92, "name": "Elite", "color": "FFE9A8"}
+	]
+}

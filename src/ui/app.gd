@@ -103,6 +103,8 @@ func setup() -> void:
 	_root = VBoxContainer.new()
 	_root.add_theme_constant_override("separation", 10)
 	margin.add_child(_root)
+	FcMotion.reduced = preferences.reduce_motion
+	FcUiTokens.touch_mode = false
 	apply_text_size(preferences.text_size)
 	content = FcContentService.new(preferences, _defs)
 	dynasty = FcDynastyController.new(content, _defs)
@@ -188,14 +190,38 @@ func show_main_menu() -> void:
 	for name in FcUiTheme.SIZE_NAMES:
 		size_pick.add_item(name)
 	size_pick.selected = preferences.text_size
-	size_pick.item_selected.connect(func(i): apply_text_size(i))
+	size_pick.item_selected.connect(func(i):
+		apply_text_size(i)
+		show_main_menu())   # rebuild so headings and labels pick up the new size at once
 	settings.add_child(size_pick)
+	settings.add_child(FcToggle.make("Reduce motion", preferences.reduce_motion, func(on: bool) -> void:
+		preferences.reduce_motion = on
+		preferences.save_file()
+		FcMotion.reduced = on))
 	settings.add_child(FcUiTables.button("Replay the tutorial next game", func():
 		preferences.reset_tutorial()
 		_say("The tutorial will open when you start your next Owner Mode game.")))
 	box.add_child(settings)
 	box.add_child(FcUiTables.button("About, licenses and logs", show_about))
+	if OS.has_feature("editor") or OS.get_cmdline_user_args().has("--gallery"):
+		box.add_child(FcUiTables.button("Component gallery (development only)", show_gallery))
 	box.add_child(FcUiTables.button("Quit", func(): get_tree().quit()))
+
+
+## The development-only Component Gallery (every design token and kit component; see docs/UI_POLISH_PLAN.md). Leaving it puts the
+## player's own text size, motion and layout settings back, because the gallery changes them to show each variant.
+func show_gallery() -> void:
+	var box := _reset("Component gallery")
+	var gallery := FcComponentGallery.new()
+	gallery.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	gallery.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	gallery.closed.connect(func() -> void:
+		FcUiTokens.touch_mode = false
+		FcMotion.reduced = preferences.reduce_motion
+		apply_text_size(preferences.text_size)
+		show_main_menu())
+	box.add_child(gallery)
+	_form["gallery"] = gallery
 
 
 ## Career Mode's home: create a player (or continue from the saved games list on the main menu). Progression, the

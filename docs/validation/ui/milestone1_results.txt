@@ -1,0 +1,23 @@
+UI/UX polish, milestone 1 (Phases 0 to 2): validation record, 2026-11-20
+Base commit: c56e3f7 (plan and decisions); the working tree held the milestone's implementation.
+
+Full unit suite       godot_console --headless --path . --script res://tests/run_tests.gd
+                      Tests: 882 passed, 0 failed (exit 0, about 9 min 50 s). Baseline before the milestone: 819 passed, 0 failed (about 9 min 50 s).
+                      The 63 new tests: design system 24, kit 33 (incl. gallery), motion 5, style lint 3, layout ratchet 1 (some files hold more than one count; see tests/unit/test_ui_*.gd).
+UI tests only         --filter=test_ui   82 passed, 0 failed (after the final edits)
+Live tests            godot_console --headless --path . --script res://tests/run_live_tests.gd
+                      Live tests: 21 passed, 0 failed. The runner was checked to fail: a deliberately wrong expectation reported FAIL and was then removed.
+Owner click test      tools/click_test.gd          67 mouse clicks sent, 0 problems
+Career click test     tools/career_click_test.gd   18 mouse clicks sent, 0 problems
+Creator Studio smoke  godot_console --headless --path creator_studio --script res://tools/studio_smoke.gd   Studio smoke: PASS
+
+Layout (smallest window each screen needs, width x height in px). Measured on the ORIGINAL code at commit 6c963ac, and again after the milestone:
+  main_menu 820x303 -> 820x338 (new Reduce motion setting and the dev-only gallery button)   new_league 775x403 -> same
+  career_home 432x196 -> same        career_creator 744x121 -> same        dynasty_entry 532x303 -> same
+  dynasty_hub / collection / packs / lineup 789x148 -> same        owner_overview / owner_roster 715x179 -> same
+No screen got wider. main_menu (820) is above the 800 px minimum of decision D6: a Phase 3 item.
+
+Style ratchet baseline (literal Color( / font-size overrides / sized labels outside the theme, tokens and kit): see tests/support/ui_style_baseline.json.
+
+Screenshots: before/ = the original code, milestone1/ = after (menu, Owner Overview, Career hub, Dynasty hub, collection and pack reveal at 412x915, 1024x768 and 1280x800; the Component Gallery in four skins, touch layout, large text, modals and toasts). Dynasty pictures use the test fixture content. Rendering used the founder's machine (OpenGL compatibility, NVIDIA RTX 4060).
+Not run: ui_playthrough (50 seasons), owner_stress, simulation and economy checks (no simulation or economy code changed); CI workflows (they run on push; the new live-test step is untested on CI).

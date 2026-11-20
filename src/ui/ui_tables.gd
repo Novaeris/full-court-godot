@@ -75,13 +75,19 @@ static func money(dollars: int) -> String:
 	return "%s$%d" % [sign, a]
 
 
+## A text label. `size` is a design size that follows the player's text-size setting (FcUiTokens.fs); `bold` makes it a
+## heading: the display font in the heading colour (the condensed face is drawn a little larger so it reads the same).
 static func label(text: String, size: int = 0, bold: bool = false) -> Label:
 	var l := Label.new()
 	l.text = text
-	if size > 0:
-		l.add_theme_font_size_override("font_size", size)
+	var px := FcUiTokens.fs(size) if size > 0 else 0
 	if bold:
-		l.add_theme_color_override("font_color", FcUiTheme.HEADING)
+		l.theme_type_variation = "HeadingLabel"
+		if px == 0:
+			px = FcUiTokens.fs(FcUiTokens.TYPE_BODY)
+		px = roundi(px * 1.12)
+	if px > 0:
+		l.add_theme_font_size_override("font_size", px)
 	return l
 
 

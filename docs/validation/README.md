@@ -1,3 +1,7 @@
+# Validation records
+
+`ui/` holds the UI/UX polish milestone: `ui/milestone1_results.txt` (test results and layout numbers) and the screenshot sets `ui/before` (original code) and `ui/milestone1` (after Phases 0 to 2). The folder has a `.gdignore` so Godot does not import the pictures.
+
 # Validation record: 2026-11-19 stabilization run
 
 Each `*.txt` file holds the full output of one run, with its command, commit (the base commit; the working tree held the stabilization edits), exit code and duration. All exit codes are 0.
