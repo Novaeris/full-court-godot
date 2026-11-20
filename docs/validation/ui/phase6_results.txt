@@ -1,0 +1,4 @@
+UI/UX polish, Phase 6 (packs and reveal): validation record, 2026-11-20
+
+Unit suite: 1022 passed, 0 failed (16 new in test_ui_packs.gd). Live tests: 52 passed (9 new in test_live_packs.gd).
+Screenshots: docs/validation/ui/phase6 (pack market, reveal summary, mobile).

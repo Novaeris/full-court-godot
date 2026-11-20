@@ -27,29 +27,40 @@ static func build_packs(ui: FcDynastyUi) -> Control:
 
 
 static func _pack_panel(ui: FcDynastyUi, pk: Dictionary) -> Control:
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 14)
+	var art := FcPackArt.new().setup(pk)
+	art.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	row.add_child(art)
 	var v := VBoxContainer.new()
-	v.custom_minimum_size = Vector2(300, 0)
-	v.add_child(FcUiTables.label(pk["name"], 20, true))
-	v.add_child(FcUiTables.label("%d card%s    Price: %s %s" % [pk["cards_per_pack"], "" if pk["cards_per_pack"] == 1 else "s", FcDynastyStyle._n(pk["amount"]), pk["currency"]], 15))
+	v.custom_minimum_size = Vector2(240, 0)
+	v.add_child(FcUiTables.label(pk["name"], FcUiTokens.TYPE_H2, true))
+	var tier := FcPackArt.tier_of(pk)
+	if tier != "fixed":
+		var chip := FcUiTables.label("Best pull: %s" % FcRarityStyle.label(tier), FcUiTokens.TYPE_SMALL)
+		chip.add_theme_color_override("font_color", FcRarityStyle.color(tier))
+		v.add_child(chip)
+	v.add_child(FcUiTables.label("%d card%s    Price: %s %s" % [pk["cards_per_pack"], "" if pk["cards_per_pack"] == 1 else "s", FcDynastyStyle._n(pk["amount"]), pk["currency"]], FcUiTokens.TYPE_BODY))
 	if pk["fixed"]:
 		v.add_child(ui.note("Always contains exactly these cards (no randomness).", 280))
 	else:
-		v.add_child(FcUiTables.label("Published odds per card", 13, true))
+		v.add_child(FcUiTables.label("Published odds per card", FcUiTokens.TYPE_SMALL, true))
 		for r in FcDynastyContentRules.RARITY_ORDER:
 			var w := int(pk["odds"].get(r, 0))
 			if w > 0:
-				var line := FcUiTables.label("%s   %s%%" % [FcDynastyStyle.rarity_label(r), _percent(w)], 13)
+				var line := FcUiTables.label("%s   %s%%" % [FcDynastyStyle.rarity_label(r), _percent(w)], FcUiTokens.TYPE_SMALL)
 				line.add_theme_color_override("font_color", FcDynastyStyle.rarity_color(r))
 				v.add_child(line)
 		for g in pk["guarantees"]:
 			v.add_child(ui.note("Guaranteed: at least %d %s or better." % [int(g["count"]), str(g["min_rarity"])], 280))
 		if not pk["pity"].is_empty():
 			v.add_child(ui.note("Bad-luck protection: a %s or better is guaranteed within %d packs (%d since your last)." % [str(pk["pity"]["rarity"]), int(pk["pity"]["after"]), pk["pity_progress"]], 280))
-	var buy := FcUiTables.button("Buy and open", func() -> void: _buy(ui, pk))
+	var buy := FcButton.make("Buy and open", FcButton.Variant.PRIMARY, func() -> void: _buy(ui, pk))
 	buy.disabled = not pk["affordable"]
 	buy.tooltip_text = "" if pk["affordable"] else "Not enough %s" % pk["currency"]
 	v.add_child(buy)
-	return ui.panel([v])
+	row.add_child(v)
+	return ui.panel([row])
 
 
 static func _percent(basis_points: int) -> String:
@@ -64,80 +75,34 @@ static func _buy(ui: FcDynastyUi, pk: Dictionary) -> void:
 	show_reveal(ui, r.data["opening"])
 
 
-## The reveal sequence. Click the card (or press Reveal next) to flip the next one; Skip shows everything at once.
+## The reveal sequence (see FcPackReveal). The pack's cards are already in the collection and saved; the screen only presents them and,
+## when the player presses Done, acknowledges the opening through the controller (the one call this screen makes).
 static func show_reveal(ui: FcDynastyUi, opening: Dictionary) -> void:
 	var ctl := ui.ctl
 	var body: Control = ui._body
 	for c in body.get_children():
 		body.remove_child(c)
 		c.queue_free()
-	var state := {"i": 0}
-	var root := VBoxContainer.new()
-	root.add_theme_constant_override("separation", 10)
-	var pack_name := str(ctl.catalog.packs().get(opening["pack_id"], {}).get("name", opening["pack_id"]))
-	root.add_child(ui.heading("Opening: %s" % pack_name))
-	var status := FcUiTables.label("", 16)
-	root.add_child(status)
-	var shown := HFlowContainer.new()
-	shown.add_theme_constant_override("h_separation", 10)
-	shown.add_theme_constant_override("v_separation", 10)
-	root.add_child(shown)
-	var back_holder := HBoxContainer.new()
-	root.add_child(back_holder)
-	var actions := HBoxContainer.new()
-	root.add_child(actions)
-	var entries: Array = opening["cards"]
-	var finish := func() -> void:
-		var r := ctl.acknowledge_opening(str(opening["opening_id"]))
-		ui.report(r, "")
-		ui.show_tab("packs")
-	# lambdas capture variables by value, so the two that call each other share a Dictionary
-	var fns := {}
-	var reveal_one := func(animate: bool) -> void:
-		var i: int = state["i"]
-		if i >= entries.size():
-			return
-		var e: Dictionary = entries[i]
-		var row := ctl.card_detail(str(e["card_id"]))
-		row["owned"] = true
-		var tag := "NEW" if bool(e["new"]) else "DUPLICATE"
-		var w := FcCardView.build(row, {"tag": tag, "on_click": func() -> void: ui.show_card_detail(str(e["card_id"]))})
-		shown.add_child(w)
-		if animate:
-			w.pivot_offset = FcCardView.SIZE / 2.0
-			w.scale = Vector2(0.2, 0.2)
-			w.modulate.a = 0.0
-			var tw := ui.app.create_tween()
-			tw.set_parallel(true)
-			tw.tween_property(w, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			tw.tween_property(w, "modulate:a", 1.0, 0.2)
-		state["i"] = i + 1
-		fns["update"].call()
-	fns["update"] = func() -> void:
-		for c in back_holder.get_children():
-			back_holder.remove_child(c)
-			c.queue_free()
-		for c in actions.get_children():
-			actions.remove_child(c)
-			c.queue_free()
-		var done: bool = state["i"] >= entries.size()
-		if not done:
-			status.text = "Card %d of %d. Click the card to reveal it." % [state["i"] + 1, entries.size()]
-			back_holder.add_child(FcCardView.build({}, {"face_down": true, "on_click": func() -> void: reveal_one.call(true)}))
-			actions.add_child(FcUiTables.button("Reveal next", func() -> void: reveal_one.call(true)))
-			actions.add_child(FcUiTables.button("Skip animation (reveal all)", func() -> void:
-				while state["i"] < entries.size():
-					reveal_one.call(false)))
-		else:
-			var new_count := 0
-			for e in entries:
-				new_count += 1 if bool(e["new"]) else 0
-			status.text = "Pack opened: %d new card%s, %d duplicate%s. Everything is already in your collection." % [new_count, "" if new_count == 1 else "s", entries.size() - new_count, "" if entries.size() - new_count == 1 else "s"]
-			actions.add_child(FcUiTables.button("Done", finish))
-	body.add_child(root)
-	fns["update"].call()
-	# keyboard: Enter or Space reveals the next card
-	status.focus_mode = Control.FOCUS_NONE
+	var listing := {}
+	for pk in ctl.pack_listing():
+		if str(pk["pack_id"]) == str(opening["pack_id"]):
+			listing = pk
+	if listing.is_empty():
+		listing = {"name": str(ctl.catalog.packs().get(opening["pack_id"], {}).get("name", opening["pack_id"])), "cards_per_pack": opening["cards"].size(), "fixed": false, "odds": {}}
+	var pack_name := str(listing.get("name", opening["pack_id"]))
+	var reveal := FcPackReveal.new()
+	reveal.setup(opening, pack_name, listing,
+		func(card_id: String) -> Dictionary:
+			var row := ctl.card_detail(card_id)
+			row["owned"] = true
+			return row,
+		func(rarity: String) -> int: return ctl.catalog.config.shards_for(rarity),
+		ctl.collection_progress,
+		func() -> void:
+			var r := ctl.acknowledge_opening(str(opening["opening_id"]))
+			ui.report(r, "")
+			ui.show_tab("packs"))
+	body.add_child(reveal)
 
 
 # --- direct acquisition -------------------------------------------------------------------------------------------

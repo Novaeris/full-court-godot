@@ -336,10 +336,10 @@ func _draw_text(rect: Rect2, color: Color, s: float) -> void:
 	# footer: caption (price) or the rarity on the left; badges, copies and the tag on the right
 	var footer_y := 192 * s
 	var left_text := caption if caption != "" else FcRarityStyle.label(str(row.get("rarity", "common")))
-	draw_string(body, Vector2(10 * s, footer_y), _fit(left_text, body, int(11 * s), size.x * 0.5), HORIZONTAL_ALIGNMENT_LEFT, -1, int(11 * s), FcUiTokens.GOLD if caption != "" else color)
+	draw_string(body, Vector2(10 * s, footer_y), _fit(left_text, body, int(11 * s), size.x * (0.66 if caption != "" else 0.5)), HORIZONTAL_ALIGNMENT_LEFT, -1, int(11 * s), FcUiTokens.GOLD if caption != "" else color)
 	var bits: Array[String] = []
 	var badges: Array = row.get("badges", [])
-	if not badges.is_empty():
+	if not badges.is_empty() and caption == "":   # a caption (a price, what a duplicate is worth) needs the room
 		bits.append("%d badge%s" % [badges.size(), "" if badges.size() == 1 else "s"])
 	if int(row.get("quantity", 0)) > 1:
 		bits.append("x%d" % int(row["quantity"]))
