@@ -29,5 +29,6 @@ desktop.ini
 *.keystore
 *.jks
 
-# Creator Studio reaches the shared code through a folder link; never commit the link (it would duplicate src/content)
-/creator_studio/shared_content
+# Creator Studio reaches the shared code and data through folder links; never commit the links (they would duplicate src and data)
+/creator_studio/game_src
+/creator_studio/data

@@ -16,20 +16,17 @@ var content_root: String = ""
 
 ## Where content releases are looked for when no folder has been chosen.
 static func default_content_root() -> String:
-	var docs := OS.get_system_dir(OS.SYSTEM_DIR_DOCUMENTS)
-	return docs.path_join("FullCourtContent") if not docs.is_empty() else "user://content"
+	return FcContentPaths.default_root()
 
 
 ## Only an absolute folder (or user://) with no ".." parts is accepted as a content folder.
 static func is_valid_content_root(path: String) -> bool:
-	if path.strip_edges().is_empty() or path.contains("\\..") or path.contains("/..") or path.begins_with(".."):
-		return false
-	return path.begins_with("user://") or path.is_absolute_path()
+	return FcContentPaths.is_valid_root(path)
 
 
 ## The folder to use: the chosen one if it is valid, otherwise the default (never fails).
 func effective_content_root() -> String:
-	return content_root if is_valid_content_root(content_root) else default_content_root()
+	return FcContentPaths.effective_root(content_root)
 
 
 func _init(file_path: String = DEFAULT_PATH) -> void:

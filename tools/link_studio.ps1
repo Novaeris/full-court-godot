@@ -1,12 +1,21 @@
-# Creates the folder link that lets Creator Studio use the game's one shared copy of src/content.
-# Run once after cloning (and again if the link ever goes missing). No admin rights needed.
-# creator_studio/shared_content  ->  src/content   (a Windows "junction"; same files, not a copy)
+# Creates the folder links that let Creator Studio use the game's ONE shared copy of the code and data.
+# Run once after cloning (and again if a link ever goes missing). No admin rights needed.
+#   creator_studio/game_src  ->  src    (Windows "junctions": the same files, not copies)
+#   creator_studio/data      ->  data
+# Studio needs all of src because the content code uses small helpers from other folders
+# (version, seeded random, checks, attribute definitions) and the data/definitions files.
 $project = Split-Path -Parent $PSScriptRoot
-$link = Join-Path $project "creator_studio\shared_content"
-$target = Join-Path $project "src\content"
-if (Test-Path $link) {
-	Write-Host "Link already exists: $link"
-	exit 0
+$links = @(
+	@{ Link = "creator_studio\game_src"; Target = "src" },
+	@{ Link = "creator_studio\data"; Target = "data" }
+)
+foreach ($l in $links) {
+	$link = Join-Path $project $l.Link
+	$target = Join-Path $project $l.Target
+	if (Test-Path $link) {
+		Write-Host "Link already exists: $link"
+	} else {
+		New-Item -ItemType Junction -Path $link -Target $target | Out-Null
+		Write-Host "Created link: $link -> $target"
+	}
 }
-New-Item -ItemType Junction -Path $link -Target $target | Out-Null
-Write-Host "Created link: $link -> $target"
