@@ -46,7 +46,7 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 6. **Basic UI shell**: main menu, save selection, standings, box score viewer (manual testing begins).
 7. **Owner Mode**: finances, tickets, arena, sponsorships, GM/coach hiring.
 8. Draft, free agency, trades, development/regression, scouting, injuries.
-9. (done) Career Mode. Dynasty Mode (card game, static hand-made players) is not started; its content pipeline (Creator Studio publishing and the game-side loader, D-042) is built first. Three modes in total.
+9. (done) Career Mode and Dynasty Mode (card game; offline, free-to-play, all content from Creator Studio releases; see docs/DYNASTY_MODE_PLAN.md). Three modes in total. Dynasty still needs the founder's real content, mobile touch layouts and (later) online play.
 10. Mobile layouts/exports, polish, release infrastructure.
 
 ## Outstanding dependencies

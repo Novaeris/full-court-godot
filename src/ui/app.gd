@@ -27,6 +27,9 @@ var saves := FcSaveManager.new()
 var preferences := FcPreferences.new()
 ## Published content (Creator Studio releases, D-042): loaded at start-up; falls back safely and reports why.
 var content: FcContentService
+## Dynasty Mode: the controller screens use and the screens' shell (built in setup).
+var dynasty: FcDynastyController
+var dynasty_ui: FcDynastyUi
 ## The open step of the tutorial (-1 = closed). Kept here because the dashboard is rebuilt often.
 var _tutorial_step: int = -1
 var _tutorial_steps: Array = []
@@ -102,6 +105,8 @@ func setup() -> void:
 	margin.add_child(_root)
 	apply_text_size(preferences.text_size)
 	content = FcContentService.new(preferences, _defs)
+	dynasty = FcDynastyController.new(content, _defs)
+	dynasty_ui = FcDynastyUi.new(self, dynasty)
 	show_main_menu()
 
 
@@ -148,7 +153,7 @@ func show_main_menu() -> void:
 	for entry in [
 			["Owner Mode", "Run every part of a franchise for up to 50 seasons: money, people, players, the draft, the league's rules.", show_new_league, "Available"],
 			["Career Mode", "Create one player and take them through a career. Draft, contracts, teams, rivalries.", show_career_home, "Playable"],
-			["Dynasty Mode", "Collect hand-made player cards, build a lineup and compete.", show_dynasty_home, "Planned"]]:
+			["Dynasty Mode", "Collect fictional player cards, open packs, build a 13-player roster and compete in challenges and tournaments.", show_dynasty_home, "Playable"]]:
 		var card := PanelContainer.new()
 		var inner := VBoxContainer.new()
 		card.add_child(inner)
@@ -654,16 +659,10 @@ func _career_skills_tab(progress: Dictionary) -> Control:
 	return box
 
 
-## Dynasty Mode's home: planned, not built (docs/DYNASTY_MODE_DRAFT.md).
+## Dynasty Mode's home: choose or create a Dynasty team (the screens live in src/ui/dynasty).
 func show_dynasty_home() -> void:
-	var box := _reset("Dynasty Mode")
-	var text := FcUiTables.label("A card-collecting basketball game with hand-made players, lineups and matches.
-
-Status: planned. It is not scheduled yet; its design is a draft in docs/DYNASTY_MODE_DRAFT.md and needs the founder's decisions first.", 16)
-	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	text.custom_minimum_size = Vector2(400, 0)
-	box.add_child(text)
-	box.add_child(FcUiTables.button("Back to the main menu", show_main_menu))
+	dynasty.refresh_content()
+	dynasty_ui.show_entry()
 
 
 ## The About screen: version, the engine's licenses (the MIT notice the engine requires in every game made with it) and

@@ -95,6 +95,12 @@ Methods must start with `test_`. Available: `assert_true`, `assert_eq`, `assert_
 | AI trades (a clear win-win happens, rosters and contracts stay consistent, no-trade clauses, both sides must gain, salary rules, several offseasons stay valid) | 6 |
 | Medical staff effects (reading staff skills, prevention reduces injuries, rehabilitation shortens them) | 3 |
 | Injuries (rate and severity, switch-off, leaving the game, durability, lineup exclusion, tracking through a season, countdown by team games, saving, offseason healing, permanent loss) | 10 |
+| Dynasty domain (profile round trip, ledger and no negative balances, idempotent requests, ownership and editions, duplicates and mastery, atomic commit, store recovery and migration chain, roster record) | 8 |
+| Dynasty content (extended schema validation and rejection cases, editions, card views and badges, market/pack listings, unavailable owned cards, revision flags, starter grant, empty content) | 11 |
+| Dynasty team building and simulation (13-slot validity, positions, one edition per player, swaps, rotation persistence, team overall, recommendations, roster to FcGameTeam mapping, starters honoured, determinism, opponents, games update records) | 12 |
+| Dynasty packs and economy (deterministic rolls, guarantees, odds, pity, reveal order, purchase, idempotency, insufficient funds, failed save, reward packs, direct acquisition, duplicates, collection challenges) | 12 |
+| Dynasty progression (challenge progress from results, restrictions, one-time claims, season points and milestones, new-season keeps collection, tournament bracket, save/load mid-run, reproducibility, whole-profile save/load) | 10 |
+| Dynasty screens (onboarding, every tab builds, validation messages, pack reveal and skip, full loop, card detail, unavailable cards) | 6 |
 | User interface smoke tests (every screen builds with data, league creation and its errors, team choice, dashboard, all seven tabs, playing through a season and into the next, saving and loading, owner controls, dynasty mode, money formatting) | 12 |
 | Game controller (new game, advancing days, playoffs flow, next season, three years valid, owner price/marketing/facilities, hiring and firing, owner report, save/load determinism mid-season and between seasons) | 11 |
 | Business model (businesses exist, demand and price, best price fills the arena, markets, revenue/expense arithmetic, plausible league margins, winning builds interest, luxury tax paid and shared, debt, human vs AI pricing, facilities, saving, validation) | 14 |

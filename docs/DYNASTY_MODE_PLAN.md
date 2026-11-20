@@ -33,16 +33,25 @@ The bundled starter release is a 2-card fallback, far below a 13-card roster, so
 |---|---|---|
 | 0 | Audit | done (this file) |
 | 1 | Domain foundation (profile, ledger, ownership, roster record, store, session) | done |
-| 2 | Content integration (schema extensions, validators, `FcDynastyCatalog`) | |
-| 3 | Collection and card presentation | |
-| 4 | Team builder | |
-| 5 | Simulation integration | |
-| 6 | Economy and packs | |
-| 7 | Challenges and rewards | |
-| 8 | Tournament | |
-| 9 | Season and progression | |
-| 10 | Hub and UX polish | |
-| 11 | Full integration and release validation | |
+| 2 | Content integration (schema extensions, validators, `FcDynastyCatalog`) | done |
+| 3 | Collection and card presentation | done (domain + screens; look not yet judged by eye) |
+| 4 | Team builder | done |
+| 5 | Simulation integration | done (no simulator change needed) |
+| 6 | Economy and packs | done |
+| 7 | Challenges and rewards | done |
+| 8 | Tournament | done |
+| 9 | Season and progression | done |
+| 10 | Hub and UX polish | done headless; needs a visual pass in the editor |
+| 11 | Full integration and release validation | done headless (see below) |
+
+## Verification (headless) and what still needs human eyes
+Verified by automated tests and `./tools/dynasty_check.ps1`: the loop (profile, starter collection, pack opening and reveal, duplicates, direct purchase, lineup, games, challenge progress and claim, tournament, season, save and reload, newer release keeps owned cards). Timings on this machine: 32-card catalog 0.3 s, 1000 pack rolls 0.06 s, a simulated game with save about 25 ms, profile load 2 ms.
+NOT verified: how the screens look and feel (card design, spacing, reveal animation timing, text sizes) and mouse/keyboard feel in the real window; please open Dynasty in the Godot editor (F5), try `./tools/dynasty_sample_draft.ps1` for sample content, and tell Claude what to change. Mobile touch layouts, online play and cosmetic effects beyond frame colours are not built.
+
+## Founder decisions still needed
+- Official content: players, editions, artwork, pack prices and odds, challenges, season and tournament teams, and the `dynasty_config` starter collection (needs at least 13 different players and a lineup-friendly spread of positions).
+- The shard and mastery numbers in `data/dynasty/economy.json` (defaults are placeholders for tuning).
+- Legal review before any paid feature or any random pack bought with real money (docs/LEGAL_CHECKLIST.md); none is built.
 
 ## Founder decisions taken with recommended answers
 See `docs/DECISIONS.md` D-043 to D-046.
