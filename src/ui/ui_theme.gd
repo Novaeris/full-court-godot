@@ -46,6 +46,9 @@ static func build(size_index: int = 1, skin_props: Dictionary = {}) -> Theme:
 	var density: float = skin["density"]
 	var pad_x := roundi(10 * density)
 	var pad_y := roundi(6 * density)
+	if FcUiTokens.touch_mode:
+		pad_x = 14
+		pad_y = 12   # every stock button, including those of screens not yet on the kit, reaches about 44 px tall
 	var t := Theme.new()
 	t.default_font_size = font_size(index)
 	var body := FcUiFonts.body(400)
@@ -141,6 +144,22 @@ static func _buttons(t: Theme, pad_x: int, pad_y: int) -> void:
 	t.set_stylebox("pressed", "TabButton", tab_open)
 	t.set_stylebox("hover_pressed", "TabButton", tab_open)
 	t.set_color("font_color", "TabButton", TEXT_MUTED)
+	# the bottom navigation bar (mobile): icon over label, the open item in the accent colour with a bar on top
+	t.set_type_variation("NavButton", "Button")
+	var nav_rest := _box(FcUiTokens.TRANSPARENT, FcUiTokens.TRANSPARENT, 0, 4, 6, 0)
+	var nav_open := _box(SURFACE_RAISED, accent, 0, 4, 6, 0)
+	nav_open.border_width_top = 3
+	for state in ["normal", "disabled"]:
+		t.set_stylebox(state, "NavButton", nav_rest)
+	t.set_stylebox("hover", "NavButton", _box(SURFACE, FcUiTokens.TRANSPARENT, 0, 4, 6, 0))
+	t.set_stylebox("pressed", "NavButton", nav_open)
+	t.set_stylebox("hover_pressed", "NavButton", nav_open)
+	t.set_color("font_color", "NavButton", TEXT_MUTED)
+	t.set_color("icon_normal_color", "NavButton", TEXT_MUTED)
+	for color_name in ["font_pressed_color", "font_hover_pressed_color", "icon_pressed_color", "icon_hover_pressed_color"]:
+		t.set_color(color_name, "NavButton", accent)
+	t.set_constant("icon_max_width", "NavButton", 24)
+	t.set_constant("h_separation", "NavButton", 2)
 	# chips and segmented choices: pill-shaped toggles
 	for variation in ["ChipButton", "SegmentButton"]:
 		t.set_type_variation(variation, "Button")
@@ -191,6 +210,10 @@ static func _panels(t: Theme, density: float) -> void:
 	third.border_width_left = 6
 	t.set_type_variation("LowerThirdPanel", "PanelContainer")
 	t.set_stylebox("panel", "LowerThirdPanel", third)
+	var nav_bar := _box(SURFACE, BORDER, 0, 0, 0, 0)
+	nav_bar.border_width_top = 1
+	t.set_type_variation("NavBarPanel", "PanelContainer")
+	t.set_stylebox("panel", "NavBarPanel", nav_bar)
 	t.set_type_variation("ScorePanel", "PanelContainer")
 	t.set_stylebox("panel", "ScorePanel", FcUiTokens.elevate(_box(FcUiTokens.BG, BORDER, 1, 12, 6, 8), 1))
 

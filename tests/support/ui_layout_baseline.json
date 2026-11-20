@@ -1,51 +1,51 @@
 {
 	"_notes": {
-		"finding": "main_menu is 820 px wide, wider than the 800 px minimum window of decision D6; Phase 3 must bring it under 800.",
-		"main_menu_h": "303 to 338 in milestone 1: the Reduce motion setting and the development-only gallery button were added. Phase 3 replaces this screen.",
-		"origin": "Measured on the code at commit 6c963ac, before the UI polish milestone (docs/UI_POLISH_PLAN.md)."
+		"origin": "Phase 0 baseline measured on commit 6c963ac; tightened in Phase 3 (the main menu, Dynasty navigation and tab bars no longer force a wide window).",
+		"phase3_heights": "career_home 196 to 221 and owner_overview/owner_roster 179 to 181: the new Broadcast and Franchise headers are a little taller. Heights are not a constraint (tabs scroll).",
+		"remaining_widths": "owner (715) and Career creator (744) fit the 800 px minimum of D6; Dynasty hub 640 and lineup 740 are Phase 8 work toward a 412 px phone."
 	},
 	"career_creator": {
-		"h": 121,
+		"h": 94,
 		"w": 744
 	},
 	"career_home": {
-		"h": 196,
+		"h": 221,
 		"w": 432
 	},
 	"dynasty_collection": {
-		"h": 148,
-		"w": 789
+		"h": 130,
+		"w": 300
 	},
 	"dynasty_entry": {
-		"h": 303,
+		"h": 276,
 		"w": 532
 	},
 	"dynasty_hub": {
-		"h": 148,
-		"w": 789
+		"h": 130,
+		"w": 640
 	},
 	"dynasty_lineup": {
-		"h": 148,
-		"w": 789
+		"h": 130,
+		"w": 740
 	},
 	"dynasty_packs": {
-		"h": 148,
-		"w": 789
+		"h": 130,
+		"w": 340
 	},
 	"main_menu": {
-		"h": 338,
-		"w": 820
+		"h": 90,
+		"w": 393
 	},
 	"new_league": {
-		"h": 403,
+		"h": 376,
 		"w": 775
 	},
 	"owner_overview": {
-		"h": 179,
+		"h": 181,
 		"w": 715
 	},
 	"owner_roster": {
-		"h": 179,
+		"h": 181,
 		"w": 715
 	}
 }

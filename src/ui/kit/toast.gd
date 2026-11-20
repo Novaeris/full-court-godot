@@ -1,6 +1,7 @@
 class_name FcToast
 extends PanelContainer
-## One notification: a coloured edge, an icon and a message. Kinds: INFO, SUCCESS, WARNING, ERROR. Clicking dismisses it.
+## One notification: a coloured edge, an icon and a message. Kinds: INFO, SUCCESS, WARNING, ERROR. On touch layouts a tap dismisses it;
+## on desktop it ignores the mouse, so a toast can never block a button (it once covered "Sign selected free agent" and swallowed the click).
 ## FcToastStack shows several at once and removes them after a few seconds (errors stay longer).
 
 signal dismissed
@@ -17,10 +18,14 @@ var message: String
 func _init(toast_kind: Kind = Kind.INFO, text: String = "") -> void:
 	kind = toast_kind
 	message = text
-	mouse_filter = Control.MOUSE_FILTER_STOP
-	custom_minimum_size.x = 340   # a compact card centred in the stack, narrow enough for a phone
-	size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	custom_minimum_size.x = 340   # a compact card, narrow enough for a phone
+	if FcUiTokens.touch_mode:
+		mouse_filter = Control.MOUSE_FILTER_STOP   # touch: centred, and a tap dismisses it
+		size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	else:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE   # desktop: bottom-right, and clicks pass through to the controls beneath it
+		size_flags_horizontal = Control.SIZE_SHRINK_END
 	var row := HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(row)
@@ -50,9 +55,10 @@ func _init(toast_kind: Kind = Kind.INFO, text: String = "") -> void:
 			dismiss())
 
 
-## How long a toast of this kind stays on screen.
-static func hold_seconds(toast_kind: Kind) -> float:
-	return 6.0 if toast_kind == Kind.ERROR else 3.0
+## How long a toast stays on screen: 3 seconds (errors 6), plus a little more for long messages so they can be read.
+static func hold_seconds(toast_kind: Kind, text_length: int = 0) -> float:
+	var base := 6.0 if toast_kind == Kind.ERROR else 3.0
+	return base + clampf((text_length - 40) * 0.04, 0.0, 5.0)
 
 
 func dismiss() -> void:

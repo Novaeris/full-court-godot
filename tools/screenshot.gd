@@ -3,7 +3,7 @@ extends SceneTree
 ## NOT headless: run with a window, e.g.
 ##   godot_console --path . --script res://tools/screenshot.gd -- screen=Roster out=C:/temp/roster.png days=20
 ## screen:
-##   menu | new_league | career_menu | career_creator | career_hub
+##   menu | settings | new_league | career_menu | career_creator | career_hub
 ##   Overview | Standings | Schedule | Roster | Finances | Staff | Market | Trades | History | News | League   (Owner tabs)
 ##   dynasty_entry | dynasty_hub | dynasty_collection | dynasty_lineup | dynasty_packs | dynasty_reveal | dynasty_market | dynasty_play
 ##   gallery  (the development-only Component Gallery)
@@ -13,6 +13,7 @@ extends SceneTree
 ##   keeps the project's canvas_items scaling (everything shrinks to fit the 1280x800 design size).
 ## text=0|1|2: the text size setting (Small, Normal, Large).
 ## gallery only: skin=neutral|broadcast|collectible|franchise  section=Buttons (scroll to a section)  touch=1  reduce=1
+## layout=auto|desktop|mobile: force the presentation target (mobile shows the bottom navigation and touch-sized controls).
 ##   demo=modal_info|modal_confirm|modal_destructive|toasts|loading (opens that overlay)
 ## offseason=draft: play the season out and stop at the owner's draft; offseason=window: the free-agency window after it.
 ## Dynasty screens use the test fixture content (tests/support/dynasty_fixture.gd), so the pictures do not depend on the machine.
@@ -31,6 +32,7 @@ var _section := ""
 var _touch := false
 var _reduce := false
 var _demo := ""
+var _layout := "auto"
 
 
 func _initialize() -> void:
@@ -51,12 +53,15 @@ func _initialize() -> void:
 			"touch": _touch = kv[1] == "1"
 			"reduce": _reduce = kv[1] == "1"
 			"demo": _demo = kv[1]
+			"layout": _layout = kv[1]
 	if not _stretch:
 		root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 	root.size = _size
 	DisplayServer.window_set_size(_size)
 	_app = FcApp.new()
 	_app.preferences = FcPreferences.new("user://screenshot_preferences.cfg")   # not the tests' file
+	_app.preferences.content_root = "C:/Example/FullCourtContent"   # a neutral path: pictures are committed and must not show the real one
+	_app.preferences.layout_override = _layout   # a Phase 3 setting; ignored by older code
 	_app.preferences.text_size = _text   # before setup(), so the first screen (the menu) is built at this size
 	_app.preferences.tutorial_done = true   # the tutorial has its own tests
 	FcSafeFile.remove_tree("user://screenshot_saves")   # start from no saved games, so every picture is reproducible
@@ -71,6 +76,9 @@ func _build_screen() -> void:
 		return
 	if _screen == "new_league":
 		_app.show_new_league()
+		return
+	if _screen == "settings":
+		_app.call("show_settings")
 		return
 	if _screen == "career_menu":
 		_app.show_career_home()

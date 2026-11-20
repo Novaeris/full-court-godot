@@ -20,6 +20,22 @@ func _init(title_text: String = "", panel_variant: Variant = Variant.SURFACE) ->
 		set_title(title_text)
 
 
+## Marks the panel with a coloured bar along its top edge (a mode card, a featured item). Built from tokens, so it works before the
+## panel is in the tree.
+func set_accent(color: Color) -> void:
+	var box := StyleBoxFlat.new()
+	box.bg_color = FcUiTokens.SURFACE_RAISED
+	box.border_color = color
+	box.border_width_top = 4
+	box.set_corner_radius_all(FcUiTokens.RADIUS_PANEL)
+	box.content_margin_left = 16
+	box.content_margin_right = 16
+	box.content_margin_top = 14
+	box.content_margin_bottom = 14
+	FcUiTokens.elevate(box, 1)
+	add_theme_stylebox_override("panel", box)
+
+
 func set_title(title_text: String) -> void:
 	if _title == null:
 		_title = FcUiTables.label(title_text, FcUiTokens.TYPE_H3, true)

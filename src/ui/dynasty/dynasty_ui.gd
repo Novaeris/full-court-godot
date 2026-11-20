@@ -4,10 +4,13 @@ extends RefCounted
 ## FcDynastyScreens* classes and plug in through TABS. Screens only call FcDynastyController (never the domain services), so
 ## nothing here can edit a balance or grant a card.
 
+## [id, label, icon]. On the mobile bottom bar only MOBILE_PRIMARY are shown directly; the rest are under "More".
 const TABS := [
-	["hub", "Hub"], ["collection", "Collection"], ["lineup", "Lineup"], ["packs", "Packs"], ["market", "Market"],
-	["play", "Play"], ["challenges", "Challenges"], ["tournament", "Tournament"], ["season", "Season"],
+	["hub", "Hub", "house"], ["collection", "Collection", "layers"], ["lineup", "Lineup", "user"], ["packs", "Packs", "package"],
+	["market", "Market", "arrow-up-down"], ["play", "Play", "play"], ["challenges", "Challenges", "star"],
+	["tournament", "Tournament", "trophy"], ["season", "Season", "sparkles"],
 ]
+const MOBILE_PRIMARY := ["hub", "collection", "packs", "play"]
 
 var app: FcApp
 var ctl: FcDynastyController
@@ -28,9 +31,13 @@ func say(text: String) -> void:
 	app._say(text)
 
 
-## Shows the result of a controller call: the failure message, or nothing on success.
+## Shows the result of a controller call: the failure message (an error toast), or the success text (a success toast).
 func report(result: FcDynastyResult, success_text: String = "") -> bool:
-	say(success_text if result.ok else result.message)
+	if result.ok:
+		if success_text != "":
+			app.notify(FcToast.Kind.SUCCESS, success_text)
+	else:
+		app.notify(FcToast.Kind.ERROR, result.message)
 	return result.ok
 
 
@@ -38,7 +45,7 @@ func report(result: FcDynastyResult, success_text: String = "") -> bool:
 
 func show_entry() -> void:
 	ctl.close_profile()
-	var box := app._reset("Dynasty Mode")
+	var box := app._reset("Dynasty Mode", {"id": "dynasty_entry", "skin": FcModeSkin.COLLECTIBLE, "back": app.show_main_menu, "rebuild": show_entry})
 	var intro := FcUiTables.label("Collect fictional player cards, open packs, build a 13-player roster and compete in simulated games, challenges and tournaments. Your collection is yours: seasons and new content never remove it.", 15)
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	intro.custom_minimum_size = Vector2(500, 0)
@@ -145,20 +152,27 @@ func _confirm_delete(slot: String, team: String) -> void:
 func show_tab(tab_id: String) -> void:
 	tab = tab_id
 	var p := ctl.profile()
-	var box := app._reset("Dynasty: %s" % p.team_name)
-	var nav := HBoxContainer.new()
-	for entry in TABS:
-		var b := FcUiTables.button(entry[1], func() -> void: show_tab(str(entry[0])))
-		b.toggle_mode = true
-		b.button_pressed = entry[0] == tab_id
-		nav.add_child(b)
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	nav.add_child(spacer)
-	nav.add_child(FcUiTables.button("Save and exit", show_entry))
-	box.add_child(nav)
+	var back: Callable = show_entry if tab_id == "hub" else func() -> void: show_tab("hub")
+	var box := app._reset("Dynasty: %s" % p.team_name, {"id": "dynasty_" + tab_id, "skin": FcModeSkin.COLLECTIBLE, "back": back, "rebuild": func() -> void: show_tab(tab)})
+	var mobile := app.layout.is_mobile()
+	var exit_button := FcButton.make("Save and exit", FcButton.Variant.GHOST, show_entry)
+	var nav := FcNavBar.new()
+	nav.setup(TABS, tab_id, mobile, MOBILE_PRIMARY)
+	nav.selected.connect(func(id: String) -> void: show_tab(id))
 	var money := FcUiTables.label(FcDynastyStyle.currency_text(p.balances), 15, true)
-	box.add_child(money)
+	money.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if mobile:
+		var top := HBoxContainer.new()   # currencies and exit on top; the navigation bar goes along the bottom edge
+		top.add_child(money)
+		top.add_child(exit_button)
+		box.add_child(top)
+	else:
+		var bar := HBoxContainer.new()
+		nav.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		bar.add_child(nav)
+		bar.add_child(exit_button)
+		box.add_child(bar)
+		box.add_child(money)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -167,6 +181,8 @@ func show_tab(tab_id: String) -> void:
 	_body.add_theme_constant_override("separation", 10)
 	scroll.add_child(_body)
 	box.add_child(scroll)
+	if mobile:
+		app.host.set_bottom_bar(nav)   # along the bottom edge of the window, outside the screen's own layout
 	_body.add_child(_build_tab(tab_id))
 
 

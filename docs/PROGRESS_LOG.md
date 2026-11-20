@@ -3,6 +3,11 @@
 Newest first. Written so someone returning after a break can see where things stand.
 The repository was published to GitHub on 2026-11-17 at the founder's request (public: https://github.com/Novaeris/full-court-godot, remote `origin`, branch `main`). Later commits stay local until the founder asks for a push.
 
+## 2026-11-20: UI/UX polish, Phase 3 (shell, navigation, notifications, layout), D-051
+
+Built after the founder reviewed milestone 1 and said "continue". `src/ui/shell/` (`FcScreenHost`, `FcNavigator`, `FcModalHost`, `FcNotifier`, `FcLayoutProfile`) plus `FcNavBar`; `FcApp` now sits on the shell. Visible results: a redesigned main menu (mode cards with status chips; 820 px down to 393 px), a Settings screen (text size, reduce motion, layout override, tutorial, content folder), a confirmed Delete, toasts instead of the bottom message line, Escape and Android back, a loading overlay for slow actions, the three skins applied (Owner letterhead and team colours, Career lower third and grid, Dynasty spotlight), and Dynasty navigation as top tabs on desktop and a bottom bar with More on mobile. Dynasty collection and packs already fit a 412 px phone; the hub and lineup still scroll sideways (Phase 8). Owner and Career fit 800x600, and wider screens scroll sideways.
+Found by the click test and fixed with a regression test: a toast covered a button and swallowed the click (toasts now pass clicks through on desktop). Also fixed: the lower third no longer re-cases text (a Career test caught it). One existing assertion changed on purpose (the main-menu card text). Tests: see `docs/validation/ui/phase3_results.txt`. Not yet: Owner and Career screens on the kit (Phase 10), Dynasty mobile layouts (Phase 8), a notification history screen, real-device checks. **Phase 4 (card system) waits for the founder's go-ahead.**
+
 ## 2026-11-20: UI/UX polish, milestone 1 (Phases 0 to 2), D-047 to D-050
 
 Plan approved by the founder (`docs/UI_POLISH_PLAN.md`); this milestone built the foundation and **stops before Phase 3** (screen shell, navigation, notifications, responsive layouts), which needs the founder's go-ahead.

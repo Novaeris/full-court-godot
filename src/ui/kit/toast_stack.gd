@@ -25,21 +25,23 @@ func push(kind: FcToast.Kind, text: String) -> FcToast:
 	for entry in _entries:
 		var existing: FcToast = entry["toast"]
 		if is_instance_valid(existing) and existing.kind == kind and existing.message == text:
-			(entry["timer"] as Timer).start(FcToast.hold_seconds(kind))
+			var again: Timer = entry["timer"]
+			if again.is_inside_tree():
+				again.start(FcToast.hold_seconds(kind, text.length()))
 			return existing
 	while _entries.size() >= MAX_VISIBLE:
 		_remove(_entries[0])
 	var toast := FcToast.new(kind, text)
 	var timer := Timer.new()
 	timer.one_shot = true
-	timer.wait_time = FcToast.hold_seconds(kind)
+	timer.autostart = true   # starts when the toast enters the tree (so a stack that is not on screen yet makes no noise)
+	timer.wait_time = FcToast.hold_seconds(kind, text.length())
 	var entry := {"toast": toast, "timer": timer}
 	_entries.append(entry)
 	toast.add_child(timer)
 	timer.timeout.connect(func() -> void: _remove(entry))
 	toast.dismissed.connect(func() -> void: _entries.erase(entry))
 	add_child(toast)
-	timer.start()
 	FcMotion.fade_in(toast)
 	return toast
 

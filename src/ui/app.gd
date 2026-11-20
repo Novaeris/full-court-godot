@@ -53,7 +53,21 @@ var _last_staff_page: int = 0
 var _last_trade_page: int = -1
 var _last_tab := 0
 var _form := {}
+## The status line of the current screen. Hidden: messages are shown as toasts (notifier); the text stays here so tests, tools
+## and later accessibility features can read the latest message.
 var _message: Label
+## The shell (docs/UI_POLISH_PLAN.md, Phase 3): the frame with the backdrop, the dialog and toast layers.
+var host: FcScreenHost
+## Which screen is showing and where Back goes.
+var navigator := FcNavigator.new()
+## Desktop or mobile presentation, and how much room there is.
+var layout := FcLayoutProfile.new()
+## Every message the player sees goes through here (toasts plus a history).
+var notifier := FcNotifier.new()
+## The active mode skin (resolved) and its key; the theme is rebuilt only when it changes.
+var _skin: Dictionary = {}
+var _skin_key: String = ""
+var _last_mode: String = FcLayoutProfile.DESKTOP
 
 
 func _ready() -> void:
@@ -91,133 +105,296 @@ func setup() -> void:
 	if _root != null:
 		return
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var background := ColorRect.new()
-	background.color = FcUiTheme.BACKGROUND
-	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(background)
-	var margin := MarginContainer.new()
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 16)
-	add_child(margin)
-	_root = VBoxContainer.new()
-	_root.add_theme_constant_override("separation", 10)
-	margin.add_child(_root)
+	host = FcScreenHost.new()
+	add_child(host)
+	_root = host.content
+	notifier.stack = host.toasts
 	FcMotion.reduced = preferences.reduce_motion
-	FcUiTokens.touch_mode = false
+	layout.mobile_os = OS.has_feature("mobile")
+	layout.touch_available = DisplayServer.is_touchscreen_available()
+	layout.override = preferences.layout_override
+	layout.changed.connect(_on_layout_changed)
+	resized.connect(func() -> void: layout.update(size))
+	FcUiTokens.touch_mode = layout.is_mobile()
 	apply_text_size(preferences.text_size)
 	content = FcContentService.new(preferences, _defs)
 	dynasty = FcDynastyController.new(content, _defs)
 	dynasty_ui = FcDynastyUi.new(self, dynasty)
 	show_main_menu()
+	layout.update(size)
 
 
 ## Sets the text size (0 small, 1 normal, 2 large) for the whole game and remembers the choice.
 func apply_text_size(index: int) -> void:
 	preferences.text_size = clampi(index, 0, FcUiTheme.SIZES.size() - 1)
-	theme = FcUiTheme.build(preferences.text_size)
+	theme = FcUiTheme.build(preferences.text_size, _skin)
 	preferences.save_file()
 
 
-func _reset(title: String) -> VBoxContainer:
+## Starts a new screen: clears the frame, shows the header and returns the (empty) content box. Every screen calls this first.
+## `opts` (all optional): id (the screen's name; the fade-in runs only when it differs from the last screen's, so a screen that
+## rebuilds itself after an action does not flash), back (a Callable: where Escape, the Android back button and Back go), rebuild (a
+## Callable that shows the screen again, used when the window changes between desktop and mobile), skin (a FcModeSkin id) or
+## skin_props (a resolved skin, e.g. FcModeSkin.franchise), header ({"kind": "plain" | "wordmark" | "letterhead" | "lower_third", ...}).
+func _reset(title: String, opts: Dictionary = {}) -> VBoxContainer:
+	var animate := navigator.enter(str(opts.get("id", title)), opts.get("back", Callable()), opts.get("rebuild", Callable()))
+	_apply_skin(opts.get("skin_props", FcModeSkin.resolve(str(opts.get("skin", FcModeSkin.NEUTRAL)))))
+	if animate:
+		host.modals.close_all()
+	host.set_bottom_bar(null)
 	for c in _root.get_children():
 		_root.remove_child(c)
 		c.queue_free()
-	_root.add_child(FcUiTables.label(title, 28, true))
+	_add_header(title, opts.get("header", {}))
 	var box := VBoxContainer.new()
 	box.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_theme_constant_override("separation", 8)
 	_root.add_child(box)
 	_content = box
 	_message = FcUiTables.label("")
-	_message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART   # a long message must not make the whole screen wider than the window
-	_message.custom_minimum_size = Vector2(200, 0)
+	_message.visible = false   # shown as a toast; kept so the latest message can be read
 	_root.add_child(_message)
+	if animate:
+		host.transition_in(_root)
 	return box
 
 
+func _add_header(title: String, header: Dictionary) -> void:
+	match str(header.get("kind", "plain")):
+		"wordmark":
+			_root.add_child(FcUiTables.label(title, FcUiTokens.TYPE_DISPLAY_XL, true))
+			var tagline := FcUiTables.label(str(header.get("tagline", "")), FcUiTokens.TYPE_BODY)
+			tagline.theme_type_variation = "MutedLabel"
+			tagline.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			_root.add_child(tagline)
+		"letterhead":
+			var letterhead := FcLetterhead.new()
+			letterhead.setup(title, str(header.get("subtitle", "")), str(header.get("abbr", "")), str(header.get("primary", "")), str(header.get("secondary", "")))
+			_root.add_child(letterhead)
+		"lower_third":
+			var third := FcLowerThird.new(title, str(header.get("subtitle", "")))
+			third.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+			_root.add_child(third)
+			third.play_in()
+		_:
+			_root.add_child(FcUiTables.label(title, 28, true))
+
+
+## Switches the mode skin (theme, backdrop). The theme is rebuilt only when the skin or the touch layout really changed.
+func _apply_skin(skin: Dictionary) -> void:
+	var key := "%s|%s|%s" % [skin.get("id", ""), str(skin.get("accent", "")), FcUiTokens.touch_mode]
+	if key == _skin_key:
+		return
+	_skin_key = key
+	_skin = skin
+	theme = FcUiTheme.build(preferences.text_size, skin)
+	host.set_skin(skin)
+
+
+## Shows a message to the player as a toast. The kind is guessed from the words; use notify() when you know it.
 func _say(text: String) -> void:
 	if _message != null:
 		_message.text = text
+	notifier.say(text)
+
+
+## A message of a known kind (FcToast.Kind): the Dynasty screens know whether an action succeeded.
+func notify(kind: FcToast.Kind, text: String) -> void:
+	if _message != null:
+		_message.text = text
+	match kind:
+		FcToast.Kind.SUCCESS:
+			notifier.success(text)
+		FcToast.Kind.WARNING:
+			notifier.warning(text)
+		FcToast.Kind.ERROR:
+			notifier.error(text)
+		_:
+			notifier.info(text)
+
+
+# --- layout, back handling, long actions ---------------------------------------------------------------------------
+
+func _on_layout_changed(profile: FcLayoutProfile) -> void:
+	FcUiTokens.touch_mode = profile.is_mobile()
+	if layout.mobile_os:
+		host.set_safe_margins(FcLayoutProfile.safe_margins(DisplayServer.get_display_safe_area(), DisplayServer.screen_get_size()))
+	if profile.mode != _last_mode:
+		_last_mode = profile.mode
+		_skin_key = ""   # the theme depends on the touch target size, so build it again
+		if navigator.can_rebuild():
+			call_deferred("_rebuild_screen")   # after this frame; dropped automatically if the app is gone
+
+
+func _rebuild_screen() -> void:
+	navigator.rebuild()
+
+
+## Goes back one screen (Escape, the Android back button): closes the top dialog first, then runs the screen's Back action.
+## Returns false when there is nothing to go back to.
+func go_back() -> bool:
+	if host.modals.count() > 0:
+		host.modals.top().close(false)
+		return true
+	return navigator.go_back()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and go_back():
+		get_viewport().set_input_as_handled()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST and not go_back():
+		get_tree().quit()
+
+
+## Runs a slow action (a month of games, a whole season) behind a loading overlay: the overlay is drawn first, then the work runs.
+func run_with_loading(message: String, work: Callable) -> void:
+	if not is_inside_tree():
+		work.call()
+		return
+	var overlay := FcLoadingOverlay.show_on(host.overlay, message)
+	await get_tree().process_frame
+	work.call()
+	if is_instance_valid(overlay):
+		overlay.dismiss()
+
+
+## Asks before leaving a game in progress for the main menu (Escape on a dashboard or hub).
+func _confirm_leave_to_menu() -> void:
+	host.modals.confirm("Return to the main menu?", "Anything you have not saved will be lost.", show_main_menu, false, "Main menu")
 
 
 # --- main menu -----------------------------------------------------------------
 
 func show_main_menu() -> void:
-	var box := _reset("FULL COURT")
+	host.modals.close_all()
+	var box := _reset("FULL COURT", {"id": "menu", "rebuild": show_main_menu, "header": {"kind": "wordmark", "tagline": "Basketball management simulation. Choose how you want to play."}})
 	if content != null and content.report.is_degraded():
-		var warn := FcUiTables.label(content.report.summary(), 14)
+		var warn := FcUiTables.label(content.report.summary(), FcUiTokens.TYPE_SMALL)
 		warn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		box.add_child(warn)
-	box.add_child(FcUiTables.label("Basketball management simulation. Choose how you want to play:", 16))
-	var modes := HBoxContainer.new()
-	modes.add_theme_constant_override("separation", 12)
+	var modes := HFlowContainer.new()
+	modes.add_theme_constant_override("h_separation", FcUiTokens.SPACE_3)
+	modes.add_theme_constant_override("v_separation", FcUiTokens.SPACE_3)
 	for entry in [
-			["Owner Mode", "Run every part of a franchise for up to 50 seasons: money, people, players, the draft, the league's rules.", show_new_league, "Available"],
-			["Career Mode", "Create one player and take them through a career. Draft, contracts, teams, rivalries.", show_career_home, "Playable"],
-			["Dynasty Mode", "Collect fictional player cards, open packs, build a 13-player roster and compete in challenges and tournaments.", show_dynasty_home, "Playable"]]:
-		var card := PanelContainer.new()
-		var inner := VBoxContainer.new()
-		card.add_child(inner)
-		inner.add_child(FcUiTables.label("%s  (%s)" % [entry[0], entry[3]], 18, true))
-		var blurb := FcUiTables.label(entry[1], 14)
+			["Owner Mode", "Run every part of a franchise for up to 50 seasons: money, people, players, the draft, the league's rules.", show_new_league, "Available", FcModeSkin.FRANCHISE, FcStatusChip.Tone.INFO],
+			["Career Mode", "Create one player and take them through a career. Draft, contracts, teams, rivalries.", show_career_home, "Playable", FcModeSkin.BROADCAST, FcStatusChip.Tone.SUCCESS],
+			["Dynasty Mode", "Collect fictional player cards, open packs, build a 13-player roster and compete in challenges and tournaments.", show_dynasty_home, "Playable", FcModeSkin.COLLECTIBLE, FcStatusChip.Tone.SUCCESS]]:
+		var card := FcPanel.new("", FcPanel.Variant.RAISED)
+		card.set_accent(FcModeSkin.resolve(entry[4])["accent"])
+		card.custom_minimum_size.x = 260
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card.add(FcStatusChip.make(entry[3], entry[5]))
+		card.add(FcUiTables.label(entry[0], FcUiTokens.TYPE_H1, true))
+		var blurb := FcUiTables.label(entry[1], FcUiTokens.TYPE_SMALL + 1)
+		blurb.theme_type_variation = "MutedLabel"
 		blurb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		blurb.custom_minimum_size = Vector2(260, 0)
-		inner.add_child(blurb)
-		inner.add_child(FcUiTables.button(entry[0], entry[2]))
+		blurb.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		card.add(blurb)
+		card.add(FcButton.make(entry[0], FcButton.Variant.PRIMARY, entry[2]))
 		modes.add_child(card)
 	box.add_child(modes)
 	var slots := saves.list_slots()
 	if not slots.is_empty():
-		box.add_child(FcUiTables.button("Continue (latest save)", on_continue))
-		box.add_child(FcUiTables.label("Saved games", 18, true))
+		box.add_child(FcButton.make("Continue (latest save)", FcButton.Variant.SECONDARY, on_continue))
+		box.add_child(FcUiTables.label("Saved games", FcUiTokens.TYPE_H3, true))
 		var rows: Array = []
 		for m in slots:
 			rows.append([m.slot_id, m.label, m.team_name, "%d-%02d" % [m.season, (m.season + 1) % 100], m.mode, m.saved_at, "ok" if m.readable else "damaged"])
-		box.add_child(FcUiTables.table(["Slot", "Name", "Team", "Season", "Mode", "Saved", ""], rows))
-		var row := HBoxContainer.new()
-		var picker := OptionButton.new()
+		var table := FcDataTable.build(["Slot", "Name", "Team", "Season", "Mode", "Saved", "Status"], rows, [])
+		if table is Tree:
+			table.custom_minimum_size.y = mini(rows.size(), 5) * 30 + 36
+		box.add_child(table)
+		var row := HFlowContainer.new()
+		var picker := FcDropdown.new()
+		var names: Array = []
 		for m in slots:
-			picker.add_item(m.slot_id)
+			names.append(m.slot_id)
+		picker.set_items(names)
 		_form["slot"] = picker
 		row.add_child(picker)
-		row.add_child(FcUiTables.button("Load", on_load_selected))
-		row.add_child(FcUiTables.button("Delete", on_delete_selected))
+		row.add_child(FcButton.make("Load", FcButton.Variant.SECONDARY, on_load_selected))
+		row.add_child(FcButton.make("Delete", FcButton.Variant.DESTRUCTIVE, request_delete_selected))
 		box.add_child(row)
-	var settings := HBoxContainer.new()
-	settings.add_child(FcUiTables.label("Text size:"))
-	var size_pick := OptionButton.new()
-	for name in FcUiTheme.SIZE_NAMES:
-		size_pick.add_item(name)
-	size_pick.selected = preferences.text_size
-	size_pick.item_selected.connect(func(i):
-		apply_text_size(i)
-		show_main_menu())   # rebuild so headings and labels pick up the new size at once
-	settings.add_child(size_pick)
-	settings.add_child(FcToggle.make("Reduce motion", preferences.reduce_motion, func(on: bool) -> void:
+	var footer := HFlowContainer.new()
+	footer.add_theme_constant_override("h_separation", FcUiTokens.SPACE_2)
+	footer.add_child(FcButton.make("Settings", FcButton.Variant.GHOST, show_settings, "settings"))
+	footer.add_child(FcButton.make("About, licenses and logs", FcButton.Variant.GHOST, show_about, "info"))
+	if OS.has_feature("editor") or OS.get_cmdline_user_args().has("--gallery"):
+		footer.add_child(FcButton.make("Component gallery (development only)", FcButton.Variant.GHOST, show_gallery, "layers"))
+	footer.add_child(FcButton.make("Quit", FcButton.Variant.GHOST, func(): get_tree().quit()))
+	box.add_child(footer)
+
+
+## Settings: text size, reduced motion, the layout (desktop or mobile), the tutorial, and where the content lives.
+func show_settings() -> void:
+	var box := _reset("Settings", {"id": "settings", "back": show_main_menu, "rebuild": show_settings})
+	var display := FcPanel.new("Display", FcPanel.Variant.SURFACE)
+	display.add(FcUiTables.label("Text size", FcUiTokens.TYPE_SMALL))
+	var sizes := FcChoiceGroup.new()
+	sizes.set_options([["0", "Small"], ["1", "Normal"], ["2", "Large"]], str(preferences.text_size))
+	sizes.selected.connect(func(id: String) -> void:
+		apply_text_size(int(id))
+		show_settings())   # rebuild so headings and labels pick up the new size at once
+	display.add(sizes)
+	display.add(FcToggle.make("Reduce motion", preferences.reduce_motion, func(on: bool) -> void:
 		preferences.reduce_motion = on
 		preferences.save_file()
 		FcMotion.reduced = on))
-	settings.add_child(FcUiTables.button("Replay the tutorial next game", func():
+	display.add(FcUiTables.label("Layout", FcUiTokens.TYPE_SMALL))
+	var layouts := FcChoiceGroup.new()
+	layouts.set_options([["auto", "Automatic"], ["desktop", "Desktop"], ["mobile", "Mobile"]], preferences.layout_override)
+	layouts.selected.connect(func(id: String) -> void:
+		preferences.layout_override = id
+		preferences.save_file()
+		layout.override = id
+		layout.update(size))
+	display.add(layouts)
+	var hint := FcUiTables.label("Automatic follows your device: phones and small touch windows use the mobile layout. Owner Mode and Career Mode are designed for desktop screens.", FcUiTokens.TYPE_SMALL)
+	hint.theme_type_variation = "MutedLabel"
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	display.add(hint)
+	box.add_child(display)
+	var help := FcPanel.new("Help", FcPanel.Variant.SURFACE)
+	var replay := FcButton.make("Replay the tutorial next game", FcButton.Variant.SECONDARY, func() -> void:
 		preferences.reset_tutorial()
-		_say("The tutorial will open when you start your next Owner Mode game.")))
-	box.add_child(settings)
-	box.add_child(FcUiTables.button("About, licenses and logs", show_about))
-	if OS.has_feature("editor") or OS.get_cmdline_user_args().has("--gallery"):
-		box.add_child(FcUiTables.button("Component gallery (development only)", show_gallery))
-	box.add_child(FcUiTables.button("Quit", func(): get_tree().quit()))
+		notify(FcToast.Kind.INFO, "The tutorial will open when you start your next Owner Mode game."))
+	replay.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	help.add(replay)
+	box.add_child(help)
+	var data := FcPanel.new("Content", FcPanel.Variant.SURFACE)
+	var path := FcUiTables.label("Content folder: %s" % ProjectSettings.globalize_path(preferences.effective_content_root()), FcUiTokens.TYPE_SMALL)
+	path.theme_type_variation = "MutedLabel"
+	path.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
+	data.add(path)
+	box.add_child(data)
+	var back := FcButton.make("Back", FcButton.Variant.SECONDARY, show_main_menu, "chevron-left")
+	back.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	box.add_child(back)
+
+
+## Deleting a save cannot be undone, so the Delete button asks first (the dialog starts on Cancel).
+func request_delete_selected() -> void:
+	var picker: FcDropdown = _form.get("slot")
+	if picker == null or picker.item_count == 0:
+		return
+	var slot := picker.get_item_text(picker.selected)
+	host.modals.confirm("Delete this save?", "'%s' will be deleted for good." % slot, on_delete_selected, true, "Delete")
 
 
 ## The development-only Component Gallery (every design token and kit component; see docs/UI_POLISH_PLAN.md). Leaving it puts the
 ## player's own text size, motion and layout settings back, because the gallery changes them to show each variant.
 func show_gallery() -> void:
-	var box := _reset("Component gallery")
+	var box := _reset("Component gallery", {"id": "gallery", "back": show_main_menu})
 	var gallery := FcComponentGallery.new()
 	gallery.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	gallery.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	gallery.closed.connect(func() -> void:
-		FcUiTokens.touch_mode = false
+		FcUiTokens.touch_mode = layout.is_mobile()
 		FcMotion.reduced = preferences.reduce_motion
+		_skin_key = ""
 		apply_text_size(preferences.text_size)
 		show_main_menu())
 	box.add_child(gallery)
@@ -227,7 +404,7 @@ func show_gallery() -> void:
 ## Career Mode's home: create a player (or continue from the saved games list on the main menu). Progression, the
 ## calendar and games come in later phases (docs/CAREER_MODE_PLAN.md); this screen says so plainly.
 func show_career_home() -> void:
-	var box := _reset("Career Mode")
+	var box := _reset("Career Mode", {"id": "career_home", "skin": FcModeSkin.BROADCAST, "back": show_main_menu, "rebuild": show_career_home})
 	var text := FcUiTables.label("Create one player (name, body, position, strengths) and take them through a career of about 20 seasons: scouting and the draft, decisions, contracts, relationships, rivalries, sponsorships and a legacy. You reach your potential by choosing which skills to raise.
 
 See docs/CAREER_MODE_PLAN.md.", 16)
@@ -242,7 +419,7 @@ See docs/CAREER_MODE_PLAN.md.", 16)
 
 ## The player creator (FcCareerCreator). A valid build makes the player and opens the Career Hub.
 func show_career_creator() -> void:
-	var box := _reset("Career Mode: create your player")
+	var box := _reset("Career Mode: create your player", {"id": "career_creator", "skin": FcModeSkin.BROADCAST, "back": show_career_home, "rebuild": show_career_creator})
 	var creator := FcCareerCreator.new(_defs)
 	creator.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	creator.create_requested.connect(on_create_career)
@@ -274,7 +451,8 @@ func on_create_career(spec: Dictionary, seed_value: int = -1) -> bool:
 ## The Career Hub: the player's card, development (points, training) and skills (badges). The calendar and games come next.
 func show_career_hub() -> void:
 	var card := career.card()
-	var box := _reset("%s   #%d" % [card["name"], card["jersey"]])
+	var box := _reset("%s   #%d" % [card["name"], card["jersey"]], {"id": "career_hub", "skin": FcModeSkin.BROADCAST, "back": _confirm_leave_to_menu,
+		"header": {"kind": "lower_third", "subtitle": "%s   %s   Age %d" % [card["position"], card["archetype"], card["age"]]}})
 	box.add_child(FcUiTables.label("%s%s   %s   Age %d   %d cm, %d kg, wingspan %d cm   Team: %s" % [
 		card["position"], "/" + card["secondary"] if card["secondary"] != "" else "", card["archetype"], card["age"],
 		card["height_cm"], card["weight_kg"], card["wingspan_cm"], card["team"]], 16))
@@ -694,7 +872,7 @@ func show_dynasty_home() -> void:
 ## The About screen: version, the engine's licenses (the MIT notice the engine requires in every game made with it) and
 ## shortcuts to the folders with logs and saves, so a player can send a log when something goes wrong.
 func show_about() -> void:
-	var box := _reset("About Full Court")
+	var box := _reset("About Full Court", {"id": "about", "back": show_main_menu, "rebuild": show_about})
 	box.add_child(FcUiTables.label("Full Court %s: a basketball management simulation. Original teams, players and staff; real cities." % FcVersion.GAME_VERSION, 16))
 	if content != null:
 		box.add_child(FcUiTables.label(content.report.summary(), 14))
@@ -758,7 +936,7 @@ func _load_slot(slot_id: String) -> void:
 # --- new league -------------------------------------------------------------------
 
 func show_new_league() -> void:
-	var box := _reset("New League")
+	var box := _reset("New League", {"id": "new_league", "skin": FcModeSkin.FRANCHISE, "back": show_main_menu, "rebuild": show_new_league})
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", 16)
@@ -865,7 +1043,7 @@ func _to_strings(source) -> Array[String]:
 # --- choosing a team -----------------------------------------------------------------
 
 func show_team_choice() -> void:
-	var box := _reset("Choose Your Team")
+	var box := _reset("Choose Your Team", {"id": "team_choice", "skin": FcModeSkin.FRANCHISE, "back": show_new_league})
 	var w := _pending_state.world
 	var rows: Array = []
 	var ids: Array[int] = []
@@ -986,7 +1164,11 @@ func _tutorial_panel() -> Control:
 
 func show_dashboard() -> void:
 	var s := controller.season()
-	var box := _reset(_team_name(controller.state.user_team_id))
+	var team: FcTeam = controller.state.world.teams.get_by_id(controller.state.user_team_id)
+	var primary: String = team.branding.primary_color if team != null else ""
+	var box := _reset(_team_name(controller.state.user_team_id), {"id": "dashboard", "skin_props": FcModeSkin.franchise(primary), "back": _confirm_leave_to_menu,
+		"header": {"kind": "letterhead", "subtitle": "Season %d-%02d   %s" % [s.year, (s.year + 1) % 100, "Owner" if controller.state.mode == FcGameState.MODE_OWNER else "Spectator"],
+			"abbr": team.identity.abbreviation if team != null else "", "primary": primary, "secondary": team.branding.secondary_color if team != null else ""}})
 	var phase := controller.phase()
 	var info := FcUiTables.label("%s    Season %d-%02d    %s    Mode: %s" % [
 		controller.state.current_date.to_iso(), s.year, (s.year + 1) % 100,
@@ -999,19 +1181,19 @@ func show_dashboard() -> void:
 		FcGameController.PHASE_REGULAR:
 			actions.add_child(FcUiTables.button("Next Day", func(): on_advance(1)))
 			actions.add_child(FcUiTables.button("Next Week", func(): on_advance(7)))
-			actions.add_child(FcUiTables.button("Next Month", func(): on_advance(30)))
-			actions.add_child(FcUiTables.button("To End of Regular Season", func(): on_sim_regular()))
+			actions.add_child(FcUiTables.button("Next Month", func(): run_with_loading("Playing a month of games...", func(): on_advance(30))))
+			actions.add_child(FcUiTables.button("To End of Regular Season", func(): run_with_loading("Simulating the regular season...", on_sim_regular)))
 		FcGameController.PHASE_PLAYOFFS:
 			actions.add_child(FcUiTables.button("Next Playoff Day", func(): on_advance(1)))
-			actions.add_child(FcUiTables.button("Play All Playoffs", func(): on_sim_playoffs()))
+			actions.add_child(FcUiTables.button("Play All Playoffs", func(): run_with_loading("Playing the playoffs...", on_sim_playoffs)))
 		FcGameController.PHASE_MEETING:
 			actions.add_child(FcUiTables.button("Close the meeting and count the votes", on_close_meeting))
 		FcGameController.PHASE_EXPANSION:
 			actions.add_child(FcUiTables.button("Run the expansion draft", on_run_expansion))
 		FcGameController.PHASE_DRAFT:
-			actions.add_child(FcUiTables.button("Let the staff finish the draft", on_draft_auto))
+			actions.add_child(FcUiTables.button("Let the staff finish the draft", func(): run_with_loading("Running the draft...", on_draft_auto)))
 		FcGameController.PHASE_OFFSEASON:
-			actions.add_child(FcUiTables.button("Finish Offseason and Start Next Season", on_next_season))
+			actions.add_child(FcUiTables.button("Finish Offseason and Start Next Season", func(): run_with_loading("Starting the next season...", on_next_season)))
 		_:
 			if controller.state.mode == FcGameState.MODE_OWNER:
 				actions.add_child(FcUiTables.button("Begin Offseason (draft, contracts, free agency)", on_next_season))

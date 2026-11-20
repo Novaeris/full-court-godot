@@ -13,7 +13,7 @@ func _init(title: String = "", subtitle: String = "") -> void:
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 0)
 	add_child(column)
-	title_label.text = title.to_upper()
+	title_label.text = title   # shown as given: a name or a label is never re-cased (callers who want capitals pass them)
 	title_label.theme_type_variation = "DisplayLabel"
 	title_label.add_theme_font_size_override("font_size", FcUiTokens.fs(FcUiTokens.TYPE_H1))
 	column.add_child(title_label)

@@ -1,0 +1,26 @@
+UI/UX polish, Phase 3 (shell, navigation, notifications, layout profile): validation record, 2026-11-20
+Base commit: b44b348 (Phases 1 and 2); the working tree held Phase 3.
+
+Full unit suite       godot_console --headless --path . --script res://tests/run_tests.gd
+                      Tests: 916 passed, 0 failed (exit 0). Before Phase 3: 882. New: 33 shell tests, 1 toast regression test.
+Live tests            Live tests: 30 passed, 0 failed (21 before; 9 new in tests/live/test_live_shell.gd)
+Owner click test      tools/click_test.gd          67 mouse clicks sent, 0 problems
+Career click test     tools/career_click_test.gd   18 mouse clicks sent, 0 problems
+Creator Studio smoke  Studio smoke: PASS
+
+Problems found and fixed during the phase (all with regression coverage):
+  - a toast covered "Sign selected free agent" and swallowed the click (tools/click_test.gd): toasts now ignore the mouse on desktop
+  - the lower third upper-cased a player's name, failing test_career_creator: it now shows text as given
+  - the screen body collapsed to zero height inside the new scroll area (a ScrollContainer only stretches a child that expands)
+  - the mobile bottom bar was cut off by a wide screen: it now lives in the frame, outside the screen
+  - the unit runner counts a test as passed even if a script error aborts it halfway (existing limitation); a test that hit this was fixed
+
+Smallest window each screen needs (width x height, px), before Phase 3 -> after:
+  main_menu 820x338 -> 393x90        dynasty_collection 789x148 -> 300x130     dynasty_packs 789x148 -> 340x130
+  dynasty_hub 789x148 -> 640x130     dynasty_lineup 789x148 -> 740x130         dynasty_entry 532x303 -> 532x276
+  new_league 775x403 -> 775x376      career_creator 744x121 -> 744x94          career_home 432x196 -> 432x221
+  owner_overview / owner_roster 715x179 -> 715x181
+No screen got wider. Owner and Career fit 800x600; anything wider scrolls sideways.
+
+Screenshots: docs/validation/ui/phase3 (menu, settings, Owner Overview, Career hub and creator, Dynasty hub, collection, packs, reveal, entry, at 412x915 mobile, 800x600, 1024x768 and 1280x800).
+Not run: ui_playthrough, owner_stress, simulation and economy checks (no simulation, economy or save code changed); CI (the live-test step has still not run on GitHub); real Android or touch devices.

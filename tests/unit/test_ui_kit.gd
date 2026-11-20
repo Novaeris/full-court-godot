@@ -217,6 +217,19 @@ func test_modal_scrim_click_cancels_only_when_dismissible() -> void:
 	assert_eq(got, ["cancelled"])
 
 
+func test_toasts_never_block_the_controls_beneath_them_on_desktop() -> void:
+	# regression: a toast once covered "Sign selected free agent" and swallowed the click (found by tools/click_test.gd)
+	var desktop := FcToast.new(FcToast.Kind.INFO, "Released a player.")
+	assert_eq(desktop.mouse_filter, Control.MOUSE_FILTER_IGNORE, "clicks pass through a desktop toast")
+	assert_eq(desktop.size_flags_horizontal, Control.SIZE_SHRINK_END, "it sits at the right, away from the main buttons")
+	FcUiTokens.touch_mode = true
+	var touch := FcToast.new(FcToast.Kind.INFO, "Released a player.")
+	assert_eq(touch.mouse_filter, Control.MOUSE_FILTER_STOP, "on touch a tap dismisses it")
+	assert_eq(touch.size_flags_horizontal, Control.SIZE_SHRINK_CENTER)
+	for t in [desktop, touch]:
+		t.free()
+
+
 func test_toasts_say_what_kind_they_are_and_errors_stay_longer() -> void:
 	assert_eq(FcToast.hold_seconds(FcToast.Kind.INFO), 3.0)
 	assert_eq(FcToast.hold_seconds(FcToast.Kind.ERROR), 6.0)
@@ -390,7 +403,7 @@ func test_score_bug_reads_like_a_scoreboard() -> void:
 
 func test_lower_third_and_letterhead_and_kpi_strip() -> void:
 	var third := FcLowerThird.new("Player of the game", "Maya Okoro")
-	assert_eq(third.title_label.text, "PLAYER OF THE GAME", "broadcast titles are upper case")
+	assert_eq(third.title_label.text, "Player of the game", "the title is shown exactly as given (a player name keeps its case)")
 	var quiet := FcLowerThird.new("Title")
 	assert_true(not quiet.subtitle_label.visible, "no subtitle, no row")
 	var head := FcLetterhead.new()
