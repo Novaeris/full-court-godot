@@ -10,6 +10,11 @@ func _initialize() -> void:
 	var files: Array[String] = []
 	_collect(TEST_ROOT, files)
 	files.sort()
+	# optional: only run test files whose name contains the text after --filter= (a developer shortcut)
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--filter=") and arg.length() > 9:
+			var wanted := arg.substr(9)
+			files = files.filter(func(f: String) -> bool: return f.contains(wanted))
 
 	var passed := 0
 	var failed := 0

@@ -1,0 +1,16 @@
+{
+	"schema": 1,
+	"note": "Dynasty Mode economy defaults. A published release may override any of these with a support definition named dynasty_config (support/dynasty_config.json, feature dynasty_config_v1). Prices of packs and cards are NEVER defaulted here: they exist only in published content.",
+	"currencies": ["credits", "tokens", "shards"],
+	"game_reward": {"win": 150, "loss": 50},
+	"shards_per_duplicate": {"common": 5, "uncommon": 10, "rare": 25, "epic": 60, "legendary": 150},
+	"mastery": {"max_level": 5, "shard_cost": [20, 40, 80, 160, 320], "frames": ["none", "bronze", "silver", "gold", "platinum", "diamond"]},
+	"opponent_offsets": [
+		{"id": "easy", "name": "Easy", "offset": -8, "reward_percent": 70},
+		{"id": "even", "name": "Even match", "offset": 0, "reward_percent": 100},
+		{"id": "hard", "name": "Hard", "offset": 6, "reward_percent": 140}
+	],
+	"team_overall_weights": [14, 14, 14, 14, 14, 7, 6, 5, 4, 3, 2, 1, 1],
+	"history_limit": 25,
+	"ledger_limit": 400
+}
