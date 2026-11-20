@@ -12,7 +12,7 @@ const DYNASTY_DIR := "user://test_layout_probe_dynasty"
 
 const SCREENS := ["main_menu", "new_league", "career_home", "career_creator", "dynasty_entry", "dynasty_hub", "dynasty_collection",
 	"dynasty_packs", "dynasty_lineup", "owner_overview", "owner_roster",
-	"m_entry", "m_hub", "m_collection", "m_lineup", "m_packs", "m_market", "m_play", "m_challenges", "m_tournament", "m_season"]
+	"m_entry", "m_hub", "m_collection", "m_lineup", "m_packs", "m_market", "m_play", "m_challenges", "m_tournament", "m_season", "m_postgame"]
 ## The Dynasty screens in the MOBILE layout (names start with m_): they must fit a 412 px phone (the margins are included in the numbers).
 const MOBILE_LIMIT := 412
 
@@ -45,7 +45,10 @@ static func measure_screen(screen: String) -> Dictionary:
 			app.dynasty_ui.on_create("Probe Kings", "PRB")
 			if screen == "m_tournament":
 				app.dynasty.enter_tournament("test_cup")
-			app.dynasty_ui.show_tab(screen.trim_prefix("m_"))
+			if screen == "m_postgame":
+				app.dynasty.auto_fill_lineup()   # a finished game on the Play screen shows the post-game view
+				app.dynasty.play_quick_game("easy")
+			app.dynasty_ui.show_tab("play" if screen == "m_postgame" else screen.trim_prefix("m_"))
 		var phone := app._root.get_combined_minimum_size() + Vector2(32, 32)
 		Engine.get_main_loop().root.remove_child(app)
 		app.free()

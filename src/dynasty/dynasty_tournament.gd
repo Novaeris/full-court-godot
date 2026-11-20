@@ -90,6 +90,7 @@ static func play_next(profile: FcDynastyProfile, catalog: FcDynastyCatalog) -> F
 	var matches: Array = run["rounds"][rd]
 	var seed_value := int(str(run["seed"]))
 	var summary: Dictionary = {}
+	var shown: Dictionary = {}   # the user's own match, for the post-game screen only
 	for m_index in matches.size():
 		var m: Dictionary = matches[m_index]
 		if int(m["a"]) == me or int(m["b"]) == me:
@@ -99,6 +100,7 @@ static func play_next(profile: FcDynastyProfile, catalog: FcDynastyCatalog) -> F
 			if not played.ok:
 				return played
 			summary = played.data["summary"]
+			shown = {"box": played.data["box"], "user_side": played.data["user_side"], "cards": played.data["cards"]}
 			var won: bool = bool(summary["won"])
 			m["winner"] = me if won else other_index
 			var me_is_a: bool = int(m["a"]) == me
@@ -127,8 +129,8 @@ static func play_next(profile: FcDynastyProfile, catalog: FcDynastyCatalog) -> F
 		profile.tournament["history"].append({"run_id": run["run_id"], "tournament_id": run["tournament_id"], "name": run["name"],
 			"placement": run["placement"], "reward_txn": run["reward_txn"], "rewards": FcDynastyProfile.normalize(rewards)})
 		profile.tournament["active"] = {}
-		return FcDynastyResult.success({"summary": summary, "run": run, "finished": true, "rewards": rewards})
-	return FcDynastyResult.success({"summary": summary, "run": run, "finished": false, "rewards": {}})
+		return FcDynastyResult.success({"summary": summary, "run": run, "finished": true, "rewards": rewards, "shown": shown})
+	return FcDynastyResult.success({"summary": summary, "run": run, "finished": false, "rewards": {}, "shown": shown})
 
 
 static func _winner_of_user(run: Dictionary, rd: int) -> int:

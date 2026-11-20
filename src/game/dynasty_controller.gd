@@ -290,6 +290,7 @@ func play_tournament_match() -> FcDynastyResult:
 	var r := session.commit(func() -> FcDynastyResult: return FcDynastyTournament.play_next(profile(), catalog))
 	if r.ok and not r.data["summary"].is_empty():
 		last_game = {"summary": r.data["summary"], "reward": 0}
+		last_game.merge(r.data.get("shown", {}))   # the box score for the post-game screen (transient, never saved)
 	return r
 
 

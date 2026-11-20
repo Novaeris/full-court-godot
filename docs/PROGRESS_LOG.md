@@ -23,6 +23,10 @@ FcPlayerVisual (the one deterministic resolver: FNV-1a hash of a stable key, sto
 
 Every Dynasty screen wraps its text and flows its columns so it fits a 412 px phone; tables become cards on a phone; the bottom navigation bar and touch-sized controls are used in the mobile layout; the starting five stand on a half court (FcLineupCourt); collection, detail, lineup, packs and play screens use the Phase 4-7 components. Results: docs/validation/ui/phase8_results.txt.
 
+## 2026-11-20: UI/UX polish, Phase 9 (post-game presentation)
+
+FcPostGameModel (pure view-model), FcPostGameScreen (score bug hero, line score, player of the game, performers, after-the-game, team comparison bars, team tabs) and FcPostGame adapters for Owner, Career and Dynasty; data/ui/pog.json; read-only box pass-through (D-053). Results: docs/validation/ui/phase9_results.txt.
+
 ## 2026-11-20: UI/UX polish, Phase 3 (shell, navigation, notifications, layout), D-051
 
 Built after the founder reviewed milestone 1 and said "continue". `src/ui/shell/` (`FcScreenHost`, `FcNavigator`, `FcModalHost`, `FcNotifier`, `FcLayoutProfile`) plus `FcNavBar`; `FcApp` now sits on the shell. Visible results: a redesigned main menu (mode cards with status chips; 820 px down to 393 px), a Settings screen (text size, reduce motion, layout override, tutorial, content folder), a confirmed Delete, toasts instead of the bottom message line, Escape and Android back, a loading overlay for slow actions, the three skins applied (Owner letterhead and team colours, Career lower third and grid, Dynasty spotlight), and Dynasty navigation as top tabs on desktop and a bottom bar with More on mobile. Dynasty collection and packs already fit a 412 px phone; the hub and lineup still scroll sideways (Phase 8). Owner and Career fit 800x600, and wider screens scroll sideways.

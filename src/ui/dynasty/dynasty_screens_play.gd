@@ -60,6 +60,39 @@ static func _after_text(data: Dictionary) -> String:
 
 
 static func _result_panel(ui: FcDynastyUi, game: Dictionary) -> Control:
+	if game.has("box"):
+		return post_game(ui, game)
+	return _summary_panel(ui, game)
+
+
+## The shared post-game screen for a Dynasty game: the simulation's box score, the user's side, a face for every player (the same
+## resolver as everywhere else) and what the game earned. Read-only: it changes nothing.
+static func post_game(ui: FcDynastyUi, game: Dictionary) -> Control:
+	var by_card := {}
+	for row in FcCollectionQuery.rows(ui.ctl.profile(), ui.ctl.catalog, {}):
+		by_card[str(row["card_id"])] = row
+	var subjects := {}
+	for pid in game["cards"]:
+		var row: Dictionary = by_card.get(str(game["cards"][pid]), {})
+		if not row.is_empty():
+			subjects[int(pid)] = FcPlayerPresentation.subject_for_card(row)
+	var rewards: Array = []
+	var extra := _after_text(game)
+	if extra != "":
+		rewards.append(extra)
+	var wins := 0
+	var history: Array = ui.ctl.profile().game_history
+	for g in history:
+		if bool(g["won"]):
+			wins += 1
+	var implications: Array = ["Your Dynasty record: %d-%d over %d games." % [wins, history.size() - wins, history.size()]]
+	var vm := FcPostGameModel.build(game["box"], {"user_side": int(game["user_side"]), "subjects": subjects, "implications": implications, "rewards": rewards})
+	var screen := FcPostGameScreen.new().setup(vm)
+	screen.name = "PostGame"
+	return screen
+
+
+static func _summary_panel(ui: FcDynastyUi, game: Dictionary) -> Control:
 	var s: Dictionary = game["summary"]
 	var v := VBoxContainer.new()
 	var title := "%s  %d - %d  vs %s%s" % ["WIN" if s["won"] else "LOSS", s["score_for"], s["score_against"], s["opponent"], " (OT)" if int(s["overtimes"]) > 0 else ""]

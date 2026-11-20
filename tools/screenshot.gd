@@ -15,6 +15,7 @@ extends SceneTree
 ## gallery only: skin=neutral|broadcast|collectible|franchise  section=Buttons (scroll to a section)  touch=1  reduce=1
 ## layout=auto|desktop|mobile: force the presentation target (mobile shows the bottom navigation and touch-sized controls).
 ##   (dynasty screens) view=grid|carousel  demo=inspector|compare
+##   screens dynasty_postgame, owner_postgame (the shared post-game screen)
 ##   demo=modal_info|modal_confirm|modal_destructive|toasts|loading (opens that overlay)
 ## offseason=draft: play the season out and stop at the owner's draft; offseason=window: the free-agency window after it.
 ## Dynasty screens use the test fixture content (tests/support/dynasty_fixture.gd), so the pictures do not depend on the machine.
@@ -128,6 +129,11 @@ func _build_screen() -> void:
 			_app.on_next_season()
 		if _offseason == "window" and _app.controller.phase() == FcGameController.PHASE_DRAFT:
 			_app.on_draft_auto()
+	if _screen == "owner_postgame":
+		var boxes: Array = _app.controller.season().recent_boxes
+		if not boxes.is_empty():
+			FcPostGame.open(_app, FcPostGame.for_owner(_app.controller, boxes[boxes.size() - 1]["box"]))
+		return
 	var index := FcApp.TAB_NAMES.find(_screen)
 	if index >= 0:
 		_app._tabs.current_tab = index
@@ -151,6 +157,11 @@ func _build_dynasty() -> void:
 			var skip := _find_button(_app, "Skip animation")
 			if skip != null:
 				skip.pressed.emit()
+		return
+	if _screen == "dynasty_postgame":
+		_app.dynasty.auto_fill_lineup()
+		_app.dynasty.play_quick_game("easy")
+		_app.dynasty_ui.show_tab("play")
 		return
 	if _app.ui_state != null:
 		_app.ui_state.set_value("collection", "view", _view)

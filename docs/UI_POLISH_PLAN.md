@@ -146,8 +146,9 @@ Procedural pack art tinted by tier, odds disclosure, reveal state machine that o
 Hub (featured card, completion, recommended action), court-shaped lineup with tap-to-select, play, challenges, bracket, season reward track, market, profile entry. The full Dynasty loop completes in the click test at 412x915 with touch emulation.
 - **Built (autonomous run, founder pre-approved all remaining phases):** Every Dynasty screen wraps its text and flows its columns so it fits a 412 px phone; tables become cards on a phone; the bottom navigation bar and touch-sized controls are used in the mobile layout; the starting five stand on a half court (FcLineupCourt); collection, detail, lineup, packs and play screens use the Phase 4-7 components.
 
-### Phase 9: Post-game presentation (results-first, no sim change)
+### Phase 9: Post-game presentation (results-first, no sim change) (BUILT)
 One shared screen for all modes in the Broadcast skin: final score hero, quarter-by-quarter line score, team comparison bars, top performers, player of the game (a display ranking from `data/ui/pog.json`, labelled as such), full player stat lines in tabs, season implications where supported (Owner record and standing; Dynasty season points and objectives; Career season record and the player's line against their average), rewards and progression earned. **Needs the D3 pass-through** of the transient `FcBoxScore` in `FcDynastyController.last_game` (not saved).
+- **Built (autonomous run, founder pre-approved all remaining phases):** FcPostGameModel (pure view-model), FcPostGameScreen (score bug hero, line score, player of the game, performers, after-the-game, team comparison bars, team tabs) and FcPostGame adapters for Owner, Career and Dynasty; data/ui/pog.json; read-only box pass-through (D-053).
 
 ### Phase 10: Career and Owner polish
 Career creator as steps with a live card and figure preview; Career hub on the shared profile; Owner franchise skin (franchise colours, letterhead, KPI strips), the 13 tabs on the kit; small-window pass for Owner and Career; Studio adopts the theme and card face.
@@ -217,3 +218,4 @@ Rebuild-on-navigate (the Phase 3 shim mitigates); Phase 7 scope (tiers ship inde
 - 2026-11-20: Phase 6 built: packs and reveal
 - 2026-11-20: Phase 7 built: player showcase and unified profile
 - 2026-11-20: Phase 8 built: remaining Dynasty screens and mobile layouts
+- 2026-11-20: Phase 9 built: post-game presentation

@@ -41,6 +41,13 @@ func after_each() -> void:
 ## A finger tap on the centre of a control: the touch events, and the mouse click Godot produces from them (its "emulate mouse from touch"
 ## setting, asserted in test_touch_is_emulated_as_a_mouse_click). Events go to the window, like tools/click_test.gd.
 func _tap(control: Control) -> void:
+	# a finger scrolls what it needs into view first
+	var holder := control.get_parent()
+	while holder != null:
+		if holder is ScrollContainer:
+			(holder as ScrollContainer).ensure_control_visible(control)
+		holder = holder.get_parent()
+	await frames(2)
 	var at := control.get_global_rect().get_center()
 	var window: Viewport = _screen
 	var touch := InputEventScreenTouch.new()
@@ -150,10 +157,28 @@ func test_the_lineup_and_a_game_work_by_touch() -> void:
 	assert_true(not app.dynasty.last_game.is_empty(), "a game was played")
 	app.dynasty_ui.show_tab("play")
 	await frames(2)
-	var texts := ""
-	for l in app._root.find_children("*", "Label", true, false):
-		texts += (l as Label).text + "\n"
-	assert_true("WIN" in texts or "LOSS" in texts, "the result is shown")
+	var screen := _find_post_game(app)
+	assert_true(screen != null, "the result is the shared post-game screen")
+	if screen == null:
+		return
+	assert_true(screen.get_child(0) is FcPanel and screen.bug.summary().contains("FINAL"), "results come first: the final score is at the top")
+	var other := 1 - int(screen.vm["user_side"])
+	var seen: Array = []
+	screen.team_tab_changed.connect(func(side: int) -> void: seen.append(side))
+	var tb := screen.tabs.button_for(str(other))
+	await seconds(6.0)   # the "Game complete" toast sits over the bottom of the screen for a few seconds, and a tap on it only dismisses it
+	await _tap(tb)
+	assert_eq(seen, [other], "a tap on the other team's tab shows its player lines")
+
+
+func _find_post_game(n: Node) -> FcPostGameScreen:
+	if n is FcPostGameScreen:
+		return n
+	for c in n.get_children():
+		var r := _find_post_game(c)
+		if r != null:
+			return r
+	return null
 
 
 func test_a_card_opens_the_inspector_by_touch_and_back_closes_it() -> void:

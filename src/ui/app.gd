@@ -670,6 +670,8 @@ func _career_season_tab() -> Control:
 			duel_text = "Duel %s vs %s (%d pts)" % ["won" if game["duel"]["won"] else "lost", game["duel"]["rival"], game["duel"]["rival_points"]]
 		rows.append([game["opponent"], "W" if game["won"] else "L", game["score"], "%d" % l["minutes"], l["points"], l["rebounds"], l["assists"], "+%d" % game["xp"], ", ".join(game["milestones"]).replace("_", " ") + (" " if duel_text != "" and not game["milestones"].is_empty() else "") + duel_text])
 	box.add_child(FcUiTables.label("Recent games", 16, true))
+	if not _career_log.is_empty():
+		box.add_child(FcUiTables.button("Game summary: latest game", func() -> void: FcPostGame.open(self, FcPostGame.for_career(career, _career_log[0]))))
 	box.add_child(FcUiTables.table(["Opponent", "", "Score", "Min", "Pts", "Reb", "Ast", "XP", "Milestones"], rows, [0, 30, 70, 40, 40, 40, 40, 50, 0]))
 	box.add_child(FcUiTables.label("Career history", 16, true))
 	box.add_child(_career_history_table())
@@ -1963,13 +1965,21 @@ func _tab_schedule() -> Control:
 			_say("Select a game first.")
 			return
 		var key: Array = keys[item.get_index()]
-		var text := box_score_text(key[0], key[1])
-		_say("No box score is kept for that game (only your most recent games are stored)." if text == "" else "")
-		if text != "":
-			_show_text_popup("Box score", text)))
+		var entry := _stored_box(key[0], key[1])
+		_say("No box score is kept for that game (only your most recent games are stored)." if entry.is_empty() else "")
+		if not entry.is_empty():
+			FcPostGame.open(self, FcPostGame.for_owner(controller, entry["box"]))))
 	row.add_child(FcUiTables.label("Box scores are kept for your team's last %d games." % FcSeason.RECENT_BOX_LIMIT))
 	box.add_child(row)
 	return box
+
+
+## The stored box score entry ({day, series, box}) of a recently played game of the owner's team, or {}.
+func _stored_box(day: int, series: int) -> Dictionary:
+	for entry in controller.season().recent_boxes:
+		if int(entry["day"]) == day and int(entry["series"]) == series:
+			return entry
+	return {}
 
 
 ## The box score of a recently played game of the owner's team as text, or "" if none is stored.

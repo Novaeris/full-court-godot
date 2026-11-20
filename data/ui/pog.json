@@ -1,0 +1,18 @@
+{
+	"label": "Player of the game",
+	"note": "A display pick: a weighted box-score line, winners only. It is not a league award and changes nothing in the game.",
+	"winners_only": true,
+	"winner_bonus": 0.0,
+	"minimum_seconds": 300,
+	"weights": {
+		"points": 1.0,
+		"rebounds": 1.2,
+		"assists": 1.5,
+		"steals": 2.5,
+		"blocks": 2.5,
+		"turnovers": -2.0,
+		"missed_fg": -0.7,
+		"missed_ft": -0.4,
+		"plus_minus": 0.15
+	}
+}

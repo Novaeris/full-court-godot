@@ -102,7 +102,7 @@ func test_the_full_loop_through_the_screens_api() -> void:
 	var game := ctl.play_quick_game("easy")
 	assert_true(game.ok, "game played")
 	app.dynasty_ui.show_tab("play")
-	assert_true("WIN" in _text(app) or "LOSS" in _text(app), "result screen")
+	assert_true("FINAL" in _text(app).to_upper() and "Player of the game" in _text(app), "result screen")
 	for i in 4:
 		ctl.play_quick_game("easy")
 	var claimable := ctl.challenge_listing().filter(func(c): return c["completed"] and not c["claimed"])
