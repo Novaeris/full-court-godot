@@ -151,7 +151,7 @@ Further tools and tests added 2026-11-18 (stability sign-off):
 | Pricing modes of the owner playthrough (`pricing=inflation|suggested`) and the run line that records every setting | `./tools/ui_playthrough.ps1` |
 | Strict mode for the simulation check (exit code 1 if any average is out of range) | `./tools/simulate_games.ps1 games=1000 strict=1` |
 | Separate DEBT, CASH, PROFIT, VALUATION and TITLES lines and a leverage breach rule | `./tools/economy_check.ps1` |
-| GitHub Actions: `ci.yml` (tests, strict sim check, short economy check on every push), `long-checks.yml` (weekly or by hand: 50-season economy at 12 and 30 teams, owner stress), `release.yml` (Windows build and packaged self-test on a version tag or by hand) | `.github/workflows/` |
+| GitHub Actions: `ci.yml` (tests, strict sim check, short economy check on every push), `long-checks.yml` (weekly or by hand: 50-season economy at 12 and 30 teams, owner stress, and a `career` job: `career_playthrough` for 20 seasons and `career_balance` with 2 seeds), `release.yml` (Windows build and packaged self-test on a version tag or by hand) | `.github/workflows/` |
 
 Career Mode (2026-11-18): `test_career_foundation.gd` (archetypes valid and within budget, hybrid builds, every validation boundary, body-dependent ceilings, garbage input, player and profile creation with seeded ids, profile and state round trips, version 1 to 2 migration, Owner states unaffected) and the main-menu mode buttons in `test_tutorial.gd`. Run one file with a scratch runner or the whole suite with `./tools/run_tests.ps1`.
 `test_career_creator.gd` (phase 2): career creation, seeds, invalid builds, save and resume, the creator form (errors, archetype templates, hybrids and points, body-limited potential) and the screens end to end.
@@ -166,3 +166,12 @@ Career Mode (2026-11-18): `test_career_foundation.gd` (archetypes valid and with
 
 ## Career click test (tools/career_click_test.ps1)
 `tools/career_click_test.gd` drives the real Career screens with simulated mouse clicks: Career Mode, Create a player, Check my build, Create my player, Let the draft decide (the team must match the scouting report), the first decision, Play next week, +1 on a skill, Train, Finish the season, Save. 18 clicks, 0 problems (2026-11-19). Two tests in `test_career_overall.gd` cover the scouting report.
+
+## Career validation tools and the full-run record (2026-11-19)
+| What | Command |
+|---|---|
+| A whole 20-season career, checking every rule | `./tools/career_playthrough.ps1 seasons=20 seed=7` |
+| One career per archetype and seed; exit 1 if an archetype's average peak is outside the band, focused careers peak more than 3 below potential, archetypes differ by more than the spread limit, or a run breaks a rule | `./tools/career_balance.ps1 [seeds=3] [teams=12] [seasons=20] [strategy=focused|even|template|low_weight]` |
+| How spending strategies compare (a study, not a pass/fail check; run through Godot directly, no wrapper) | `godot_console --headless --path . --script res://tools/career_growth_study.gd` |
+| Career Mode through simulated mouse clicks | `./tools/career_click_test.ps1` |
+A balance threshold describes acceptable balance; it is never a reason to retune progression. Use at least 3 seeds for a first comparison and at least 5 before changing a threshold. Full, dated outputs of each validation run (command, commit, exit code, duration, seeds) are kept in `docs/validation/`. Total test count: 710 (from the 2026-11-19 full run; see `docs/validation/`).

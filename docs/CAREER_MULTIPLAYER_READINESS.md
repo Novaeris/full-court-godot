@@ -1,12 +1,14 @@
 # Career Mode: multiplayer readiness audit (phase 6)
 
-Status 2026-11-18. An audit of what exists, what a future online mode will need, and the rules a server must enforce. **No networking, accounts or server code exists or is proposed to be built without the founder's approval.** Written against the code as it stands after phases 1-4 (`docs/CAREER_MODE_PLAN.md`).
+**Status: deferred, not planned (proposed 2026-11-19, awaiting founder approval).** Career Mode is a complete single-player game; online team play, if it is ever built, is a later Dynasty-side track and would start as asynchronous or server-simulated games (the simulation is possession-based, not real time). This audit is kept only so that nothing built in Career blocks that future. Nothing below is scheduled.
+
+Original status 2026-11-18. An audit of what exists, what a future online mode will need, and the rules a server must enforce. **No networking, accounts or server code exists or is proposed to be built without the founder's approval.** Written against the code as it stands after phases 1-4 (`docs/CAREER_MODE_PLAN.md`).
 
 ## 1. What is already online-ready (and where)
 | Requirement | State | Where |
 |---|---|---|
-| Stable player identity | Done. `FcCareerProfile.profile_id` ("fcp_" + 16 hex digits) is globally unique, seeded, never reused, separate from the per-save integer `player_id` | `src/data/career/career_profile.gd` |
-| Explicit data ownership | Done. The profile has `owner_account` (empty until accounts exist); a career profile belongs to one account, the world belongs to one save | same |
+| Stable player identity | Done. `FcCareerProfile.profile_id` ("fcp_" + 16 hex digits) is unique within a save, seeded (the same seed gives the same id, so it is not globally unique across saves; D-041), and separate from the per-save integer `player_id` | `src/data/career/career_profile.gd` |
+| Explicit data ownership | Done. The profile has `owner_account` (reserved, always empty; no accounts exist); a career profile belongs to one account, the world belongs to one save | same |
 | Versioned serialization | Done. Save data version 2 with a tested migration step; `build_version` and `ruleset_version` on every profile; `schema` on each record | `src/core/version.gd`, `src/save/save_migrator.gd` |
 | Validated player builds | Done. `FcPlayerBuild.validate(spec, defs)` is pure, never throws on garbage, returns plain-language errors; the creator only sends a build that passes | `src/career/player_build.gd` |
 | Same attribute definitions offline and online | Done by construction: one shared catalog (`data/definitions/attributes.json`) and one rules file (`data/career/build_rules.json`) | `data/` |

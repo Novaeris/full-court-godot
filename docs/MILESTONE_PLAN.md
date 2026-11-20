@@ -8,7 +8,7 @@ How to read it
   **needs from you** (decisions only you can make).
 - **Size** is a rough guess in working stretches ("S" = a few hours of my work, "M" = a day, "L" = several days,
   "XL" = a week or more). My estimates have been too small as often as too large; treat them as order of magnitude.
-- Owner Mode comes first (decision D-028). Career Mode is on the plan but **blocked until you describe it**.
+- Owner Mode comes first (decision D-028). Career Mode was built second (M6, built and playable, stabilization in progress).
 - Rules that apply to every milestone: tests first-class, docs updated with the code, saves versioned, nothing pushed
   or published without your say-so, original names and branding only.
 
@@ -19,7 +19,7 @@ What changed since v2, in the order of the founder's work list:
 - **M3 (simulation depth): started.** The overtime rate went from about 2.3% to about 4.0% (real: 5-6%) by letting a team that trails in the last 24 seconds hold the ball for the last shot; the rest of M3 is untouched.
 - **M4 (UI polish): second pass done.** A central theme, three text sizes, a first-time tutorial with a Help button, a plain-language tooltip on every owner lever (a test checks it), an About screen with the engine's license and shortcuts to the logs and saves folders, and screenshots at other window sizes (`screenshot.ps1 size=1024x700`; Finances and Staff checked at 1024x700). Still waiting for the founder's look-and-feel references (`docs/LOOK_AND_FEEL.md`). Not done: volume (there is no audio yet), a separate save/load screen (the main menu already lists, loads and deletes saves), richer box-score and standings screens.
 - **M5 (platforms): Windows export and a tester zip are done** (`export_presets.cfg`, `tools/export_windows.ps1`, `tools/package_windows.ps1`, `docs/RELEASE.md`, a `--selftest` check). Logs and licenses are reachable from the About screen. Not done: the game icon (needs art), an installer and code signing (need a certificate), Mac (needs a Mac), automated builds, mobile (Dynasty only).
-- **M6 Career Mode: started 2026-11-18** (`docs/CAREER_MODE_PLAN.md`; phases 1 and 2 built: player foundation, creator, hub card, save and resume). **M7: drafted, not started.** `docs/CAREER_MODE_DRAFT.md` and `docs/DYNASTY_MODE_DRAFT.md` propose a design with recommended answers and list the questions only the founder can answer; no code until the founder approves them (project rule: do not build Career or Dynasty until scheduled).
+- **M6 Career Mode: built and playable** (`docs/CAREER_MODE_PLAN.md`; phases 1-6 done 2026-11-18/19, D-038 to D-040: creator, progression, season simulation, RPG layer, potential-capped growth, scouting and draft pick). A 20-season career has been played start to finish by `tools/career_playthrough.ps1`. **M7 Dynasty: drafted, not started.** `docs/DYNASTY_MODE_DRAFT.md` proposes a design and lists the questions only the founder can answer; no Dynasty code until the founder approves them and schedules it (`docs/CAREER_MODE_DRAFT.md` is superseded by the plan). Next: stabilization, manual playtesting, a visual and usability pass, then a rules freeze.
 - **M3 (continued):** late-game fouling added (overtime about 3.5-4.4% (4.4% before the 2026-11-18 turnover recalibration, about 3.7% after)); close games are a little more frequent than real.
 - **M8 (pre-release): a legal checklist now exists** (`docs/LEGAL_CHECKLIST.md`): license, names, loot boxes, AI art, privacy, stores. It needs a lawyer.
 
@@ -108,13 +108,13 @@ platform save locations; automated builds; crash logs the player can send.
 Done when: a build installs and plays a full season on each target.
 Needs from you: later, for Dynasty on phones: devices (or emulators) and Apple/Google developer accounts.
 
-## M6. Career Mode (size XL; defined, not scheduled)
+## M6. Career Mode (size XL; built and playable, 2026-11-19)
 Goal: the player creates one player and takes them through a roughly **20-year** RPG-style career (decided).
 Scope (from the founder's description; to be detailed with the founder before building): player creation, progression
 as an RPG (skills, choices, milestones), contracts and team changes, the daily life of a career, an ending.
 Randomized players and the existing simulation, so it reuses the core.
 Done when: a 20-season career can be played start to finish and the simulation of the rest of the league stays healthy.
-Needs from you: a detailed design (what the player does each season, what choices exist, how it ends).
+Status: done as above. Career is a complete single-player game; online play is not planned for it (proposed, awaiting founder approval).
 
 ## M7. Dynasty Mode (size XL+; defined, not scheduled)
 Goal: a **card-collecting game inspired by NBA 2K MyTeam** (decided), with **static players that the founder makes**,
@@ -141,7 +141,7 @@ Needs from you: business decisions (price model, release order, who tests).
 2. **M4 UI polish (desktop)** next, then **M5 PC builds** (Windows, then Mac): the biggest gap between "works" and
    "feels like a game", and cheaper to fix before the other modes multiply the screens. Mobile belongs to M7 (Dynasty).
 3. **M3 Simulation depth** in parallel with M4/M5 where convenient (it is mostly separate code).
-4. **M6 Career Mode** (shares the core) once Owner Mode is shippable and the design exists.
+4. **M6 Career Mode** (shares the core): built.
 5. **M7 Dynasty Mode** last: a separate product with its own systems, design and legal questions, and the only mode on
    mobile (touch UI, phone builds, store accounts).
 6. **M8** legal items start early (loot boxes, AI-made assets, names); the rest at the end.

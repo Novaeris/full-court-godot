@@ -5,8 +5,10 @@ extends RefCounted
 ## exactly like contracts and statistics do (decision D-009), and holds what only a career has: archetype, look,
 ## jersey, XP and levels, points, reputation, currency, badges, stage, decisions and history.
 ##
-## `profile_id` is the future online identity: a text id that is globally unique and never reused, separate from the
-## world's integer player ids (which are only unique inside one save). Money-like values are ints (rule 6).
+## `profile_id` is a text id ("fcp_" + 16 hex digits) drawn from the seeded FcRng, separate from the world's integer
+## player ids. It is unique within one save (GameState checks that) and deterministic from the seed: two saves made
+## from the same seed get the same id, so it is NOT globally unique. It deliberately does not use FcIdGenerator (a
+## documented exception to the integer-id rule, see D-041). Money-like values are ints (rule 6).
 ## `build_version` is the ruleset the build was created under; `ruleset_version` the one it was last validated under.
 ## Progression numbers change only through validated rules (src/career), never by direct assignment from a client.
 
@@ -72,11 +74,11 @@ var tags: Array[String] = []
 var decisions: Array = []
 ## One row per season: {"year", "team_id", "games", "points", "rebounds", "assists", "awards": []}.
 var history: Array = []
-## The online account that owns this profile (empty until online exists).
+## Reserved and unused: an account name for a possible future online feature (not planned for Career). Always empty today.
 var owner_account: String = ""
 
 
-## A new globally unique profile id from a seeded stream: "fcp_" + 16 hex digits.
+## A new profile id from a seeded stream: "fcp_" + 16 hex digits. Unique within a save, not across saves.
 static func make_profile_id(rng: FcRng) -> String:
 	return "fcp_%04x%04x%04x%04x" % [rng.range_int(0, 0xFFFF), rng.range_int(0, 0xFFFF), rng.range_int(0, 0xFFFF), rng.range_int(0, 0xFFFF)]
 

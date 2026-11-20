@@ -30,9 +30,12 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 - News feed and box score viewer (354 tests)
 - Medical staff effects and AI trades (363 tests)
 - Career statistics and archiving of old seasons (370 tests)
+- Owner Mode depth, long-run economy and stability checks (see `docs/PROGRESS_LOG.md` and `docs/STABILITY_REPORT.md`)
+- Career Mode phases 1-6 (D-038 to D-040): build validation and creator, progression, season simulation, RPG layer (decisions, contracts, relationships, rivalries, sponsorships), potential-capped player-directed growth, scouting and draft pick; marked playable (710 tests at the 2026-11-19 stabilization run)
 
 ## Current
-- Owner Mode depth (see `docs/PROGRESS_LOG.md`). A milestone plan is drafted in `docs/MILESTONE_PLAN.md` and awaits founder review; until it is approved the "Next" list below is only a rough guide.
+- Owner Mode depth (see `docs/PROGRESS_LOG.md`). A milestone plan is drafted in `docs/MILESTONE_PLAN.md` and is the plan of record; the "Next" list below is only a rough guide.
+- Stabilization (2026-11-19): fix doc and contract inconsistencies, run the full validation set, then founder manual playtesting, a visual and usability pass on the Owner and Career screens, and a rules freeze before the next major track.
 
 ## Next (proposed order, driven by dependencies)
 1. (done) Staff entities. 2. (done) Save system. 3. (done) Procedural generation of the league.
@@ -42,7 +45,7 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 6. **Basic UI shell**: main menu, save selection, standings, box score viewer (manual testing begins).
 7. **Owner Mode**: finances, tickets, arena, sponsorships, GM/coach hiring.
 8. Draft, free agency, trades, development/regression, scouting, injuries.
-9. Career Mode (to be defined by the founder) and Dynasty Mode, history/records, narratives. Three modes in total; Owner Mode first.
+9. (done) Career Mode. Dynasty Mode (card game, static hand-made players) is not started. Three modes in total.
 10. Mobile layouts/exports, polish, release infrastructure.
 
 ## Outstanding dependencies

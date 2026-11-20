@@ -3,6 +3,12 @@
 Newest first. Written so someone returning after a break can see where things stand.
 The repository was published to GitHub on 2026-11-17 at the founder's request (public: https://github.com/Novaeris/full-court-godot, remote `origin`, branch `main`). Later commits stay local until the founder asks for a push.
 
+## 2026-11-19: Career Mode playable, then a stabilization pass
+
+Career Mode phases 1-6 are built (D-038 to D-040): creator, progression, season simulation, the RPG layer (decisions, contracts, relationships, rivalries, sponsorships), potential-capped player-directed growth, and a scouting report and draft pick. A whole career plays start to finish (`./tools/career_playthrough.ps1`), and `./tools/career_click_test.ps1` clicks through the Career screens.
+Stabilization pass (no game rules changed, no save-format change, `DATA_VERSION` unchanged): the profile id contract was corrected (D-041: text, unique per save, not globally unique), online claims about Career were reworded as deferred (proposed, awaiting founder approval), the balance tool's wording and thresholds were reconciled, and the README, roadmap, milestone plan, Career plan, testing guide and CLAUDE.md were brought up to date. Validation outputs, including the test count (710), are in `docs/validation/`.
+Next (founder): play several Owner seasons and several Career builds by hand (save and resume, offseason, contracts, retirement), then a visual and usability pass, then freeze core rules.
+
 ## 2026-11-18: stability sign-off
 
 Response to an outside review: explicit pricing modes in the playthrough tool, a debt restructuring rule that keeps D-029 (D-036), AI financial discipline, a hard-limit fix, an owner stress tool, multi-seed economy runs, reconciled docs and GitHub Actions CI. Result and every number: `docs/STABILITY_REPORT.md` (597 tests, CI green, conditional sign-off). Open: a founder decision on small-market owners who need repeated restructuring.
@@ -51,10 +57,10 @@ mid-draft). Everything is committed locally; nothing is published.
 - (Updated 2026-11-18) Overtime games are about 3.5-4.4% (4.4% before the 2026-11-18 turnover recalibration, about 3.7% after) (real about 5-6%) after two sim changes; close games are slightly too frequent.
 - (Updated 2026-11-18) The UI has a central dark theme, text sizes, a tutorial and tooltips; it is still plain tables and buttons, desktop only, and the real look waits for the founder's references. Staff chemistry, season tickets, promotion nights and playoff prices exist.
 - A small-market owner who starts with a high payroll loses money in season 1 (valid challenge, recovered by season 3 in testing).
-- Career Mode (RPG player career) and Dynasty Mode (card collecting) are defined (D-029) but not built. The old watch-only mode that was called "dynasty" in the code is now "Spectator".
+- (Updated 2026-11-19) Career Mode is built and playable (see the 2026-11-19 entry); Dynasty Mode (card collecting) is defined (D-029) but not built. The old watch-only mode that was called "dynasty" in the code is now "Spectator".
 
 ### Questions for the founder
-1. **Career Mode**: what does the player do in it, and how is it different from Dynasty Mode? Nothing is built for it until you describe it.
+1. ~~Career Mode: what does the player do in it?~~ Answered and built (see the 2026-11-19 entry).
 2. Is the pace of the free-agency/draft flow right (the offseason now has a draft screen and a window, and the GM can skip them)?
 3. Do you want me to continue with Owner Mode depth (staff negotiation, named sponsors) or begin Dynasty Mode next?
 

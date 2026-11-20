@@ -1,6 +1,6 @@
 # Full Court
 
-A basketball management simulation (Godot 4.7, GDScript). Three modes are planned: Owner Mode (being built first), Career Mode (create a player, RPG progression) and Dynasty Mode (a card-collecting game). A watch-only Spectator mode also exists for testing.
+A basketball management simulation (Godot 4.7, GDScript). Three modes: Owner Mode (built first, playable), Career Mode (create a player and take them through an RPG-style career; playable) and Dynasty Mode (a card-collecting game; not started). A watch-only Spectator mode also exists for testing.
 Real cities and countries; original franchises, players and staff.
 
 ## Play it
@@ -16,7 +16,7 @@ The screens are plain tables and buttons, built to test the game. `docs/PROGRESS
 ## Tools (PowerShell, from this folder)
 | Command | What it does |
 |---|---|
-| `./tools/run_tests.ps1` | Runs all automated tests (about 1 minute) |
+| `./tools/run_tests.ps1` | Runs all automated tests (about 7 minutes) |
 | `./tools/generate_league.ps1 [options]` | Builds a league and prints teams, rules, top players |
 | `./tools/play_season.ps1 [options]` | Plays one full season and prints standings, playoffs, awards |
 | `./tools/play_seasons.ps1 seasons=6` | Plays several seasons with offseasons and a health table |
@@ -27,6 +27,9 @@ The screens are plain tables and buttons, built to test the game. `docs/PROGRESS
 | `./tools/owner_playthrough.ps1 strategy=builder` | Plays seasons as an owner with a scripted strategy and prints the books |
 | `./tools/ui_playthrough.ps1 seasons=3` | Plays Owner Mode through the real screens and checks nothing breaks |
 | `./tools/click_test.ps1` | Clicks through the game with simulated mouse clicks |
+| `./tools/career_click_test.ps1` | Clicks through Career Mode with simulated mouse clicks |
+| `./tools/career_playthrough.ps1 seasons=20` | Plays a whole Career Mode career and checks the rules held |
+| `./tools/career_balance.ps1 seeds=3` | Plays one career per archetype and checks they are comparable |
 | `godot_console --path . --script res://tools/screenshot.gd -- screen=Roster out=shot.png` | Saves a picture of a screen (opens a window) |
 
 ## Where things are

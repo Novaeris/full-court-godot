@@ -224,3 +224,8 @@ Built on the founder's instruction to continue; the following product choices we
 
 ## D-040 Career Mode: a light prospect step (2026-11-19, Claude's recommended choice, founder away)
 - Instead of a second league (college or development league), the prospect stage is a scouting report: `prospect_score` (0.6 overall + 0.4 potential) gives a projected pick, a seeded draft-night surprise of up to 2 picks, and the team holding that pick (weakest roster picks first). The rookie contract follows the pick slot. A full pre-professional league stays unbuilt until there is a reason to simulate one.
+
+## D-041 Career profile id is a text id, unique per save, not an `FcIdGenerator` id (2026-11-19, found in the stabilization audit)
+- `FcCareerProfile.profile_id` is text ("fcp_" + 16 hex digits) drawn from the seeded `FcRng`. It is an **exception to rule 3** (integer ids from `FcIdGenerator`): the world's integer `player_id` stays the real key; `profile_id` only names the career record. It is unique within one save (`FcGameState.validate` checks) and deterministic from the seed, so two saves made from the same seed get the same id. Earlier comments and docs called it "globally unique, never reused"; that was wrong and has been corrected.
+- No saved-format change, so no migration and no `DATA_VERSION` bump. If a globally unique id is ever needed (online), it would be a new field added with a migration.
+- Related, **proposed and awaiting founder approval** (not yet a decision): Career Mode is a complete single-player game; online team play, if built, is a later Dynasty-side track, asynchronous or server-simulated first. `docs/CAREER_MULTIPLAYER_READINESS.md` is kept only as a "does not block it" audit.

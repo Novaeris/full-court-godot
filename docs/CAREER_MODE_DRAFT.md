@@ -1,5 +1,7 @@
 # Career Mode: draft design for the founder to correct (M6)
 
+> **Superseded (2026-11-19):** Career Mode is built; see `docs/CAREER_MODE_PLAN.md` and decisions D-038 to D-041. Kept for history only.
+
 Status: **DRAFT written by Claude on 2026-11-17 using recommended answers. No code exists and none will be written until the founder approves or changes this.** The founder defined the idea (decision D-029): create one player and take them through an RPG-style career of about 20 years, with randomized players, using the same league and simulation core as Owner Mode.
 
 ## The idea in one paragraph

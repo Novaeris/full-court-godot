@@ -1,0 +1,56 @@
+Command: powershell -NoProfile -File tools/click_test.ps1
+Started: 2026-11-19T23:46:08-05:00
+Commit: 0c595e1
+-----
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+  ok   the New League screen opened
+  ok   '12 teams' is selected
+  ok   the team choice screen opened
+  ok   the game started
+  ok   the team picked by clicking is the one managed
+  ok   Next Week moved the calendar (2026-10-20 -> 2026-10-27)
+  ok   clicking the Standings tab shows it
+  ok   clicking the Schedule tab shows it
+  ok   clicking the Roster tab shows it
+  ok   clicking the Finances tab shows it
+  ok   clicking the Staff tab shows it
+  ok   clicking the Draft tab shows it
+  ok   clicking the Market tab shows it
+  ok   clicking the Trades tab shows it
+  ok   clicking the History tab shows it
+  ok   clicking the News tab shows it
+  ok   clicking the League tab shows it
+  ok   clicking the Overview tab shows it
+  ok   the Finances page 2 opened
+  ok   Borrow raised the debt (0 -> 10000000)
+  ok   the Finances page 2 opened
+  ok   Repay paid it back
+  ok   the Finances page 1 opened
+  ok   Use suggestion set the ticket price
+  ok   the Finances page 3 opened
+  ok   Start project started the arena project the drop-down showed
+  ok   Release with nothing selected only shows a hint (Select a player first.)
+  ok   the player profile popup appeared
+  ok   Release removed the selected player (15 -> 14)
+  ok   Sign selected free agent added the player (Signed Michael Hargrove for $2.10M a year over 5 years.)
+  ok   the Finances page 1 opened
+  ok   Check the offer answered (Mexico City Bonfires turned the offer down: it does not think it gets enough back.)
+  ok   To End of Regular Season finished the regular season
+  ok   Play All Playoffs finished the season
+  ok   Begin Offseason opened the owners' meeting
+  ok   Vote yes recorded the owner's vote
+  ok   Vote no recorded a second vote
+  ok   Close the meeting counted the votes
+  ok   the decisions were logged
+  ok   the first press warned about players whose contracts end
+  ok   Begin Offseason opened the draft
+  ok   the workout invitation was used
+  ok   Draft selected prospect made the pick
+  ok   the draft ended and the free-agency window opened
+  ok   the new season started
+  ok   the game state is valid after all those clicks
+--- 67 mouse clicks sent, 0 problem(s)
+-----
+Exit code: 0
+Duration: 10 s

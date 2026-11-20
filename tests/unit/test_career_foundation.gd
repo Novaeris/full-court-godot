@@ -280,6 +280,26 @@ func test_a_career_state_saves_and_reloads_with_its_player_and_profile() -> void
 	assert_eq(reloaded.attributes.to_dict(), made["player"].attributes.to_dict(), "the player's attributes survive")
 
 
+## D-041 contract: profile_id is text and only unique inside one save (it is deterministic from the seed), while player_id is the
+## world's integer id and still resolves after a save round trip.
+func test_profile_id_contract_text_id_and_integer_player_id_survive_a_save() -> void:
+	var made := FcPlayerBuild.create(_world(), _good("point_forward", 3), 2026, FcRng.new(9))
+	var profile: FcCareerProfile = made["profile"]
+	assert_true(typeof(profile.profile_id) == TYPE_STRING, "profile_id is text")
+	assert_true(typeof(profile.player_id) == TYPE_INT, "player_id is the world's integer id")
+	var state := FcGameState.new(_world(), FcRng.new(1))
+	var made2 := FcPlayerBuild.create(state.world, _good("point_forward", 3), 2026, FcRng.new(9))
+	assert_eq(made2["profile"].profile_id, profile.profile_id, "the same seed in another world repeats the id: unique per save, not global")
+	state.mode = FcGameState.MODE_CAREER
+	state.user_team_id = 0
+	state.career_profiles.append(made2["profile"])
+	var back := FcGameState.from_dict(JSON.parse_string(JSON.stringify(state.to_dict())), defs)
+	var again: FcCareerProfile = back.career_profiles[0]
+	assert_eq(again.profile_id, profile.profile_id, "the text id survives the save unchanged")
+	assert_eq(again.player_id, made2["player"].id)
+	assert_true(back.world.players.get_by_id(again.player_id) != null, "the integer player id still resolves after reload")
+
+
 func test_state_validation_catches_a_profile_without_a_player_and_duplicate_ids() -> void:
 	var w := _world()
 	var made := FcPlayerBuild.create(w, _good(), 2026, FcRng.new(2))

@@ -6,9 +6,12 @@ extends SceneTree
 ## Run:  godot_console --headless --path . --script res://tools/career_balance.gd -- [seeds=3] [teams=12] [seasons=20] [strategy=focused|even|template|low_weight]
 ## strategy: how the development points are spent (see tools/career_growth_study.gd): focused = best overall gain per point (default),
 ## even = always the lowest attribute, template = the archetype's strengths only, low_weight = the attributes that count least first.
-## The band and spread checks apply to focused and even only (template and low_weight are deliberately weak comparisons). Exit code 1 if an archetype's average peak falls outside the acceptable band (see BAND), the focused careers do not get within
-## 3 overall points of potential, or any run breaks a rule.
+## Checks (exit code 1 if any fails): (1) the average peak overall of each archetype stays inside BAND (64-86); (2) focused careers peak within
+## 3 overall points of potential; (3) the best and worst archetype average peaks differ by at most SPREAD_LIMIT (10) overall points; (4) no run
+## breaks a career rule or fails state validation. Checks 1 and 3 apply to focused and even only (template and low_weight are deliberately weak
+## comparisons); check 2 applies to focused only. These limits describe acceptable balance: never retune progression just to pass them.
 
+const SPREAD_LIMIT := 10.0   # the best and worst archetype's average peak may differ by at most this many overall points
 const BAND := [64.0, 86.0]   # the average peak overall of a career must stay inside this (a good starter to a clear star)
 var _strategy := "focused"
 
@@ -59,8 +62,8 @@ func _initialize() -> void:
 	var low: float = all_peaks.min()
 	var high: float = all_peaks.max()
 	print("Spread between archetypes: %.1f overall points (lowest %.1f, highest %.1f)" % [high - low, low, high])
-	if _strategy in ["focused", "even"] and high - low > 10.0:
-		_problems.append("archetypes differ by %.1f overall points at their peak (more than 10)" % (high - low))
+	if _strategy in ["focused", "even"] and high - low > SPREAD_LIMIT:
+		_problems.append("archetypes differ by %.1f overall points at their peak (more than %.0f)" % [high - low, SPREAD_LIMIT])
 	print("--- %d problem(s)" % _problems.size())
 	for p in _problems:
 		print("  * " + p)

@@ -190,7 +190,7 @@ func show_main_menu() -> void:
 ## calendar and games come in later phases (docs/CAREER_MODE_PLAN.md); this screen says so plainly.
 func show_career_home() -> void:
 	var box := _reset("Career Mode")
-	var text := FcUiTables.label("Create one player (name, body, position, strengths) and take them through a career of about 20 seasons: scouting and the draft, decisions, contracts, relationships, rivalries, sponsorships and a legacy. You reach your potential by choosing which skills to raise. Later, the same player can go online.
+	var text := FcUiTables.label("Create one player (name, body, position, strengths) and take them through a career of about 20 seasons: scouting and the draft, decisions, contracts, relationships, rivalries, sponsorships and a legacy. You reach your potential by choosing which skills to raise.
 
 See docs/CAREER_MODE_PLAN.md.", 16)
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
