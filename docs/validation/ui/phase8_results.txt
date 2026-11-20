@@ -1,0 +1,3 @@
+UI/UX polish, Phase 8 (remaining Dynasty screens and mobile layouts): validation record, 2026-11-20
+
+Unit suite 1059 tests green; live suite 61 green including tap-driven tests (bottom bar, pack purchase, reveal skip, lineup, game) run in a phone-sized SubViewport; layout ratchet now hard-checks every m_* screen fits 412 px; style baseline lowered.

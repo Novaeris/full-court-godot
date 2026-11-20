@@ -10,8 +10,8 @@ static func build_packs(ui: FcDynastyUi) -> Control:
 	root.add_child(ui.heading("Pack Market"))
 	var pending := ctl.pending_openings()
 	for o in pending:
-		var p := ui.panel([FcUiTables.label("A pack is waiting to be revealed (%s)." % ctl.catalog.packs().get(o["pack_id"], {}).get("name", o["pack_id"]), 16, true),
-			FcUiTables.button("Continue the reveal", func() -> void: show_reveal(ui, o))])
+		var p := ui.panel([FcDynastyUi.wl("A pack is waiting to be revealed (%s)." % ctl.catalog.packs().get(o["pack_id"], {}).get("name", o["pack_id"]), 16, true),
+			FcDynastyUi.btn("Continue the reveal", func() -> void: show_reveal(ui, o))])
 		root.add_child(p)
 	var packs := ctl.pack_listing()
 	if packs.is_empty():
@@ -34,21 +34,21 @@ static func _pack_panel(ui: FcDynastyUi, pk: Dictionary) -> Control:
 	row.add_child(art)
 	var v := VBoxContainer.new()
 	v.custom_minimum_size = Vector2(240, 0)
-	v.add_child(FcUiTables.label(pk["name"], FcUiTokens.TYPE_H2, true))
+	v.add_child(FcDynastyUi.wl(pk["name"], FcUiTokens.TYPE_H2, true))
 	var tier := FcPackArt.tier_of(pk)
 	if tier != "fixed":
-		var chip := FcUiTables.label("Best pull: %s" % FcRarityStyle.label(tier), FcUiTokens.TYPE_SMALL)
+		var chip := FcDynastyUi.wl("Best pull: %s" % FcRarityStyle.label(tier), FcUiTokens.TYPE_SMALL)
 		chip.add_theme_color_override("font_color", FcRarityStyle.color(tier))
 		v.add_child(chip)
-	v.add_child(FcUiTables.label("%d card%s    Price: %s %s" % [pk["cards_per_pack"], "" if pk["cards_per_pack"] == 1 else "s", FcDynastyStyle._n(pk["amount"]), pk["currency"]], FcUiTokens.TYPE_BODY))
+	v.add_child(FcDynastyUi.wl("%d card%s    Price: %s %s" % [pk["cards_per_pack"], "" if pk["cards_per_pack"] == 1 else "s", FcDynastyStyle._n(pk["amount"]), pk["currency"]], FcUiTokens.TYPE_BODY))
 	if pk["fixed"]:
 		v.add_child(ui.note("Always contains exactly these cards (no randomness).", 280))
 	else:
-		v.add_child(FcUiTables.label("Published odds per card", FcUiTokens.TYPE_SMALL, true))
+		v.add_child(FcDynastyUi.wl("Published odds per card", FcUiTokens.TYPE_SMALL, true))
 		for r in FcDynastyContentRules.RARITY_ORDER:
 			var w := int(pk["odds"].get(r, 0))
 			if w > 0:
-				var line := FcUiTables.label("%s   %s%%" % [FcDynastyStyle.rarity_label(r), _percent(w)], FcUiTokens.TYPE_SMALL)
+				var line := FcDynastyUi.wl("%s   %s%%" % [FcDynastyStyle.rarity_label(r), _percent(w)], FcUiTokens.TYPE_SMALL)
 				line.add_theme_color_override("font_color", FcDynastyStyle.rarity_color(r))
 				v.add_child(line)
 		for g in pk["guarantees"]:
@@ -125,7 +125,7 @@ static func build_market(ui: FcDynastyUi) -> Control:
 		card["owned"] = true
 		card["quantity"] = item["owned"]
 		v.add_child(FcCardView.build(card, {"caption": "%s %s" % [FcDynastyStyle._n(item["amount"]), item["currency"]], "on_click": func() -> void: ui.show_card_detail(str(card["card_id"]))}))
-		var buy := FcUiTables.button("Buy", func() -> void:
+		var buy := FcDynastyUi.btn("Buy", func() -> void:
 			var r := ctl.acquire_card(str(card["card_id"]))
 			ui.report(r, "Bought %s." % card["name"])
 			ui.refresh())

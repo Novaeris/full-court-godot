@@ -2,6 +2,7 @@
 	"_notes": {
 		"origin": "Phase 0 baseline measured on commit 6c963ac; tightened in Phase 3 (the main menu, Dynasty navigation and tab bars no longer force a wide window).",
 		"phase3_heights": "career_home 196 to 221 and owner_overview/owner_roster 179 to 181: the new Broadcast and Franchise headers are a little taller. Heights are not a constraint (tabs scroll).",
+		"phase8": "Phase 8 added the m_* screens (Dynasty in the mobile layout, must fit 412 px) and shrank the desktop Dynasty screens too (labels wrap, columns flow). main_menu etc. unchanged.",
 		"remaining_widths": "owner (715) and Career creator (744) fit the 800 px minimum of D6; Dynasty hub 640 and lineup 740 are Phase 8 work toward a 412 px phone."
 	},
 	"career_creator": {
@@ -14,23 +15,63 @@
 	},
 	"dynasty_collection": {
 		"h": 130,
-		"w": 300
+		"w": 230
 	},
 	"dynasty_entry": {
-		"h": 276,
-		"w": 532
+		"h": 278,
+		"w": 395
 	},
 	"dynasty_hub": {
 		"h": 130,
-		"w": 640
+		"w": 320
 	},
 	"dynasty_lineup": {
 		"h": 130,
-		"w": 740
+		"w": 340
 	},
 	"dynasty_packs": {
 		"h": 130,
+		"w": 280
+	},
+	"m_challenges": {
+		"h": 107,
+		"w": 267
+	},
+	"m_collection": {
+		"h": 107,
+		"w": 267
+	},
+	"m_entry": {
+		"h": 302,
+		"w": 395
+	},
+	"m_hub": {
+		"h": 107,
+		"w": 320
+	},
+	"m_lineup": {
+		"h": 107,
 		"w": 340
+	},
+	"m_market": {
+		"h": 107,
+		"w": 267
+	},
+	"m_packs": {
+		"h": 107,
+		"w": 280
+	},
+	"m_play": {
+		"h": 107,
+		"w": 330
+	},
+	"m_season": {
+		"h": 107,
+		"w": 314
+	},
+	"m_tournament": {
+		"h": 107,
+		"w": 290
 	},
 	"main_menu": {
 		"h": 90,

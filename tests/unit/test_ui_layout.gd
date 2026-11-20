@@ -6,6 +6,15 @@ extends FcTestCase
 const BASELINE_PATH := "res://tests/support/ui_layout_baseline.json"
 
 
+func test_every_dynasty_screen_fits_a_phone_in_the_mobile_layout() -> void:
+	# a hard requirement (not a ratchet): Dynasty is the mobile release target, and a phone is about 412 px wide
+	for screen in FcUiLayoutProbe.SCREENS:
+		if not screen.begins_with("m_"):
+			continue
+		var now := FcUiLayoutProbe.measure_screen(screen)
+		assert_true(now["w"] <= FcUiLayoutProbe.MOBILE_LIMIT, "%s needs %d px of width on a phone (limit %d)" % [screen, now["w"], FcUiLayoutProbe.MOBILE_LIMIT])
+
+
 func test_no_screen_needs_a_bigger_window_than_the_baseline() -> void:
 	var parsed = JSON.parse_string(FileAccess.get_file_as_string(BASELINE_PATH))
 	assert_true(parsed is Dictionary and not (parsed as Dictionary).is_empty(), "the baseline file must load")

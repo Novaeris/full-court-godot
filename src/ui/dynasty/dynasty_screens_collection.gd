@@ -39,7 +39,7 @@ static func build_collection(ui: FcDynastyUi) -> Control:
 	for i in FcCollectionQuery.SORTS.size():
 		sort_items.append([FcCollectionQuery.SORT_NAMES[i], FcCollectionQuery.SORTS[i]])
 	sort.set_items(sort_items, ui.collection_sort)
-	tools.add_child(FcUiTables.label("Sort", FcUiTokens.TYPE_SMALL))
+	tools.add_child(FcDynastyUi.wl("Sort", FcUiTokens.TYPE_SMALL))
 	tools.add_child(sort)
 	var view := FcChoiceGroup.new()
 	view.set_options([["grid", "Grid"], ["carousel", "Carousel"]], str(ui.app.ui_state.get_value("collection", "view", "grid")))
@@ -153,33 +153,50 @@ static func build_lineup(ui: FcDynastyUi) -> Control:
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 8)
 	var head := HBoxContainer.new()
-	head.add_child(FcUiTables.label(str(ctl.team_overall()), 44, true))
+	head.add_child(FcDynastyUi.wl(str(ctl.team_overall()), 44, true))
 	var info := VBoxContainer.new()
-	info.add_child(FcUiTables.label("Team overall (weighted from your 13 slots: starters count most)", 14))
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.add_child(FcDynastyUi.wl("Team overall (weighted from your 13 slots: starters count most)", 14))
 	var identity := ctl.team_identity()
-	info.add_child(FcUiTables.label("Identity: %s" % (", ".join(identity) if not identity.is_empty() else "set a lineup")))
+	info.add_child(FcDynastyUi.wl("Identity: %s" % (", ".join(identity) if not identity.is_empty() else "set a lineup")))
 	head.add_child(info)
 	root.add_child(head)
 	var problems := ctl.lineup_problems()
 	if problems.is_empty():
-		var ok := FcUiTables.label("Lineup is valid and ready to play.")
+		var ok := FcDynastyUi.wl("Lineup is valid and ready to play.")
 		ok.add_theme_color_override("font_color", FcUiTheme.GOOD)
 		root.add_child(ok)
 	else:
 		for p in problems.slice(0, 4):
-			var l := FcUiTables.label("Problem: %s" % p)
+			var l := FcDynastyUi.wl("Problem: %s" % p)
 			l.add_theme_color_override("font_color", FcUiTheme.BAD)
 			root.add_child(l)
 		if problems.size() > 4:
-			root.add_child(FcUiTables.label("...and %d more." % (problems.size() - 4)))
-	root.add_child(FcUiTables.button("Auto-fill the recommended lineup", func() -> void:
+			root.add_child(FcDynastyUi.wl("...and %d more." % (problems.size() - 4)))
+	root.add_child(FcDynastyUi.btn("Auto-fill the recommended lineup", func() -> void:
 		var r := ctl.auto_fill_lineup()
 		ui.report(r, "Lineup set to the best players you own, by position.")
 		ui.refresh()))
 	root.add_child(ui.note("Starters must be able to play their slot's position (primary or secondary). Bench order is the substitution order. Rotation: give a player fewer or more minutes. One edition per real player.", 700))
-	var groups := [["Starters", 0, 5], ["Bench", 5, 12], ["Reserve", 12, 13]]
 	var views := ctl.roster_view()
-	for g in groups:
+	root.add_child(ui.heading("Starters"))
+	var court := FcLineupCourt.new()
+	var starters: Array = []
+	for i in FcDynastyRoster.STARTERS:
+		starters.append(_slot_widget(ui, views[i], true))
+	court.set_slots(starters)
+	root.add_child(court)
+	var rotation := FcPanel.new("Starters: rotation and removal", FcPanel.Variant.SURFACE)
+	for i in FcDynastyRoster.STARTERS:
+		var line := HBoxContainer.new()
+		var who := FcDynastyUi.wl("%s: %s" % [str(views[i]["name"]).trim_prefix("Starter "), views[i]["card"].get("name", "empty")], 13)
+		line.add_child(who)
+		var controls := _controls_row(ui, views[i])
+		controls.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		line.add_child(controls)
+		rotation.add(line)
+	root.add_child(rotation)
+	for g in [["Bench", 5, 12], ["Reserve", 12, 13]]:
 		root.add_child(ui.heading(g[0]))
 		var flow := HFlowContainer.new()
 		flow.add_theme_constant_override("h_separation", 10)
@@ -190,36 +207,58 @@ static func build_lineup(ui: FcDynastyUi) -> Control:
 	return root
 
 
-static func _slot_widget(ui: FcDynastyUi, slot_view: Dictionary) -> Control:
+## One roster slot: its name, the card (tap it to choose another player), the rotation setting and a remove button.
+## `on_court` uses a smaller card (the court gives each starter less room).
+static func _slot_widget(ui: FcDynastyUi, slot_view: Dictionary, on_court: bool = false) -> Control:
 	var ctl := ui.ctl
 	var slot: int = slot_view["slot"]
 	var v := VBoxContainer.new()
-	v.add_child(FcUiTables.label(slot_view["name"], 13, true))
+	v.add_theme_constant_override("separation", 2)
+	if on_court:
+		v.custom_minimum_size.x = 84   # one compact column: position and a mini card (rotation and remove are below the court)
+	var title := FcUiTables.label(str(slot_view["name"]).trim_prefix("Starter "), 13, true) if on_court else FcDynastyUi.wl(slot_view["name"], 13, true)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.add_child(title)
 	var card: Dictionary = slot_view["card"]
 	if card.is_empty():
 		var empty := FcCardView.build({"name": "Empty", "overall": 0, "rarity": "common", "available": true, "owned": true, "position": "", "edition": "Choose a player", "art_path": ""},
-			{"size": FcCardView.SMALL, "on_click": func() -> void: _pick(ui, slot)})
+			{"size": FcCardFace.SIZE_MINI if on_court else FcCardView.SMALL, "on_click": func() -> void: _pick(ui, slot)})
+		empty.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		v.add_child(empty)
 	else:
-		v.add_child(FcCardView.build(card, {"size": FcCardView.SMALL, "on_click": func() -> void: _pick(ui, slot)}))
+		var shown := FcCardView.build(card, {"size": FcCardFace.SIZE_MINI if on_court else FcCardView.SMALL, "on_click": func() -> void: _pick(ui, slot)})
+		shown.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		v.add_child(shown)
+	if not on_court:
+		v.add_child(_controls_row(ui, slot_view))
+	return v
+
+
+## The rotation setting (fewer, normal or more minutes) and the remove button of one slot.
+static func _controls_row(ui: FcDynastyUi, slot_view: Dictionary) -> Control:
+	var ctl := ui.ctl
+	var slot: int = slot_view["slot"]
+	var card: Dictionary = slot_view["card"]
 	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 4)
 	var minutes := OptionButton.new()
 	for m in ["Fewer min", "Normal", "More min"]:
 		minutes.add_item(m)
+	minutes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	minutes.selected = int(slot_view["minutes"]) + 1
 	minutes.item_selected.connect(func(i: int) -> void:
 		ctl.set_minutes(slot, i - 1)
 		ui.say("Rotation updated."))
 	minutes.disabled = card.is_empty()
 	row.add_child(minutes)
-	var clear := FcUiTables.button("X", func() -> void:
+	var clear := FcDynastyUi.btn("X", func() -> void:
 		ctl.clear_slot(slot)
 		ui.refresh())
 	clear.tooltip_text = "Remove this player from the slot"
 	clear.disabled = card.is_empty()
 	row.add_child(clear)
-	v.add_child(row)
-	return v
+	return row
 
 
 ## The card picker for a slot: every usable owned card, with a comparison against the current player.
@@ -254,7 +293,7 @@ static func _pick(ui: FcDynastyUi, slot: int) -> void:
 	var box := VBoxContainer.new()
 	box.add_child(ui.note("Double-click a row or select it and press Choose. Compare overall and key ratings with your current player." if not candidates.is_empty() else "You do not own a card that can play this slot.", 800))
 	box.add_child(tree)
-	var choose := FcUiTables.button("Choose selected player", func() -> void:
+	var choose := FcDynastyUi.btn("Choose selected player", func() -> void:
 		var item := tree.get_selected()
 		if item != null:
 			_choose(ui, dialog, slot, str(candidates[item.get_index()]["card_id"])))

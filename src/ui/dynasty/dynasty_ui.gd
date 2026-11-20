@@ -46,35 +46,36 @@ func report(result: FcDynastyResult, success_text: String = "") -> bool:
 func show_entry() -> void:
 	ctl.close_profile()
 	var box := app._reset("Dynasty Mode", {"id": "dynasty_entry", "skin": FcModeSkin.COLLECTIBLE, "back": app.show_main_menu, "rebuild": show_entry})
-	var intro := FcUiTables.label("Collect fictional player cards, open packs, build a 13-player roster and compete in simulated games, challenges and tournaments. Your collection is yours: seasons and new content never remove it.", 15)
+	var intro := FcDynastyUi.wl("Collect fictional player cards, open packs, build a 13-player roster and compete in simulated games, challenges and tournaments. Your collection is yours: seasons and new content never remove it.", 15)
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	intro.custom_minimum_size = Vector2(500, 0)
+	intro.custom_minimum_size = Vector2(160, 0)
 	box.add_child(intro)
 	box.add_child(_content_status())
 	if not ctl.catalog.is_playable():
 		box.add_child(_onboarding_panel())
 	var profiles := ctl.profiles()
 	if not profiles.is_empty():
-		box.add_child(FcUiTables.label("Your Dynasty teams", 18, true))
+		box.add_child(FcDynastyUi.wl("Your Dynasty teams", 18, true))
 		for p in profiles:
 			var row := HBoxContainer.new()
-			var label := FcUiTables.label("%s (%s)   %d cards   %s credits   record %s" % [p["team_name"], p["abbreviation"], p["cards"], FcDynastyStyle._n(p["credits"]), p["record"]])
+			var label := FcDynastyUi.wl("%s (%s)   %d cards   %s credits   record %s" % [p["team_name"], p["abbreviation"], p["cards"], FcDynastyStyle._n(p["credits"]), p["record"]])
 			label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			row.add_child(label)
 			if p["readable"]:
-				row.add_child(FcUiTables.button("Open", func() -> void: open_profile(str(p["slot"]))))
-			row.add_child(FcUiTables.button("Delete", func() -> void: _confirm_delete(str(p["slot"]), str(p["team_name"]))))
+				row.add_child(FcDynastyUi.btn("Open", func() -> void: open_profile(str(p["slot"]))))
+			row.add_child(FcDynastyUi.btn("Delete", func() -> void: _confirm_delete(str(p["slot"]), str(p["team_name"]))))
 			box.add_child(row)
 	if ctl.catalog.is_playable():
-		box.add_child(FcUiTables.label("Start a new Dynasty team", 18, true))
+		box.add_child(FcDynastyUi.wl("Start a new Dynasty team", 18, true))
 		var grid := GridContainer.new()
 		grid.columns = 2
-		grid.add_child(FcUiTables.label("Team name"))
+		grid.add_child(FcDynastyUi.wl("Team name"))
 		var name_edit := LineEdit.new()
 		name_edit.text = "My Dynasty"
-		name_edit.custom_minimum_size = Vector2(260, 0)
+		name_edit.custom_minimum_size = Vector2(160, 0)
+		name_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		grid.add_child(name_edit)
-		grid.add_child(FcUiTables.label("Abbreviation (2-4 letters)"))
+		grid.add_child(FcDynastyUi.wl("Abbreviation (2-4 letters)"))
 		var abbr_edit := LineEdit.new()
 		abbr_edit.text = "DYN"
 		abbr_edit.max_length = 4
@@ -82,14 +83,14 @@ func show_entry() -> void:
 		_form["name"] = name_edit
 		_form["abbr"] = abbr_edit
 		box.add_child(grid)
-		box.add_child(FcUiTables.button("Create team and receive the starter collection", func() -> void: on_create(name_edit.text, abbr_edit.text)))
-	box.add_child(FcUiTables.button("Back to the main menu", app.show_main_menu))
+		box.add_child(FcDynastyUi.btn("Create team and receive the starter collection", func() -> void: on_create(name_edit.text, abbr_edit.text)))
+	box.add_child(FcDynastyUi.btn("Back to the main menu", app.show_main_menu))
 
 
 func _content_status() -> Control:
-	var l := FcUiTables.label(_content_text(), 13)
+	var l := FcDynastyUi.wl(_content_text(), 13)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	l.custom_minimum_size = Vector2(500, 0)
+	l.custom_minimum_size = Vector2(160, 0)
 	l.add_theme_color_override("font_color", FcUiTheme.TEXT_MUTED)
 	return l
 
@@ -109,10 +110,10 @@ func _onboarding_panel() -> Control:
 	var panel := PanelContainer.new()
 	var v := VBoxContainer.new()
 	panel.add_child(v)
-	v.add_child(FcUiTables.label("Dynasty needs content first", 18, true))
-	var text := FcUiTables.label("%s\n\nOpen Creator Studio (the separate project in this repository), create players and cards, set up packs and the starter collection (a dynasty_config support file), check the draft and publish a release. Then come back here: Dynasty loads the active release automatically." % ctl.catalog.playable_problem(), 14)
+	v.add_child(FcDynastyUi.wl("Dynasty needs content first", 18, true))
+	var text := FcDynastyUi.wl("%s\n\nOpen Creator Studio (the separate project in this repository), create players and cards, set up packs and the starter collection (a dynasty_config support file), check the draft and publish a release. Then come back here: Dynasty loads the active release automatically." % ctl.catalog.playable_problem(), 14)
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	text.custom_minimum_size = Vector2(500, 0)
+	text.custom_minimum_size = Vector2(160, 0)
 	v.add_child(text)
 	return panel
 
@@ -159,7 +160,7 @@ func show_tab(tab_id: String) -> void:
 	var nav := FcNavBar.new()
 	nav.setup(TABS, tab_id, mobile, MOBILE_PRIMARY)
 	nav.selected.connect(func(id: String) -> void: show_tab(id))
-	var money := FcUiTables.label(FcDynastyStyle.currency_text(p.balances), 15, true)
+	var money := FcDynastyUi.wl(FcDynastyStyle.currency_text(p.balances), 15, true)
 	money.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if mobile:
 		var top := HBoxContainer.new()   # currencies and exit on top; the navigation bar goes along the bottom edge
@@ -218,13 +219,26 @@ func _build_tab(tab_id: String) -> Control:
 # --- helpers for screens ------------------------------------------------------------------------------------------
 
 func heading(text: String) -> Label:
-	return FcUiTables.label(text, 20, true)
+	return FcDynastyUi.wl(text, 20, true)
 
 
-func note(text: String, width: int = 520) -> Label:
-	var l := FcUiTables.label(text, 14)
+## A text label that wraps to the width it is given (a phone, a small window) instead of forcing the screen wider. `size` is a design size.
+static func wl(text: String, size: int = 0, bold: bool = false) -> Label:
+	var l := FcUiTables.label(text, size, bold)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	l.custom_minimum_size = Vector2(width, 0)
+	l.custom_minimum_size.x = 120
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return l
+
+
+## A button in the kit style (touch-sized on mobile layouts). `primary` makes it the screen's main action.
+static func btn(text: String, on_press: Callable, primary: bool = false) -> FcButton:
+	return FcButton.make(text, FcButton.Variant.PRIMARY if primary else FcButton.Variant.SECONDARY, on_press)
+
+
+## A muted explanatory paragraph. `_width` is only a hint kept for older callers: the text wraps to the space available.
+func note(text: String, _width: int = 520) -> Label:
+	var l := wl(text, 14)
 	l.add_theme_color_override("font_color", FcUiTheme.TEXT_MUTED)
 	return l
 
@@ -243,7 +257,7 @@ func progress_bar(value: int, maximum: int) -> ProgressBar:
 	bar.max_value = maxi(1, maximum)
 	bar.value = value
 	bar.show_percentage = false
-	bar.custom_minimum_size = Vector2(160, 14)
+	bar.custom_minimum_size = Vector2(110, 14)
 	return bar
 
 
@@ -262,14 +276,15 @@ func _build_hub() -> Control:
 		root.add_child(_onboarding_panel())
 	# identity and strength
 	var top := HBoxContainer.new()
-	var ovr := FcUiTables.label(str(s["overall"]), 54, true)
+	var ovr := FcDynastyUi.wl(str(s["overall"]), 54, true)
 	ovr.tooltip_text = "Team overall, from your 13-player roster"
 	top.add_child(ovr)
 	var id_box := VBoxContainer.new()
-	id_box.add_child(FcUiTables.label("%s  (%s)" % [s["team_name"], s["abbreviation"]], 22))
+	id_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	id_box.add_child(FcDynastyUi.wl("%s  (%s)" % [s["team_name"], s["abbreviation"]], 22))
 	id_box.add_child(note("Team overall. %s" % (("Identity: " + ", ".join(s["identity"])) if not s["identity"].is_empty() else "Set a lineup to see your identity."), 420))
 	var rec: Dictionary = s["record"]
-	id_box.add_child(FcUiTables.label("Record %d-%d    Points %d-%d    Streak %s" % [rec["wins"], rec["losses"], rec["points_for"], rec["points_against"], _streak(int(rec["streak"]))], 14))
+	id_box.add_child(FcDynastyUi.wl("Record %d-%d    Points %d-%d    Streak %s" % [rec["wins"], rec["losses"], rec["points_for"], rec["points_against"], _streak(int(rec["streak"]))], 14))
 	top.add_child(id_box)
 	root.add_child(top)
 	var featured := featured_card()
@@ -281,29 +296,32 @@ func _build_hub() -> Control:
 	rec_panel.add_theme_stylebox_override("panel", FcDynastyStyle.box(FcUiTheme.ACCENT_SOFT, FcUiTheme.ACCENT, 2, 10, 10))
 	var rv := VBoxContainer.new()
 	rec_panel.add_child(rv)
-	rv.add_child(FcUiTables.label("Recommended next: %s" % next["title"], 18, true))
+	rv.add_child(FcDynastyUi.wl("Recommended next: %s" % next["title"], 18, true))
 	rv.add_child(note(next["why"]))
-	rv.add_child(FcUiTables.button(next["button"], func() -> void: show_tab(str(next["tab"]))))
+	rv.add_child(FcDynastyUi.btn(next["button"], func() -> void: show_tab(str(next["tab"]))))
 	root.add_child(rec_panel)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
+	var row := HFlowContainer.new()   # two columns on a wide screen, one under the other on a phone
+	row.add_theme_constant_override("h_separation", 12)
+	row.add_theme_constant_override("v_separation", 12)
 	# collection and season
 	var col: Dictionary = s["collection"]
 	var left := VBoxContainer.new()
+	left.custom_minimum_size.x = 280
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_child(heading("Collection"))
-	left.add_child(FcUiTables.label("%d of %d cards (%d%%)" % [col["owned"], col["total"], col["percent"]]))
+	left.add_child(FcDynastyUi.wl("%d of %d cards (%d%%)" % [col["owned"], col["total"], col["percent"]]))
 	left.add_child(progress_bar(col["owned"], col["total"]))
 	var season: Dictionary = s["season"]
 	left.add_child(heading("Season"))
 	if season.is_empty():
 		left.add_child(note("The loaded release has no season yet."))
 	else:
-		left.add_child(FcUiTables.label("%s: %d season points" % [season["name"], season["points"]]))
+		left.add_child(FcDynastyUi.wl("%s: %d season points" % [season["name"], season["points"]]))
 		left.add_child(progress_bar(season["points"], maxi(season["top_milestone"], 1)))
 	row.add_child(left)
 	# challenges and packs
 	var right := VBoxContainer.new()
+	right.custom_minimum_size.x = 280
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right.add_child(heading("Current challenges"))
 	var shown := 0
@@ -311,7 +329,7 @@ func _build_hub() -> Control:
 		if c["claimed"] or shown >= 3:
 			continue
 		shown += 1
-		right.add_child(FcUiTables.label("%s  %d/%d%s" % [c["title"], c["progress"], c["target"], "  (claim it!)" if c["completed"] else ""], 14))
+		right.add_child(FcDynastyUi.wl("%s  %d/%d%s" % [c["title"], c["progress"], c["target"], "  (claim it!)" if c["completed"] else ""], 14))
 	if shown == 0:
 		right.add_child(note("No open challenges."))
 	right.add_child(heading("Packs you can open"))
@@ -319,7 +337,7 @@ func _build_hub() -> Control:
 	for p in ctl.pack_listing():
 		if p["affordable"]:
 			affordable += 1
-			right.add_child(FcUiTables.label("%s: %s %s" % [p["name"], FcDynastyStyle._n(p["amount"]), p["currency"]], 14))
+			right.add_child(FcDynastyUi.wl("%s: %s %s" % [p["name"], FcDynastyStyle._n(p["amount"]), p["currency"]], 14))
 	if affordable == 0:
 		right.add_child(note("Nothing you can afford right now. Play games and finish challenges to earn credits."))
 	row.add_child(right)
@@ -328,7 +346,7 @@ func _build_hub() -> Control:
 	if s["recent"].is_empty():
 		root.add_child(note("Nothing yet."))
 	for t in s["recent"]:
-		root.add_child(FcUiTables.label("%s   %s" % [_kind_name(str(t["kind"])), _deltas_text(t["deltas"])], 13))
+		root.add_child(FcDynastyUi.wl("%s   %s" % [_kind_name(str(t["kind"])), _deltas_text(t["deltas"])], 13))
 	root.add_child(note("Content release %s. Card ratings, attributes and badges are static: they never change from playing or duplicates." % s["release_id"], 600))
 	return root
 
@@ -347,10 +365,11 @@ func _featured_panel(row: Dictionary) -> Control:
 	box.add_theme_constant_override("separation", 16)
 	box.add_child(FcCardView.build(row, {"size": FcCardFace.SIZE_STANDARD, "on_click": func() -> void: show_card_detail(str(row["card_id"]))}))
 	var words := VBoxContainer.new()
+	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	words.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var title := FcUiTables.label("Featured card", FcUiTokens.TYPE_H3, true)
+	var title := FcDynastyUi.wl("Featured card", FcUiTokens.TYPE_H3, true)
 	words.add_child(title)
-	words.add_child(FcUiTables.label("%s (%s)" % [row["name"], row["edition"]], FcUiTokens.TYPE_BODY))
+	words.add_child(FcDynastyUi.wl("%s (%s)" % [row["name"], row["edition"]], FcUiTokens.TYPE_BODY))
 	words.add_child(note("Your highest-rated card. Click it to inspect, compare or turn it over.", 320))
 	box.add_child(words)
 	return box
