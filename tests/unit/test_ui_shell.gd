@@ -486,3 +486,20 @@ func test_touch_layouts_enlarge_the_stock_buttons_too() -> void:
 	var touch := FcUiTheme.build(1)
 	assert_true(touch.get_stylebox("normal", "Button").get_minimum_size().y > small, "older screens' buttons grow with the touch layout")
 	assert_true(touch.get_stylebox("normal", "Button").get_minimum_size().y + 15 >= FcUiTokens.TOUCH_TARGET - 8, "to roughly 44 px with the text")
+
+
+func test_the_highlighted_saved_game_is_the_one_that_loads() -> void:
+	# regression: Load always used the dropdown's first entry, whatever row the player clicked in the table
+	_make_app()
+	assert_true(app.on_create_league({"teams": 8, "conferences": 2, "divisions": 1, "free_agents": 10, "seed": "5", "name": "Pick League"}))
+	app.on_start_game(app._pending_state.world.teams.ids()[2])
+	app.on_save()
+	assert_true(app.saves.save("second_slot", app.controller.state, "Second").is_ok(), "a second save")
+	app.show_main_menu()
+	var slots := app.saves.list_slots()
+	assert_true(slots.size() >= 2, "two saves to choose from")
+	var tree: Tree = _find(app, Tree)[0]
+	var picker: OptionButton = app._form["slot"]
+	assert_eq(picker.get_item_text(picker.selected), slots[0].slot_id, "the first row starts highlighted and chosen")
+	tree.get_root().get_child(1).select(0)
+	assert_eq(picker.get_item_text(picker.selected), slots[1].slot_id, "clicking the second row chooses the second save")

@@ -314,6 +314,14 @@ func show_main_menu() -> void:
 			names.append(m.slot_id)
 		picker.set_items(names)
 		_form["slot"] = picker
+		if table is Tree:
+			# the highlighted row is the save Load and Delete act on (the dropdown follows it; it used to ignore the table)
+			var tree := table as Tree
+			tree.item_selected.connect(func() -> void:
+				var picked := tree.get_selected()
+				if picked != null:
+					picker.selected = picked.get_index())
+			tree.get_root().get_child(0).select(0)
 		row.add_child(picker)
 		row.add_child(FcButton.make("Load", FcButton.Variant.SECONDARY, on_load_selected))
 		row.add_child(FcButton.make("Delete", FcButton.Variant.DESTRUCTIVE, request_delete_selected))

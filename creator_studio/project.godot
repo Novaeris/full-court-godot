@@ -1,6 +1,10 @@
-; Full Court Creator Studio: the separate tool that authors content and publishes it to the game.
-; It shares the game's src/content code through the "shared_content" folder link
-; (run tools/link_studio.ps1 once after cloning). See docs/ARCHITECTURE.md "Content publishing".
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
