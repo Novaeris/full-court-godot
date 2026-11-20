@@ -1,0 +1,12 @@
+{
+	"_about": "First-run hints. Each one is shown once, on its screen, until the player presses Got it (or turns hints off in Settings). Text is plain advice; nothing here changes the game.",
+	"hints": [
+		{"id": "dynasty_hub", "mode": "dynasty", "title": "Your Dynasty at a glance", "text": "This is home. Open a pack on Packs, set your five starters and the bench on Lineup, then play on Play. Challenges and the Season reward track pay you for the games you play."},
+		{"id": "dynasty_collection", "mode": "dynasty", "title": "Your collection", "text": "Tap a card to inspect it, compare two cards, or open the player profile. Cards marked NEW are ones you have not looked at yet. Switch between the grid and the carousel with the view buttons."},
+		{"id": "dynasty_packs", "mode": "dynasty", "title": "Packs", "text": "Every pack shows its odds and what you can pull. Opening one turns the cards over one by one; you can skip the animation at any time and get exactly the same cards."},
+		{"id": "dynasty_lineup", "mode": "dynasty", "title": "Set your lineup", "text": "Five starters stand on the court, one for each position, and the rest of the squad is your bench. Tap a starter to pick someone else, or use Auto-fill to let the game choose."},
+		{"id": "dynasty_play", "mode": "dynasty", "title": "Play a game", "text": "Pick how strong an opponent you want: harder ones pay more credits. Every game is simulated with the real engine, and the result screen shows the score, the best players and what you earned."},
+		{"id": "career_creator", "mode": "career", "title": "Build your player", "text": "Work through the five steps. An archetype is only a starting point: change any skill to make a hybrid. Your body limits how high your potential can go. The preview shows who you are making."},
+		{"id": "career_hub", "mode": "career", "title": "Your career", "text": "Play a day, a week or the whole season. Spend skill points on the Develop tab, ask the coach for a role, and answer the decisions that come up before you play on. Player profile shows your full card."}
+	]
+}

@@ -27,6 +27,8 @@ var saves := FcSaveManager.new()
 var preferences := FcPreferences.new()
 ## The game's sound (Phase 11); screens fire cues through FcAudio.cue.
 var audio: FcAudio
+## First-run hints (Phase 12).
+var hints: FcHints
 ## Published content (Creator Studio releases, D-042): loaded at start-up; falls back safely and reports why.
 var content: FcContentService
 ## Dynasty Mode: the controller screens use and the screens' shell (built in setup).
@@ -120,6 +122,7 @@ func setup() -> void:
 		get_tree().node_added.connect(_on_node_added)   # every button makes the click sound; screens need no code for it
 	if ui_state == null:
 		ui_state = FcUiState.new(preferences.path.replace("preferences", "ui_state"))
+	hints = FcHints.new(ui_state, preferences)
 	FcMotion.reduced = preferences.reduce_motion
 	layout.mobile_os = OS.has_feature("mobile")
 	layout.touch_available = DisplayServer.is_touchscreen_available()
@@ -391,6 +394,18 @@ func show_settings() -> void:
 	display.add(hint)
 	box.add_child(display)
 	box.add_child(_sound_panel())
+	var tips := FcPanel.new("Hints", FcPanel.Variant.SURFACE)
+	tips.add(FcToggle.make("Show first-time hints", preferences.hints_enabled, func(on: bool) -> void:
+		preferences.hints_enabled = on
+		preferences.save_file()))
+	var again := FcButton.make("Show the hints again", FcButton.Variant.SECONDARY, func() -> void:
+		hints.reset()
+		preferences.hints_enabled = true
+		preferences.save_file()
+		notify(FcToast.Kind.SUCCESS, "The hints will show again."))
+	again.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	tips.add(again)
+	box.add_child(tips)
 	var help := FcPanel.new("Help", FcPanel.Variant.SURFACE)
 	var replay := FcButton.make("Replay the tutorial next game", FcButton.Variant.SECONDARY, func() -> void:
 		preferences.reset_tutorial()
@@ -487,6 +502,9 @@ See docs/CAREER_MODE_PLAN.md.", 16)
 ## The player creator (FcCareerCreator). A valid build makes the player and opens the Career Hub.
 func show_career_creator() -> void:
 	var box := _reset("Career Mode: create your player", {"id": "career_creator", "skin": FcModeSkin.BROADCAST, "back": show_career_home, "rebuild": show_career_creator})
+	var creator_hint := hints.card("career_creator")
+	if creator_hint != null:
+		box.add_child(creator_hint)
 	var creator := FcCareerCreator.new(_defs)
 	creator.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	creator.create_requested.connect(on_create_career)
@@ -525,6 +543,9 @@ func show_career_hub() -> void:
 	identity.add_child(FcPlayerPortrait.new().setup(FcPlayerPresentation.from_career(career)["subject"], 64))
 	identity.add_child(FcUiTables.button("Player profile", func() -> void: FcPlayerProfile.open_modal(self, FcPlayerPresentation.from_career(career))))
 	box.add_child(identity)
+	var career_hint := hints.card("career_hub")
+	if career_hint != null:
+		box.add_child(career_hint)
 	box.add_child(FcUiTables.label("%s%s   %s   Age %d   %d cm, %d kg, wingspan %d cm   Team: %s" % [
 		card["position"], "/" + card["secondary"] if card["secondary"] != "" else "", card["archetype"], card["age"],
 		card["height_cm"], card["weight_kg"], card["wingspan_cm"], card["team"]], 16))

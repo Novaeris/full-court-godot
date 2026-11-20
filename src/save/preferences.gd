@@ -21,6 +21,8 @@ var audio_sfx: int = 80
 var audio_music: int = 60
 var audio_muted: bool = false
 var haptics: bool = true
+## First-run hints on screens (Phase 12); the dismissed ones are remembered in the UI state file, not here.
+var hints_enabled: bool = true
 ## The shared content folder chosen by the player ("" = the default, Documents/FullCourtContent).
 var content_root: String = ""
 
@@ -60,6 +62,7 @@ func load_file() -> void:
 		audio_music = clampi(int(cfg.get_value("audio", "music", 60)), 0, 100)
 		audio_muted = bool(cfg.get_value("audio", "muted", false))
 		haptics = bool(cfg.get_value("audio", "haptics", true))
+		hints_enabled = bool(cfg.get_value("ui", "hints", true))
 		content_root = str(cfg.get_value("content", "root", ""))
 
 
@@ -76,6 +79,7 @@ func save_file() -> bool:
 	cfg.set_value("audio", "music", audio_music)
 	cfg.set_value("audio", "muted", audio_muted)
 	cfg.set_value("audio", "haptics", haptics)
+	cfg.set_value("ui", "hints", hints_enabled)
 	cfg.set_value("content", "root", content_root)
 	return cfg.save(path) == OK
 

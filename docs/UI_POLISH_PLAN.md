@@ -158,8 +158,9 @@ Career creator as steps with a live card and figure preview; Career hub on the s
 `FcAudio` owned by `FcApp` (not an autoload); buses Master, UI, SFX, Music; data-driven sound map (`data/ui/audio.json`); missing files are silent. Identity "arena and hardwood": soft wood-and-leather taps for UI, paper-and-snap card flips, rarity stings in one key that climb (single bounce, chime, horn, crowd swell, arena horn and roar), a short ascending motif for rewards and achievements. Independent volumes and mutes, saved in `preferences.cfg`; the game is fully playable muted. Optional haptics toggle. **Sound sourcing is decided here (D4); nothing unlicensed is added.**
 - **Built (autonomous run, founder pre-approved all remaining phases):** FcAudio (owned by FcApp, FcAudio.cue), FcAudioSynth, data/ui/audio.json sound map with 17 sounds on UI/SFX/Music buses; rarity stings in C major climbing in five tiers; every button clicks; toasts, flips, pack tears, rewards and game results have cues; Sound panel in Settings with volumes, mute and vibration (preferences.cfg [audio]). No third-party audio (D-054).
 
-### Phase 12: Onboarding, UX states, accessibility sweep
+### Phase 12: Onboarding, UX states, accessibility sweep (BUILT)
 First-run hints for Career and Dynasty; empty / loading / error / success audit; focus order and controller pass; contrast audit.
+- **Built (autonomous run, founder pre-approved all remaining phases):** FcHints (data/ui/hints.json: 7 first-run hints for Dynasty and Career screens, dismissed state in the UI sidecar file, Hints controls in Settings, a Hints card with Got it and Turn hints off); audit tests for empty states (every Dynasty tab on a new profile, both layouts), focus reach (every enabled button and card takes focus), dialog back handling and a wider contrast audit (rarity colours on their cards, mastery frames, accents).
 
 ### Phase 13: Full Game Presentation and Release Readiness
 Cross-mode visual consistency audit; complete navigation testing; resolution and aspect-ratio matrix (360x800 to 2560x1080, 4:3 and 21:9, text scales); animation performance validation; card collection performance (100, 500, 2,000 cards, grid and carousel); mobile usability review (Dynasty, device or emulator); audio review; accessibility review; regression across all game systems (suite, click tests, `studio_smoke`, simulation calibration, save integrity, pack outcomes identical for a fixed seed); final screenshot library in `docs/validation/`.
@@ -223,3 +224,4 @@ Rebuild-on-navigate (the Phase 3 shim mitigates); Phase 7 scope (tiers ship inde
 - 2026-11-20: Phase 9 built: post-game presentation
 - 2026-11-20: Phase 10 built: Career and Owner polish
 - 2026-11-20: Phase 11 built: audio
+- 2026-11-20: Phase 12 built: onboarding, UX states, accessibility sweep

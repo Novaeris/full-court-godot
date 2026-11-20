@@ -184,6 +184,9 @@ func show_tab(tab_id: String) -> void:
 	box.add_child(scroll)
 	if mobile:
 		app.host.set_bottom_bar(nav)   # along the bottom edge of the window, outside the screen's own layout
+	var tip := app.hints.card("dynasty_" + tab_id)
+	if tip != null:
+		_body.add_child(tip)
 	_body.add_child(_build_tab(tab_id))
 
 

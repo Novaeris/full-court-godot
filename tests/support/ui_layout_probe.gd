@@ -31,6 +31,7 @@ static func measure_screen(screen: String) -> Dictionary:
 	var app := FcApp.new()
 	app.preferences = FcPreferences.new(PREFS_PATH)
 	app.preferences.tutorial_done = true
+	app.preferences.hints_enabled = false   # a first-run hint is temporary: the ratchet measures the screen itself
 	app.preferences.layout_override = "mobile" if screen.begins_with("m_") else "auto"
 	app.saves = FcSaveManager.new(SAVE_DIR)
 	Engine.get_main_loop().root.add_child(app)
