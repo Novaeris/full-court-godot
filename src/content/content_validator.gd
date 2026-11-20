@@ -115,10 +115,19 @@ static func check_definitions(dir: String, paths: Array[String], definitions: Fc
 		defs[kind][id] = data
 	for id in defs["player"]:
 		_check_player("players/%s.json" % id, defs["player"][id], definitions, errors)
+		FcDynastyContentRules.check_player("players/%s.json" % id, defs["player"][id], definitions, errors)
 	for id in defs["card"]:
 		_check_card("cards/%s.json" % id, defs["card"][id], defs["player"], path_set, errors)
+		FcDynastyContentRules.check_card("cards/%s.json" % id, defs["card"][id], definitions, errors)
 	for id in defs["pack"]:
 		_check_pack("packs/%s.json" % id, defs["pack"][id], defs["card"], errors)
+		FcDynastyContentRules.check_pack("packs/%s.json" % id, defs["pack"][id], defs["card"], errors)
+	for id in defs["challenge"]:
+		FcDynastyContentRules.check_challenge("challenges/%s.json" % id, defs["challenge"][id], defs["card"], defs["pack"], errors)
+	for id in defs["seasonal"]:
+		FcDynastyContentRules.check_season("seasonal/%s.json" % id, defs["seasonal"][id], defs["card"], defs["pack"], defs["challenge"], errors)
+	for id in defs["support"]:
+		FcDynastyContentRules.check_support("support/%s.json" % id, defs["support"][id], defs["card"], defs["pack"], errors)
 	return {"problems": errors, "defs": defs}
 
 

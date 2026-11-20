@@ -37,6 +37,12 @@ const ID_FIELDS := {
 const SUPPORTED := [
 	"card_rarity_v1",
 	"pack_fixed_v1",
+	"pack_odds_v1",
+	"card_market_v1",
+	"challenge_v1",
+	"season_v1",
+	"dynasty_config_v1",
+	"card_overrides_v1",
 ]
 
 
