@@ -1,27 +1,16 @@
 class_name FcDynastyStyle
 extends RefCounted
-## Colours and small helpers shared by the Dynasty screens. Rarity is the one place that gets strong colour: it must be
-## readable at a glance on every card. Everything else follows FcUiTheme.
-
-const RARITY_COLORS := {
-	"common": Color(0.62, 0.66, 0.72),
-	"uncommon": Color(0.36, 0.78, 0.50),
-	"rare": Color(0.32, 0.60, 0.96),
-	"epic": Color(0.70, 0.45, 0.96),
-	"legendary": Color(0.98, 0.78, 0.28),
-}
-const FRAME_COLORS := {"none": Color(0, 0, 0, 0), "bronze": Color(0.80, 0.50, 0.28), "silver": Color(0.80, 0.84, 0.90),
-	"gold": Color(0.98, 0.80, 0.32), "platinum": Color(0.62, 0.92, 0.94), "diamond": Color(0.58, 0.80, 1.0)}
+## Small helpers shared by the Dynasty screens (art textures, initials, number formatting). Rarity looks live in FcRarityStyle.
 
 static var _textures: Dictionary = {}
 
 
 static func rarity_color(rarity: String) -> Color:
-	return RARITY_COLORS.get(rarity, RARITY_COLORS["common"])
+	return FcRarityStyle.color(rarity)
 
 
 static func rarity_label(rarity: String) -> String:
-	return rarity.capitalize()
+	return FcRarityStyle.label(rarity)
 
 
 ## Card artwork as a texture, or null when there is none or it cannot be read (callers draw the fallback).

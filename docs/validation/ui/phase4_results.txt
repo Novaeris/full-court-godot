@@ -1,0 +1,5 @@
+UI/UX polish, Phase 4 (card system): validation record, 2026-11-20
+
+Unit suite: 936 passed, 0 failed (916 before; 20 new in test_ui_cards.gd). Live tests: 39 passed (9 new in tests/live/test_live_cards.gd: drawing every rarity and size, hover and focus lift, the sweep, flip, reduced motion).
+Screenshots: docs/validation/ui/phase4 (gallery cards, Dynasty collection and pack reveal).
+Changed on purpose: test_dynasty_ui reads a card's accessible_text because cards are drawn, not labels.

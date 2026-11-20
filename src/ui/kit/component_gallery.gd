@@ -48,6 +48,7 @@ func build() -> void:
 	_section_inputs()
 	_section_feedback()
 	_section_data()
+	_section_cards()
 	_section_broadcast()
 	_section_franchise()
 	_section_motion()
@@ -331,6 +332,44 @@ func _section_data() -> void:
 	s.add_child(_captioned("Data table (desktop)", FcDataTable.build(columns, rows, [0, 60, 60, 80], {"compact": false}), true))
 	s.add_child(_captioned("Data table (compact, for touch layouts)", FcDataTable.build(columns, rows, [], {"compact": true}), true))
 	s.add_child(_captioned("Data table (empty)", FcDataTable.build(columns, [], [], {"empty_title": "No players", "empty_text": "Sign a free agent to fill this list."}), true))
+
+
+func _demo_card(rarity: String, overall: int, player: String, extra: Dictionary = {}) -> Dictionary:
+	var card := {"card_id": "demo_" + rarity, "rarity": rarity, "overall": overall, "position": "SG", "secondary": "", "name": player, "edition": "Base Edition",
+		"team": "Harbor", "badges": ["a", "b"], "quantity": 1, "owned": true, "available": true, "mastery": 0, "art_path": ""}
+	card.merge(extra, true)
+	return card
+
+
+func _section_cards() -> void:
+	var s := _section("Cards", "Every rarity has its own frame, background and effects. States: hover (lift), focus, selected, inspected, face down, unowned, NEW, mastery frames. Sizes: mini to hero.")
+	var rarities := _flow()
+	s.add_child(rarities)
+	var names := {"common": "Mason Vale", "uncommon": "Rico Tamsin", "rare": "Dev Carter", "epic": "Lena Voss", "legendary": "Maya Okoro", "mythic_future": "Unknown Rarity"}
+	var overall := 60
+	for rarity in names:
+		var card := FcCardFace.new().setup(_demo_card(rarity, overall, names[rarity]))
+		rarities.add_child(_captioned(rarity, card))
+		overall += 7
+	var states := _flow()
+	s.add_child(states)
+	var base := _demo_card("epic", 83, "Lena Voss")
+	var variants := [["default", {}], ["hover", {"lift": 1.0}], ["selected", {"selected": true}], ["inspected", {"inspected": true}], ["face down", {"face_down": true}],
+		["NEW", {"tag": "NEW"}], ["duplicate x3", {"tag": "DUPLICATE", "row": {"quantity": 3}}], ["not owned", {"row": {"owned": false}}], ["unavailable", {"row": {"available": false}}],
+		["mastery 1", {"row": {"mastery": 1}}], ["mastery 3", {"row": {"mastery": 3}}], ["mastery 5", {"row": {"mastery": 5}}], ["price", {"caption": "500 credits"}]]
+	for variant in variants:
+		var options: Dictionary = variant[1]
+		var row := base.duplicate()
+		row.merge(options.get("row", {}), true)
+		var card := FcCardFace.new().setup(row, options)
+		if options.has("lift"):
+			card.lift = float(options["lift"])
+		states.add_child(_captioned(str(variant[0]), card))
+	var sizes := _flow()
+	s.add_child(sizes)
+	for kind in ["mini", "small", "standard", "detail", "hero"]:
+		var card := FcCardFace.new().setup(_demo_card("legendary", 94, "Maya Okoro"), {"size": FcCardFace.size_for(kind)})
+		sizes.add_child(_captioned(kind, card))
 
 
 func _section_broadcast() -> void:

@@ -121,8 +121,9 @@ Each phase lists objectives, files, dependencies, tasks, acceptance and tests.
 - **Deviations and decisions** (D-051): Back is hierarchical rather than a history stack; the old `app._message` label is kept hidden as the text record (tests and tools read it) while the toast is what the player sees; the only existing test assertion changed is the main-menu card text ("Owner Mode  (Available)" became a title plus a status chip); toasts pass clicks through on desktop (a toast once covered "Sign selected free agent"; found by `tools/click_test.gd`, regression test added); the lower third shows text as given (upper-casing a player name broke the Career test and altered data); the bottom navigation belongs to the frame, not to a screen.
 - **Not done (belongs to later phases):** Owner and Career screens still use `FcUiTables` (migrated in Phase 10); the Dynasty hub, lineup and tables are still desktop layouts that scroll sideways on a phone (Phase 8); no screen-to-screen slide transition (fade only); the notification history has no screen yet; no real-device check of safe areas or Android back.
 
-### Phase 4: Card system
+### Phase 4: Card system (BUILT)
 `FcCardView.build(row, options)` keeps its API; new `FcCardFace`, `FcRarityStyle` (registry with fallback), states hover / focus / **selected** / **inspected**, five sizes, flip, per-rarity treatments, owned / unowned / unavailable. Studio can reuse the face.
+- **Built (autonomous run, founder pre-approved all remaining phases):** new src/ui/cards (FcRarityStyle: five rarities each with its own frame, background pattern and effects, with a safe fallback for unknown rarities; FcCardFace: the whole card drawn in one node with hover lift, focus ring, selected, inspected, face-down back, flip, a shader light sweep on rare and up, mastery frames, NEW and other tags, accessible text). FcCardView.build keeps its API, so every Dynasty screen already uses the new cards. The gallery has a Cards section (all rarities, states, sizes). Card text is drawn, so tests read a card's accessible_text().
 
 ### Phase 5: Collection, carousel, inspector, compare, completion
 Grid and carousel browse modes (virtualised; carousel builds the focused card plus 3 neighbours each side), inspector overlay (zoom, tilt, flip) replacing the `AcceptDialog`, side-by-side compare, completion rings by team / rarity / edition, NEW markers (sidecar store, D2), featured card on the hub chosen from existing data, shared-element transitions. No new content fields.
@@ -207,3 +208,4 @@ Rebuild-on-navigate (the Phase 3 shim mitigates); Phase 7 scope (tiers ship inde
 ## 10. Progress log
 
 - 2026-11-20: plan approved; milestone 1 (Phases 0 to 2) built and reported. The founder said "continue"; Phase 3 was built (report in `docs/PROGRESS_LOG.md`). **Phase 4 onward wait for the founder's go-ahead.**
+- 2026-11-20: Phase 4 built: card system

@@ -31,6 +31,9 @@ func after_each() -> void:
 
 func _text(node: Node) -> String:
 	var text := ""
+	if node is FcCardFace:
+		text += (node as FcCardFace).accessible_text().to_upper() + "
+"   # cards are drawn, so their words come from their description
 	if node is Label:
 		text += (node as Label).text + "\n"
 	if node is Button:

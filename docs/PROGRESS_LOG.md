@@ -3,6 +3,10 @@
 Newest first. Written so someone returning after a break can see where things stand.
 The repository was published to GitHub on 2026-11-17 at the founder's request (public: https://github.com/Novaeris/full-court-godot, remote `origin`, branch `main`). Later commits stay local until the founder asks for a push.
 
+## 2026-11-20: UI/UX polish, Phase 4 (card system)
+
+new src/ui/cards (FcRarityStyle: five rarities each with its own frame, background pattern and effects, with a safe fallback for unknown rarities; FcCardFace: the whole card drawn in one node with hover lift, focus ring, selected, inspected, face-down back, flip, a shader light sweep on rare and up, mastery frames, NEW and other tags, accessible text). FcCardView.build keeps its API, so every Dynasty screen already uses the new cards. The gallery has a Cards section (all rarities, states, sizes). Card text is drawn, so tests read a card's accessible_text(). Results: docs/validation/ui/phase4_results.txt.
+
 ## 2026-11-20: UI/UX polish, Phase 3 (shell, navigation, notifications, layout), D-051
 
 Built after the founder reviewed milestone 1 and said "continue". `src/ui/shell/` (`FcScreenHost`, `FcNavigator`, `FcModalHost`, `FcNotifier`, `FcLayoutProfile`) plus `FcNavBar`; `FcApp` now sits on the shell. Visible results: a redesigned main menu (mode cards with status chips; 820 px down to 393 px), a Settings screen (text size, reduce motion, layout override, tutorial, content folder), a confirmed Delete, toasts instead of the bottom message line, Escape and Android back, a loading overlay for slow actions, the three skins applied (Owner letterhead and team colours, Career lower third and grid, Dynasty spotlight), and Dynasty navigation as top tabs on desktop and a bottom bar with More on mobile. Dynasty collection and packs already fit a 412 px phone; the hub and lineup still scroll sideways (Phase 8). Owner and Career fit 800x600, and wider screens scroll sideways.
