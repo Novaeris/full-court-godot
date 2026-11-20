@@ -34,6 +34,12 @@ jobs:
           mv "Godot_v${GODOT_VERSION}_linux.x86_64" godot
           chmod +x godot
 
+      - name: Link Creator Studio to the shared src and data (the Windows junctions do not exist in a fresh checkout)
+        run: |
+          rm -rf creator_studio/game_src creator_studio/data
+          ln -s "$PWD/src" creator_studio/game_src
+          ln -s "$PWD/data" creator_studio/data
+
       - name: Import the project (registers every class)
         run: ~/godot/godot --headless --path . --import --quit
 
