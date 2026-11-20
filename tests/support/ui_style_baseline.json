@@ -1,0 +1,57 @@
+{
+	"res://src/ui/app.gd": {
+		"color": 0,
+		"font": 0,
+		"sized_label": 86
+	},
+	"res://src/ui/career_creator.gd": {
+		"color": 0,
+		"font": 0,
+		"sized_label": 6
+	},
+	"res://src/ui/dynasty/card_view.gd": {
+		"color": 1,
+		"font": 10,
+		"sized_label": 0
+	},
+	"res://src/ui/dynasty/dynasty_screens_collection.gd": {
+		"color": 0,
+		"font": 0,
+		"sized_label": 5
+	},
+	"res://src/ui/dynasty/dynasty_screens_packs.gd": {
+		"color": 0,
+		"font": 0,
+		"sized_label": 6
+	},
+	"res://src/ui/dynasty/dynasty_screens_play.gd": {
+		"color": 0,
+		"font": 0,
+		"sized_label": 17
+	},
+	"res://src/ui/dynasty/dynasty_style.gd": {
+		"color": 11,
+		"font": 0,
+		"sized_label": 0
+	},
+	"res://src/ui/dynasty/dynasty_ui.gd": {
+		"color": 0,
+		"font": 0,
+		"sized_label": 16
+	},
+	"res://src/ui/ui_mode_skin.gd": {
+		"color": 1,
+		"font": 0,
+		"sized_label": 0
+	},
+	"res://src/ui/ui_rating_tiers.gd": {
+		"color": 1,
+		"font": 0,
+		"sized_label": 0
+	},
+	"res://src/ui/ui_tables.gd": {
+		"color": 0,
+		"font": 1,
+		"sized_label": 0
+	}
+}

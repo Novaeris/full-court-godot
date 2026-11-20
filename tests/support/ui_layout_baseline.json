@@ -1,0 +1,51 @@
+{
+	"_notes": {
+		"finding": "main_menu is 820 px wide, wider than the 800 px minimum window of decision D6; Phase 3 must bring it under 800.",
+		"main_menu_h": "303 to 338 in milestone 1: the Reduce motion setting and the development-only gallery button were added. Phase 3 replaces this screen.",
+		"origin": "Measured on the code at commit 6c963ac, before the UI polish milestone (docs/UI_POLISH_PLAN.md)."
+	},
+	"career_creator": {
+		"h": 121,
+		"w": 744
+	},
+	"career_home": {
+		"h": 196,
+		"w": 432
+	},
+	"dynasty_collection": {
+		"h": 148,
+		"w": 789
+	},
+	"dynasty_entry": {
+		"h": 303,
+		"w": 532
+	},
+	"dynasty_hub": {
+		"h": 148,
+		"w": 789
+	},
+	"dynasty_lineup": {
+		"h": 148,
+		"w": 789
+	},
+	"dynasty_packs": {
+		"h": 148,
+		"w": 789
+	},
+	"main_menu": {
+		"h": 338,
+		"w": 820
+	},
+	"new_league": {
+		"h": 403,
+		"w": 775
+	},
+	"owner_overview": {
+		"h": 179,
+		"w": 715
+	},
+	"owner_roster": {
+		"h": 179,
+		"w": 715
+	}
+}

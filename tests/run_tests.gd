@@ -52,6 +52,8 @@ func _collect(dir_path: String, out: Array[String]) -> void:
 	if dir == null:
 		return
 	for sub in dir.get_directories():
+		if sub == "live":
+			continue   # live tests need frames and a real tree: tests/run_live_tests.gd runs them
 		_collect(dir_path.path_join(sub), out)
 	for file in dir.get_files():
 		if file.begins_with("test_") and file.ends_with(".gd"):
