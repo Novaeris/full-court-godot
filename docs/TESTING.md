@@ -196,3 +196,7 @@ Shaders and animation looks cannot be checked headless: they are reviewed from s
 
 ### Test-runner reliability (D-052)
 A test now FAILS if a runtime script error happens while it runs (setup, body, teardown, or the time spent awaiting in a live test), because Godot aborts the function that raised it and the remaining assertions would never run. This uses a `Logger` (`tests/support/script_error_logger.gd`), not console parsing. A test file that extends `FcTestCase` but defines no `test_` method also fails. Options: `--filter=text` and `--dir=res://folder`. `tests/unit/test_runner_detection.gd` proves the behaviour by running a second Godot process on the deliberately broken tests in `tests/runner_fixtures` (a folder both normal runners skip). Limits: `push_error` calls and engine messages are not failures; an infinite loop or an `await` that never resumes is left to the CI job timeout; the live runner returns exit code 2 if the run stops early. Details: docs/DYNASTY_HARDENING.md.
+
+
+## Status at the end of the UI polish milestone (2026-11-20)
+Unit suite: 1,113 tests; live UI suite: 68 tests; both exit 0. See docs/RELEASE_READINESS.md for every other check and for what was not verified.

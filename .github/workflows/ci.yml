@@ -36,9 +36,10 @@ jobs:
 
       - name: Link Creator Studio to the shared src and data (the Windows junctions do not exist in a fresh checkout)
         run: |
-          rm -rf creator_studio/game_src creator_studio/data
+          rm -rf creator_studio/game_src creator_studio/data creator_studio/assets
           ln -s "$PWD/src" creator_studio/game_src
           ln -s "$PWD/data" creator_studio/data
+          ln -s "$PWD/assets" creator_studio/assets
 
       - name: Import the project (registers every class)
         run: ~/godot/godot --headless --path . --import --quit

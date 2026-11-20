@@ -162,8 +162,9 @@ Career creator as steps with a live card and figure preview; Career hub on the s
 First-run hints for Career and Dynasty; empty / loading / error / success audit; focus order and controller pass; contrast audit.
 - **Built (autonomous run, founder pre-approved all remaining phases):** FcHints (data/ui/hints.json: 7 first-run hints for Dynasty and Career screens, dismissed state in the UI sidecar file, Hints controls in Settings, a Hints card with Got it and Turn hints off); audit tests for empty states (every Dynasty tab on a new profile, both layouts), focus reach (every enabled button and card takes focus), dialog back handling and a wider contrast audit (rarity colours on their cards, mastery frames, accents).
 
-### Phase 13: Full Game Presentation and Release Readiness
+### Phase 13: Full Game Presentation and Release Readiness (BUILT)
 Cross-mode visual consistency audit; complete navigation testing; resolution and aspect-ratio matrix (360x800 to 2560x1080, 4:3 and 21:9, text scales); animation performance validation; card collection performance (100, 500, 2,000 cards, grid and carousel); mobile usability review (Dynasty, device or emulator); audio review; accessibility review; regression across all game systems (suite, click tests, `studio_smoke`, simulation calibration, save integrity, pack outcomes identical for a fixed seed); final screenshot library in `docs/validation/`.
+- **Built (autonomous run, founder pre-approved all remaining phases):** test_release_readiness.gd (window-shape matrix, D6 800 px and phone-with-large-text ratchets, navigation, performance), regression digest against the pre-UI commit, simulation/economy/click/Studio checks, final screenshot library, docs/RELEASE_READINESS.md. career_click_test.gd updated for the five creator steps; CI links Studio assets.
 
 ## 6. Animation specification
 
@@ -225,3 +226,4 @@ Rebuild-on-navigate (the Phase 3 shim mitigates); Phase 7 scope (tiers ship inde
 - 2026-11-20: Phase 10 built: Career and Owner polish
 - 2026-11-20: Phase 11 built: audio
 - 2026-11-20: Phase 12 built: onboarding, UX states, accessibility sweep
+- 2026-11-20: Phase 13 built: full game presentation and release readiness

@@ -25,12 +25,13 @@ static func measure() -> Dictionary:
 	return out
 
 
-static func measure_screen(screen: String) -> Dictionary:
+static func measure_screen(screen: String, text_size: int = 1) -> Dictionary:
 	FcSafeFile.remove_tree(DYNASTY_DIR)
 	FcDynastyFixture.wipe()
 	var app := FcApp.new()
 	app.preferences = FcPreferences.new(PREFS_PATH)
 	app.preferences.tutorial_done = true
+	app.preferences.text_size = text_size
 	app.preferences.hints_enabled = false   # a first-run hint is temporary: the ratchet measures the screen itself
 	app.preferences.layout_override = "mobile" if screen.begins_with("m_") else "auto"
 	app.saves = FcSaveManager.new(SAVE_DIR)

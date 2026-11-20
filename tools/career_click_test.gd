@@ -48,6 +48,8 @@ func _run() -> void:
 		return
 	creator.set_field("first_name", "Maya")   # typing is not simulated; the build itself is the default
 	creator.set_field("last_name", "Okoro")
+	for step in 4:   # the creator is five steps; the build is checked and created on the last one
+		await _click_button("Next step")
 	await _click_button("Check my build")
 	_expect(creator.check().is_empty(), "the default build with a name is valid")
 	await _click_button("Create my player")
