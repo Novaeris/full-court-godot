@@ -147,6 +147,11 @@ static func _footer(page: VBoxContainer, actions: Dictionary, compact: bool) -> 
 	buttons.add_child(FcButton.make("Credits", FcButton.Variant.GHOST, actions["credits"], "info"))
 	if actions.has("gallery"):
 		buttons.add_child(FcButton.make("Gallery (dev)", FcButton.Variant.GHOST, actions["gallery"], "layers"))
+	if actions.has("set_sound"):   # a quick mute for the whole game (the full controls are in Settings)
+		var sound := FcToggle.make("Sound", bool(actions.get("sound_on", true)), actions["set_sound"])
+		sound.name = "SoundToggle"
+		sound.tooltip_text = "Turn all game sound on or off (volumes are in Settings)"
+		buttons.add_child(sound)
 	buttons.add_child(FcButton.make("Quit", FcButton.Variant.GHOST, actions["quit"]))
 	footer.add_child(buttons)
 	var studio := FcBrand.logo(FcBrand.NOVAERIS_WORDMARK, 128, "Novaeris")

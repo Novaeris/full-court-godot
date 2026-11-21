@@ -1,15 +1,15 @@
 class_name FcToast
 extends PanelContainer
-## One notification: a coloured edge, an icon and a message. Kinds: INFO, SUCCESS, WARNING, ERROR. On touch layouts a tap dismisses it;
+## One notification: a coloured edge, an icon and a message. Kinds: INFO, SUCCESS, WARNING, ERROR, ACHIEVEMENT (gold edge and a trophy: a level reached or a title won). On touch layouts a tap dismisses it;
 ## on desktop it ignores the mouse, so a toast can never block a button (it once covered "Sign selected free agent" and swallowed the click).
 ## FcToastStack shows several at once and removes them after a few seconds (errors stay longer).
 
 signal dismissed
 
-enum Kind { INFO, SUCCESS, WARNING, ERROR }
+enum Kind { INFO, SUCCESS, WARNING, ERROR, ACHIEVEMENT }
 
-const COLORS := {Kind.INFO: FcUiTokens.INFO, Kind.SUCCESS: FcUiTokens.SUCCESS, Kind.WARNING: FcUiTokens.WARNING, Kind.ERROR: FcUiTokens.DANGER}
-const ICONS := {Kind.INFO: "info", Kind.SUCCESS: "circle-check", Kind.WARNING: "triangle-alert", Kind.ERROR: "circle-alert"}
+const COLORS := {Kind.INFO: FcUiTokens.INFO, Kind.SUCCESS: FcUiTokens.SUCCESS, Kind.WARNING: FcUiTokens.WARNING, Kind.ERROR: FcUiTokens.DANGER, Kind.ACHIEVEMENT: FcUiTokens.GOLD}
+const ICONS := {Kind.INFO: "info", Kind.SUCCESS: "circle-check", Kind.WARNING: "triangle-alert", Kind.ERROR: "circle-alert", Kind.ACHIEVEMENT: "trophy"}
 
 var kind: Kind
 var message: String

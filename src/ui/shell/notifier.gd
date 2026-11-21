@@ -45,6 +45,18 @@ static func classify(text: String) -> FcToast.Kind:
 	return FcToast.Kind.INFO
 
 
+## A gold achievement banner (a level reached, a title won) with its own sound; `cue_id` names the sound ("achievement" by default).
+func achievement(text: String, cue_id: String = "achievement") -> void:
+	if text.strip_edges() == "":
+		return
+	history.append({"kind": FcToast.Kind.ACHIEVEMENT, "text": text})
+	FcAudio.cue(cue_id)
+	if history.size() > HISTORY_LIMIT:
+		history.pop_front()
+	if stack != null and is_instance_valid(stack):
+		stack.push(FcToast.Kind.ACHIEVEMENT, text)
+
+
 func last() -> Dictionary:
 	return history.back() if not history.is_empty() else {}
 

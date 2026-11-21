@@ -56,6 +56,22 @@
 			{"wave": "saw", "freq": 262, "ms": 420, "gain": 0.22, "decay": 5, "attack_ms": 20, "lowpass": 0.16},
 			{"wave": "saw", "freq": 392, "start_ms": 160, "ms": 520, "gain": 0.22, "decay": 4, "attack_ms": 20, "lowpass": 0.16}]}},
 		"game_loss": {"bus": "SFX", "gain_db": -9.0, "file": "res://assets/audio/game_loss.ogg", "synth": {"layers": [
-			{"wave": "triangle", "freq": 196, "freq_to": 147, "ms": 480, "gain": 0.45, "decay": 6}]}}
+			{"wave": "triangle", "freq": 196, "freq_to": 147, "ms": 480, "gain": 0.45, "decay": 6}]}},
+		"transition": {"bus": "UI", "gain_db": -14.0, "file": "res://assets/audio/transition.ogg", "synth": {"layers": [
+			{"wave": "noise", "ms": 110, "gain": 0.28, "decay": 30, "attack_ms": 25, "lowpass": 0.3}]}},
+		"level_up": {"bus": "SFX", "gain_db": -7.0, "file": "res://assets/audio/level_up.ogg", "synth": {"layers": [
+			{"wave": "triangle", "freq": 330, "ms": 120, "gain": 0.45, "decay": 14},
+			{"wave": "triangle", "freq": 440, "start_ms": 100, "ms": 120, "gain": 0.45, "decay": 14},
+			{"wave": "triangle", "freq": 554, "start_ms": 200, "ms": 120, "gain": 0.45, "decay": 14},
+			{"wave": "triangle", "freq": 659, "start_ms": 300, "ms": 380, "gain": 0.5, "decay": 8}]}},
+		"achievement": {"bus": "SFX", "gain_db": -8.0, "file": "res://assets/audio/achievement.ogg", "synth": {"layers": [
+			{"wave": "sine", "freq": 523, "ms": 160, "gain": 0.45, "decay": 14},
+			{"wave": "sine", "freq": 784, "start_ms": 120, "ms": 360, "gain": 0.5, "decay": 8},
+			{"wave": "sine", "freq": 1047, "start_ms": 120, "ms": 360, "gain": 0.25, "decay": 10}]}},
+		"championship": {"bus": "SFX", "gain_db": -5.0, "file": "res://assets/audio/championship.ogg", "synth": {"layers": [
+			{"wave": "saw", "freq": 262, "ms": 520, "gain": 0.24, "decay": 4, "attack_ms": 20, "lowpass": 0.18},
+			{"wave": "saw", "freq": 330, "start_ms": 180, "ms": 520, "gain": 0.24, "decay": 4, "attack_ms": 20, "lowpass": 0.18},
+			{"wave": "saw", "freq": 392, "start_ms": 360, "ms": 900, "gain": 0.26, "decay": 3, "attack_ms": 20, "lowpass": 0.18},
+			{"wave": "sine", "freq": 523, "start_ms": 360, "ms": 900, "gain": 0.3, "decay": 5}]}}
 	}
 }

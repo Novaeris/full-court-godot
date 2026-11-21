@@ -315,7 +315,10 @@ func go_back() -> bool:
 	if host.modals.count() > 0:
 		host.modals.top().close(false)
 		return true
-	return navigator.go_back()
+	var went := navigator.go_back()
+	if went:
+		FcAudio.cue("ui_back")
+	return went
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -363,7 +366,12 @@ func show_main_menu() -> void:
 		"delete": func(slot_id: String) -> void:
 			_select_slot(slot_id)
 			request_delete_selected(),
-		"select": _select_slot, "settings": show_settings, "credits": show_credits, "quit": func() -> void: get_tree().quit()}
+		"select": _select_slot, "settings": show_settings, "credits": show_credits, "quit": func() -> void: get_tree().quit(),
+		"sound_on": not preferences.audio_muted, "set_sound": func(on: bool) -> void:
+			preferences.audio_muted = not on
+			preferences.save_file()
+			if audio != null:
+				audio.apply_settings()}
 	if OS.has_feature("editor") or OS.get_cmdline_user_args().has("--gallery"):
 		actions["gallery"] = show_gallery
 	var compact := FcUiTokens.touch_mode or (size.x > 0.0 and size.x < 700.0)
@@ -593,8 +601,12 @@ func on_career_play(days: int) -> Dictionary:
 	show_career_hub()
 	if result["ok"]:
 		var xp := 0
+		var levels := 0
 		for game in result["games"]:
 			xp += int(game["xp"])
+			levels += int(game.get("levels_gained", 0))
+		if levels > 0:
+			notifier.achievement("Level up! You are now level %d." % int(career.progress()["level"]), "level_up")
 		_say("%d game%s played, +%d XP." % [result["games"].size(), "" if result["games"].size() == 1 else "s", xp])
 	else:
 		_say(str(result.get("reason", "")))
@@ -1320,6 +1332,8 @@ func on_sim_playoffs() -> void:
 	show_dashboard()
 	var champion := controller.season().champion_id
 	_say("Champions: %s" % _team_name(champion))
+	if champion == controller.state.user_team_id:
+		FcCelebration.show_on(host.overlay, "Champions!", _team_name(champion))
 
 
 ## One button, three jobs. Owner Mode: first press (season over) warns about players whose
