@@ -31,6 +31,16 @@ var size_class: String = REGULAR
 
 
 ## The mode and size class for a window of `size`, without changing anything.
+## The UI scale factor for a phone: the screen's density relative to Android's 160 dpi baseline, so a 1080 px wide, 420 dpi phone gets 2.6 and
+## the window is about 412 logical px wide, the width the mobile layouts are designed for. Without it the project's 1280 px design width
+## (stretch mode canvas_items) squeezes the whole UI to 84% on a phone: tiny text and touch targets under 44 dp (found on the Android emulator).
+## Clamped to 1.0-4.0; an unknown density (0 or less) gives 1.0.
+static func phone_scale(dpi: int) -> float:
+	if dpi <= 0:
+		return 1.0
+	return clampf(float(dpi) / 160.0, 1.0, 4.0)
+
+
 static func classify(size: Vector2, is_mobile_os: bool, has_touch: bool, choice: String = AUTO) -> Dictionary:
 	var target := DESKTOP
 	if choice == MOBILE or choice == DESKTOP:
@@ -62,10 +72,13 @@ func is_compact() -> bool:
 
 ## Margins in pixels for a device safe area: `area` is the usable rectangle, `screen` the full screen. Never negative; a safe
 ## area that is empty or the whole screen gives zeros (desktops report the screen minus the taskbar, so callers only apply this on mobile).
-static func safe_margins(area: Rect2i, screen: Vector2i) -> Dictionary:
+## `scale` is the window's content scale factor: the safe area is in physical pixels but the UI lays out in logical ones, so the margins are divided by it
+## (without that a phone's status bar became a band 2.6 times too tall; found on the Android emulator).
+static func safe_margins(area: Rect2i, screen: Vector2i, scale: float = 1.0) -> Dictionary:
 	if area.size.x <= 0 or area.size.y <= 0 or screen.x <= 0 or screen.y <= 0:
 		return {"left": 0, "top": 0, "right": 0, "bottom": 0}
+	var k := maxf(scale, 0.01)
 	return {
-		"left": maxi(0, area.position.x), "top": maxi(0, area.position.y),
-		"right": maxi(0, screen.x - area.end.x), "bottom": maxi(0, screen.y - area.end.y),
+		"left": ceili(maxi(0, area.position.x) / k), "top": ceili(maxi(0, area.position.y) / k),
+		"right": ceili(maxi(0, screen.x - area.end.x) / k), "bottom": ceili(maxi(0, screen.y - area.end.y) / k),
 	}

@@ -46,3 +46,17 @@ func test_the_theme_has_a_focus_style_for_every_interactive_control() -> void:
 	for size in 3:
 		assert_true(FcUiViewportAudit.focus_styles_missing(FcUiTheme.build(size)).is_empty(), "text size %d" % size)
 	FcUiTheme.build(1)
+
+
+func test_a_phone_is_scaled_by_its_density_to_about_412_logical_pixels() -> void:
+	assert_eq(FcLayoutProfile.phone_scale(420), 2.625, "a 420 dpi phone")
+	assert_true(absf(1080.0 / FcLayoutProfile.phone_scale(420) - 412.0) < 2.0, "1080 px wide becomes about 412 logical px")
+	assert_eq(FcLayoutProfile.phone_scale(0), 1.0, "an unknown density changes nothing")
+	assert_eq(FcLayoutProfile.phone_scale(1000), 4.0, "and it is capped")
+
+
+func test_safe_area_margins_are_converted_to_logical_pixels() -> void:
+	var m := FcLayoutProfile.safe_margins(Rect2i(0, 105, 1080, 2200), Vector2i(1080, 2400), 2.625)
+	assert_eq(m["top"], 40, "105 physical px at scale 2.625 is 40 logical px")
+	assert_eq(m["bottom"], 37, "the bottom inset (95 px) too")
+	assert_eq(FcLayoutProfile.safe_margins(Rect2i(0, 105, 1080, 2200), Vector2i(1080, 2400))["top"], 105, "scale 1 changes nothing")

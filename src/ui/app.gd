@@ -100,6 +100,12 @@ func _run_self_test() -> void:
 			problem = "the league is invalid: %s" % errors[0]
 		elif not saves.save("selftest", controller.state, "Selftest").is_ok():
 			problem = "could not write a save file"
+		elif not saves.load_slot("selftest", _defs).is_ok():
+			problem = "could not load the save file it just wrote"
+	if problem == "":
+		problem = _self_test_dynasty()
+	FcSafeFile.remove_tree("user://selftest_saves")
+	FcSafeFile.remove_tree("user://selftest_dynasty")
 	print("SELFTEST OK" if problem == "" else "SELFTEST FAILED: " + problem)
 	get_tree().quit(0 if problem == "" else 1)
 
@@ -125,6 +131,10 @@ func setup() -> void:
 	hints = FcHints.new(ui_state, preferences)
 	FcMotion.reduced = preferences.reduce_motion
 	layout.mobile_os = OS.has_feature("mobile")
+	if layout.mobile_os and get_window() != null:
+		var window := get_window()   # phone: size the UI by the screen's density instead of the 1280 px desktop design width
+		window.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
+		window.content_scale_factor = FcLayoutProfile.phone_scale(DisplayServer.screen_get_dpi())
 	layout.touch_available = DisplayServer.is_touchscreen_available()
 	layout.override = preferences.layout_override
 	layout.changed.connect(_on_layout_changed)
@@ -136,6 +146,29 @@ func setup() -> void:
 	dynasty_ui = FcDynastyUi.new(self, dynasty)
 	show_main_menu()
 	layout.update(size)
+
+
+## The Dynasty half of the self-test: the bundled content release loads and is playable, a profile is created with the starter collection and a
+## legal lineup, a game is played and a pack is opened, and the profile is saved and read back, all in a scratch folder.
+func _self_test_dynasty() -> String:
+	var ctl := FcDynastyController.new(content, _defs, FcDynastyStore.new("user://selftest_dynasty"))
+	if not ctl.catalog.is_playable():
+		return "the Dynasty content release is not playable: %s" % ctl.catalog.playable_problem()
+	var made := ctl.create_profile("Selftest", "SLF", "f58c29", 7)
+	if not made.ok:
+		return "could not create a Dynasty profile: %s" % made.message
+	if not ctl.lineup_problems().is_empty():
+		return "the starter lineup is not legal: %s" % ctl.lineup_problems()[0]
+	if not ctl.play_quick_game("easy").ok:
+		return "could not play a Dynasty game"
+	if not ctl.buy_pack("rookie_pack").ok:
+		return "could not open a Dynasty pack"
+	var slot: String = ctl.session.slot
+	var cards := ctl.profile().unique_owned()
+	ctl.close_profile()
+	if not ctl.open_profile(slot).ok or ctl.profile().unique_owned() != cards:
+		return "the Dynasty profile did not reload intact"
+	return ""
 
 
 func _exit_tree() -> void:
@@ -246,7 +279,7 @@ func notify(kind: FcToast.Kind, text: String) -> void:
 func _on_layout_changed(profile: FcLayoutProfile) -> void:
 	FcUiTokens.touch_mode = profile.is_mobile()
 	if layout.mobile_os:
-		host.set_safe_margins(FcLayoutProfile.safe_margins(DisplayServer.get_display_safe_area(), DisplayServer.screen_get_size()))
+		host.set_safe_margins(FcLayoutProfile.safe_margins(DisplayServer.get_display_safe_area(), DisplayServer.screen_get_size(), get_window().content_scale_factor))
 	if profile.mode != _last_mode:
 		_last_mode = profile.mode
 		_skin_key = ""   # the theme depends on the touch target size, so build it again

@@ -1,0 +1,6 @@
+; A tiny empty project used only by tools/inspect_export.ps1: it loads an exported package and lists what is inside.
+config_version=5
+
+[application]
+
+config/name="Export inspector"
