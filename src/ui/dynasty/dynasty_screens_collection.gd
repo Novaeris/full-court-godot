@@ -261,53 +261,45 @@ static func _controls_row(ui: FcDynastyUi, slot_view: Dictionary) -> Control:
 	return row
 
 
-## The card picker for a slot: every usable owned card, with a comparison against the current player.
+## The card picker for a slot: every usable owned card, with a comparison against the current player, in a kit dialog.
 static func _pick(ui: FcDynastyUi, slot: int) -> void:
 	var ctl := ui.ctl
 	var current_id := str(ctl.profile().roster.slots[slot])
 	var current := ctl.catalog.view(current_id) if current_id != "" else {}
-	var dialog := AcceptDialog.new()
-	dialog.title = "Choose a player for %s" % FcDynastyRoster.slot_name(slot)
-	dialog.min_size = Vector2i(860, 560)
 	var candidates := ctl.candidates_for(slot)
-	var cols := ["Player", "Edition", "Pos", "OVR", "vs current"]
+	var columns: Array = [
+		{"key": "name", "title": "Player", "kind": "custom", "fill": true, "sort_value": func(r: Dictionary): return r["name"], "make": func() -> Control: return FcPlayerChip.new(),
+			"bind": func(cell: Control, row: Dictionary) -> void: (cell as FcPlayerChip).setup({"subject": FcPlayerPresentation.subject_for_card(row["view"]), "name": row["name"], "overall": row["overall"]}, str(row["edition"]), false, 36, false)},
+		{"key": "pos", "title": "Pos", "width": 54},
+		{"key": "overall", "title": "OVR", "width": 64, "kind": "rating", "align": "center"},
+		{"key": "diff", "title": "vs current", "width": 92, "kind": "number", "format": func(v) -> String: return "%+d" % int(v) if not current.is_empty() else "-"}]
 	for c in COMPARE_COMPOSITES:
-		cols.append(c[1])
+		columns.append({"key": "c_" + str(c[0]), "title": str(c[1]), "width": 66, "kind": "number"})
 	var rows: Array = []
 	for v in candidates:
 		var comps := ctl.catalog.ratings.compute(ctl.catalog.make_player(str(v["card_id"]), 1))
-		var diff := ""
-		if not current.is_empty():
-			diff = "%+d" % (int(v["overall"]) - int(current["overall"]))
-		var row := [v["name"], v["edition"], v["position"], v["overall"], diff]
+		var row := {"id": str(v["card_id"]), "name": v["name"], "edition": v["edition"], "pos": v["position"], "overall": v["overall"], "view": v,
+			"diff": int(v["overall"]) - int(current["overall"]) if not current.is_empty() else 0}
 		for c in COMPARE_COMPOSITES:
-			row.append(roundi(float(comps.get(c[0], 0.0))))
+			row["c_" + str(c[0])] = roundi(float(comps.get(c[0], 0.0)))
 		rows.append(row)
-	var tree := FcUiTables.table(cols, rows)
-	tree.custom_minimum_size = Vector2(800, 400)
-	tree.item_activated.connect(func() -> void:
-		var item := tree.get_selected()
-		if item == null:
+	var modal := FcModal.new("Choose a player for %s" % FcDynastyRoster.slot_name(slot), "", FcModal.Kind.CONFIRM, "Choose selected player", "Cancel")
+	modal.panel.custom_minimum_size.x = 760
+	var hint := ui.note("Double-click a row or select it and press Choose. Compare overall and key ratings with your current player." if not candidates.is_empty() else "You do not own a card that can play this slot.", 700)
+	modal.content.add_child(hint)
+	var table := FcTable.new(columns, rows, {"row_height": 44, "max_rows": 8, "empty_title": "No cards", "empty_text": "You do not own a card that can play this slot."})
+	table.custom_minimum_size = Vector2(700, 44 * 9)
+	modal.content.add_child(table)
+	modal.confirm_button.disabled = candidates.is_empty()
+	var choose := func() -> void:
+		if table.selected_id == null:
+			ui.say("Select a player first.")
 			return
-		_choose(ui, dialog, slot, str(candidates[item.get_index()]["card_id"])))
-	var box := VBoxContainer.new()
-	box.add_child(ui.note("Double-click a row or select it and press Choose. Compare overall and key ratings with your current player." if not candidates.is_empty() else "You do not own a card that can play this slot.", 800))
-	box.add_child(tree)
-	var choose := FcDynastyUi.btn("Choose selected player", func() -> void:
-		var item := tree.get_selected()
-		if item != null:
-			_choose(ui, dialog, slot, str(candidates[item.get_index()]["card_id"])))
-	choose.disabled = candidates.is_empty()
-	box.add_child(choose)
-	dialog.add_child(box)
-	dialog.confirmed.connect(dialog.queue_free)
-	dialog.canceled.connect(dialog.queue_free)
-	ui.app.add_child(dialog)
-	dialog.popup_centered()
+		ui.report(ui.ctl.assign_slot(slot, str(table.selected_id)), "Lineup updated.")
+		ui.refresh()
+	modal.confirmed.connect(choose)
+	table.row_activated.connect(func(_id) -> void:
+		modal.close(true))
+	ui.app.host.modals.open(modal)
 
 
-static func _choose(ui: FcDynastyUi, dialog: Window, slot: int, card_id: String) -> void:
-	var r := ui.ctl.assign_slot(slot, card_id)
-	dialog.queue_free()
-	ui.report(r, "Lineup updated.")
-	ui.refresh()

@@ -21,6 +21,7 @@ var _root_label: Label
 var _drafts: ItemList
 var _new_name: LineEdit
 var _files_text: RichTextLabel
+var _previews: HFlowContainer
 var _report: RichTextLabel
 var _approver: LineEdit
 var _note: LineEdit
@@ -144,6 +145,7 @@ func refresh_all() -> void:
 	if selected >= 0:
 		_drafts.select(selected)
 	_refresh_draft_panel()
+	_refresh_previews()
 	_refresh_releases()
 
 
@@ -202,21 +204,29 @@ func _build_ui() -> void:
 	box.add_theme_constant_override("separation", 8)
 	margin.add_child(box)
 
-	var title := Label.new()
-	title.text = "Full Court Creator Studio"
-	title.add_theme_font_size_override("font_size", 24)
-	box.add_child(title)
-	var intro := Label.new()
-	intro.text = "Edit a draft, check it, then approve it to publish a release the game can load. Nothing reaches the game until you approve."
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", FcUiTokens.SPACE_3)
+	var mark := FcBrand.logo(FcBrand.NOVAERIS_MARK, 56, "Novaeris")
+	mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	header.add_child(mark)
+	var title_box := VBoxContainer.new()
+	title_box.add_theme_constant_override("separation", 0)
+	title_box.add_child(FcUiTables.label("Full Court Creator Studio", FcUiTokens.TYPE_H1, true))
+	var intro := FcUiTables.label("Edit a draft, check it, then approve it to publish a release the game can load. Nothing reaches the game until you approve.", FcUiTokens.TYPE_SMALL)
+	intro.theme_type_variation = "MutedLabel"
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	box.add_child(intro)
+	title_box.add_child(intro)
+	title_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(title_box)
+	box.add_child(header)
 
 	var folder_row := HBoxContainer.new()
 	_root_label = Label.new()
+	_root_label.theme_type_variation = "MutedLabel"
 	_root_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	folder_row.add_child(_root_label)
-	folder_row.add_child(_button("Choose folder...", func(): _folder_dialog.popup_centered_ratio(0.6)))
-	folder_row.add_child(_button("Open folder", func(): _open_in_explorer(settings.effective_root())))
+	folder_row.add_child(_button("Choose folder...", func(): _folder_dialog.popup_centered_ratio(0.6), FcButton.Variant.GHOST))
+	folder_row.add_child(_button("Open folder", func(): _open_in_explorer(settings.effective_root()), FcButton.Variant.GHOST))
 	box.add_child(folder_row)
 
 	var columns := HBoxContainer.new()
@@ -224,9 +234,10 @@ func _build_ui() -> void:
 	columns.add_theme_constant_override("separation", 16)
 	box.add_child(columns)
 
-	# Left: drafts
+	# Left: drafts and releases
 	var left := VBoxContainer.new()
-	left.custom_minimum_size = Vector2(320, 0)
+	left.custom_minimum_size = Vector2(340, 0)
+	left.add_theme_constant_override("separation", FcUiTokens.SPACE_2)
 	columns.add_child(left)
 	left.add_child(_heading("Drafts"))
 	_drafts = ItemList.new()
@@ -240,7 +251,7 @@ func _build_ui() -> void:
 	new_row.add_child(_new_name)
 	new_row.add_child(_button("Create", func():
 		if create_draft(_new_name.text) != "":
-			_new_name.text = ""))
+			_new_name.text = "", FcButton.Variant.PRIMARY))
 	left.add_child(new_row)
 	left.add_child(_heading("Releases"))
 	_releases = ItemList.new()
@@ -253,10 +264,15 @@ func _build_ui() -> void:
 		else:
 			make_active(str(_releases.get_item_metadata(picked[0])))))
 
-	# Right: the selected draft
+	# Right: the selected draft, with a read-only preview of its cards
+	var right_scroll := ScrollContainer.new()
+	right_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	columns.add_child(right_scroll)
 	var right := VBoxContainer.new()
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	columns.add_child(right)
+	right.add_theme_constant_override("separation", FcUiTokens.SPACE_2)
+	right_scroll.add_child(right)
 	right.add_child(_heading("Selected draft"))
 	_files_text = RichTextLabel.new()
 	_files_text.custom_minimum_size = Vector2(0, 120)
@@ -265,12 +281,17 @@ func _build_ui() -> void:
 	draft_row.add_child(_button("Open draft folder", func():
 		if not _draft_id.is_empty():
 			_open_in_explorer(workspace.content_dir(_draft_id))))
-	draft_row.add_child(_button("Check", validate_draft))
+	draft_row.add_child(_button("Check", validate_draft, FcButton.Variant.PRIMARY))
 	right.add_child(draft_row)
+	right.add_child(_heading("Card previews (read-only)"))
+	_previews = HFlowContainer.new()
+	_previews.add_theme_constant_override("h_separation", FcUiTokens.SPACE_3)
+	_previews.add_theme_constant_override("v_separation", FcUiTokens.SPACE_3)
+	right.add_child(_previews)
 	right.add_child(_heading("Check report"))
 	_report = RichTextLabel.new()
 	_report.bbcode_enabled = true
-	_report.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_report.custom_minimum_size = Vector2(0, 120)
 	right.add_child(_report)
 	right.add_child(_heading("Owner approval"))
 	_approver = LineEdit.new()
@@ -280,12 +301,18 @@ func _build_ui() -> void:
 	_note = LineEdit.new()
 	_note.placeholder_text = "Approval note (what this release is)"
 	right.add_child(_note)
-	_publish_button = _button("Approve and publish...", func(): _confirm.popup_centered())
+	_publish_button = _button("Approve and publish...", func(): _confirm.popup_centered(), FcButton.Variant.PRIMARY)
 	right.add_child(_publish_button)
 
 	_status = Label.new()
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(_status)
+	var footer := HBoxContainer.new()
+	footer.alignment = BoxContainer.ALIGNMENT_END
+	var credit := FcUiTables.label("A Novaeris tool", FcUiTokens.TYPE_SMALL)
+	credit.theme_type_variation = "CaptionLabel"
+	footer.add_child(credit)
+	box.add_child(footer)
 
 	_confirm = ConfirmationDialog.new()
 	_confirm.title = "Publish this release?"
@@ -299,18 +326,43 @@ func _build_ui() -> void:
 	add_child(_folder_dialog)
 
 
-func _button(text: String, action: Callable) -> Button:
-	var b := Button.new()
-	b.text = text
-	b.pressed.connect(action)
-	return b
+func _button(text: String, action: Callable, variant: FcButton.Variant = FcButton.Variant.SECONDARY) -> Button:
+	return FcButton.make(text, variant, action)
 
 
 func _heading(text: String) -> Label:
-	var l := Label.new()
-	l.text = text
-	l.add_theme_font_size_override("font_size", 18)
-	return l
+	return FcUiTables.label(text, FcUiTokens.TYPE_H3, true)
+
+
+## Read-only previews of the cards in the selected draft, drawn with the game's own card face (so what you see is how the card will look).
+## It only reads the draft's card and player files; nothing is written, and a file that cannot be read is skipped.
+func _refresh_previews() -> void:
+	for c in _previews.get_children():
+		_previews.remove_child(c)
+		c.queue_free()
+	if _draft_id.is_empty() or not workspace.has_draft(_draft_id):
+		return
+	var dir := workspace.content_dir(_draft_id)
+	var shown := 0
+	for path in FcSafeFile.list_files(dir):
+		if not str(path).begins_with("cards/") or not str(path).ends_with(".json") or shown >= 8:
+			continue
+		var card = JSON.parse_string(FileAccess.get_file_as_string(dir.path_join(str(path))))
+		if not (card is Dictionary):
+			continue
+		var player = JSON.parse_string(FileAccess.get_file_as_string(dir.path_join("players/%s.json" % str(card.get("player_id", "")))))
+		var has_player: bool = player is Dictionary
+		var overall := int(card.get("overall", player.get("overall", 0) if has_player else 0))
+		var player_name := str(player.get("display_name", card.get("title", "?"))) if has_player else str(card.get("title", "?"))
+		var row := {"card_id": str(card.get("card_id", "")), "player_id": str(card.get("player_id", "")), "name": player_name, "edition": str(card.get("title", "")),
+			"rarity": str(card.get("rarity", "common")), "overall": overall, "position": str(player.get("position", "")) if has_player else "", "team": "", "badges": [],
+			"quantity": 1, "owned": true, "available": overall > 0, "mastery": 0, "art_path": str(card.get("art_path", ""))}
+		_previews.add_child(FcCardFace.new().setup(row, {"size": FcCardFace.SIZE_SMALL}))
+		shown += 1
+	if shown == 0:
+		var note := FcUiTables.label("No cards in this draft yet.", FcUiTokens.TYPE_SMALL)
+		note.theme_type_variation = "MutedLabel"
+		_previews.add_child(note)
 
 
 func _open_in_explorer(path: String) -> void:

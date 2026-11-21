@@ -139,13 +139,9 @@ func open_profile(slot: String) -> bool:
 
 
 func _confirm_delete(slot: String, team: String) -> void:
-	var dialog := ConfirmationDialog.new()
-	dialog.dialog_text = "Delete '%s' and everything in it? This cannot be undone." % team
-	dialog.confirmed.connect(func() -> void:
+	app.host.modals.confirm("Delete this team?", "Delete '%s' and everything in it? This cannot be undone." % team, func() -> void:
 		ctl.delete_profile(slot)
-		show_entry())
-	app.add_child(dialog)
-	dialog.popup_centered()
+		show_entry(), true, "Delete")
 
 
 # --- frame and navigation ------------------------------------------------------------------------------------------

@@ -206,29 +206,15 @@ static func build_tournament(ui: FcDynastyUi) -> Control:
 
 
 static func _bracket(run: Dictionary) -> Control:
-	var cols := HFlowContainer.new()   # the rounds sit side by side on a wide screen and stack on a phone
-	cols.add_theme_constant_override("h_separation", 24)
-	cols.add_theme_constant_override("v_separation", 12)
-	for round_view in FcDynastyTournament.bracket_view(run):
-		var v := VBoxContainer.new()
-		v.add_theme_constant_override("separation", 8)
-		v.add_child(FcDynastyUi.wl(round_view["round_name"], 16, true))
-		for m in round_view["matches"]:
-			var p := PanelContainer.new()
-			if m["you"]:
-				p.add_theme_stylebox_override("panel", FcDynastyStyle.box(FcUiTheme.ACCENT_SOFT, FcUiTheme.ACCENT, 2, 8, 6))
-			var inner := VBoxContainer.new()
-			var a := FcDynastyUi.wl(str(m["a"]), 14)
-			var b := FcDynastyUi.wl(str(m["b"]), 14)
-			if m["played"]:
-				(a if m["winner"] == m["a"] else b).add_theme_color_override("font_color", FcUiTheme.GOOD)
-			inner.add_child(a)
-			inner.add_child(b)
-			inner.add_child(FcDynastyUi.wl(str(m["score"]), 12))
-			p.add_child(inner)
-			v.add_child(p)
-		cols.add_child(v)
-	return cols
+	var view := FcDynastyTournament.bracket_view(run)
+	var drawing := FcBracket.build(view, FcUiTokens.touch_mode)
+	if FcUiTokens.touch_mode:
+		return drawing   # a phone gets a stack of match panels that scrolls with the page
+	var scroll := ScrollContainer.new()   # a narrow desktop window scrolls the drawing sideways instead of squeezing it
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size.y = drawing.custom_minimum_size.y + 16.0
+	scroll.add_child(drawing)
+	return scroll
 
 
 # --- season -------------------------------------------------------------------------------------------------------------
