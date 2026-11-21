@@ -1,5 +1,7 @@
 # Look and feel: what is built and what is still needed from the founder
 
+**Update 2026-11-21:** the Visual Identity milestone (D-057, `docs/VISUAL_IDENTITY_PLAN.md`) adds the Full Court and Novaeris brand and new palette values.
+
 **Update 2026-11-20:** the founder approved the "Hardwood Night" direction (Barlow Condensed and Inter, Lucide icons, three mode personalities) and a full UI/UX milestone: see `docs/UI_POLISH_PLAN.md` and decisions D-047 to D-050. Fonts, icons and the design tokens now exist (`assets/`, `src/ui/ui_tokens.gd`). The sections below describe the earlier default and are kept for history; "What the default is NOT" is now partly out of date (no logo, illustrations, sound, team colours in the UI or animations beyond the kit's motion helpers yet).
 
 Status 2026-11-17. The founder has not yet sent references, so Claude chose a default and made it easy to change.

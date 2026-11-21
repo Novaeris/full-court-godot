@@ -1,0 +1,21 @@
+{
+	"_about": "Brand assets (D-057). Full Court is the game identity, Novaeris is the studio. Paths are relative to res://. 'sizes' lists resized copies by width. Built by tools/build_brand_assets.sh from assets/brand/source/. Where a file is missing the game shows a text wordmark instead (FcBrand, Phase D).",
+	"assets": {
+		"full_court_lockup": {"brand": "full_court", "kind": "lockup", "transparent": true, "file": "assets/brand/full_court_lockup.png", "sizes": {"1024": "assets/brand/full_court_lockup_1024.png", "512": "assets/brand/full_court_lockup_512.png", "256": "assets/brand/full_court_lockup_256.png"}},
+		"full_court_mono_white": {"brand": "full_court", "kind": "mono", "transparent": true, "file": "assets/brand/full_court_mono_white.png"},
+		"full_court_mono_navy": {"brand": "full_court", "kind": "mono", "transparent": true, "file": "assets/brand/full_court_mono_navy.png"},
+		"novaeris_lockup": {"brand": "novaeris", "kind": "lockup", "transparent": true, "file": "assets/brand/novaeris_lockup.png", "sizes": {"1024": "assets/brand/novaeris_lockup_1024.png", "512": "assets/brand/novaeris_lockup_512.png", "256": "assets/brand/novaeris_lockup_256.png"}},
+		"novaeris_mark": {"brand": "novaeris", "kind": "mark", "transparent": true, "file": "assets/brand/novaeris_mark.png", "sizes": {"512": "assets/brand/novaeris_mark_512.png", "256": "assets/brand/novaeris_mark_256.png", "128": "assets/brand/novaeris_mark_128.png"}},
+		"novaeris_wordmark": {"brand": "novaeris", "kind": "wordmark", "transparent": true, "file": "assets/brand/novaeris_wordmark.png"}
+	},
+	"icons": {
+		"app_icon_1024": {"file": "assets/brand/app_icon_1024.png", "w": 1024, "h": 1024},
+		"app_icon_512": {"file": "assets/brand/app_icon_512.png", "w": 512, "h": 512},
+		"android_icon_192": {"file": "assets/brand/android_icon_192.png", "w": 192, "h": 192},
+		"android_adaptive_foreground_432": {"file": "assets/brand/android_adaptive_foreground_432.png", "w": 432, "h": 432},
+		"android_adaptive_background_432": {"file": "assets/brand/android_adaptive_background_432.png", "w": 432, "h": 432},
+		"android_adaptive_monochrome_432": {"file": "assets/brand/android_adaptive_monochrome_432.png", "w": 432, "h": 432}
+	},
+	"boot_splash": {"file": "assets/brand/boot_splash.png", "w": 1280, "h": 720, "background": "0B1020"},
+	"windows_icon": "assets/brand/app_icon.ico"
+}

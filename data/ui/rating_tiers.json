@@ -4,8 +4,8 @@
 		{"min": 0, "name": "Reserve", "color": "A0AABF"},
 		{"min": 55, "name": "Depth", "color": "7FA2D6"},
 		{"min": 65, "name": "Rotation", "color": "4CC3D9"},
-		{"min": 75, "name": "Starter", "color": "F58C29"},
-		{"min": 85, "name": "Star", "color": "FFC857"},
+		{"min": 75, "name": "Starter", "color": "FF8A24"},
+		{"min": 85, "name": "Star", "color": "FFB547"},
 		{"min": 92, "name": "Elite", "color": "FFE9A8"}
 	]
 }

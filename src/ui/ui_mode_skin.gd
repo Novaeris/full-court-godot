@@ -38,7 +38,7 @@ static func resolve(id: String, overrides: Dictionary = {}) -> Dictionary:
 	skin["id"] = id if SKINS.has(id) else NEUTRAL
 	skin["density"] = clampf(float(skin["density"]), 0.8, 1.2)
 	skin["motion"] = clampf(float(skin["motion"]), 0.0, 1.0)
-	skin["accent"] = FcUiContrast.ensure(skin["accent"], FcUiTokens.SURFACE_RAISED, 4.5)
+	skin["accent"] = FcUiContrast.ensure(skin["accent"], FcUiTokens.SURFACE_HIGH, 4.5)
 	return skin
 
 

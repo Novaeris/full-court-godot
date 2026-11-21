@@ -2,7 +2,7 @@ extends FcTestCase
 ## The design system itself (docs/UI_POLISH_PLAN.md, section 3): contrast of every text colour on every surface, the mode skins and
 ## their whitelist, the theme (type variations, text scale), fonts, icons, rating tiers and the reduce-motion preference.
 
-const SURFACES := [FcUiTokens.BG, FcUiTokens.SURFACE, FcUiTokens.SURFACE_RAISED]
+const SURFACES := [FcUiTokens.BG, FcUiTokens.SURFACE, FcUiTokens.SURFACE_RAISED, FcUiTokens.SURFACE_HIGH]
 const PREFS_PATH := "user://test_prefs_design_system.cfg"
 
 

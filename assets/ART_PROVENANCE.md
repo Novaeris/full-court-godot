@@ -1,0 +1,12 @@
+# Art provenance
+
+Every shipped art file is listed here with where it came from and its legal review status (`docs/LEGAL_CHECKLIST.md`, section 4).
+
+| Files | Source | Review |
+|---|---|---|
+| `brand/source/full_court_banner.png`, `brand/source/novaeris_banner.png` | Supplied by the founder as the Full Court game logo and the Novaeris studio logo (2172 x 724 banners). Not shipped (`.gdignore`) | Founder-owned originals. Trademark clearance of both names is still open (legal checklist) |
+| `brand/*.png`, `brand/app_icon.ico` | Derived from the two banners by `tools/build_brand_assets.sh` (crop, key, resize, place on navy). Nothing redrawn | As above |
+| `icons/app_icon.svg` | Original basketball tile, written for this project | Original |
+| `icons/lucide/*` , `fonts/*` | See `assets/README.md` | ISC / OFL |
+
+No portrait art and no menu art is shipped yet. Anything added later must be listed here with its source (hand-made, commissioned or generated) and review status.

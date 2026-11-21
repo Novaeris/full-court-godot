@@ -7,16 +7,25 @@ extends RefCounted
 # --- colours -------------------------------------------------------------------------------------------------------
 const BG := Color("0B1020")
 const SURFACE := Color("111A2E")
-const SURFACE_RAISED := Color("18233D")
+## "Court Slate".
+const SURFACE_RAISED := Color("17233D")
+## "Elevated Surface": the third step (popovers, selected rows, hover fills). Added by the Visual Identity milestone (D-057).
+const SURFACE_HIGH := Color("202F4D")
 const BORDER := Color("2A3856")
-const PRIMARY := Color("F58C29")
-const INFO := Color("3DA5FF")
-const STEEL := Color("6C8EBF")
-const GOLD := Color("FFC857")
+## "Court Orange" (was F58C29). All of PRIMARY, INFO and GOLD pass 4.5:1 on BG, SURFACE, SURFACE_RAISED and SURFACE_HIGH (D-057).
+const PRIMARY := Color("FF8A24")
+## The deeper orange of the Full Court logo's underline: for gradients and glows, not for text.
+const PRIMARY_DEEP := Color("E65300")
+## "Electric Blue" (was 3DA5FF).
+const INFO := Color("39A9FF")
+## Lightened from #6C8EBF to reach 4.5:1 on SURFACE_HIGH.
+const STEEL := Color("7C9DCB")
+## "Championship Gold" (was FFC857).
+const GOLD := Color("FFB547")
 const SUCCESS := Color("3DD68C")
 const WARNING := Color("F5B93A")
-## Lightened from #F0524F so it reaches 4.5:1 as text on every surface (the contrast test enforces this).
-const DANGER := Color("F2605D")
+## Lightened (was #F2605D) so it reaches 4.5:1 as text on every surface including SURFACE_HIGH (the contrast test enforces this).
+const DANGER := Color("F5726F")
 const TEXT := Color("EAF0FA")
 const TEXT_MUTED := Color("9AA8C2")
 const TEXT_DISABLED := Color("5F6B84")
