@@ -34,3 +34,13 @@ func _init(title: String = "", body: String = "", state_kind: Kind = Kind.EMPTY,
 		action_button = FcButton.make(action_text, FcButton.Variant.PRIMARY, on_action)
 		action_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		add_child(action_button)
+
+
+## An error state with a "Try again" style action (the one every failed load or save shows).
+static func error(title: String, body: String, action_text: String = "Try again", on_action: Callable = Callable()) -> FcEmptyState:
+	return FcEmptyState.new(title, body, Kind.ERROR, "", action_text if on_action.is_valid() else "", on_action)
+
+
+## A success state ("Saved", "All done") with an optional next step.
+static func success(title: String, body: String = "", action_text: String = "", on_action: Callable = Callable()) -> FcEmptyState:
+	return FcEmptyState.new(title, body, Kind.SUCCESS, "", action_text if on_action.is_valid() else "", on_action)

@@ -48,6 +48,7 @@ func build() -> void:
 	_section_inputs()
 	_section_feedback()
 	_section_data()
+	_section_table()
 	_section_cards()
 	_section_players()
 	_section_broadcast()
@@ -182,8 +183,8 @@ func _section_colours() -> void:
 	var s := _section("Colour", "Hardwood Night tokens. Text colours are tested for at least 4.5:1 contrast on every surface.")
 	var flow := _flow()
 	s.add_child(flow)
-	for pair in [["BG", FcUiTokens.BG], ["SURFACE", FcUiTokens.SURFACE], ["RAISED", FcUiTokens.SURFACE_RAISED], ["BORDER", FcUiTokens.BORDER],
-			["PRIMARY", FcUiTokens.PRIMARY], ["ACCENT (skin)", FcUiTheme.accent], ["INFO", FcUiTokens.INFO], ["GOLD", FcUiTokens.GOLD], ["SUCCESS", FcUiTokens.SUCCESS],
+	for pair in [["BG", FcUiTokens.BG], ["SURFACE", FcUiTokens.SURFACE], ["RAISED", FcUiTokens.SURFACE_RAISED], ["HIGH", FcUiTokens.SURFACE_HIGH], ["BORDER", FcUiTokens.BORDER],
+			["PRIMARY", FcUiTokens.PRIMARY], ["PRIMARY_DEEP", FcUiTokens.PRIMARY_DEEP], ["ACCENT (skin)", FcUiTheme.accent], ["INFO", FcUiTokens.INFO], ["GOLD", FcUiTokens.GOLD], ["SUCCESS", FcUiTokens.SUCCESS],
 			["WARNING", FcUiTokens.WARNING], ["DANGER", FcUiTokens.DANGER], ["TEXT", FcUiTokens.TEXT], ["MUTED", FcUiTokens.TEXT_MUTED], ["DISABLED", FcUiTokens.TEXT_DISABLED]]:
 		var swatch := Panel.new()
 		var chip := StyleBoxFlat.new()
@@ -309,6 +310,11 @@ func _section_feedback() -> void:
 	for kind in [[FcEmptyState.Kind.EMPTY, "No cards yet", "Open a pack or play a game to start your collection."], [FcEmptyState.Kind.ERROR, "Could not load the release", "Check the content folder in Settings, then try again."], [FcEmptyState.Kind.SUCCESS, "All caught up", "Every challenge reward has been claimed."]]:
 		var state := FcEmptyState.new(kind[1], kind[2], kind[0], "", "Try again" if kind[0] == FcEmptyState.Kind.ERROR else "", Callable())
 		states.add_child(_captioned("Empty state / %s" % FcEmptyState.Kind.keys()[kind[0]].to_lower(), state))
+	states.add_child(_captioned("Error (with action)", FcEmptyState.error("The save could not be written", "Check free disk space, then try again.", "Try again", func() -> void: _toasts.push(FcToast.Kind.INFO, "Retrying (demo)."))))
+	states.add_child(_captioned("Success", FcEmptyState.success("Saved", "Your franchise was saved a moment ago.")))
+	var skeleton := FcSkeleton.new(4, 24)
+	skeleton.custom_minimum_size.x = 260
+	states.add_child(_captioned("Skeleton (loading rows)", skeleton))
 
 
 func _section_data() -> void:
@@ -333,6 +339,35 @@ func _section_data() -> void:
 	s.add_child(_captioned("Data table (desktop)", FcDataTable.build(columns, rows, [0, 60, 60, 80], {"compact": false}), true))
 	s.add_child(_captioned("Data table (compact, for touch layouts)", FcDataTable.build(columns, rows, [], {"compact": true}), true))
 	s.add_child(_captioned("Data table (empty)", FcDataTable.build(columns, [], [], {"empty_title": "No players", "empty_text": "Sign a free agent to fill this list."}), true))
+
+
+## FcTable on 400 sample rows (generated here for the demo, not game data): sortable headers, a portrait, rating badges and mini bars.
+func _section_table() -> void:
+	var s := _section("Table", "FcTable on 400 SAMPLE rows made up for this page. Click a header to sort, click or use the arrow keys to select, Enter to activate. Only about 20 rows exist as controls however long the list is.")
+	var teams := [{"name": "Harbor Kings", "abbreviation": "HBK", "primary": "#1F3A5F", "secondary": "#C8A951"}, {"name": "Sky City", "abbreviation": "SKY", "primary": "#7A1F2B", "secondary": "#FFFFFF"},
+		{"name": "Pine Wolves", "abbreviation": "PNW", "primary": "#1F5F3A", "secondary": "#EAF0FA"}]
+	var firsts := ["Maya", "Dev", "Lena", "Omar", "Priya", "Tomas", "Ines", "Kofi", "Sora", "Hana"]
+	var lasts := ["Okoro", "Carter", "Voss", "Haddad", "Rao", "Lind", "Duarte", "Mensah", "Ito", "Park"]
+	var positions := ["PG", "SG", "SF", "PF", "C"]
+	var rows: Array = []
+	for i in 400:
+		rows.append({"id": i + 1, "name": "%s %s" % [firsts[(i * 7 + i / 10) % 10], lasts[(i * 3 + i / 7) % 10]], "pos": positions[i % 5], "age": 19 + (i * 7) % 18, "ovr": 45 + (i * 37) % 50,
+			"salary": 900000 + ((i * 7919) % 30) * 1000000, "contract": ((i * 13) % 100), "team": teams[i % 3]})
+	var columns := [
+		{"key": "portrait", "title": "", "width": 56, "kind": "custom", "sortable": false,
+			"make": func() -> Control: return FcPlayerPortrait.new(),
+			"bind": func(cell: Control, row: Dictionary) -> void: (cell as FcPlayerPortrait).setup(FcPlayerPresentation.subject("table_sample:%d" % row["id"], row["name"], row["team"], int(row["id"]) % 99), 32)},
+		{"key": "name", "title": "Player"},
+		{"key": "pos", "title": "Pos", "width": 56},
+		{"key": "age", "title": "Age", "width": 56, "kind": "number"},
+		{"key": "ovr", "title": "OVR", "width": 72, "kind": "rating", "align": "center"},
+		{"key": "salary", "title": "Salary", "width": 100, "kind": "number", "format": func(v) -> String: return FcUiTables.money(int(v))},
+		{"key": "contract", "title": "Contract used", "width": 130, "kind": "bar"}]
+	var table := FcTable.new(columns, rows, {"row_height": 44, "max_rows": 8, "sort_key": "ovr", "sort_ascending": false})
+	table.custom_minimum_size.y = 44 * 9 + 2
+	s.add_child(table)
+	s.add_child(_captioned("Table (compact, for touch layouts)", FcTable.build(columns, rows.slice(0, 3), {"compact": true}), true))
+	s.add_child(_captioned("Table (empty)", FcTable.build(columns, [], {"empty_title": "No players", "empty_text": "Sign a free agent to fill this list."}), true))
 
 
 func _demo_card(rarity: String, overall: int, player: String, extra: Dictionary = {}) -> Dictionary:

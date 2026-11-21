@@ -28,7 +28,7 @@ const WARNING := Color("F5B93A")
 const DANGER := Color("F5726F")
 const TEXT := Color("EAF0FA")
 const TEXT_MUTED := Color("9AA8C2")
-const TEXT_DISABLED := Color("5F6B84")
+const TEXT_DISABLED := Color("6A7791")
 ## The dim layer behind a modal (translucent, so it is not a text colour).
 const SCRIM := Color(0.02, 0.03, 0.07, 0.72)
 const TRANSPARENT := Color(0, 0, 0, 0)
