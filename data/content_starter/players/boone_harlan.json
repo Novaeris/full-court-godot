@@ -1,0 +1,45 @@
+{
+	"attributes": {
+		"agility": 49,
+		"ball_handling": 27,
+		"basketball_iq": 45,
+		"blocks": 50,
+		"close_finishing": 59,
+		"competitive_mentality": 49,
+		"consistency": 48,
+		"decision_making": 51,
+		"defensive_awareness": 52,
+		"dunking": 45,
+		"durability": 55,
+		"free_throw": 41,
+		"interior_defense": 60,
+		"layups": 51,
+		"leadership": 48,
+		"mid_range": 48,
+		"offensive_awareness": 48,
+		"passing": 37,
+		"perimeter_defense": 45,
+		"rebounding": 67,
+		"shot_selection": 51,
+		"speed": 40,
+		"stamina": 45,
+		"steals": 45,
+		"strength": 65,
+		"three_point": 29,
+		"vertical": 50,
+		"work_ethic": 46
+	},
+	"badges": [
+		"rebound_chaser"
+	],
+	"display_name": "Boone Harlan",
+	"player_id": "boone_harlan",
+	"position": "PF",
+	"secondary_position": "C",
+	"team": "Mobile Tempest",
+	"tendencies": {
+		"foul_tendency": 60,
+		"offensive_rebound_tendency": 80,
+		"post_tendency": 75
+	}
+}

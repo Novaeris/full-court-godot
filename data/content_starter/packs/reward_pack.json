@@ -1,0 +1,38 @@
+{
+	"card_ids": [
+		"ian_marlowe_base",
+		"teodor_brask_base",
+		"kellan_drummond_base",
+		"rafael_oyelaran_base",
+		"cyrus_tallwood_base",
+		"nico_brandvold_base",
+		"evander_pike_base",
+		"lucian_marchetti_base",
+		"hollis_granger_base",
+		"piers_calloway_base",
+		"tomas_eriksen_base",
+		"amari_fontaine_base",
+		"boone_harlan_base",
+		"quentin_ashdown_base",
+		"otis_pemberton_base",
+		"viktor_haldane_base",
+		"dmitri_kalloway_base",
+		"wendell_oakes_base",
+		"barnaby_stroud_base",
+		"ibrahim_soltani_base"
+	],
+	"cards_per_pack": 2,
+	"name": "Reward Pack",
+	"odds": {
+		"common": 7000,
+		"uncommon": 3000
+	},
+	"pack_id": "reward_pack",
+	"price": {
+		"amount": 0,
+		"currency": "credits"
+	},
+	"requires_features": [
+		"pack_odds_v1"
+	]
+}

@@ -1,0 +1,20 @@
+{
+	"category": "team_composition",
+	"challenge_id": "ten_wins",
+	"description": "Win 10 games.",
+	"objective": {
+		"target": 10,
+		"type": "wins"
+	},
+	"requires_features": [
+		"challenge_v1"
+	],
+	"rewards": {
+		"credits": 600,
+		"pack_ids": [
+			"rookie_pack"
+		]
+	},
+	"season_points": 10,
+	"title": "Ten Wins"
+}

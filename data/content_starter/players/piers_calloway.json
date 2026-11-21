@@ -1,0 +1,45 @@
+{
+	"attributes": {
+		"agility": 52,
+		"ball_handling": 54,
+		"basketball_iq": 47,
+		"blocks": 39,
+		"close_finishing": 50,
+		"competitive_mentality": 48,
+		"consistency": 46,
+		"decision_making": 47,
+		"defensive_awareness": 52,
+		"dunking": 46,
+		"durability": 47,
+		"free_throw": 48,
+		"interior_defense": 46,
+		"layups": 60,
+		"leadership": 50,
+		"mid_range": 62,
+		"offensive_awareness": 58,
+		"passing": 51,
+		"perimeter_defense": 52,
+		"rebounding": 50,
+		"shot_selection": 56,
+		"speed": 51,
+		"stamina": 52,
+		"steals": 49,
+		"strength": 48,
+		"three_point": 57,
+		"vertical": 56,
+		"work_ethic": 52
+	},
+	"badges": [
+		"catch_and_shoot"
+	],
+	"display_name": "Piers Calloway",
+	"player_id": "piers_calloway",
+	"position": "SF",
+	"secondary_position": "PF",
+	"team": "Boise Ironclads",
+	"tendencies": {
+		"drive_tendency": 55,
+		"mid_range_tendency": 65,
+		"three_point_tendency": 50
+	}
+}

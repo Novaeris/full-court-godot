@@ -1,0 +1,16 @@
+{
+	"card_id": "bram_lindqvist_base",
+	"edition": "Founding Edition",
+	"player_id": "bram_lindqvist",
+	"price": {
+		"amount": 3500,
+		"currency": "credits"
+	},
+	"rarity": "rare",
+	"requires_features": [
+		"card_rarity_v1",
+		"card_market_v1"
+	],
+	"revision": 1,
+	"title": "Bram Lindqvist"
+}

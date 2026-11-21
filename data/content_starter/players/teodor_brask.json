@@ -1,0 +1,43 @@
+{
+	"attributes": {
+		"agility": 61,
+		"ball_handling": 60,
+		"basketball_iq": 48,
+		"blocks": 37,
+		"close_finishing": 42,
+		"competitive_mentality": 51,
+		"consistency": 49,
+		"decision_making": 49,
+		"defensive_awareness": 47,
+		"dunking": 48,
+		"durability": 46,
+		"free_throw": 51,
+		"interior_defense": 47,
+		"layups": 50,
+		"leadership": 51,
+		"mid_range": 47,
+		"offensive_awareness": 46,
+		"passing": 58,
+		"perimeter_defense": 74,
+		"rebounding": 37,
+		"shot_selection": 51,
+		"speed": 66,
+		"stamina": 56,
+		"steals": 72,
+		"strength": 46,
+		"three_point": 47,
+		"vertical": 50,
+		"work_ethic": 50
+	},
+	"badges": [
+		"clamps"
+	],
+	"display_name": "Teodor Brask",
+	"player_id": "teodor_brask",
+	"position": "PG",
+	"team": "Duluth Frost",
+	"tendencies": {
+		"gamble_tendency": 70,
+		"pass_tendency": 60
+	}
+}

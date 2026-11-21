@@ -1,0 +1,20 @@
+{
+	"category": "shooting",
+	"challenge_id": "at_the_line",
+	"description": "Make 30 free throws across your games.",
+	"objective": {
+		"mode": "cumulative",
+		"scope": "team",
+		"stat": "free_throws",
+		"target": 30,
+		"type": "stat"
+	},
+	"requires_features": [
+		"challenge_v1"
+	],
+	"rewards": {
+		"credits": 300
+	},
+	"season_points": 10,
+	"title": "At the Line"
+}

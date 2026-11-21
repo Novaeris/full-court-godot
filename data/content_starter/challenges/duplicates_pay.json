@@ -1,0 +1,18 @@
+{
+	"category": "collection",
+	"challenge_id": "duplicates_pay",
+	"description": "Hold 5 duplicate cards.",
+	"objective": {
+		"metric": "duplicates",
+		"target": 5,
+		"type": "collection"
+	},
+	"requires_features": [
+		"challenge_v1"
+	],
+	"rewards": {
+		"shards": 50
+	},
+	"season_points": 10,
+	"title": "Spare Parts"
+}

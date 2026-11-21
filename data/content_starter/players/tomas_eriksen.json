@@ -1,0 +1,45 @@
+{
+	"attributes": {
+		"agility": 56,
+		"ball_handling": 56,
+		"basketball_iq": 57,
+		"blocks": 58,
+		"close_finishing": 58,
+		"competitive_mentality": 56,
+		"consistency": 62,
+		"decision_making": 56,
+		"defensive_awareness": 70,
+		"dunking": 54,
+		"durability": 57,
+		"free_throw": 54,
+		"interior_defense": 59,
+		"layups": 59,
+		"leadership": 60,
+		"mid_range": 54,
+		"offensive_awareness": 56,
+		"passing": 53,
+		"perimeter_defense": 71,
+		"rebounding": 59,
+		"shot_selection": 57,
+		"speed": 57,
+		"stamina": 64,
+		"steals": 67,
+		"strength": 60,
+		"three_point": 72,
+		"vertical": 58,
+		"work_ethic": 60
+	},
+	"badges": [
+		"corner_specialist",
+		"clamps"
+	],
+	"display_name": "Tomas Eriksen",
+	"player_id": "tomas_eriksen",
+	"position": "SF",
+	"secondary_position": "PF",
+	"team": "Savannah Mariners",
+	"tendencies": {
+		"foul_tendency": 35,
+		"three_point_tendency": 70
+	}
+}

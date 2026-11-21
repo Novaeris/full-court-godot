@@ -1,0 +1,45 @@
+{
+	"attributes": {
+		"agility": 65,
+		"ball_handling": 76,
+		"basketball_iq": 69,
+		"blocks": 58,
+		"close_finishing": 63,
+		"competitive_mentality": 63,
+		"consistency": 64,
+		"decision_making": 66,
+		"defensive_awareness": 63,
+		"dunking": 63,
+		"durability": 68,
+		"free_throw": 67,
+		"interior_defense": 57,
+		"layups": 75,
+		"leadership": 64,
+		"mid_range": 78,
+		"offensive_awareness": 75,
+		"passing": 64,
+		"perimeter_defense": 69,
+		"rebounding": 67,
+		"shot_selection": 72,
+		"speed": 68,
+		"stamina": 67,
+		"steals": 67,
+		"strength": 64,
+		"three_point": 75,
+		"vertical": 71,
+		"work_ethic": 67
+	},
+	"badges": [
+		"catch_and_shoot"
+	],
+	"display_name": "Luca Santovena",
+	"player_id": "luca_santovena",
+	"position": "SF",
+	"secondary_position": "SG",
+	"team": "Fresno Embers",
+	"tendencies": {
+		"drive_tendency": 55,
+		"mid_range_tendency": 65,
+		"three_point_tendency": 50
+	}
+}

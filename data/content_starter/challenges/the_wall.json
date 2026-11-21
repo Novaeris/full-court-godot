@@ -1,0 +1,20 @@
+{
+	"category": "defense",
+	"challenge_id": "the_wall",
+	"description": "Record 8 blocks across your games.",
+	"objective": {
+		"mode": "cumulative",
+		"scope": "team",
+		"stat": "blocks",
+		"target": 8,
+		"type": "stat"
+	},
+	"requires_features": [
+		"challenge_v1"
+	],
+	"rewards": {
+		"credits": 350
+	},
+	"season_points": 10,
+	"title": "The Wall"
+}

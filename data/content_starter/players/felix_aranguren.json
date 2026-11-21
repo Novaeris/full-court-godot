@@ -1,0 +1,44 @@
+{
+	"attributes": {
+		"agility": 68,
+		"ball_handling": 57,
+		"basketball_iq": 66,
+		"blocks": 71,
+		"close_finishing": 65,
+		"competitive_mentality": 63,
+		"consistency": 67,
+		"decision_making": 65,
+		"defensive_awareness": 64,
+		"dunking": 56,
+		"durability": 67,
+		"free_throw": 74,
+		"interior_defense": 69,
+		"layups": 68,
+		"leadership": 65,
+		"mid_range": 76,
+		"offensive_awareness": 64,
+		"passing": 71,
+		"perimeter_defense": 64,
+		"rebounding": 69,
+		"shot_selection": 62,
+		"speed": 55,
+		"stamina": 67,
+		"steals": 63,
+		"strength": 64,
+		"three_point": 76,
+		"vertical": 64,
+		"work_ethic": 66
+	},
+	"badges": [
+		"catch_and_shoot"
+	],
+	"display_name": "Felix Aranguren",
+	"player_id": "felix_aranguren",
+	"position": "C",
+	"secondary_position": "PF",
+	"team": "Wichita Gale",
+	"tendencies": {
+		"post_tendency": 40,
+		"three_point_tendency": 60
+	}
+}

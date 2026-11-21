@@ -1,0 +1,21 @@
+{
+	"category": "collection",
+	"challenge_id": "rare_finds",
+	"description": "Own 5 rare cards.",
+	"objective": {
+		"metric": "rarity_cards",
+		"rarity": "rare",
+		"target": 5,
+		"type": "collection"
+	},
+	"requires_features": [
+		"challenge_v1"
+	],
+	"rewards": {
+		"pack_ids": [
+			"pro_pack"
+		]
+	},
+	"season_points": 10,
+	"title": "Rare Finds"
+}

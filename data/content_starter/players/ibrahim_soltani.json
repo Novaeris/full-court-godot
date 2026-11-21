@@ -1,0 +1,40 @@
+{
+	"attributes": {
+		"agility": 56,
+		"ball_handling": 47,
+		"basketball_iq": 57,
+		"blocks": 59,
+		"close_finishing": 83,
+		"competitive_mentality": 58,
+		"consistency": 55,
+		"decision_making": 61,
+		"defensive_awareness": 57,
+		"dunking": 58,
+		"durability": 57,
+		"free_throw": 57,
+		"interior_defense": 56,
+		"layups": 71,
+		"leadership": 60,
+		"mid_range": 65,
+		"offensive_awareness": 68,
+		"passing": 55,
+		"perimeter_defense": 56,
+		"rebounding": 64,
+		"shot_selection": 61,
+		"speed": 45,
+		"stamina": 55,
+		"steals": 47,
+		"strength": 75,
+		"three_point": 42,
+		"vertical": 57,
+		"work_ethic": 58
+	},
+	"display_name": "Ibrahim Soltani",
+	"player_id": "ibrahim_soltani",
+	"position": "C",
+	"team": "Fresno Embers",
+	"tendencies": {
+		"post_tendency": 85,
+		"three_point_tendency": 5
+	}
+}

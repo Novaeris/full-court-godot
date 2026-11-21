@@ -1,0 +1,21 @@
+{
+	"category": "playmaking",
+	"challenge_id": "sharing_the_ball",
+	"description": "Record 40 assists across your games.",
+	"objective": {
+		"mode": "cumulative",
+		"scope": "team",
+		"stat": "assists",
+		"target": 40,
+		"type": "stat"
+	},
+	"requires_features": [
+		"challenge_v1"
+	],
+	"rewards": {
+		"credits": 400,
+		"tokens": 1
+	},
+	"season_points": 10,
+	"title": "Sharing the Ball"
+}

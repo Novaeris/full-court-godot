@@ -1,0 +1,44 @@
+{
+	"attributes": {
+		"agility": 73,
+		"ball_handling": 83,
+		"basketball_iq": 89,
+		"blocks": 72,
+		"close_finishing": 71,
+		"competitive_mentality": 70,
+		"consistency": 74,
+		"decision_making": 84,
+		"defensive_awareness": 73,
+		"dunking": 76,
+		"durability": 76,
+		"free_throw": 70,
+		"interior_defense": 72,
+		"layups": 70,
+		"leadership": 76,
+		"mid_range": 73,
+		"offensive_awareness": 81,
+		"passing": 92,
+		"perimeter_defense": 75,
+		"rebounding": 80,
+		"shot_selection": 70,
+		"speed": 70,
+		"stamina": 74,
+		"steals": 72,
+		"strength": 75,
+		"three_point": 68,
+		"vertical": 73,
+		"work_ethic": 72
+	},
+	"badges": [
+		"pick_and_roll_maestro"
+	],
+	"display_name": "Remy Delacourt",
+	"player_id": "remy_delacourt",
+	"position": "SF",
+	"secondary_position": "PF",
+	"team": "Wichita Gale",
+	"tendencies": {
+		"pass_tendency": 72,
+		"post_tendency": 35
+	}
+}

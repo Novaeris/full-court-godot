@@ -1,0 +1,18 @@
+{
+	"category": "collection",
+	"challenge_id": "collector",
+	"description": "Collect 25 different cards.",
+	"objective": {
+		"metric": "unique_cards",
+		"target": 25,
+		"type": "collection"
+	},
+	"requires_features": [
+		"challenge_v1"
+	],
+	"rewards": {
+		"tokens": 2
+	},
+	"season_points": 10,
+	"title": "Collector"
+}

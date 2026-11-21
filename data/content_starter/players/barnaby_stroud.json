@@ -1,0 +1,44 @@
+{
+	"attributes": {
+		"agility": 48,
+		"ball_handling": 34,
+		"basketball_iq": 58,
+		"blocks": 82,
+		"close_finishing": 58,
+		"competitive_mentality": 60,
+		"consistency": 57,
+		"decision_making": 57,
+		"defensive_awareness": 62,
+		"dunking": 57,
+		"durability": 56,
+		"free_throw": 48,
+		"interior_defense": 79,
+		"layups": 59,
+		"leadership": 56,
+		"mid_range": 43,
+		"offensive_awareness": 58,
+		"passing": 43,
+		"perimeter_defense": 59,
+		"rebounding": 75,
+		"shot_selection": 58,
+		"speed": 42,
+		"stamina": 60,
+		"steals": 57,
+		"strength": 70,
+		"three_point": 29,
+		"vertical": 66,
+		"work_ethic": 56
+	},
+	"badges": [
+		"rim_protector"
+	],
+	"display_name": "Barnaby Stroud",
+	"player_id": "barnaby_stroud",
+	"position": "C",
+	"secondary_position": "PF",
+	"team": "Tucson Mirage",
+	"tendencies": {
+		"foul_tendency": 55,
+		"post_tendency": 60
+	}
+}

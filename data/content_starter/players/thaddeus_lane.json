@@ -1,0 +1,44 @@
+{
+	"attributes": {
+		"agility": 83,
+		"ball_handling": 66,
+		"basketball_iq": 76,
+		"blocks": 83,
+		"close_finishing": 84,
+		"competitive_mentality": 74,
+		"consistency": 75,
+		"decision_making": 76,
+		"defensive_awareness": 74,
+		"dunking": 96,
+		"durability": 73,
+		"free_throw": 75,
+		"interior_defense": 73,
+		"layups": 77,
+		"leadership": 75,
+		"mid_range": 75,
+		"offensive_awareness": 76,
+		"passing": 75,
+		"perimeter_defense": 75,
+		"rebounding": 84,
+		"shot_selection": 64,
+		"speed": 81,
+		"stamina": 74,
+		"steals": 76,
+		"strength": 74,
+		"three_point": 60,
+		"vertical": 88,
+		"work_ethic": 76
+	},
+	"badges": [
+		"posterizer"
+	],
+	"display_name": "Thaddeus Lane",
+	"player_id": "thaddeus_lane",
+	"position": "PF",
+	"secondary_position": "C",
+	"team": "Savannah Mariners",
+	"tendencies": {
+		"drive_tendency": 70,
+		"offensive_rebound_tendency": 65
+	}
+}

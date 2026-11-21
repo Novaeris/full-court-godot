@@ -1,0 +1,20 @@
+{
+	"attributes": {
+		"blocks": 99,
+		"defensive_awareness": 96,
+		"interior_defense": 99,
+		"rebounding": 99,
+		"strength": 98,
+		"vertical": 99
+	},
+	"card_id": "augustin_delmar_anniversary",
+	"edition": "Anniversary Edition",
+	"player_id": "augustin_delmar",
+	"rarity": "legendary",
+	"requires_features": [
+		"card_rarity_v1",
+		"card_overrides_v1"
+	],
+	"revision": 1,
+	"title": "Augustin Delmar"
+}

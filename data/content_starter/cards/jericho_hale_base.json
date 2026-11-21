@@ -1,0 +1,11 @@
+{
+	"card_id": "jericho_hale_base",
+	"edition": "Founding Edition",
+	"player_id": "jericho_hale",
+	"rarity": "legendary",
+	"requires_features": [
+		"card_rarity_v1"
+	],
+	"revision": 1,
+	"title": "Jericho Hale"
+}

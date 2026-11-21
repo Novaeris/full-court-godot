@@ -1,0 +1,16 @@
+{
+	"card_id": "wendell_oakes_base",
+	"edition": "Founding Edition",
+	"player_id": "wendell_oakes",
+	"price": {
+		"amount": 500,
+		"currency": "credits"
+	},
+	"rarity": "common",
+	"requires_features": [
+		"card_rarity_v1",
+		"card_market_v1"
+	],
+	"revision": 1,
+	"title": "Wendell Oakes"
+}

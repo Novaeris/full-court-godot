@@ -1,0 +1,16 @@
+{
+	"card_id": "nico_brandvold_base",
+	"edition": "Founding Edition",
+	"player_id": "nico_brandvold",
+	"price": {
+		"amount": 500,
+		"currency": "credits"
+	},
+	"rarity": "common",
+	"requires_features": [
+		"card_rarity_v1",
+		"card_market_v1"
+	],
+	"revision": 1,
+	"title": "Nico Brandvold"
+}

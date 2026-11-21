@@ -1,0 +1,44 @@
+{
+	"attributes": {
+		"agility": 81,
+		"ball_handling": 63,
+		"basketball_iq": 67,
+		"blocks": 64,
+		"close_finishing": 78,
+		"competitive_mentality": 66,
+		"consistency": 68,
+		"decision_making": 68,
+		"defensive_awareness": 66,
+		"dunking": 82,
+		"durability": 66,
+		"free_throw": 63,
+		"interior_defense": 63,
+		"layups": 85,
+		"leadership": 66,
+		"mid_range": 66,
+		"offensive_awareness": 69,
+		"passing": 66,
+		"perimeter_defense": 63,
+		"rebounding": 63,
+		"shot_selection": 62,
+		"speed": 75,
+		"stamina": 67,
+		"steals": 63,
+		"strength": 68,
+		"three_point": 59,
+		"vertical": 76,
+		"work_ethic": 69
+	},
+	"badges": [
+		"posterizer"
+	],
+	"display_name": "Zaire Colburn",
+	"player_id": "zaire_colburn",
+	"position": "SG",
+	"secondary_position": "PG",
+	"team": "Provo Summit",
+	"tendencies": {
+		"drive_tendency": 85,
+		"three_point_tendency": 20
+	}
+}

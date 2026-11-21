@@ -1,0 +1,11 @@
+{
+	"card_id": "augustin_delmar_base",
+	"edition": "Founding Edition",
+	"player_id": "augustin_delmar",
+	"rarity": "legendary",
+	"requires_features": [
+		"card_rarity_v1"
+	],
+	"revision": 1,
+	"title": "Augustin Delmar"
+}

@@ -1,0 +1,43 @@
+{
+	"attributes": {
+		"agility": 54,
+		"ball_handling": 40,
+		"basketball_iq": 69,
+		"blocks": 92,
+		"close_finishing": 63,
+		"competitive_mentality": 65,
+		"consistency": 67,
+		"decision_making": 66,
+		"defensive_awareness": 77,
+		"dunking": 65,
+		"durability": 68,
+		"free_throw": 55,
+		"interior_defense": 91,
+		"layups": 67,
+		"leadership": 65,
+		"mid_range": 49,
+		"offensive_awareness": 64,
+		"passing": 57,
+		"perimeter_defense": 64,
+		"rebounding": 85,
+		"shot_selection": 68,
+		"speed": 51,
+		"stamina": 66,
+		"steals": 67,
+		"strength": 80,
+		"three_point": 42,
+		"vertical": 77,
+		"work_ethic": 63
+	},
+	"badges": [
+		"rim_protector"
+	],
+	"display_name": "Marcellus Tindall",
+	"player_id": "marcellus_tindall",
+	"position": "C",
+	"team": "Mobile Tempest",
+	"tendencies": {
+		"foul_tendency": 55,
+		"post_tendency": 60
+	}
+}

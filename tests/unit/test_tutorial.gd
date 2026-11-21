@@ -139,7 +139,7 @@ func test_the_main_menu_offers_the_three_modes_and_each_one_opens() -> void:
 	app.show_career_home()
 	assert_true("Career Mode" in _labels_text(app) and "choosing which skills to raise" in _labels_text(app) and _has_button("Back to the main menu"))
 	app.show_dynasty_home()
-	assert_true("Dynasty Mode" in _labels_text(app) and "Dynasty needs content first" in _labels_text(app), "Dynasty opens; the bundled 2-card starter release is too small, so it explains what to publish")
+	assert_true("Dynasty Mode" in _labels_text(app) and "Start a new Dynasty team" in _labels_text(app), "Dynasty opens on the entry screen; the bundled Founding Series release is playable (D-055)")
 	app.show_main_menu()
 	app.show_new_league()
 	assert_true("Game mode" in _labels_text(app), "the Owner Mode button leads to the new-league wizard")

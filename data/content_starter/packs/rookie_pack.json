@@ -1,0 +1,73 @@
+{
+	"card_ids": [
+		"ian_marlowe_base",
+		"teodor_brask_base",
+		"kellan_drummond_base",
+		"rafael_oyelaran_base",
+		"dominic_strand_base",
+		"mateo_quillfeather_base",
+		"ansel_voss_base",
+		"jericho_hale_base",
+		"cyrus_tallwood_base",
+		"nico_brandvold_base",
+		"evander_pike_base",
+		"lucian_marchetti_base",
+		"bram_lindqvist_base",
+		"zaire_colburn_base",
+		"silas_ravenscroft_base",
+		"kofi_adebanjo_base",
+		"hollis_granger_base",
+		"piers_calloway_base",
+		"tomas_eriksen_base",
+		"amari_fontaine_base",
+		"gideon_wrenfield_base",
+		"luca_santovena_base",
+		"remy_delacourt_base",
+		"anders_kjell_base",
+		"boone_harlan_base",
+		"quentin_ashdown_base",
+		"otis_pemberton_base",
+		"viktor_haldane_base",
+		"emeka_durand_base",
+		"joaquin_mireles_base",
+		"magnus_ferrow_base",
+		"thaddeus_lane_base",
+		"dmitri_kalloway_base",
+		"wendell_oakes_base",
+		"barnaby_stroud_base",
+		"ibrahim_soltani_base",
+		"felix_aranguren_base",
+		"marcellus_tindall_base",
+		"soren_valdis_base",
+		"augustin_delmar_base",
+		"dominic_strand_lockdown",
+		"bram_lindqvist_corner",
+		"emeka_durand_enforcer",
+		"felix_aranguren_pace_and_space",
+		"jericho_hale_anniversary",
+		"augustin_delmar_anniversary"
+	],
+	"cards_per_pack": 3,
+	"guarantees": [
+		{
+			"count": 1,
+			"min_rarity": "uncommon"
+		}
+	],
+	"name": "Rookie Pack",
+	"odds": {
+		"common": 6500,
+		"epic": 90,
+		"legendary": 10,
+		"rare": 600,
+		"uncommon": 2800
+	},
+	"pack_id": "rookie_pack",
+	"price": {
+		"amount": 500,
+		"currency": "credits"
+	},
+	"requires_features": [
+		"pack_odds_v1"
+	]
+}

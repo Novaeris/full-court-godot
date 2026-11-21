@@ -1,0 +1,45 @@
+{
+	"attributes": {
+		"agility": 66,
+		"ball_handling": 47,
+		"basketball_iq": 66,
+		"blocks": 64,
+		"close_finishing": 76,
+		"competitive_mentality": 64,
+		"consistency": 64,
+		"decision_making": 65,
+		"defensive_awareness": 71,
+		"dunking": 63,
+		"durability": 78,
+		"free_throw": 53,
+		"interior_defense": 80,
+		"layups": 66,
+		"leadership": 66,
+		"mid_range": 66,
+		"offensive_awareness": 68,
+		"passing": 58,
+		"perimeter_defense": 65,
+		"rebounding": 86,
+		"shot_selection": 62,
+		"speed": 56,
+		"stamina": 67,
+		"steals": 64,
+		"strength": 86,
+		"three_point": 42,
+		"vertical": 62,
+		"work_ethic": 67
+	},
+	"badges": [
+		"rebound_chaser"
+	],
+	"display_name": "Emeka Durand",
+	"player_id": "emeka_durand",
+	"position": "PF",
+	"secondary_position": "C",
+	"team": "Akron Foundry",
+	"tendencies": {
+		"foul_tendency": 60,
+		"offensive_rebound_tendency": 80,
+		"post_tendency": 75
+	}
+}

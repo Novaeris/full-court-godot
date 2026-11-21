@@ -1,0 +1,20 @@
+{
+	"category": "defense",
+	"challenge_id": "lockdown",
+	"description": "Record 10 steals across your games.",
+	"objective": {
+		"mode": "cumulative",
+		"scope": "team",
+		"stat": "steals",
+		"target": 10,
+		"type": "stat"
+	},
+	"requires_features": [
+		"challenge_v1"
+	],
+	"rewards": {
+		"credits": 300
+	},
+	"season_points": 10,
+	"title": "Lockdown"
+}

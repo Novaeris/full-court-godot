@@ -1,0 +1,11 @@
+{
+	"card_id": "thaddeus_lane_base",
+	"edition": "Founding Edition",
+	"player_id": "thaddeus_lane",
+	"rarity": "epic",
+	"requires_features": [
+		"card_rarity_v1"
+	],
+	"revision": 1,
+	"title": "Thaddeus Lane"
+}

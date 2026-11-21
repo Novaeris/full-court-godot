@@ -1,0 +1,44 @@
+{
+	"attributes": {
+		"agility": 46,
+		"ball_handling": 47,
+		"basketball_iq": 45,
+		"blocks": 46,
+		"close_finishing": 50,
+		"competitive_mentality": 55,
+		"consistency": 48,
+		"decision_making": 47,
+		"defensive_awareness": 62,
+		"dunking": 50,
+		"durability": 51,
+		"free_throw": 46,
+		"interior_defense": 50,
+		"layups": 51,
+		"leadership": 51,
+		"mid_range": 45,
+		"offensive_awareness": 45,
+		"passing": 55,
+		"perimeter_defense": 63,
+		"rebounding": 45,
+		"shot_selection": 47,
+		"speed": 47,
+		"stamina": 57,
+		"steals": 48,
+		"strength": 49,
+		"three_point": 56,
+		"vertical": 50,
+		"work_ethic": 49
+	},
+	"badges": [
+		"clamps"
+	],
+	"display_name": "Hollis Granger",
+	"player_id": "hollis_granger",
+	"position": "SF",
+	"secondary_position": "SG",
+	"team": "Akron Foundry",
+	"tendencies": {
+		"drive_tendency": 50,
+		"pass_tendency": 50
+	}
+}

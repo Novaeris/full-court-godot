@@ -1,0 +1,20 @@
+{
+	"attributes": {
+		"close_finishing": 85,
+		"defensive_awareness": 80,
+		"durability": 87,
+		"interior_defense": 89,
+		"rebounding": 95,
+		"strength": 95
+	},
+	"card_id": "emeka_durand_enforcer",
+	"edition": "Enforcer Edition",
+	"player_id": "emeka_durand",
+	"rarity": "epic",
+	"requires_features": [
+		"card_rarity_v1",
+		"card_overrides_v1"
+	],
+	"revision": 1,
+	"title": "Emeka Durand"
+}

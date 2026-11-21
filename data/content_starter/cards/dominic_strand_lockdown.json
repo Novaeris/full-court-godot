@@ -1,0 +1,20 @@
+{
+	"attributes": {
+		"agility": 86,
+		"ball_handling": 84,
+		"perimeter_defense": 97,
+		"speed": 89,
+		"stamina": 83,
+		"steals": 98
+	},
+	"card_id": "dominic_strand_lockdown",
+	"edition": "Lockdown Edition",
+	"player_id": "dominic_strand",
+	"rarity": "epic",
+	"requires_features": [
+		"card_rarity_v1",
+		"card_overrides_v1"
+	],
+	"revision": 1,
+	"title": "Dominic Strand"
+}

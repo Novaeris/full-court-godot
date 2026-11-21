@@ -1,0 +1,16 @@
+{
+	"card_id": "boone_harlan_base",
+	"edition": "Founding Edition",
+	"player_id": "boone_harlan",
+	"price": {
+		"amount": 500,
+		"currency": "credits"
+	},
+	"rarity": "common",
+	"requires_features": [
+		"card_rarity_v1",
+		"card_market_v1"
+	],
+	"revision": 1,
+	"title": "Boone Harlan"
+}

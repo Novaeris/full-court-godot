@@ -1,0 +1,44 @@
+{
+	"attributes": {
+		"agility": 76,
+		"ball_handling": 57,
+		"basketball_iq": 63,
+		"blocks": 73,
+		"close_finishing": 80,
+		"competitive_mentality": 66,
+		"consistency": 67,
+		"decision_making": 69,
+		"defensive_awareness": 67,
+		"dunking": 85,
+		"durability": 69,
+		"free_throw": 63,
+		"interior_defense": 64,
+		"layups": 69,
+		"leadership": 64,
+		"mid_range": 64,
+		"offensive_awareness": 67,
+		"passing": 68,
+		"perimeter_defense": 64,
+		"rebounding": 79,
+		"shot_selection": 56,
+		"speed": 76,
+		"stamina": 63,
+		"steals": 67,
+		"strength": 69,
+		"three_point": 53,
+		"vertical": 82,
+		"work_ethic": 64
+	},
+	"badges": [
+		"posterizer"
+	],
+	"display_name": "Joaquin Mireles",
+	"player_id": "joaquin_mireles",
+	"position": "PF",
+	"secondary_position": "SF",
+	"team": "Duluth Frost",
+	"tendencies": {
+		"drive_tendency": 70,
+		"offensive_rebound_tendency": 65
+	}
+}

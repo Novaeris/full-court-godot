@@ -1,0 +1,45 @@
+{
+	"attributes": {
+		"agility": 66,
+		"ball_handling": 58,
+		"basketball_iq": 67,
+		"blocks": 64,
+		"close_finishing": 63,
+		"competitive_mentality": 64,
+		"consistency": 73,
+		"decision_making": 62,
+		"defensive_awareness": 75,
+		"dunking": 58,
+		"durability": 64,
+		"free_throw": 64,
+		"interior_defense": 68,
+		"layups": 64,
+		"leadership": 66,
+		"mid_range": 66,
+		"offensive_awareness": 66,
+		"passing": 62,
+		"perimeter_defense": 83,
+		"rebounding": 66,
+		"shot_selection": 64,
+		"speed": 65,
+		"stamina": 75,
+		"steals": 74,
+		"strength": 63,
+		"three_point": 81,
+		"vertical": 62,
+		"work_ethic": 62
+	},
+	"badges": [
+		"corner_specialist",
+		"clamps"
+	],
+	"display_name": "Bram Lindqvist",
+	"player_id": "bram_lindqvist",
+	"position": "SG",
+	"secondary_position": "SF",
+	"team": "Mobile Tempest",
+	"tendencies": {
+		"foul_tendency": 35,
+		"three_point_tendency": 70
+	}
+}

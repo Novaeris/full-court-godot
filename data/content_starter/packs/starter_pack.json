@@ -1,9 +1,22 @@
 {
 	"card_ids": [
-		"starter_guard_base",
-		"starter_big_base"
+		"ian_marlowe_base",
+		"teodor_brask_base",
+		"kellan_drummond_base",
+		"cyrus_tallwood_base",
+		"nico_brandvold_base",
+		"evander_pike_base",
+		"hollis_granger_base",
+		"piers_calloway_base",
+		"tomas_eriksen_base",
+		"boone_harlan_base",
+		"quentin_ashdown_base",
+		"otis_pemberton_base",
+		"dmitri_kalloway_base",
+		"wendell_oakes_base",
+		"barnaby_stroud_base"
 	],
-	"name": "Starter Pack",
+	"name": "Founding Starter Collection",
 	"pack_id": "starter_pack",
 	"requires_features": [
 		"pack_fixed_v1"

@@ -1,0 +1,19 @@
+{
+	"category": "team_composition",
+	"challenge_id": "first_wins",
+	"description": "Win 3 games.",
+	"objective": {
+		"target": 3,
+		"type": "wins"
+	},
+	"requires_features": [
+		"challenge_v1"
+	],
+	"rewards": {
+		"pack_ids": [
+			"reward_pack"
+		]
+	},
+	"season_points": 10,
+	"title": "First Wins"
+}

@@ -1,0 +1,45 @@
+{
+	"attributes": {
+		"agility": 48,
+		"ball_handling": 46,
+		"basketball_iq": 49,
+		"blocks": 33,
+		"close_finishing": 52,
+		"competitive_mentality": 46,
+		"consistency": 50,
+		"decision_making": 51,
+		"defensive_awareness": 52,
+		"dunking": 42,
+		"durability": 50,
+		"free_throw": 65,
+		"interior_defense": 34,
+		"layups": 47,
+		"leadership": 47,
+		"mid_range": 59,
+		"offensive_awareness": 60,
+		"passing": 49,
+		"perimeter_defense": 50,
+		"rebounding": 38,
+		"shot_selection": 57,
+		"speed": 48,
+		"stamina": 52,
+		"steals": 50,
+		"strength": 40,
+		"three_point": 74,
+		"vertical": 46,
+		"work_ethic": 52
+	},
+	"badges": [
+		"catch_and_shoot",
+		"corner_specialist"
+	],
+	"display_name": "Nico Brandvold",
+	"player_id": "nico_brandvold",
+	"position": "SG",
+	"secondary_position": "PG",
+	"team": "Duluth Frost",
+	"tendencies": {
+		"drive_tendency": 25,
+		"three_point_tendency": 85
+	}
+}

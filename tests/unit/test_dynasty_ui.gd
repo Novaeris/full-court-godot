@@ -48,7 +48,13 @@ func _use_fixture() -> void:
 
 
 func test_empty_content_shows_onboarding_not_a_crash() -> void:
-	app.show_dynasty_home()
+	# the bundled release is now a complete, playable one (D-055), so the unplayable case is built on purpose: nobody can play C
+	var layout: Array = []
+	for i in FcDynastyFixture.PLAYER_COUNT:
+		layout.append(["PG", ""])
+	app.dynasty.catalog = FcDynastyFixture.catalog(0, "fcr_0123456789abcdef", layout, false)
+	assert_true(not app.dynasty.catalog.is_playable(), "this release cannot field a team")
+	app.dynasty_ui.show_entry()   # (show_dynasty_home would reload the bundled release, which is playable)
 	var t := _text(app)
 	assert_true("Dynasty needs content first" in t, "explains what to do")
 	assert_true("Create team" not in t, "no team can be created without enough content")

@@ -1,0 +1,44 @@
+{
+	"attributes": {
+		"agility": 73,
+		"ball_handling": 73,
+		"basketball_iq": 75,
+		"blocks": 65,
+		"close_finishing": 76,
+		"competitive_mentality": 74,
+		"consistency": 74,
+		"decision_making": 75,
+		"defensive_awareness": 76,
+		"dunking": 67,
+		"durability": 74,
+		"free_throw": 81,
+		"interior_defense": 72,
+		"layups": 70,
+		"leadership": 73,
+		"mid_range": 84,
+		"offensive_awareness": 76,
+		"passing": 76,
+		"perimeter_defense": 71,
+		"rebounding": 75,
+		"shot_selection": 74,
+		"speed": 71,
+		"stamina": 73,
+		"steals": 72,
+		"strength": 76,
+		"three_point": 92,
+		"vertical": 76,
+		"work_ethic": 75
+	},
+	"badges": [
+		"catch_and_shoot"
+	],
+	"display_name": "Magnus Ferrow",
+	"player_id": "magnus_ferrow",
+	"position": "PF",
+	"secondary_position": "C",
+	"team": "Boise Ironclads",
+	"tendencies": {
+		"post_tendency": 20,
+		"three_point_tendency": 68
+	}
+}

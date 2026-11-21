@@ -1,0 +1,20 @@
+{
+	"category": "shooting",
+	"challenge_id": "downtown",
+	"description": "Make 10 three-pointers in one game.",
+	"objective": {
+		"mode": "single_game",
+		"scope": "team",
+		"stat": "threes",
+		"target": 10,
+		"type": "stat"
+	},
+	"requires_features": [
+		"challenge_v1"
+	],
+	"rewards": {
+		"credits": 350
+	},
+	"season_points": 10,
+	"title": "Downtown"
+}

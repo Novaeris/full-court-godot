@@ -1,0 +1,44 @@
+{
+	"attributes": {
+		"agility": 49,
+		"ball_handling": 48,
+		"basketball_iq": 46,
+		"blocks": 43,
+		"close_finishing": 49,
+		"competitive_mentality": 49,
+		"consistency": 49,
+		"decision_making": 48,
+		"defensive_awareness": 48,
+		"dunking": 47,
+		"durability": 49,
+		"free_throw": 56,
+		"interior_defense": 47,
+		"layups": 46,
+		"leadership": 47,
+		"mid_range": 57,
+		"offensive_awareness": 54,
+		"passing": 52,
+		"perimeter_defense": 49,
+		"rebounding": 53,
+		"shot_selection": 48,
+		"speed": 44,
+		"stamina": 46,
+		"steals": 52,
+		"strength": 48,
+		"three_point": 68,
+		"vertical": 52,
+		"work_ethic": 52
+	},
+	"badges": [
+		"catch_and_shoot"
+	],
+	"display_name": "Quentin Ashdown",
+	"player_id": "quentin_ashdown",
+	"position": "PF",
+	"secondary_position": "SF",
+	"team": "Provo Summit",
+	"tendencies": {
+		"post_tendency": 20,
+		"three_point_tendency": 68
+	}
+}

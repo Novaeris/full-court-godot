@@ -1,0 +1,44 @@
+{
+	"attributes": {
+		"agility": 73,
+		"ball_handling": 62,
+		"basketball_iq": 70,
+		"blocks": 78,
+		"close_finishing": 70,
+		"competitive_mentality": 73,
+		"consistency": 71,
+		"decision_making": 72,
+		"defensive_awareness": 71,
+		"dunking": 68,
+		"durability": 73,
+		"free_throw": 83,
+		"interior_defense": 77,
+		"layups": 76,
+		"leadership": 74,
+		"mid_range": 87,
+		"offensive_awareness": 75,
+		"passing": 80,
+		"perimeter_defense": 73,
+		"rebounding": 81,
+		"shot_selection": 72,
+		"speed": 60,
+		"stamina": 73,
+		"steals": 75,
+		"strength": 71,
+		"three_point": 84,
+		"vertical": 71,
+		"work_ethic": 75
+	},
+	"badges": [
+		"catch_and_shoot"
+	],
+	"display_name": "Soren Valdis",
+	"player_id": "soren_valdis",
+	"position": "C",
+	"secondary_position": "PF",
+	"team": "Provo Summit",
+	"tendencies": {
+		"post_tendency": 40,
+		"three_point_tendency": 60
+	}
+}

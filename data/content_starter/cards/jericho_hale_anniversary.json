@@ -1,0 +1,20 @@
+{
+	"attributes": {
+		"ball_handling": 99,
+		"free_throw": 93,
+		"layups": 99,
+		"mid_range": 98,
+		"shot_selection": 92,
+		"three_point": 99
+	},
+	"card_id": "jericho_hale_anniversary",
+	"edition": "Anniversary Edition",
+	"player_id": "jericho_hale",
+	"rarity": "legendary",
+	"requires_features": [
+		"card_rarity_v1",
+		"card_overrides_v1"
+	],
+	"revision": 1,
+	"title": "Jericho Hale"
+}

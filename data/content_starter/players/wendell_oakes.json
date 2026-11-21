@@ -1,0 +1,40 @@
+{
+	"attributes": {
+		"agility": 50,
+		"ball_handling": 36,
+		"basketball_iq": 50,
+		"blocks": 51,
+		"close_finishing": 74,
+		"competitive_mentality": 50,
+		"consistency": 52,
+		"decision_making": 46,
+		"defensive_awareness": 46,
+		"dunking": 47,
+		"durability": 48,
+		"free_throw": 49,
+		"interior_defense": 52,
+		"layups": 59,
+		"leadership": 50,
+		"mid_range": 54,
+		"offensive_awareness": 57,
+		"passing": 46,
+		"perimeter_defense": 48,
+		"rebounding": 56,
+		"shot_selection": 46,
+		"speed": 35,
+		"stamina": 49,
+		"steals": 38,
+		"strength": 66,
+		"three_point": 33,
+		"vertical": 51,
+		"work_ethic": 50
+	},
+	"display_name": "Wendell Oakes",
+	"player_id": "wendell_oakes",
+	"position": "C",
+	"team": "Spokane Rapids",
+	"tendencies": {
+		"post_tendency": 85,
+		"three_point_tendency": 5
+	}
+}

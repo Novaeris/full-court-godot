@@ -1,0 +1,45 @@
+{
+	"attributes": {
+		"agility": 75,
+		"ball_handling": 81,
+		"basketball_iq": 63,
+		"blocks": 51,
+		"close_finishing": 65,
+		"competitive_mentality": 65,
+		"consistency": 63,
+		"decision_making": 69,
+		"defensive_awareness": 64,
+		"dunking": 68,
+		"durability": 63,
+		"free_throw": 73,
+		"interior_defense": 51,
+		"layups": 83,
+		"leadership": 67,
+		"mid_range": 79,
+		"offensive_awareness": 66,
+		"passing": 66,
+		"perimeter_defense": 67,
+		"rebounding": 53,
+		"shot_selection": 77,
+		"speed": 71,
+		"stamina": 63,
+		"steals": 64,
+		"strength": 54,
+		"three_point": 83,
+		"vertical": 66,
+		"work_ethic": 66
+	},
+	"badges": [
+		"ankle_breaker"
+	],
+	"display_name": "Mateo Quillfeather",
+	"player_id": "mateo_quillfeather",
+	"position": "PG",
+	"secondary_position": "SG",
+	"team": "Tucson Mirage",
+	"tendencies": {
+		"drive_tendency": 65,
+		"mid_range_tendency": 60,
+		"three_point_tendency": 55
+	}
+}

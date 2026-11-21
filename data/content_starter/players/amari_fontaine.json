@@ -1,0 +1,45 @@
+{
+	"attributes": {
+		"agility": 61,
+		"ball_handling": 65,
+		"basketball_iq": 57,
+		"blocks": 50,
+		"close_finishing": 60,
+		"competitive_mentality": 59,
+		"consistency": 60,
+		"decision_making": 58,
+		"defensive_awareness": 55,
+		"dunking": 61,
+		"durability": 55,
+		"free_throw": 57,
+		"interior_defense": 49,
+		"layups": 70,
+		"leadership": 57,
+		"mid_range": 72,
+		"offensive_awareness": 63,
+		"passing": 59,
+		"perimeter_defense": 59,
+		"rebounding": 57,
+		"shot_selection": 65,
+		"speed": 60,
+		"stamina": 60,
+		"steals": 60,
+		"strength": 57,
+		"three_point": 71,
+		"vertical": 61,
+		"work_ethic": 60
+	},
+	"badges": [
+		"catch_and_shoot"
+	],
+	"display_name": "Amari Fontaine",
+	"player_id": "amari_fontaine",
+	"position": "SF",
+	"secondary_position": "SG",
+	"team": "Tucson Mirage",
+	"tendencies": {
+		"drive_tendency": 55,
+		"mid_range_tendency": 65,
+		"three_point_tendency": 50
+	}
+}

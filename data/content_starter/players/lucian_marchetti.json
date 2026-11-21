@@ -1,0 +1,45 @@
+{
+	"attributes": {
+		"agility": 58,
+		"ball_handling": 60,
+		"basketball_iq": 56,
+		"blocks": 46,
+		"close_finishing": 55,
+		"competitive_mentality": 59,
+		"consistency": 58,
+		"decision_making": 59,
+		"defensive_awareness": 59,
+		"dunking": 50,
+		"durability": 60,
+		"free_throw": 73,
+		"interior_defense": 49,
+		"layups": 55,
+		"leadership": 61,
+		"mid_range": 69,
+		"offensive_awareness": 65,
+		"passing": 58,
+		"perimeter_defense": 56,
+		"rebounding": 50,
+		"shot_selection": 69,
+		"speed": 57,
+		"stamina": 56,
+		"steals": 60,
+		"strength": 48,
+		"three_point": 85,
+		"vertical": 58,
+		"work_ethic": 56
+	},
+	"badges": [
+		"catch_and_shoot",
+		"corner_specialist"
+	],
+	"display_name": "Lucian Marchetti",
+	"player_id": "lucian_marchetti",
+	"position": "SG",
+	"secondary_position": "SF",
+	"team": "Wichita Gale",
+	"tendencies": {
+		"drive_tendency": 25,
+		"three_point_tendency": 85
+	}
+}

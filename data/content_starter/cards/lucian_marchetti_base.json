@@ -1,0 +1,16 @@
+{
+	"card_id": "lucian_marchetti_base",
+	"edition": "Founding Edition",
+	"player_id": "lucian_marchetti",
+	"price": {
+		"amount": 1200,
+		"currency": "credits"
+	},
+	"rarity": "uncommon",
+	"requires_features": [
+		"card_rarity_v1",
+		"card_market_v1"
+	],
+	"revision": 1,
+	"title": "Lucian Marchetti"
+}

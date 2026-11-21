@@ -1,0 +1,45 @@
+{
+	"attributes": {
+		"agility": 47,
+		"ball_handling": 69,
+		"basketball_iq": 63,
+		"blocks": 31,
+		"close_finishing": 45,
+		"competitive_mentality": 49,
+		"consistency": 45,
+		"decision_making": 60,
+		"defensive_awareness": 48,
+		"dunking": 37,
+		"durability": 45,
+		"free_throw": 47,
+		"interior_defense": 34,
+		"layups": 47,
+		"leadership": 56,
+		"mid_range": 45,
+		"offensive_awareness": 56,
+		"passing": 68,
+		"perimeter_defense": 46,
+		"rebounding": 35,
+		"shot_selection": 49,
+		"speed": 51,
+		"stamina": 45,
+		"steals": 49,
+		"strength": 36,
+		"three_point": 50,
+		"vertical": 48,
+		"work_ethic": 51
+	},
+	"badges": [
+		"pick_and_roll_maestro"
+	],
+	"display_name": "Ian Marlowe",
+	"player_id": "ian_marlowe",
+	"position": "PG",
+	"secondary_position": "SG",
+	"team": "Savannah Mariners",
+	"tendencies": {
+		"drive_tendency": 45,
+		"pass_tendency": 78,
+		"three_point_tendency": 40
+	}
+}

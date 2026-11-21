@@ -1,0 +1,11 @@
+{
+	"card_id": "anders_kjell_base",
+	"edition": "Founding Edition",
+	"player_id": "anders_kjell",
+	"rarity": "legendary",
+	"requires_features": [
+		"card_rarity_v1"
+	],
+	"revision": 1,
+	"title": "Anders Kjell"
+}

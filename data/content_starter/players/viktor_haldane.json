@@ -1,0 +1,44 @@
+{
+	"attributes": {
+		"agility": 56,
+		"ball_handling": 60,
+		"basketball_iq": 61,
+		"blocks": 54,
+		"close_finishing": 59,
+		"competitive_mentality": 59,
+		"consistency": 59,
+		"decision_making": 61,
+		"defensive_awareness": 57,
+		"dunking": 55,
+		"durability": 56,
+		"free_throw": 63,
+		"interior_defense": 59,
+		"layups": 57,
+		"leadership": 59,
+		"mid_range": 69,
+		"offensive_awareness": 63,
+		"passing": 60,
+		"perimeter_defense": 55,
+		"rebounding": 60,
+		"shot_selection": 56,
+		"speed": 56,
+		"stamina": 61,
+		"steals": 59,
+		"strength": 56,
+		"three_point": 71,
+		"vertical": 57,
+		"work_ethic": 59
+	},
+	"badges": [
+		"catch_and_shoot"
+	],
+	"display_name": "Viktor Haldane",
+	"player_id": "viktor_haldane",
+	"position": "PF",
+	"secondary_position": "SF",
+	"team": "Tulsa Wildfire",
+	"tendencies": {
+		"post_tendency": 20,
+		"three_point_tendency": 68
+	}
+}

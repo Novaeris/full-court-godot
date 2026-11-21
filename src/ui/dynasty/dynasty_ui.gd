@@ -100,7 +100,7 @@ func _content_text() -> String:
 	var report: FcContentLoadReport = ctl.content.report if ctl.content != null else null
 	var text := "Content release: %s (%d cards, %d packs, %d challenges)" % [cat.release_id() if cat.release_id() != "" else "none loaded", cat.card_ids().size(), cat.packs().size(), cat.challenges().size()]
 	if report != null and report.used_starter:
-		text += ". This is the small bundled starter release; publish your content from Creator Studio."
+		text += ". This is the bundled Founding Series release; a release published from Creator Studio replaces it."
 	elif report != null and report.is_degraded():
 		text += ". " + report.summary()
 	return text

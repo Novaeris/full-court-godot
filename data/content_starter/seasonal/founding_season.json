@@ -1,0 +1,208 @@
+{
+	"active": true,
+	"challenge_ids": [
+		"century_mark",
+		"downtown",
+		"at_the_line",
+		"sharing_the_ball",
+		"lockdown",
+		"the_wall",
+		"glass_eaters",
+		"first_wins",
+		"ten_wins",
+		"statement_win",
+		"underdogs",
+		"collector",
+		"rare_finds",
+		"duplicates_pay"
+	],
+	"description": "The first season of Full Court Dynasty: play games, finish challenges and win both tournaments.",
+	"milestones": [
+		{
+			"id": "tip_off",
+			"name": "Tip-off",
+			"points": 20,
+			"rewards": {
+				"credits": 300
+			}
+		},
+		{
+			"id": "rolling",
+			"name": "Rolling",
+			"points": 50,
+			"rewards": {
+				"tokens": 3
+			}
+		},
+		{
+			"id": "contender",
+			"name": "Contender",
+			"points": 90,
+			"rewards": {
+				"pack_ids": [
+					"pro_pack"
+				]
+			}
+		},
+		{
+			"id": "champion_run",
+			"name": "Champion Run",
+			"points": 140,
+			"rewards": {
+				"credits": 1000,
+				"pack_ids": [
+					"elite_pack"
+				]
+			}
+		}
+	],
+	"name": "Founding Season",
+	"objectives": [
+		{
+			"id": "wins_5",
+			"objective": {
+				"target": 5,
+				"type": "wins"
+			},
+			"points": 15,
+			"title": "Win 5 games"
+		},
+		{
+			"id": "wins_20",
+			"objective": {
+				"target": 20,
+				"type": "wins"
+			},
+			"points": 30,
+			"title": "Win 20 games"
+		}
+	],
+	"requires_features": [
+		"season_v1"
+	],
+	"season_id": "founding_season",
+	"tournaments": [
+		{
+			"entry_fee": {
+				"amount": 200,
+				"currency": "credits"
+			},
+			"name": "Founders Cup",
+			"rewards": {
+				"champion": {
+					"credits": 2500,
+					"tokens": 5
+				},
+				"finalist": {
+					"credits": 1200
+				},
+				"quarterfinal": {
+					"credits": 250
+				},
+				"semifinal": {
+					"credits": 600
+				}
+			},
+			"teams": [
+				{
+					"abbreviation": "SAV",
+					"name": "Savannah Mariners",
+					"rating": 52
+				},
+				{
+					"abbreviation": "DUL",
+					"name": "Duluth Frost",
+					"rating": 55
+				},
+				{
+					"abbreviation": "REN",
+					"name": "Reno Cinders",
+					"rating": 58
+				},
+				{
+					"abbreviation": "AKR",
+					"name": "Akron Foundry",
+					"rating": 61
+				},
+				{
+					"abbreviation": "BOI",
+					"name": "Boise Ironclads",
+					"rating": 64
+				},
+				{
+					"abbreviation": "TUC",
+					"name": "Tucson Mirage",
+					"rating": 67
+				},
+				{
+					"abbreviation": "OMA",
+					"name": "Omaha Stampede",
+					"rating": 70
+				}
+			],
+			"tournament_id": "founders_cup"
+		},
+		{
+			"entry_fee": {
+				"amount": 2,
+				"currency": "tokens"
+			},
+			"name": "Pro Invitational",
+			"rewards": {
+				"champion": {
+					"pack_ids": [
+						"elite_pack"
+					],
+					"tokens": 12
+				},
+				"finalist": {
+					"tokens": 6
+				},
+				"quarterfinal": {
+					"credits": 800
+				},
+				"semifinal": {
+					"tokens": 3
+				}
+			},
+			"teams": [
+				{
+					"abbreviation": "TUL",
+					"name": "Tulsa Wildfire",
+					"rating": 64
+				},
+				{
+					"abbreviation": "SPO",
+					"name": "Spokane Rapids",
+					"rating": 67
+				},
+				{
+					"abbreviation": "FRE",
+					"name": "Fresno Embers",
+					"rating": 70
+				},
+				{
+					"abbreviation": "WIC",
+					"name": "Wichita Gale",
+					"rating": 73
+				},
+				{
+					"abbreviation": "MOB",
+					"name": "Mobile Tempest",
+					"rating": 76
+				},
+				{
+					"abbreviation": "PRO",
+					"name": "Provo Summit",
+					"rating": 79
+				},
+				{
+					"abbreviation": "LAR",
+					"name": "Laredo Outlaws",
+					"rating": 82
+				}
+			],
+			"tournament_id": "pro_invitational"
+		}
+	]
+}

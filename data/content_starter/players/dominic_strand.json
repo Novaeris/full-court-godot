@@ -1,0 +1,43 @@
+{
+	"attributes": {
+		"agility": 77,
+		"ball_handling": 75,
+		"basketball_iq": 64,
+		"blocks": 53,
+		"close_finishing": 54,
+		"competitive_mentality": 62,
+		"consistency": 66,
+		"decision_making": 65,
+		"defensive_awareness": 68,
+		"dunking": 66,
+		"durability": 65,
+		"free_throw": 68,
+		"interior_defense": 66,
+		"layups": 62,
+		"leadership": 68,
+		"mid_range": 63,
+		"offensive_awareness": 62,
+		"passing": 72,
+		"perimeter_defense": 88,
+		"rebounding": 52,
+		"shot_selection": 68,
+		"speed": 80,
+		"stamina": 74,
+		"steals": 89,
+		"strength": 64,
+		"three_point": 59,
+		"vertical": 65,
+		"work_ethic": 64
+	},
+	"badges": [
+		"clamps"
+	],
+	"display_name": "Dominic Strand",
+	"player_id": "dominic_strand",
+	"position": "PG",
+	"team": "Boise Ironclads",
+	"tendencies": {
+		"gamble_tendency": 70,
+		"pass_tendency": 60
+	}
+}

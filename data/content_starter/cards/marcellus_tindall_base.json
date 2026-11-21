@@ -1,0 +1,16 @@
+{
+	"card_id": "marcellus_tindall_base",
+	"edition": "Founding Edition",
+	"player_id": "marcellus_tindall",
+	"price": {
+		"amount": 3500,
+		"currency": "credits"
+	},
+	"rarity": "rare",
+	"requires_features": [
+		"card_rarity_v1",
+		"card_market_v1"
+	],
+	"revision": 1,
+	"title": "Marcellus Tindall"
+}

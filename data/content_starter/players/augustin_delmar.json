@@ -1,0 +1,44 @@
+{
+	"attributes": {
+		"agility": 73,
+		"ball_handling": 61,
+		"basketball_iq": 85,
+		"blocks": 99,
+		"close_finishing": 80,
+		"competitive_mentality": 85,
+		"consistency": 84,
+		"decision_making": 79,
+		"defensive_awareness": 91,
+		"dunking": 85,
+		"durability": 84,
+		"free_throw": 68,
+		"interior_defense": 99,
+		"layups": 80,
+		"leadership": 85,
+		"mid_range": 71,
+		"offensive_awareness": 85,
+		"passing": 68,
+		"perimeter_defense": 82,
+		"rebounding": 95,
+		"shot_selection": 85,
+		"speed": 67,
+		"stamina": 84,
+		"steals": 80,
+		"strength": 93,
+		"three_point": 57,
+		"vertical": 94,
+		"work_ethic": 80
+	},
+	"badges": [
+		"rim_protector"
+	],
+	"display_name": "Augustin Delmar",
+	"player_id": "augustin_delmar",
+	"position": "C",
+	"secondary_position": "PF",
+	"team": "Laredo Outlaws",
+	"tendencies": {
+		"foul_tendency": 55,
+		"post_tendency": 60
+	}
+}

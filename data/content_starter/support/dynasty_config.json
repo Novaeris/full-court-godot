@@ -1,0 +1,9 @@
+{
+	"requires_features": [
+		"dynasty_config_v1"
+	],
+	"starter_credits": 2000,
+	"starter_pack_id": "starter_pack",
+	"starter_tokens": 5,
+	"support_id": "dynasty_config"
+}

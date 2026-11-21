@@ -1,49 +1,667 @@
 {
-	"approval_note": "Bundled starter content (fallback when no release loads)",
+	"approval_note": "Bundled Founding Series release (D-055): the first playable Dynasty content",
 	"approved_by": "Full Court build tool",
 	"content_version": 1,
 	"files": [
 		{
-			"bytes": 172,
+			"bytes": 293,
 			"kind": "card",
-			"path": "cards/starter_big_base.json",
-			"sha256": "ea2a02e09cd90e0c48f0fd4a28a8455ed12482ad9d47e5afdddcddbecc33c9ed"
+			"path": "cards/amari_fontaine_base.json",
+			"sha256": "c8e1721db5aea9e133721f2baf69f9a423df766e1763b42baca0c2b0f4c78a24"
 		},
 		{
-			"bytes": 178,
+			"bytes": 210,
 			"kind": "card",
-			"path": "cards/starter_guard_base.json",
-			"sha256": "a445d4ba3a20739916ba036067303c2da1e8dc4a40c7b3f12b7fe98179556544"
+			"path": "cards/anders_kjell_base.json",
+			"sha256": "1680befd0854ebe6840450f43272440b4a353423553be728b10ec9d13b083c35"
 		},
 		{
-			"bytes": 165,
+			"bytes": 199,
+			"kind": "card",
+			"path": "cards/ansel_voss_base.json",
+			"sha256": "c52d90b1379171e04e5a77823347ef3410b8a92957aeaf4019f98d9ac00e31c8"
+		},
+		{
+			"bytes": 399,
+			"kind": "card",
+			"path": "cards/augustin_delmar_anniversary.json",
+			"sha256": "13825b5538bc0d111a9917fc07b25d908e4badc45ad0961cb1e1f710238f646c"
+		},
+		{
+			"bytes": 219,
+			"kind": "card",
+			"path": "cards/augustin_delmar_base.json",
+			"sha256": "9706fe0817c0a6dcc14ae698675a4a8dbc3417ffc97566fe726a059c130f73a8"
+		},
+		{
+			"bytes": 293,
+			"kind": "card",
+			"path": "cards/barnaby_stroud_base.json",
+			"sha256": "5987cae0401aea2091f00ed37c7c7449c5b8db8eee1884cad5675f9036b3c67b"
+		},
+		{
+			"bytes": 284,
+			"kind": "card",
+			"path": "cards/boone_harlan_base.json",
+			"sha256": "772d89ba281bd65e766161c3a929e8a7323e946838349208cd061d0a2a4634d3"
+		},
+		{
+			"bytes": 289,
+			"kind": "card",
+			"path": "cards/bram_lindqvist_base.json",
+			"sha256": "8871c7f12a15ee1cd9fb87cdf3e254af2feb42873cb2dd1aa71fac17be7eb84f"
+		},
+		{
+			"bytes": 385,
+			"kind": "card",
+			"path": "cards/bram_lindqvist_corner.json",
+			"sha256": "665a46ed98a3c5c4287576764f419bb507b1f305294df7ab52d3c926860cfe9b"
+		},
+		{
+			"bytes": 290,
+			"kind": "card",
+			"path": "cards/cyrus_tallwood_base.json",
+			"sha256": "164a9d31c79c533271535dd4cd03ce34cd5030e3a0837f15610ab89f61f9a734"
+		},
+		{
+			"bytes": 293,
+			"kind": "card",
+			"path": "cards/dmitri_kalloway_base.json",
+			"sha256": "bdd265a40ea1f54bd6c24d51c1b16b0183c4fc5d5f21c595e03439afdd14eb3e"
+		},
+		{
+			"bytes": 289,
+			"kind": "card",
+			"path": "cards/dominic_strand_base.json",
+			"sha256": "96bdb1bc77ad9df21df5870b5e7d4918a68fb29902ce9a23264e4be7e88d4341"
+		},
+		{
+			"bytes": 373,
+			"kind": "card",
+			"path": "cards/dominic_strand_lockdown.json",
+			"sha256": "5f665134c27e91dadbf9b6989204bf0599a14f8b8e32789d0ce3c490f6f4aab4"
+		},
+		{
+			"bytes": 283,
+			"kind": "card",
+			"path": "cards/emeka_durand_base.json",
+			"sha256": "8bc671ab88f6db0f487224c87dbf4a44187aa6c55f8543036c4e7bbe8e92aae5"
+		},
+		{
+			"bytes": 390,
+			"kind": "card",
+			"path": "cards/emeka_durand_enforcer.json",
+			"sha256": "d4efcee7e45916cc7e4e0abeac2c3c59c8aa14daa86987b3b05e7ec821d6156f"
+		},
+		{
+			"bytes": 287,
+			"kind": "card",
+			"path": "cards/evander_pike_base.json",
+			"sha256": "1c77616173f3faf6f1c6ca92fedbb4af867748423fecd2f77abf89539fe69057"
+		},
+		{
+			"bytes": 292,
+			"kind": "card",
+			"path": "cards/felix_aranguren_base.json",
+			"sha256": "1b98abd64bf3cb9a4200eaa14980d86ae50d6569c4f22c4820941b3480d2149a"
+		},
+		{
+			"bytes": 396,
+			"kind": "card",
+			"path": "cards/felix_aranguren_pace_and_space.json",
+			"sha256": "5eee4ebf2d2b96d63650816d7b540d07f76fc1fe121b0347dc1a00afcd30a708"
+		},
+		{
+			"bytes": 295,
+			"kind": "card",
+			"path": "cards/gideon_wrenfield_base.json",
+			"sha256": "5b069790c18def311fc2ecf950cf4be95eaffc43b827c57632b06681c2416c4b"
+		},
+		{
+			"bytes": 290,
+			"kind": "card",
+			"path": "cards/hollis_granger_base.json",
+			"sha256": "bd4078e823a0804ce56ab7a0a607500411337468f76c738060890188d38669ad"
+		},
+		{
+			"bytes": 281,
+			"kind": "card",
+			"path": "cards/ian_marlowe_base.json",
+			"sha256": "c2e8d1ebc730c49826a375ea294dfd3074fac13eab32e400bba21b2d69ef8ff4"
+		},
+		{
+			"bytes": 296,
+			"kind": "card",
+			"path": "cards/ibrahim_soltani_base.json",
+			"sha256": "b954e33650c4c8d0560112515b2122d91d36bbfd9b7e99b235d1e129a7b1693f"
+		},
+		{
+			"bytes": 386,
+			"kind": "card",
+			"path": "cards/jericho_hale_anniversary.json",
+			"sha256": "783573a88750b5f3990441a235d8aa0a1435c0488d4124f1c084be4cec53f900"
+		},
+		{
+			"bytes": 210,
+			"kind": "card",
+			"path": "cards/jericho_hale_base.json",
+			"sha256": "f4589f5856766e2d55f0857119a6813815452fdb8999a36884b6b87c923ca07b"
+		},
+		{
+			"bytes": 292,
+			"kind": "card",
+			"path": "cards/joaquin_mireles_base.json",
+			"sha256": "34a6e03c601ab536ca577108b0e80d6f9f40987c3e34741faea03f5f083526e7"
+		},
+		{
+			"bytes": 296,
+			"kind": "card",
+			"path": "cards/kellan_drummond_base.json",
+			"sha256": "4e7ba86ff6a514fa3552bc863cf8bb8a755f29221ce51f37a41458f9762f1d50"
+		},
+		{
+			"bytes": 208,
+			"kind": "card",
+			"path": "cards/kofi_adebanjo_base.json",
+			"sha256": "c57859e455b8c7a0f0888dc515be7401124b4489634c9dcd005cec1bf4030159"
+		},
+		{
+			"bytes": 289,
+			"kind": "card",
+			"path": "cards/luca_santovena_base.json",
+			"sha256": "1fbb74a888a673af60f788f42905860eac0b4f971eab4f791fab883e2f3e4aab"
+		},
+		{
+			"bytes": 299,
+			"kind": "card",
+			"path": "cards/lucian_marchetti_base.json",
+			"sha256": "21cd58e3c0827bb0919b6d8e83d48e40ebe9473ff8da5e0ed6cc11bdfa58f7d1"
+		},
+		{
+			"bytes": 208,
+			"kind": "card",
+			"path": "cards/magnus_ferrow_base.json",
+			"sha256": "5b70e6ed9bda104a186f876210ec179ea24687847bd13ef890b630ba47f1f31f"
+		},
+		{
+			"bytes": 298,
+			"kind": "card",
+			"path": "cards/marcellus_tindall_base.json",
+			"sha256": "ce609bb697a7ace77cbb34a279316c8c449b6d9e68f8153b8b288dd7ea0b76c9"
+		},
+		{
+			"bytes": 301,
+			"kind": "card",
+			"path": "cards/mateo_quillfeather_base.json",
+			"sha256": "b0cf4a69017a5ac15928e946bb3de72dc8145e75baae64d9841b971fd7abea40"
+		},
+		{
+			"bytes": 290,
+			"kind": "card",
+			"path": "cards/nico_brandvold_base.json",
+			"sha256": "fe13d04b882e56299acf42802af5410c2a0fd45cf2a3867a2c23243130223b37"
+		},
+		{
+			"bytes": 293,
+			"kind": "card",
+			"path": "cards/otis_pemberton_base.json",
+			"sha256": "9bf4d28b8fedf3ceae987ead1b0c1466a6a2df6e11f972ae66e1b919140e4f98"
+		},
+		{
+			"bytes": 290,
+			"kind": "card",
+			"path": "cards/piers_calloway_base.json",
+			"sha256": "7ca8c2896cd31baf61083b06e01d7086d3cffa3492c790f8941ee46331e015a3"
+		},
+		{
+			"bytes": 293,
+			"kind": "card",
+			"path": "cards/quentin_ashdown_base.json",
+			"sha256": "81a860edfbb510074d58f1c8ea90f24756eefd8757452b6eff31c0bb35c5d078"
+		},
+		{
+			"bytes": 296,
+			"kind": "card",
+			"path": "cards/rafael_oyelaran_base.json",
+			"sha256": "971b6bfdd428abf33ce95111945a4556243e495abb0eeb7216a8ca635dbbc602"
+		},
+		{
+			"bytes": 211,
+			"kind": "card",
+			"path": "cards/remy_delacourt_base.json",
+			"sha256": "c1ee92f9b71110310fe838077f485a352cca627fadcffa506d93689c260d6820"
+		},
+		{
+			"bytes": 220,
+			"kind": "card",
+			"path": "cards/silas_ravenscroft_base.json",
+			"sha256": "bd70c486a179971a7db3f087961f9cf6b97b035f561cbb3f660e62883b6cc4fb"
+		},
+		{
+			"bytes": 205,
+			"kind": "card",
+			"path": "cards/soren_valdis_base.json",
+			"sha256": "cd8acaa92809a12b9e484272552bc55e14e3fce87c3db6aa28eaa1b8a82b117b"
+		},
+		{
+			"bytes": 284,
+			"kind": "card",
+			"path": "cards/teodor_brask_base.json",
+			"sha256": "52321272203cba2a4918b2da61dd0e50d11c10baa63079b01911d3c942b14457"
+		},
+		{
+			"bytes": 208,
+			"kind": "card",
+			"path": "cards/thaddeus_lane_base.json",
+			"sha256": "6fbff9c074c7c9ba9858d70b468bf4c7098a75c70645550edf03808edee02c11"
+		},
+		{
+			"bytes": 290,
+			"kind": "card",
+			"path": "cards/tomas_eriksen_base.json",
+			"sha256": "e78badfc411a4b13efacf5c096dce110fe4e92938d2d1dad5e3a794089c3459e"
+		},
+		{
+			"bytes": 293,
+			"kind": "card",
+			"path": "cards/viktor_haldane_base.json",
+			"sha256": "5a1a4d0956fd77b3224cad9f89623d87f9e7c25064afbbd96d1e12ad5c9a0e99"
+		},
+		{
+			"bytes": 287,
+			"kind": "card",
+			"path": "cards/wendell_oakes_base.json",
+			"sha256": "0b5447443278d4655f685eac55805e7bfada2cae431dd408b34a492aa108500a"
+		},
+		{
+			"bytes": 286,
+			"kind": "card",
+			"path": "cards/zaire_colburn_base.json",
+			"sha256": "38e110e845fc554e4482a245d8de226f0cf4bfec12b0a7d32694dba80b3c73e7"
+		},
+		{
+			"bytes": 365,
+			"kind": "challenge",
+			"path": "challenges/at_the_line.json",
+			"sha256": "49c234424c72e8d15334fc211c3c71ef49d4c2b34b3b8847e895a14ea5782065"
+		},
+		{
+			"bytes": 362,
+			"kind": "challenge",
+			"path": "challenges/century_mark.json",
+			"sha256": "c7f8f98e4d1d1779c1aed7abc6f9fe0bccf15322a6509e5e1251baa9440ac712"
+		},
+		{
+			"bytes": 315,
+			"kind": "challenge",
+			"path": "challenges/collector.json",
+			"sha256": "c35c7e46b52120b6826699e050605ef6f8cf934cbbad638516cf6d667a469904"
+		},
+		{
+			"bytes": 352,
+			"kind": "challenge",
+			"path": "challenges/downtown.json",
+			"sha256": "a60f208d50885e5385200d9fe6c89c4e773687f561df38005bac0d73c13b537f"
+		},
+		{
+			"bytes": 316,
+			"kind": "challenge",
+			"path": "challenges/duplicates_pay.json",
+			"sha256": "094c3b20f6caf1209ecf0feb765e8d3c7b5df7bb621d6bac3a73b67bfb8e42b5"
+		},
+		{
+			"bytes": 296,
+			"kind": "challenge",
+			"path": "challenges/first_wins.json",
+			"sha256": "f989a67786833d8ac5816c173313ed07fb3230ac6fa18d7e57e1c3eeea5d4f8f"
+		},
+		{
+			"bytes": 373,
+			"kind": "challenge",
+			"path": "challenges/glass_eaters.json",
+			"sha256": "5f9d6ddf1351be5fccdcd4a05073703c13db6166f802ac980e702de7ef10448b"
+		},
+		{
+			"bytes": 350,
+			"kind": "challenge",
+			"path": "challenges/lockdown.json",
+			"sha256": "3c23d0d3c8b9d229908ee9d57dc330627bfb0e327f73a8fce628dfd2333b5194"
+		},
+		{
+			"bytes": 346,
+			"kind": "challenge",
+			"path": "challenges/rare_finds.json",
+			"sha256": "a1f0c918c001bdf451c95d47caf3aa259e4abc52a742a6a08d62ded713f9971f"
+		},
+		{
+			"bytes": 386,
+			"kind": "challenge",
+			"path": "challenges/sharing_the_ball.json",
+			"sha256": "3fd222278166345ecde7978e4c297c26434f042a720e38a356be2232d63f85a1"
+		},
+		{
+			"bytes": 309,
+			"kind": "challenge",
+			"path": "challenges/statement_win.json",
+			"sha256": "921d1866be552b960f421276fba96f69b29546ac6bcf7e52837447faec10f6f9"
+		},
+		{
+			"bytes": 312,
+			"kind": "challenge",
+			"path": "challenges/ten_wins.json",
+			"sha256": "d2ef8bc4753de8af4041e943de7dfa7c5032bc2207850e4b3f39871df86f1b11"
+		},
+		{
+			"bytes": 348,
+			"kind": "challenge",
+			"path": "challenges/the_wall.json",
+			"sha256": "072a9f296b819b637d6e7cd26a95e83e7097f335d4d6dc76de6f7d52af2f6b2f"
+		},
+		{
+			"bytes": 341,
+			"kind": "challenge",
+			"path": "challenges/underdogs.json",
+			"sha256": "bd621757b7e0a84c74f65d9bb0c9007f8dd15d980ed4478d87dcfe8a2d5d24fc"
+		},
+		{
+			"bytes": 1584,
+			"kind": "pack",
+			"path": "packs/elite_pack.json",
+			"sha256": "a93927c8fc61fcaf2935e3089de768a0b4f8092863b9c3294204ab6ba5610bcd"
+		},
+		{
+			"bytes": 1537,
+			"kind": "pack",
+			"path": "packs/pro_pack.json",
+			"sha256": "50d4a301efb0f4af5083e8c8a53bf640c20f22d87a656ecd9422cc10894ebc5e"
+		},
+		{
+			"bytes": 741,
+			"kind": "pack",
+			"path": "packs/reward_pack.json",
+			"sha256": "f0a72c4af18c5d0bc9e0cf4879f2c81d5e5f39f4ca210bee3756367b09541be9"
+		},
+		{
+			"bytes": 1544,
+			"kind": "pack",
+			"path": "packs/rookie_pack.json",
+			"sha256": "5e6265dc24727c31d039925a3033bba50d912470fead1905d45ae24d87ecb5d4"
+		},
+		{
+			"bytes": 501,
 			"kind": "pack",
 			"path": "packs/starter_pack.json",
-			"sha256": "dd4afc438eaf10e98975bed77c8c15c35b1fccf84c98ad47c8deb4f5918def15"
+			"sha256": "f552660ee368d5de8145c2ddf4ccf797fc6ca60cb12754077b81982eb4bbf932"
 		},
 		{
-			"bytes": 172,
+			"bytes": 892,
 			"kind": "player",
-			"path": "players/starter_big.json",
-			"sha256": "a95c382bd8728169c17c5533fcb0a4683a8b6d5e933ba3201ef3aac9e71b8e44"
+			"path": "players/amari_fontaine.json",
+			"sha256": "439ab6c492cfb453726ff520b914ec9dddc6ff3348c4b61dd90fb55cda2d6e2a"
 		},
 		{
-			"bytes": 167,
+			"bytes": 845,
 			"kind": "player",
-			"path": "players/starter_guard.json",
-			"sha256": "e3d75fa248d23798ec0bf2a4197a9ba840ed3ae2b983e4cd6cc6e68d51bf51e1"
+			"path": "players/anders_kjell.json",
+			"sha256": "a3b812a4c6e70d252dadff4eaf89f035edf4540da2800ff7a6f8eb7b2b85d338"
+		},
+		{
+			"bytes": 857,
+			"kind": "player",
+			"path": "players/ansel_voss.json",
+			"sha256": "02e3b1e1e67dcf00606ad4cc3324d3020c562c75a379a8e3ebee199139301180"
+		},
+		{
+			"bytes": 856,
+			"kind": "player",
+			"path": "players/augustin_delmar.json",
+			"sha256": "5b3edab99a38f6cbbf611c836a4c55098a928280efff853954092f4b287a4655"
+		},
+		{
+			"bytes": 853,
+			"kind": "player",
+			"path": "players/barnaby_stroud.json",
+			"sha256": "a9f508479ca68776a743f9e0f1d85bfde10d33bafdff2e643142e46f94f854b8"
+		},
+		{
+			"bytes": 887,
+			"kind": "player",
+			"path": "players/boone_harlan.json",
+			"sha256": "d614d0217d779d3672493408aa42960ee15e53c3b10339a41a6f39c7d0569982"
+		},
+		{
+			"bytes": 878,
+			"kind": "player",
+			"path": "players/bram_lindqvist.json",
+			"sha256": "ad1df2e9cc75ad2507d17eb225817e4f26ffe3bebc4588c21f4cb35fe6efb05a"
+		},
+		{
+			"bytes": 878,
+			"kind": "player",
+			"path": "players/cyrus_tallwood.json",
+			"sha256": "011ed6af20c0d32e2f317045bcb524caac4a249f86d6b7f966fb911b0555cc58"
+		},
+		{
+			"bytes": 868,
+			"kind": "player",
+			"path": "players/dmitri_kalloway.json",
+			"sha256": "7dcccaa0402b21f6520456a47d8e416ceb75d4c2de6ddf77248d8be1b96688e6"
+		},
+		{
+			"bytes": 822,
+			"kind": "player",
+			"path": "players/dominic_strand.json",
+			"sha256": "71f16e9b187875bad3270bf0f4b2004e55befd452a49e664f9098b6a980f7398"
+		},
+		{
+			"bytes": 886,
+			"kind": "player",
+			"path": "players/emeka_durand.json",
+			"sha256": "f26fccbf2f655aeee3f336f9bd483de7b1d9ceb086867da5957a4f5a1730bb41"
+		},
+		{
+			"bytes": 826,
+			"kind": "player",
+			"path": "players/evander_pike.json",
+			"sha256": "fcad9f4e79eaaeff24877a48d998488ebeb659eb63376c0bd22e66010bb37951"
+		},
+		{
+			"bytes": 863,
+			"kind": "player",
+			"path": "players/felix_aranguren.json",
+			"sha256": "065e527ec756d8135eba3288e444ca3af4786dcc5d9e706d08ea29661e82076d"
+		},
+		{
+			"bytes": 853,
+			"kind": "player",
+			"path": "players/gideon_wrenfield.json",
+			"sha256": "bdb045c32fd133c263061c8e660148e525e42bf62ad577814f7a702caaa4a38b"
+		},
+		{
+			"bytes": 848,
+			"kind": "player",
+			"path": "players/hollis_granger.json",
+			"sha256": "5e32dad58c4a762680f057c317e5c640150cae4aa75d9fdf6a07d3389a1f65ed"
+		},
+		{
+			"bytes": 891,
+			"kind": "player",
+			"path": "players/ian_marlowe.json",
+			"sha256": "d30de5553186d2bc46f1a40f4fbd9f663f9db0075fdd562b453567c6e77826ea"
+		},
+		{
+			"bytes": 797,
+			"kind": "player",
+			"path": "players/ibrahim_soltani.json",
+			"sha256": "259edb2f2c8ad49fab50c12384610823a6b2b3f8fc8f84bf41574a29f6aabb3f"
+		},
+		{
+			"bytes": 887,
+			"kind": "player",
+			"path": "players/jericho_hale.json",
+			"sha256": "7bd7c5fc77293b1e35e061df2dd0c388193f38ca6ac331b70d0526d43732041d"
+		},
+		{
+			"bytes": 866,
+			"kind": "player",
+			"path": "players/joaquin_mireles.json",
+			"sha256": "102583bf20b4f6294036ba177185930bbd8d693cb3b3a8cbd409a4ad8f97a11d"
+		},
+		{
+			"bytes": 891,
+			"kind": "player",
+			"path": "players/kellan_drummond.json",
+			"sha256": "bedd7a851c62715659962ec0788d50d005bb6ad0081d80f9bf44a0bd34f564ae"
+		},
+		{
+			"bytes": 856,
+			"kind": "player",
+			"path": "players/kofi_adebanjo.json",
+			"sha256": "392948671751ab93e85ff1b9cee5e4aaa70784eea640fa3157ebc5046bf12ae3"
+		},
+		{
+			"bytes": 892,
+			"kind": "player",
+			"path": "players/luca_santovena.json",
+			"sha256": "f45ceeafae59221fbfebf1aa80dc813d1511b51c14514daedb9b87ff3cb41391"
+		},
+		{
+			"bytes": 890,
+			"kind": "player",
+			"path": "players/lucian_marchetti.json",
+			"sha256": "109a328ff12f69dcaf0fa92d7305985b500b7141ae669c77506c96d1fc971762"
+		},
+		{
+			"bytes": 862,
+			"kind": "player",
+			"path": "players/magnus_ferrow.json",
+			"sha256": "276e013a850703d5ac8b7378ef86f3022a6f2f654767cf4b298ccfd7fa012406"
+		},
+		{
+			"bytes": 831,
+			"kind": "player",
+			"path": "players/marcellus_tindall.json",
+			"sha256": "945d83f7d09758a611b503bd6aad1ee14c2569d66c3c228ea5ab009f10206e71"
+		},
+		{
+			"bytes": 898,
+			"kind": "player",
+			"path": "players/mateo_quillfeather.json",
+			"sha256": "9b0ba8d121d7190ca4887c0869d65f426a5ccfd0732db51410cf3d11eac8cb1f"
+		},
+		{
+			"bytes": 886,
+			"kind": "player",
+			"path": "players/nico_brandvold.json",
+			"sha256": "675010a812cbecbf235234b5cfdaff8d0469406e6528d3c5f35185f6645fd808"
+		},
+		{
+			"bytes": 865,
+			"kind": "player",
+			"path": "players/otis_pemberton.json",
+			"sha256": "31f21f43ccd6e8fa0d08077cfc1600dd01e98d596b89efcc1ade2acab229bdf4"
+		},
+		{
+			"bytes": 894,
+			"kind": "player",
+			"path": "players/piers_calloway.json",
+			"sha256": "b7885d8d756184f670874f92613c2932add383adea5b865f530a1885560154a6"
+		},
+		{
+			"bytes": 864,
+			"kind": "player",
+			"path": "players/quentin_ashdown.json",
+			"sha256": "3bb5c4bec07eefc1a251bc50507f7e681927d87261c33f26b9cacb7233847072"
+		},
+		{
+			"bytes": 895,
+			"kind": "player",
+			"path": "players/rafael_oyelaran.json",
+			"sha256": "9b6ea6f6f68cfe54d3e9682dca1a08901aeaf4359bf439a556d11b4792bb8296"
+		},
+		{
+			"bytes": 861,
+			"kind": "player",
+			"path": "players/remy_delacourt.json",
+			"sha256": "fd61890ccd7768f7d18ce4528a27518cc4a1c29be277810fe54b8b021fe004da"
+		},
+		{
+			"bytes": 894,
+			"kind": "player",
+			"path": "players/silas_ravenscroft.json",
+			"sha256": "b855f1c07d64615e63cc2a314c35e25f8d82fa5705a2a061349e12d13d582e42"
+		},
+		{
+			"bytes": 857,
+			"kind": "player",
+			"path": "players/soren_valdis.json",
+			"sha256": "2ee6473ddccf56e007f5fad2ada7ac626e2a9dc5901c84d5392260156c493b9f"
+		},
+		{
+			"bytes": 815,
+			"kind": "player",
+			"path": "players/teodor_brask.json",
+			"sha256": "4816bef45f90d6baa4a2a9b3e2df5a24fb00ba1c7073571696f81dd489456e1f"
+		},
+		{
+			"bytes": 866,
+			"kind": "player",
+			"path": "players/thaddeus_lane.json",
+			"sha256": "a0103390e8d4225bb2c579ea8e044b0de8778fd786bcb5147eb6537020fd6ab4"
+		},
+		{
+			"bytes": 879,
+			"kind": "player",
+			"path": "players/tomas_eriksen.json",
+			"sha256": "2db9c92c5acc7dc50463d5ee882603f3cf8b24d4526675c636f280efa89cf72e"
+		},
+		{
+			"bytes": 864,
+			"kind": "player",
+			"path": "players/viktor_haldane.json",
+			"sha256": "31cea30594476343b8455233e36a042c9619516429cfd40f1a1080841a5fa6e7"
+		},
+		{
+			"bytes": 794,
+			"kind": "player",
+			"path": "players/wendell_oakes.json",
+			"sha256": "cbefc6e50e9b2b6c3fa7591f998a6fb4b213821d159c8931bacd7254c43a9ce4"
+		},
+		{
+			"bytes": 856,
+			"kind": "player",
+			"path": "players/zaire_colburn.json",
+			"sha256": "d422452c0296eb3b6d79af953bf4456b7bea53f7831966d14f20a16bfed20bb4"
+		},
+		{
+			"bytes": 3373,
+			"kind": "seasonal",
+			"path": "seasonal/founding_season.json",
+			"sha256": "5bff382d2844ad84fa92a5f1eb1adce6f1a5edd61c255b69eacb45d4af5b0263"
+		},
+		{
+			"bytes": 169,
+			"kind": "support",
+			"path": "support/dynasty_config.json",
+			"sha256": "a3d775cc480022eae6307a1f3f6a89fcc47490afb19ee396675a713c8ed23925"
 		}
 	],
 	"format": "fc_content_release",
-	"manifest_checksum": "97996998059cfc487e5cc02efd23e493687bffeec7621184f1b35159cf5f55a3",
+	"manifest_checksum": "792855668e8a93acfa8ae6a1080c0c76f2411137610eec1abe4db1a0321322ab",
 	"min_game_version": "0.1.0",
 	"previous_release_id": "",
 	"published_at": 1700000000,
 	"published_by": "Full Court build tool",
-	"release_id": "fcr_4d854324631cb325",
+	"release_id": "fcr_2036b76f032b29c4",
 	"requires_features": [
+		"card_market_v1",
+		"card_overrides_v1",
 		"card_rarity_v1",
-		"pack_fixed_v1"
+		"challenge_v1",
+		"dynasty_config_v1",
+		"pack_fixed_v1",
+		"pack_odds_v1",
+		"season_v1"
 	],
 	"schema_version": 1
 }

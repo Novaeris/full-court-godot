@@ -1,0 +1,20 @@
+{
+	"attributes": {
+		"consistency": 82,
+		"defensive_awareness": 84,
+		"perimeter_defense": 92,
+		"stamina": 84,
+		"steals": 83,
+		"three_point": 90
+	},
+	"card_id": "bram_lindqvist_corner",
+	"edition": "Corner Edition",
+	"player_id": "bram_lindqvist",
+	"rarity": "epic",
+	"requires_features": [
+		"card_rarity_v1",
+		"card_overrides_v1"
+	],
+	"revision": 1,
+	"title": "Bram Lindqvist"
+}

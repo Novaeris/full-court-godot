@@ -1,0 +1,45 @@
+{
+	"attributes": {
+		"agility": 64,
+		"ball_handling": 68,
+		"basketball_iq": 59,
+		"blocks": 43,
+		"close_finishing": 58,
+		"competitive_mentality": 58,
+		"consistency": 59,
+		"decision_making": 60,
+		"defensive_awareness": 60,
+		"dunking": 55,
+		"durability": 58,
+		"free_throw": 62,
+		"interior_defense": 44,
+		"layups": 69,
+		"leadership": 55,
+		"mid_range": 71,
+		"offensive_awareness": 56,
+		"passing": 59,
+		"perimeter_defense": 56,
+		"rebounding": 45,
+		"shot_selection": 65,
+		"speed": 65,
+		"stamina": 55,
+		"steals": 60,
+		"strength": 48,
+		"three_point": 70,
+		"vertical": 56,
+		"work_ethic": 57
+	},
+	"badges": [
+		"ankle_breaker"
+	],
+	"display_name": "Kellan Drummond",
+	"player_id": "kellan_drummond",
+	"position": "PG",
+	"secondary_position": "SG",
+	"team": "Reno Cinders",
+	"tendencies": {
+		"drive_tendency": 65,
+		"mid_range_tendency": 60,
+		"three_point_tendency": 55
+	}
+}

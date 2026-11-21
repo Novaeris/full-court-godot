@@ -1,0 +1,44 @@
+{
+	"attributes": {
+		"agility": 72,
+		"ball_handling": 94,
+		"basketball_iq": 87,
+		"blocks": 54,
+		"close_finishing": 75,
+		"competitive_mentality": 76,
+		"consistency": 75,
+		"decision_making": 86,
+		"defensive_awareness": 74,
+		"dunking": 62,
+		"durability": 72,
+		"free_throw": 76,
+		"interior_defense": 59,
+		"layups": 72,
+		"leadership": 82,
+		"mid_range": 72,
+		"offensive_awareness": 84,
+		"passing": 96,
+		"perimeter_defense": 72,
+		"rebounding": 62,
+		"shot_selection": 73,
+		"speed": 75,
+		"stamina": 73,
+		"steals": 73,
+		"strength": 60,
+		"three_point": 75,
+		"vertical": 73,
+		"work_ethic": 76
+	},
+	"badges": [
+		"pick_and_roll_maestro"
+	],
+	"display_name": "Ansel Voss",
+	"player_id": "ansel_voss",
+	"position": "PG",
+	"team": "Omaha Stampede",
+	"tendencies": {
+		"drive_tendency": 45,
+		"pass_tendency": 78,
+		"three_point_tendency": 40
+	}
+}

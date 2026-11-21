@@ -1,0 +1,11 @@
+{
+	"card_id": "soren_valdis_base",
+	"edition": "Founding Edition",
+	"player_id": "soren_valdis",
+	"rarity": "epic",
+	"requires_features": [
+		"card_rarity_v1"
+	],
+	"revision": 1,
+	"title": "Soren Valdis"
+}

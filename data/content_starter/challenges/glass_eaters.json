@@ -1,0 +1,20 @@
+{
+	"category": "rebounding",
+	"challenge_id": "glass_eaters",
+	"description": "Have one player grab 12 rebounds in a game.",
+	"objective": {
+		"mode": "single_game",
+		"scope": "player",
+		"stat": "rebounds",
+		"target": 12,
+		"type": "stat"
+	},
+	"requires_features": [
+		"challenge_v1"
+	],
+	"rewards": {
+		"credits": 400
+	},
+	"season_points": 10,
+	"title": "Glass Eater"
+}

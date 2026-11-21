@@ -1,0 +1,20 @@
+{
+	"category": "scoring",
+	"challenge_id": "century_mark",
+	"description": "Score 100 points or more in one game.",
+	"objective": {
+		"mode": "single_game",
+		"scope": "team",
+		"stat": "points",
+		"target": 100,
+		"type": "stat"
+	},
+	"requires_features": [
+		"challenge_v1"
+	],
+	"rewards": {
+		"credits": 300
+	},
+	"season_points": 10,
+	"title": "Century Mark"
+}

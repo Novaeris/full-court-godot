@@ -1,0 +1,16 @@
+{
+	"card_id": "otis_pemberton_base",
+	"edition": "Founding Edition",
+	"player_id": "otis_pemberton",
+	"price": {
+		"amount": 1200,
+		"currency": "credits"
+	},
+	"rarity": "uncommon",
+	"requires_features": [
+		"card_rarity_v1",
+		"card_market_v1"
+	],
+	"revision": 1,
+	"title": "Otis Pemberton"
+}

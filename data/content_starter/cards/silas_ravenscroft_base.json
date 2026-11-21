@@ -1,0 +1,11 @@
+{
+	"card_id": "silas_ravenscroft_base",
+	"edition": "Founding Edition",
+	"player_id": "silas_ravenscroft",
+	"rarity": "epic",
+	"requires_features": [
+		"card_rarity_v1"
+	],
+	"revision": 1,
+	"title": "Silas Ravenscroft"
+}

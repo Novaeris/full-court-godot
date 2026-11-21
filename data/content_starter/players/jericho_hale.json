@@ -1,0 +1,45 @@
+{
+	"attributes": {
+		"agility": 89,
+		"ball_handling": 95,
+		"basketball_iq": 80,
+		"blocks": 63,
+		"close_finishing": 85,
+		"competitive_mentality": 83,
+		"consistency": 79,
+		"decision_making": 84,
+		"defensive_awareness": 84,
+		"dunking": 83,
+		"durability": 83,
+		"free_throw": 88,
+		"interior_defense": 66,
+		"layups": 97,
+		"leadership": 84,
+		"mid_range": 93,
+		"offensive_awareness": 83,
+		"passing": 83,
+		"perimeter_defense": 79,
+		"rebounding": 68,
+		"shot_selection": 87,
+		"speed": 93,
+		"stamina": 84,
+		"steals": 84,
+		"strength": 69,
+		"three_point": 99,
+		"vertical": 79,
+		"work_ethic": 80
+	},
+	"badges": [
+		"ankle_breaker"
+	],
+	"display_name": "Jericho Hale",
+	"player_id": "jericho_hale",
+	"position": "PG",
+	"secondary_position": "SG",
+	"team": "Tulsa Wildfire",
+	"tendencies": {
+		"drive_tendency": 65,
+		"mid_range_tendency": 60,
+		"three_point_tendency": 55
+	}
+}

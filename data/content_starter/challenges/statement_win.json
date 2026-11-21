@@ -1,0 +1,17 @@
+{
+	"category": "team_composition",
+	"challenge_id": "statement_win",
+	"description": "Win a game by 15 points or more.",
+	"objective": {
+		"target": 15,
+		"type": "win_margin"
+	},
+	"requires_features": [
+		"challenge_v1"
+	],
+	"rewards": {
+		"credits": 500
+	},
+	"season_points": 10,
+	"title": "Statement Win"
+}

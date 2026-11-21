@@ -1,0 +1,20 @@
+{
+	"attributes": {
+		"free_throw": 83,
+		"interior_defense": 78,
+		"mid_range": 85,
+		"passing": 80,
+		"rebounding": 78,
+		"three_point": 85
+	},
+	"card_id": "felix_aranguren_pace_and_space",
+	"edition": "Pace-and-Space Edition",
+	"player_id": "felix_aranguren",
+	"rarity": "epic",
+	"requires_features": [
+		"card_rarity_v1",
+		"card_overrides_v1"
+	],
+	"revision": 1,
+	"title": "Felix Aranguren"
+}

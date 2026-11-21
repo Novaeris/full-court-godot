@@ -1,0 +1,45 @@
+{
+	"attributes": {
+		"agility": 55,
+		"ball_handling": 79,
+		"basketball_iq": 75,
+		"blocks": 39,
+		"close_finishing": 56,
+		"competitive_mentality": 60,
+		"consistency": 57,
+		"decision_making": 69,
+		"defensive_awareness": 60,
+		"dunking": 48,
+		"durability": 56,
+		"free_throw": 59,
+		"interior_defense": 40,
+		"layups": 58,
+		"leadership": 65,
+		"mid_range": 57,
+		"offensive_awareness": 68,
+		"passing": 78,
+		"perimeter_defense": 55,
+		"rebounding": 43,
+		"shot_selection": 56,
+		"speed": 60,
+		"stamina": 58,
+		"steals": 55,
+		"strength": 49,
+		"three_point": 59,
+		"vertical": 57,
+		"work_ethic": 58
+	},
+	"badges": [
+		"pick_and_roll_maestro"
+	],
+	"display_name": "Rafael Oyelaran",
+	"player_id": "rafael_oyelaran",
+	"position": "PG",
+	"secondary_position": "SG",
+	"team": "Akron Foundry",
+	"tendencies": {
+		"drive_tendency": 45,
+		"pass_tendency": 78,
+		"three_point_tendency": 40
+	}
+}

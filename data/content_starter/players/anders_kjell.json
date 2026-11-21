@@ -1,0 +1,44 @@
+{
+	"attributes": {
+		"agility": 85,
+		"ball_handling": 82,
+		"basketball_iq": 82,
+		"blocks": 81,
+		"close_finishing": 84,
+		"competitive_mentality": 89,
+		"consistency": 84,
+		"decision_making": 80,
+		"defensive_awareness": 93,
+		"dunking": 82,
+		"durability": 88,
+		"free_throw": 84,
+		"interior_defense": 80,
+		"layups": 84,
+		"leadership": 83,
+		"mid_range": 84,
+		"offensive_awareness": 83,
+		"passing": 84,
+		"perimeter_defense": 94,
+		"rebounding": 81,
+		"shot_selection": 83,
+		"speed": 83,
+		"stamina": 90,
+		"steals": 81,
+		"strength": 83,
+		"three_point": 89,
+		"vertical": 82,
+		"work_ethic": 81
+	},
+	"badges": [
+		"clamps"
+	],
+	"display_name": "Anders Kjell",
+	"player_id": "anders_kjell",
+	"position": "SF",
+	"secondary_position": "PF",
+	"team": "Omaha Stampede",
+	"tendencies": {
+		"drive_tendency": 50,
+		"pass_tendency": 50
+	}
+}

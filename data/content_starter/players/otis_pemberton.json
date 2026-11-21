@@ -1,0 +1,44 @@
+{
+	"attributes": {
+		"agility": 65,
+		"ball_handling": 44,
+		"basketball_iq": 59,
+		"blocks": 65,
+		"close_finishing": 66,
+		"competitive_mentality": 57,
+		"consistency": 56,
+		"decision_making": 54,
+		"defensive_awareness": 59,
+		"dunking": 75,
+		"durability": 55,
+		"free_throw": 56,
+		"interior_defense": 60,
+		"layups": 54,
+		"leadership": 54,
+		"mid_range": 57,
+		"offensive_awareness": 55,
+		"passing": 56,
+		"perimeter_defense": 56,
+		"rebounding": 68,
+		"shot_selection": 49,
+		"speed": 68,
+		"stamina": 54,
+		"steals": 59,
+		"strength": 56,
+		"three_point": 41,
+		"vertical": 73,
+		"work_ethic": 56
+	},
+	"badges": [
+		"posterizer"
+	],
+	"display_name": "Otis Pemberton",
+	"player_id": "otis_pemberton",
+	"position": "PF",
+	"secondary_position": "C",
+	"team": "Laredo Outlaws",
+	"tendencies": {
+		"drive_tendency": 70,
+		"offensive_rebound_tendency": 65
+	}
+}

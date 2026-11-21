@@ -1,0 +1,44 @@
+{
+	"attributes": {
+		"agility": 85,
+		"ball_handling": 72,
+		"basketball_iq": 75,
+		"blocks": 74,
+		"close_finishing": 85,
+		"competitive_mentality": 75,
+		"consistency": 73,
+		"decision_making": 73,
+		"defensive_awareness": 73,
+		"dunking": 91,
+		"durability": 71,
+		"free_throw": 70,
+		"interior_defense": 72,
+		"layups": 96,
+		"leadership": 77,
+		"mid_range": 76,
+		"offensive_awareness": 75,
+		"passing": 75,
+		"perimeter_defense": 75,
+		"rebounding": 74,
+		"shot_selection": 70,
+		"speed": 85,
+		"stamina": 74,
+		"steals": 73,
+		"strength": 74,
+		"three_point": 65,
+		"vertical": 83,
+		"work_ethic": 75
+	},
+	"badges": [
+		"posterizer"
+	],
+	"display_name": "Kofi Adebanjo",
+	"player_id": "kofi_adebanjo",
+	"position": "SG",
+	"secondary_position": "SF",
+	"team": "Reno Cinders",
+	"tendencies": {
+		"drive_tendency": 85,
+		"three_point_tendency": 20
+	}
+}

@@ -1,5 +1,5 @@
 extends SceneTree
-## Rebuilds the small starter content release bundled with the game (data/content_starter).
+## Rebuilds the bundled Founding Series release (data/content_starter, D-055: 40 players, cards, packs, challenges, a season).
 ## It is the last fallback when no published release can be loaded. It goes through the real
 ## publisher into a scratch store, then the finished release folder is copied into the project.
 ## Run: ./tools/build_starter_content.ps1   (then commit the result).
@@ -13,26 +13,16 @@ func _init() -> void:
 	var defs := FcDefinitionSet.load_default()
 	var store := FcLocalContentStore.new(SCRATCH)
 	var workspace := FcDraftWorkspace.new(SCRATCH.path_join("drafts"), defs)
-	var draft := workspace.create_draft("Starter content", 1700000000)
-	workspace.save_definition(draft, "players/starter_guard.json", {
-		"player_id": "starter_guard", "display_name": "Starter Guard", "position": "PG",
-		"attributes": {"three_point": 70, "ball_handling": 72, "passing": 68}})
-	workspace.save_definition(draft, "players/starter_big.json", {
-		"player_id": "starter_big", "display_name": "Starter Big", "position": "C",
-		"attributes": {"rebounding": 74, "interior_defense": 70, "close_finishing": 68}})
-	workspace.save_definition(draft, "cards/starter_guard_base.json", {
-		"card_id": "starter_guard_base", "player_id": "starter_guard", "title": "Starter Guard",
-		"rarity": "common", "revision": 1, "requires_features": ["card_rarity_v1"]})
-	workspace.save_definition(draft, "cards/starter_big_base.json", {
-		"card_id": "starter_big_base", "player_id": "starter_big", "title": "Starter Big",
-		"rarity": "common", "revision": 1, "requires_features": ["card_rarity_v1"]})
-	workspace.save_definition(draft, "packs/starter_pack.json", {
-		"pack_id": "starter_pack", "name": "Starter Pack",
-		"card_ids": ["starter_guard_base", "starter_big_base"], "requires_features": ["pack_fixed_v1"]})
+	var draft := workspace.create_draft("Founding Series", 1700000000)
+	var save := func(rel: String, data: Dictionary) -> void:
+		var saved := workspace.save_definition(draft, rel, data)
+		if not saved.is_ok():
+			printerr("Could not save %s: %s %s" % [rel, saved.message, str(saved.problems)])
+	FcDynastyFoundingContent.write_all(save, defs.attributes.keys())
 	var publisher := FcPublisher.new(store, defs)
 	publisher.clock = func() -> int: return 1700000000
 	var content := workspace.content_dir(draft)
-	var approval := FcApproval.grant("Full Court build tool", "Bundled starter content (fallback when no release loads)",
+	var approval := FcApproval.grant("Full Court build tool", "Bundled Founding Series release (D-055): the first playable Dynasty content",
 		FcPublisher.draft_hash(content))
 	var result := publisher.publish(content, approval)
 	if not result.is_ok():

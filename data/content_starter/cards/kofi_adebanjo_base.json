@@ -1,0 +1,11 @@
+{
+	"card_id": "kofi_adebanjo_base",
+	"edition": "Founding Edition",
+	"player_id": "kofi_adebanjo",
+	"rarity": "epic",
+	"requires_features": [
+		"card_rarity_v1"
+	],
+	"revision": 1,
+	"title": "Kofi Adebanjo"
+}

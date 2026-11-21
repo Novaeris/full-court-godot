@@ -1,0 +1,45 @@
+{
+	"attributes": {
+		"agility": 45,
+		"ball_handling": 42,
+		"basketball_iq": 49,
+		"blocks": 50,
+		"close_finishing": 49,
+		"competitive_mentality": 45,
+		"consistency": 57,
+		"decision_making": 48,
+		"defensive_awareness": 59,
+		"dunking": 44,
+		"durability": 50,
+		"free_throw": 46,
+		"interior_defense": 46,
+		"layups": 45,
+		"leadership": 46,
+		"mid_range": 48,
+		"offensive_awareness": 48,
+		"passing": 44,
+		"perimeter_defense": 62,
+		"rebounding": 51,
+		"shot_selection": 48,
+		"speed": 47,
+		"stamina": 53,
+		"steals": 56,
+		"strength": 45,
+		"three_point": 62,
+		"vertical": 48,
+		"work_ethic": 50
+	},
+	"badges": [
+		"corner_specialist",
+		"clamps"
+	],
+	"display_name": "Cyrus Tallwood",
+	"player_id": "cyrus_tallwood",
+	"position": "SG",
+	"secondary_position": "SF",
+	"team": "Spokane Rapids",
+	"tendencies": {
+		"foul_tendency": 35,
+		"three_point_tendency": 70
+	}
+}

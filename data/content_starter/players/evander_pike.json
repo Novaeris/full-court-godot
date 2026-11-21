@@ -1,0 +1,43 @@
+{
+	"attributes": {
+		"agility": 66,
+		"ball_handling": 58,
+		"basketball_iq": 54,
+		"blocks": 58,
+		"close_finishing": 68,
+		"competitive_mentality": 56,
+		"consistency": 58,
+		"decision_making": 59,
+		"defensive_awareness": 56,
+		"dunking": 78,
+		"durability": 58,
+		"free_throw": 50,
+		"interior_defense": 59,
+		"layups": 76,
+		"leadership": 54,
+		"mid_range": 58,
+		"offensive_awareness": 54,
+		"passing": 57,
+		"perimeter_defense": 60,
+		"rebounding": 58,
+		"shot_selection": 54,
+		"speed": 66,
+		"stamina": 55,
+		"steals": 57,
+		"strength": 56,
+		"three_point": 47,
+		"vertical": 70,
+		"work_ethic": 60
+	},
+	"badges": [
+		"posterizer"
+	],
+	"display_name": "Evander Pike",
+	"player_id": "evander_pike",
+	"position": "SG",
+	"team": "Fresno Embers",
+	"tendencies": {
+		"drive_tendency": 85,
+		"three_point_tendency": 20
+	}
+}

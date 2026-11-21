@@ -1,0 +1,44 @@
+{
+	"attributes": {
+		"agility": 49,
+		"ball_handling": 28,
+		"basketball_iq": 49,
+		"blocks": 50,
+		"close_finishing": 56,
+		"competitive_mentality": 47,
+		"consistency": 45,
+		"decision_making": 46,
+		"defensive_awareness": 48,
+		"dunking": 49,
+		"durability": 57,
+		"free_throw": 51,
+		"interior_defense": 54,
+		"layups": 46,
+		"leadership": 47,
+		"mid_range": 45,
+		"offensive_awareness": 49,
+		"passing": 35,
+		"perimeter_defense": 46,
+		"rebounding": 73,
+		"shot_selection": 47,
+		"speed": 38,
+		"stamina": 50,
+		"steals": 48,
+		"strength": 62,
+		"three_point": 21,
+		"vertical": 54,
+		"work_ethic": 57
+	},
+	"badges": [
+		"rebound_chaser"
+	],
+	"display_name": "Dmitri Kalloway",
+	"player_id": "dmitri_kalloway",
+	"position": "C",
+	"secondary_position": "PF",
+	"team": "Reno Cinders",
+	"tendencies": {
+		"offensive_rebound_tendency": 90,
+		"post_tendency": 55
+	}
+}

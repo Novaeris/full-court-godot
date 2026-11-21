@@ -1,0 +1,44 @@
+{
+	"attributes": {
+		"agility": 67,
+		"ball_handling": 62,
+		"basketball_iq": 68,
+		"blocks": 64,
+		"close_finishing": 64,
+		"competitive_mentality": 70,
+		"consistency": 63,
+		"decision_making": 63,
+		"defensive_awareness": 78,
+		"dunking": 64,
+		"durability": 69,
+		"free_throw": 65,
+		"interior_defense": 68,
+		"layups": 67,
+		"leadership": 62,
+		"mid_range": 67,
+		"offensive_awareness": 62,
+		"passing": 68,
+		"perimeter_defense": 82,
+		"rebounding": 65,
+		"shot_selection": 68,
+		"speed": 63,
+		"stamina": 76,
+		"steals": 64,
+		"strength": 69,
+		"three_point": 68,
+		"vertical": 64,
+		"work_ethic": 66
+	},
+	"badges": [
+		"clamps"
+	],
+	"display_name": "Gideon Wrenfield",
+	"player_id": "gideon_wrenfield",
+	"position": "SF",
+	"secondary_position": "PF",
+	"team": "Spokane Rapids",
+	"tendencies": {
+		"drive_tendency": 50,
+		"pass_tendency": 50
+	}
+}
