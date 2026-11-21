@@ -186,9 +186,9 @@ func _play_intro(pack_listing: Dictionary) -> void:
 func _celebrate(face: FcCardFace, rarity: String, intensity: int) -> void:
 	var color := FcRarityStyle.color(rarity)
 	if intensity >= 1:
-		face.lift = 1.0   # the rarity-coloured glow
+		face.set_glow(1.0)   # the rarity-coloured glow
 	if intensity >= 2:
-		face.mouse_entered.emit()   # the light sweep
+		face.play_sweep()   # the light sweep (an explicit call, not a simulated mouse event)
 	if intensity >= 3:
 		_burst(face, color, intensity)
 		_flash_once(color)

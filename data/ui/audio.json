@@ -47,6 +47,12 @@
 			{"wave": "saw", "freq": 392, "ms": 1100, "gain": 0.2, "decay": 2.2, "attack_ms": 40, "lowpass": 0.15},
 			{"wave": "noise", "start_ms": 100, "ms": 1000, "gain": 0.22, "decay": 3, "attack_ms": 300, "lowpass": 0.12},
 			{"wave": "sine", "freq": 1047, "start_ms": 300, "ms": 800, "gain": 0.18, "decay": 5}]}},
+		"reveal_swell": {"bus": "SFX", "gain_db": -9.0, "file": "res://assets/audio/reveal_swell.ogg", "synth": {"layers": [
+			{"wave": "noise", "ms": 900, "gain": 0.4, "decay": 1.0, "attack_ms": 700, "lowpass": 0.2},
+			{"wave": "saw", "freq": 98, "freq_to": 196, "ms": 900, "gain": 0.16, "decay": 0.6, "attack_ms": 600, "lowpass": 0.1}]}},
+		"reveal_hit": {"bus": "SFX", "gain_db": -6.0, "file": "res://assets/audio/reveal_hit.ogg", "synth": {"layers": [
+			{"wave": "sine", "freq": 90, "freq_to": 38, "ms": 700, "gain": 0.8, "decay": 5},
+			{"wave": "noise", "ms": 160, "gain": 0.5, "decay": 28, "lowpass": 0.3}]}},
 		"reward": {"bus": "SFX", "gain_db": -7.0, "file": "res://assets/audio/reward.ogg", "synth": {"layers": [
 			{"wave": "sine", "freq": 392, "ms": 140, "gain": 0.45, "decay": 14},
 			{"wave": "sine", "freq": 523, "start_ms": 110, "ms": 140, "gain": 0.45, "decay": 14},

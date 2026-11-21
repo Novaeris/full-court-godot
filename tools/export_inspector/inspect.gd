@@ -5,7 +5,7 @@ extends SceneTree
 
 const REQUIRED := [
 	"res://project.binary", "res://data/content_starter/manifest.json", "res://data/definitions/attributes.json", "res://data/dynasty/economy.json",
-	"res://data/simulation", "res://data/ui/audio.json", "res://data/career/badges.json", "res://assets/fonts/Inter-Variable.ttf",
+	"res://data/simulation", "res://data/ui/audio.json", "res://data/ui/reveal_effects.json", "res://data/career/badges.json", "res://assets/fonts/Inter-Variable.ttf",
 	"res://assets/icons/lucide", "res://assets/icons/app_icon.svg", "res://assets/shaders/card_sweep.gdshader",
 	"res://assets/fonts/OFL-Inter.txt", "res://assets/fonts/OFL-BarlowCondensed.txt", "res://assets/icons/lucide/LICENSE.txt", "res://src/ui/app.gd", "res://src/dynasty/dynasty_catalog.gd", "res://scenes/main.tscn", "res://data/ui/brand.json", "res://data/ui/team_identity.json",
 	"res://assets/brand/boot_splash.png", "res://assets/brand/app_icon.ico",

@@ -36,6 +36,13 @@ var lift: float = 0.0:
 	set(v):
 		lift = v
 		queue_redraw()
+## 0 to 1: the glow around the BACK of a face-down card, in `tease_color` (the pack reveal's build-up before a rare card turns over).
+## Cosmetic only: it is set by the reveal from the rarity the committed opening already holds.
+var tease: float = 0.0:
+	set(v):
+		tease = v
+		queue_redraw()
+var tease_color: Color = Color.WHITE
 var on_click: Callable = Callable()
 var _sweep: ColorRect = null
 var _hover_tween: Tween = null
@@ -139,10 +146,31 @@ func _lift_to(target: float) -> void:
 	_hover_tween = create_tween().set_parallel(true)
 	_hover_tween.tween_property(self, "lift", target, d)
 	_hover_tween.tween_property(self, "scale", Vector2.ONE * (1.0 + 0.04 * target), d).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	if target > 0.0 and _sweep != null and not FcMotion.reduced:
-		var mat := _sweep.material as ShaderMaterial
-		mat.set_shader_parameter("progress", -0.3)
-		_hover_tween.tween_property(mat, "shader_parameter/progress", 1.3, 0.55)
+	if target > 0.0:
+		_start_sweep(_hover_tween)
+
+
+## Plays the light sweep across a rare-and-up card. EXPLICIT (the pack reveal calls this; it never fakes a mouse event). Does nothing for
+## cards without a sweep, for a face-down card, or with reduced motion. Returns the tween or null.
+func play_sweep() -> Tween:
+	if _sweep == null or face_down or FcMotion.reduced or not is_inside_tree():
+		return null
+	var tw := create_tween()
+	_start_sweep(tw)
+	return tw
+
+
+## Sets the rarity-coloured glow (0 to 1) without a hover: the reveal uses it for the tease before a card turns over.
+func set_glow(amount: float) -> void:
+	lift = clampf(amount, 0.0, 1.0)
+
+
+func _start_sweep(tw: Tween) -> void:
+	if _sweep == null or FcMotion.reduced:
+		return
+	var mat := _sweep.material as ShaderMaterial
+	mat.set_shader_parameter("progress", -0.3)
+	tw.tween_property(mat, "shader_parameter/progress", 1.3, 0.55)
 
 
 func _ensure_sweep() -> void:
@@ -373,6 +401,10 @@ func _draw_back(s: float) -> void:
 	draw_style_box(body, rect)
 	_outline(rect, int(10 * s), FcUiTokens.BORDER, 2.0 * s)
 	_outline(rect.grow(-6 * s), int(7 * s), Color(FcUiTheme.accent, 0.55), maxf(1.0, s))
+	if tease > 0.0:   # the build-up glow: three soft outlines in the rarity colour, growing with `tease`
+		for i in 4:
+			_outline(rect.grow((2 + i * 3) * s), int((12 + i * 3) * s), Color(tease_color, (0.55 - i * 0.12) * tease), 2.5 * s)
+		_outline(rect.grow(-6 * s), int(7 * s), Color(tease_color, 0.8 * tease), 2.0 * s)
 	# court lines: a centre circle, the keys and a half-court line
 	var c := size / 2.0
 	var line := Color(FcUiTokens.BORDER, 0.9)

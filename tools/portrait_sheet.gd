@@ -41,8 +41,9 @@ class Sheet extends Control:
 			elif kind == "full":
 				draw_rect(r, well)
 				FcPlayerFigure.draw(self, r.grow(-6), v, true)
-			elif kind == "card":
-				pass
+			elif kind == "baked":
+				draw_rect(r, well)
+				draw_texture_rect(it["texture"], Rect2(r.position + r.size * 0.0, r.size), false)
 			else:
 				draw_rect(r, well)
 				FcPlayerFigure.draw(self, Rect2(r.position + Vector2(r.size.x * 0.06, r.size.y * 0.1), r.size * Vector2(0.88, 0.9)), v)
@@ -61,7 +62,7 @@ func _initialize() -> void:
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 	DirAccess.make_dir_recursive_absolute(_out)
 	FcPlayerFigure.hd_enabled = _mode == "hd"
-	_jobs = ["bust", "headshot", "full", "sizes", "uniforms", "ages"]
+	_jobs = ["bust", "headshot", "full", "sizes", "uniforms", "ages", "baked"]
 
 
 func _visual(i: int, age: int = 0, team_index: int = -1) -> Dictionary:
@@ -124,6 +125,14 @@ func _build(kind: String) -> void:
 			for i in 12:
 				var r := Rect2(Vector2(8 + (i % 6) * 250, 8 + (i / 6) * 270), Vector2(240, 260))
 				s.items.append({"rect": r, "visual": _visual(7, 27, i), "kind": "bust"})
+		"baked":   # the portrait bake cache (FcPortraitBake): 24 players drawn once into textures and shown from the cache
+			var bake := FcPortraitBake.new()
+			root.add_child(bake)
+			size = Vector2i(8 * 150 + 16, 3 * 150 + 16)
+			for i in 24:
+				var r := Rect2(Vector2(8 + (i % 8) * 150, 8 + (i / 8) * 150), Vector2(142, 142))
+				var v := _visual(i, 19 + FcPlayerVisual.fnv1a("age%d" % i) % 20)
+				s.items.append({"rect": r, "visual": v, "kind": "baked", "texture": bake.texture_for(v, Vector2i(142, 142))})
 		"ages":
 			size = Vector2i(10 * 150 + 16, 2 * 160 + 16)
 			for j in 2:

@@ -23,3 +23,6 @@ Three asset categories. Nothing external or AI-generated is shipped without the 
 
 ## Rebuilding the brand files
 `bash tools/build_brand_assets.sh` (needs ImageMagick 7). The supplied banners have the background baked in, so the transparent versions are made by keying (brightest colour channel becomes opacity), cropping and masking the stray arena lights. The artwork is not redrawn. **If the original layered or vector files exist, replace the keyed files with them.** Known limits of keying: the silver lettering's dark outline is lost, so the transparent files are meant for the dark UI; on white use the `mono_navy` version.
+
+## Portrait pathway for generated and featured players (proposal D-059)
+Generated league players use the procedural figure (category A); the proposed high-fidelity figure and its bake cache change nothing here. Featured Dynasty players (category B) keep the art spec above and are the only place approved art is used: every art file needs a line in `assets/ART_PROVENANCE.md` (source: hand-made, commissioned or generated; founder approval; legal review state) before it is committed. Note: the provenance file is `assets/ART_PROVENANCE.md`, not `docs/`.

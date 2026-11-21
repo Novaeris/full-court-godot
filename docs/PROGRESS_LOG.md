@@ -3,6 +3,9 @@
 Newest first. Written so someone returning after a break can see where things stand.
 The repository was published to GitHub on 2026-11-17 at the founder's request (public: https://github.com/Novaeris/full-court-godot, remote `origin`, branch `main`). Later commits stay local until the founder asks for a push.
 
+## 2026-11-21: Player portrait and pack-opening investigation and prototypes (D-059, proposed)
+Investigated the portrait quality and the pack opening; built limited prototypes behind off-by-default switches and wrote `docs/PLAYER_VISUAL_PROPOSAL.md` for approval. Built: `FcPlayerTraits`, `FcPlayerFigureHd`, `FcPortraitBake`, `FcRevealSpec` + `data/ui/reveal_effects.json`, `FcRevealFx`, `FcPackRevealCinematic`, two synthesised sounds; tools `portrait_sheet.gd`, `portrait_bench.gd`, `pack_reveal_demo.gd`; 120-player contact sheets, storyboards and a 17 s video in `docs/validation/portraits` and `docs/validation/pack_reveal`. Shipped fix: explicit `FcCardFace.play_sweep()` and `set_glow()` instead of a simulated mouse event. Identity golden, saves, odds and controllers unchanged. Waiting for the founder's decisions (proposal section 10).
+
 ## 2026-11-21: Visual Identity and UI Transformation milestone (D-057, D-058)
 
 Plan of record: `docs/VISUAL_IDENTITY_PLAN.md` (approved by the founder, run without hard stops: screenshots and a summary per checkpoint in `docs/validation/ui/visual_identity/`, each phase committed and pushed).
