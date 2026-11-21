@@ -3,7 +3,7 @@ extends SceneTree
 ## NOT headless: run with a window, e.g.
 ##   godot_console --path . --script res://tools/screenshot.gd -- screen=Roster out=C:/temp/roster.png days=20
 ## screen:
-##   menu | settings | new_league | career_menu | career_creator | career_hub
+##   menu | menu_saves | credits | settings | new_league | career_menu | career_creator | career_hub
 ##   Overview | Standings | Schedule | Roster | Finances | Staff | Market | Trades | History | News | League   (Owner tabs)
 ##   dynasty_entry | dynasty_hub | dynasty_collection | dynasty_lineup | dynasty_packs | dynasty_reveal | dynasty_market | dynasty_play
 ##   gallery  (the development-only Component Gallery)
@@ -77,6 +77,17 @@ func _initialize() -> void:
 
 func _build_screen() -> void:
 	if _screen == "menu":
+		return
+	if _screen == "menu_saves":
+		# three scratch saves (in user://screenshot_saves, never the player's own) so the Continue card and the saved-game cards show
+		_app.on_create_league({"teams": 12, "conferences": 2, "divisions": 1, "free_agents": 12, "seed": "5", "name": "Screenshot League"})
+		_app.on_start_game(_app._pending_state.world.teams.ids()[2])
+		for slot in [["owner_1", "Houston dynasty"], ["owner_2", "Rebuild year two"], ["owner_3", "Expansion test"]]:
+			_app.saves.save(slot[0], _app.controller.state, slot[1])
+		_app.show_main_menu()
+		return
+	if _screen == "credits":
+		_app.show_credits()
 		return
 	if _screen == "new_league":
 		_app.show_new_league()

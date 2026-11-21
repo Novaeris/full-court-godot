@@ -15,6 +15,11 @@ run/main_scene="res://scenes/main.tscn"
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.7")
 config/icon="res://assets/icons/app_icon.svg"
+boot_splash/bg_color=Color(0.043137256, 0.0627451, 0.1254902, 1)
+boot_splash/image="res://assets/brand/boot_splash.png"
+boot_splash/fullsize=false
+boot_splash/use_filter=true
+config/windows_native_icon="res://assets/brand/app_icon.ico"
 
 [display]
 

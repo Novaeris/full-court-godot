@@ -94,7 +94,7 @@ func set_toast_inset(pixels: int) -> void:
 	toasts.offset_top = toasts.offset_bottom - 220
 
 
-## The mode skin's backdrop: "flat", "grid" or "spotlight", tinted by the skin's accent.
+## The mode skin's backdrop: "flat", "grid", "spotlight" or "arena" (the main menu), tinted by the skin's accent.
 func set_skin(skin: Dictionary) -> void:
 	_backdrop.style = str(skin.get("background", "flat"))
 	_backdrop.accent = skin.get("accent", FcUiTokens.PRIMARY)
@@ -129,6 +129,8 @@ class _Backdrop extends Control:
 				while y < size.y:
 					draw_line(Vector2(0, y), Vector2(size.x, y), line, 1.0)
 					y += 48.0
+			"arena":
+				FcArenaArt.paint(self, Rect2(Vector2.ZERO, size), accent)
 			"spotlight":
 				if _glow == null:
 					_glow = GradientTexture2D.new()

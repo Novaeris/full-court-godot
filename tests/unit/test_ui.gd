@@ -51,8 +51,10 @@ func _start_small_game() -> void:
 
 func test_main_menu_builds() -> void:
 	app.show_main_menu()
-	assert_true("FULL COURT" in _labels_text(app))
-	assert_eq(_trees(app).size(), 0, "no saved games yet, so no table")
+	assert_true(app._root.find_child("Logo", true, false) != null, "the Full Court logo heads the menu")
+	assert_eq(_trees(app).size(), 0, "no tables on the menu")
+	assert_eq(app._menu["save_cards"].size(), 0, "no saved games yet, so no save cards and no Continue card")
+	assert_eq(app._menu["mode_cards"].size(), 3, "the three mode cards")
 
 
 func test_new_league_screen_builds_with_valid_choices() -> void:
@@ -150,7 +152,7 @@ func test_saving_and_loading_from_the_menu() -> void:
 	assert_true("Saved" in app._message.text)
 	var date_before := app.controller.state.current_date.to_iso()
 	app.show_main_menu()
-	assert_eq(_trees(app).size(), 1, "the saved game is listed")
+	assert_eq(app._menu["save_cards"].size(), 1, "the saved game is listed")
 	app.on_continue()
 	assert_true(app.controller != null)
 	assert_eq(app.controller.state.current_date.to_iso(), date_before)

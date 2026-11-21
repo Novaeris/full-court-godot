@@ -57,6 +57,8 @@ var _last_staff_page: int = 0
 var _last_trade_page: int = -1
 var _last_tab := 0
 var _form := {}
+## The widgets of the main menu as built by FcMainMenu (mode_cards, save_cards, continue_button); tests and tools read it.
+var _menu := {}
 ## The status line of the current screen. Hidden: messages are shown as toasts (notifier); the text stays here so tests, tools
 ## and later accessibility features can read the latest message.
 var _message: Label
@@ -78,8 +80,21 @@ var _last_mode: String = FcLayoutProfile.DESKTOP
 
 func _ready() -> void:
 	setup()
+	call_deferred("_maybe_show_startup")
 	if OS.get_cmdline_user_args().has("--selftest"):
 		call_deferred("_run_self_test")
+
+
+## The startup logos (Novaeris, then Full Court) over the main menu, which is already built behind them. Only when this node IS the running
+## game (not when a tool or a test adds it to a scene), not headless, not in the self-test, and not switched off in Settings.
+func _maybe_show_startup() -> void:
+	if not is_inside_tree() or get_tree().current_scene != self or not preferences.show_splash or DisplayServer.get_name() == "headless":
+		return
+	if OS.get_cmdline_user_args().has("--selftest") or OS.get_cmdline_user_args().has("--no-splash") or not FcSplash.can_show():
+		return
+	var splash := FcSplash.new()
+	host.overlay.add_child(splash)
+	splash.start()
 
 
 ## `FullCourt.exe -- --selftest` (also headless): plays a small league through a season and an offseason using the
@@ -228,6 +243,8 @@ func _add_header(title: String, header: Dictionary) -> void:
 			tagline.theme_type_variation = "MutedLabel"
 			tagline.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			_root.add_child(tagline)
+		"none":
+			pass   # the screen draws its own header (the main menu shows the logo)
 		"letterhead":
 			var letterhead := FcLetterhead.new()
 			letterhead.setup(title, str(header.get("subtitle", "")), str(header.get("abbr", "")), str(header.get("primary", "")), str(header.get("secondary", "")), header.get("team", {}))
@@ -331,70 +348,36 @@ func _confirm_leave_to_menu() -> void:
 
 func show_main_menu() -> void:
 	host.modals.close_all()
-	var box := _reset("FULL COURT", {"id": "menu", "rebuild": show_main_menu, "header": {"kind": "wordmark", "tagline": "Basketball management simulation. Choose how you want to play."}})
-	if content != null and content.report.is_degraded():
-		var warn := FcUiTables.label(content.report.summary(), FcUiTokens.TYPE_SMALL)
-		warn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		box.add_child(warn)
-	var modes := HFlowContainer.new()
-	modes.add_theme_constant_override("h_separation", FcUiTokens.SPACE_3)
-	modes.add_theme_constant_override("v_separation", FcUiTokens.SPACE_3)
-	for entry in [
-			["Owner Mode", "Run every part of a franchise for up to 50 seasons: money, people, players, the draft, the league's rules.", show_new_league, "Available", FcModeSkin.FRANCHISE, FcStatusChip.Tone.INFO],
-			["Career Mode", "Create one player and take them through a career. Draft, contracts, teams, rivalries.", show_career_home, "Playable", FcModeSkin.BROADCAST, FcStatusChip.Tone.SUCCESS],
-			["Dynasty Mode", "Collect fictional player cards, open packs, build a 13-player roster and compete in challenges and tournaments.", show_dynasty_home, "Playable", FcModeSkin.COLLECTIBLE, FcStatusChip.Tone.SUCCESS]]:
-		var card := FcPanel.new("", FcPanel.Variant.RAISED)
-		card.set_accent(FcModeSkin.resolve(entry[4])["accent"])
-		card.custom_minimum_size.x = 260
-		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		card.add(FcStatusChip.make(entry[3], entry[5]))
-		card.add(FcUiTables.label(entry[0], FcUiTokens.TYPE_H1, true))
-		var blurb := FcUiTables.label(entry[1], FcUiTokens.TYPE_SMALL + 1)
-		blurb.theme_type_variation = "MutedLabel"
-		blurb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		blurb.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		card.add(blurb)
-		card.add(FcButton.make(entry[0], FcButton.Variant.PRIMARY, entry[2]))
-		modes.add_child(card)
-	box.add_child(modes)
+	var box := _reset("FULL COURT", {"id": "menu", "rebuild": show_main_menu, "skin_props": FcModeSkin.resolve(FcModeSkin.NEUTRAL, {"background": "arena"}), "header": {"kind": "none"}})
 	var slots := saves.list_slots()
-	if not slots.is_empty():
-		box.add_child(FcButton.make("Continue (latest save)", FcButton.Variant.SECONDARY, on_continue))
-		box.add_child(FcUiTables.label("Saved games", FcUiTokens.TYPE_H3, true))
-		var rows: Array = []
-		for m in slots:
-			rows.append([m.slot_id, m.label, m.team_name, "%d-%02d" % [m.season, (m.season + 1) % 100], m.mode, m.saved_at, "ok" if m.readable else "damaged"])
-		var table := FcDataTable.build(["Slot", "Name", "Team", "Season", "Mode", "Saved", "Status"], rows, [])
-		if table is Tree:
-			table.custom_minimum_size.y = mini(rows.size(), 5) * 30 + 36
-		box.add_child(table)
-		var row := HFlowContainer.new()
-		var picker := FcDropdown.new()
-		var names: Array = []
-		for m in slots:
-			names.append(m.slot_id)
-		picker.set_items(names)
-		_form["slot"] = picker
-		if table is Tree:
-			# the highlighted row is the save Load and Delete act on (the dropdown follows it; it used to ignore the table)
-			var tree := table as Tree
-			tree.item_selected.connect(func() -> void:
-				var picked := tree.get_selected()
-				if picked != null:
-					picker.selected = picked.get_index())
-			tree.get_root().get_child(0).select(0)
-		row.add_child(picker)
-		row.add_child(FcButton.make("Load", FcButton.Variant.SECONDARY, on_load_selected))
-		row.add_child(FcButton.make("Delete", FcButton.Variant.DESTRUCTIVE, request_delete_selected))
-		box.add_child(row)
-	var footer := HFlowContainer.new()
-	footer.add_theme_constant_override("h_separation", FcUiTokens.SPACE_2)
-	footer.add_child(FcButton.make("Settings", FcButton.Variant.GHOST, show_settings, "settings"))
-	footer.add_child(FcButton.make("About, licenses and logs", FcButton.Variant.GHOST, show_about, "info"))
+	# the dropdown is kept (not shown): Load, Delete and Continue read the chosen save from it, so those methods and their tests keep working
+	var picker := FcDropdown.new()
+	var names: Array = []
+	for m in slots:
+		names.append(m.slot_id)
+	picker.set_items(names)
+	_form["slot"] = picker
+	var actions := {"open_owner": show_new_league, "open_career": show_career_home, "open_dynasty": show_dynasty_home, "continue_latest": on_continue,
+		"load": func(slot_id: String) -> void: _load_slot(slot_id),
+		"delete": func(slot_id: String) -> void:
+			_select_slot(slot_id)
+			request_delete_selected(),
+		"select": _select_slot, "settings": show_settings, "credits": show_credits, "quit": func() -> void: get_tree().quit()}
 	if OS.has_feature("editor") or OS.get_cmdline_user_args().has("--gallery"):
-		footer.add_child(FcButton.make("Component gallery (development only)", FcButton.Variant.GHOST, show_gallery, "layers"))
-	footer.add_child(FcButton.make("Quit", FcButton.Variant.GHOST, func(): get_tree().quit()))
-	box.add_child(footer)
+		actions["gallery"] = show_gallery
+	var compact := FcUiTokens.touch_mode or (size.x > 0.0 and size.x < 700.0)
+	_menu = FcMainMenu.build(box, slots, actions, {"compact": compact, "content_warning": content.report.summary() if content != null and content.report.is_degraded() else ""})
+
+
+## Makes `slot_id` the chosen save (the one Load, Delete and the cards act on).
+func _select_slot(slot_id: String) -> void:
+	var picker: FcDropdown = _form.get("slot")
+	if picker == null:
+		return
+	for i in picker.item_count:
+		if picker.get_item_text(i) == slot_id:
+			picker.selected = i
+			return
 
 
 ## Settings: text size, reduced motion, the layout (desktop or mobile), the tutorial, and where the content lives.
@@ -412,6 +395,9 @@ func show_settings() -> void:
 		preferences.reduce_motion = on
 		preferences.save_file()
 		FcMotion.reduced = on))
+	display.add(FcToggle.make("Show the startup logos", preferences.show_splash, func(on: bool) -> void:
+		preferences.show_splash = on
+		preferences.save_file()))
 	display.add(FcUiTables.label("Layout", FcUiTokens.TYPE_SMALL))
 	var layouts := FcChoiceGroup.new()
 	layouts.set_options([["auto", "Automatic"], ["desktop", "Desktop"], ["mobile", "Mobile"]], preferences.layout_override)
@@ -988,29 +974,22 @@ func show_dynasty_home() -> void:
 	dynasty_ui.show_entry()
 
 
-## The About screen: version, the engine's licenses (the MIT notice the engine requires in every game made with it) and
-## shortcuts to the folders with logs and saves, so a player can send a log when something goes wrong.
+## The Credits screen (it replaced About): the Full Court and Novaeris logos, the version, what the game is built with and its licences,
+## and shortcuts to the folders with logs and saves, so a player can send a log when something goes wrong.
+func show_credits() -> void:
+	var box := _reset("Credits", {"id": "about", "back": show_main_menu, "rebuild": show_credits})
+	FcCredits.build(box, {"back": show_main_menu,
+		"open_logs": func() -> void: OS.shell_open(ProjectSettings.globalize_path("user://logs")),
+		"open_saves": func() -> void: OS.shell_open(ProjectSettings.globalize_path("user://")),
+		"open_content": func() -> void:
+			FcSafeFile.make_dir(preferences.effective_content_root())
+			OS.shell_open(ProjectSettings.globalize_path(preferences.effective_content_root()))},
+		content.report.summary() if content != null else "")
+
+
+## Kept under its old name: tests, tools and older code call it.
 func show_about() -> void:
-	var box := _reset("About Full Court", {"id": "about", "back": show_main_menu, "rebuild": show_about})
-	box.add_child(FcUiTables.label("Full Court %s: a basketball management simulation. Original teams, players and staff; real cities." % FcVersion.GAME_VERSION, 16))
-	if content != null:
-		box.add_child(FcUiTables.label(content.report.summary(), 14))
-	var info := Engine.get_version_info()
-	box.add_child(FcUiTables.label("Made with the Godot Engine %s (MIT license). Copyright (c) 2014-present Godot Engine contributors, Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.  https://godotengine.org" % info.get("string", ""), 14))
-	var text := TextEdit.new()
-	text.editable = false
-	text.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	text.text = Engine.get_license_text()
-	box.add_child(text)
-	var row := HBoxContainer.new()
-	row.add_child(FcUiTables.button("Open the logs folder", func(): OS.shell_open(ProjectSettings.globalize_path("user://logs"))))
-	row.add_child(FcUiTables.button("Open the saves folder", func(): OS.shell_open(ProjectSettings.globalize_path("user://"))))
-	row.add_child(FcUiTables.button("Open the content folder", func():
-		FcSafeFile.make_dir(preferences.effective_content_root())
-		OS.shell_open(ProjectSettings.globalize_path(preferences.effective_content_root()))))
-	row.add_child(FcUiTables.button("Back", show_main_menu))
-	box.add_child(row)
-	box.add_child(FcUiTables.label("If something goes wrong, send the newest file in the logs folder together with a description. Nothing is sent automatically.", 14))
+	show_credits()
 
 
 func on_continue() -> void:

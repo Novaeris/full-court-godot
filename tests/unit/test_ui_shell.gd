@@ -399,8 +399,10 @@ func test_the_main_menu_fits_a_phone_and_keeps_its_buttons() -> void:
 	_make_app()
 	app.show_main_menu()
 	var text := _labels_text(app)
-	for expected in ["FULL COURT", "[Owner Mode]", "[Career Mode]", "[Dynasty Mode]", "[Settings]", "[About, licenses and logs]", "[Quit]"]:
+	for expected in ["[Owner Mode]", "[Career Mode]", "[Dynasty Mode]", "[Settings]", "[Credits]", "[Quit]"]:
 		assert_true(expected in text, "the menu shows " + expected)
+	var logo := app._root.find_child("Logo", true, false)
+	assert_true(logo != null and logo.tooltip_text == "FULL COURT", "the menu shows the Full Court logo (or its text wordmark)")
 	assert_true(app._root.get_combined_minimum_size().x + 32 < 460, "three mode cards stack: the menu needs well under 460 px (it was 820)")
 
 
@@ -489,7 +491,7 @@ func test_touch_layouts_enlarge_the_stock_buttons_too() -> void:
 
 
 func test_the_highlighted_saved_game_is_the_one_that_loads() -> void:
-	# regression: Load always used the dropdown's first entry, whatever row the player clicked in the table
+	# regression: Load always used the first entry, whatever save the player picked (the saves are cards now: selecting a card picks it)
 	_make_app()
 	assert_true(app.on_create_league({"teams": 8, "conferences": 2, "divisions": 1, "free_agents": 10, "seed": "5", "name": "Pick League"}))
 	app.on_start_game(app._pending_state.world.teams.ids()[2])
@@ -498,8 +500,11 @@ func test_the_highlighted_saved_game_is_the_one_that_loads() -> void:
 	app.show_main_menu()
 	var slots := app.saves.list_slots()
 	assert_true(slots.size() >= 2, "two saves to choose from")
-	var tree: Tree = _find(app, Tree)[0]
+	var cards: Array = app._menu["save_cards"]
+	assert_eq(cards.size(), slots.size(), "one card per save")
 	var picker: OptionButton = app._form["slot"]
-	assert_eq(picker.get_item_text(picker.selected), slots[0].slot_id, "the first row starts highlighted and chosen")
-	tree.get_root().get_child(1).select(0)
-	assert_eq(picker.get_item_text(picker.selected), slots[1].slot_id, "clicking the second row chooses the second save")
+	assert_eq(picker.get_item_text(picker.selected), slots[0].slot_id, "the first card starts chosen")
+	assert_true(cards[0].is_selected and not cards[1].is_selected, "and shows it")
+	cards[1].selected.emit(slots[1].slot_id)
+	assert_eq(picker.get_item_text(picker.selected), slots[1].slot_id, "choosing the second card chooses the second save")
+	assert_true(cards[1].is_selected and not cards[0].is_selected, "the highlight moves with it")
