@@ -58,6 +58,7 @@ func _initialize() -> void:
 			"demo": _demo = kv[1]
 			"layout": _layout = kv[1]
 			"view": _view = kv[1]
+			"hd": FcPlayerFigure.hd_enabled = kv[1] == "1"   # the high-fidelity portrait prototype (docs/PLAYER_VISUAL_PROPOSAL.md)
 	if not _stretch:
 		root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 	root.size = _size

@@ -11,6 +11,9 @@ extends RefCounted
 ## every size; head shape, eyes, brows, nose and mouth vary with the key's proportions (FcPlayerVisual.proportions).
 
 const DEFAULTS := {"face_w": 86, "jaw": 0, "eye_gap": 34, "eye_size": 100, "brow": 1, "nose": 1, "mouth": 0, "accessory": 0, "warmth": 0}
+## PROTOTYPE SWITCH (docs/PLAYER_VISUAL_PROPOSAL.md): false = the shipped figure. true routes the procedural figure through FcPlayerFigureHd.
+## Off by default; only the portrait sheet tool and the screenshot tool turn it on, until the founder approves the new look.
+static var hd_enabled: bool = false
 const SHADOW := Color(0.04, 0.05, 0.1)
 const LIGHT := Color(1, 1, 1)
 
@@ -37,10 +40,19 @@ static func draw_headshot(ci: CanvasItem, rect: Rect2, visual: Dictionary) -> vo
 		draw(ci, rect, visual)
 		return
 	var grown := Rect2(rect.position + Vector2(-rect.size.x * 0.22, -rect.size.y * 0.06), rect.size * Vector2(1.44, 1.52))
+	if hd_enabled:
+		FcPlayerFigureHd.bust(ci, grown, visual)
+		return
 	_bust(ci, grown, visual)
 
 
 static func _figure(ci: CanvasItem, rect: Rect2, visual: Dictionary, full_body: bool) -> void:
+	if hd_enabled:
+		if full_body:
+			FcPlayerFigureHd.full(ci, rect, visual)
+		else:
+			FcPlayerFigureHd.bust(ci, rect, visual)
+		return
 	if full_body:
 		_full(ci, rect, visual)
 	else:
