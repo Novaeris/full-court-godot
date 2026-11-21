@@ -507,16 +507,18 @@ func show_gallery() -> void:
 ## calendar and games come in later phases (docs/CAREER_MODE_PLAN.md); this screen says so plainly.
 func show_career_home() -> void:
 	var box := _reset("Career Mode", {"id": "career_home", "skin": FcModeSkin.BROADCAST, "back": show_main_menu, "rebuild": show_career_home})
-	var text := FcUiTables.label("Create one player (name, body, position, strengths) and take them through a career of about 20 seasons: scouting and the draft, decisions, contracts, relationships, rivalries, sponsorships and a legacy. You reach your potential by choosing which skills to raise.
-
-See docs/CAREER_MODE_PLAN.md.", 16)
+	var panel := FcPanel.new("Your career", FcPanel.Variant.RAISED)
+	panel.set_accent(FcModeSkin.resolve(FcModeSkin.BROADCAST)["accent"])
+	panel.custom_minimum_size.x = 360
+	var text := FcUiTables.label("Create one player (name, body, position, strengths) and take them through a career of about 20 seasons: scouting and the draft, decisions, contracts, relationships, rivalries, sponsorships and a legacy. You reach your potential by choosing which skills to raise.", FcUiTokens.TYPE_BODY)
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	text.custom_minimum_size = Vector2(400, 0)
-	box.add_child(text)
-	var row := HBoxContainer.new()
-	row.add_child(FcUiTables.button("Create a player", show_career_creator))
-	row.add_child(FcUiTables.button("Back to the main menu", show_main_menu))
-	box.add_child(row)
+	panel.add(text)
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", FcUiTokens.SPACE_2)
+	row.add_child(FcButton.make("Create a player", FcButton.Variant.PRIMARY, show_career_creator, "plus"))
+	row.add_child(FcButton.make("Back to the main menu", FcButton.Variant.SECONDARY, show_main_menu, "chevron-left"))
+	panel.add(row)
+	box.add_child(panel)
 
 
 ## The player creator (FcCareerCreator). A valid build makes the player and opens the Career Hub.
@@ -558,20 +560,12 @@ func show_career_hub() -> void:
 	var card := career.card()
 	var box := _reset("%s   #%d" % [card["name"], card["jersey"]], {"id": "career_hub", "skin": FcModeSkin.BROADCAST, "back": _confirm_leave_to_menu,
 		"header": {"kind": "lower_third", "subtitle": "%s   %s   Age %d" % [card["position"], card["archetype"], card["age"]]}})
-	var identity := HBoxContainer.new()   # the player, the same figure as on the profile, with the way into it
-	identity.add_theme_constant_override("separation", FcUiTokens.SPACE_3)
-	identity.add_child(FcPlayerPortrait.new().setup(FcPlayerPresentation.from_career(career)["subject"], 64))
-	identity.add_child(FcUiTables.button("Player profile", func() -> void: FcPlayerProfile.open_modal(self, FcPlayerPresentation.from_career(career))))
-	box.add_child(identity)
+	var progress := career.progress()
+	var view_model := FcPlayerPresentation.from_career(career)
+	box.add_child(FcCareerHub.hero(card, progress, view_model, func() -> void: FcPlayerProfile.open_modal(self, FcPlayerPresentation.from_career(career))))
 	var career_hint := hints.card("career_hub")
 	if career_hint != null:
 		box.add_child(career_hint)
-	box.add_child(FcUiTables.label("%s%s   %s   Age %d   %d cm, %d kg, wingspan %d cm   Team: %s" % [
-		card["position"], "/" + card["secondary"] if card["secondary"] != "" else "", card["archetype"], card["age"],
-		card["height_cm"], card["weight_kg"], card["wingspan_cm"], card["team"]], 16))
-	var progress := career.progress()
-	box.add_child(FcUiTables.label("Overall %d    Potential %d (your ceiling)    Level %d    XP %d (%d of %d to the next level)    Development points %d    Skill points %d" % [
-		card["overall"], card["potential"], progress["level"], progress["xp"], progress["into_level"], progress["needed"], progress["development_points"], progress["skill_points"]], 17, true))
 	var tabs := FcTabPages.new()
 	tabs.add_page(_career_card_tab(card), "Card")
 	tabs.add_page(_career_season_tab(), "Season")
@@ -580,7 +574,7 @@ func show_career_hub() -> void:
 	tabs.current_tab = clampi(_last_career_tab, 0, 3)
 	tabs.tab_changed.connect(func(i): _last_career_tab = i)
 	box.add_child(tabs)
-	box.add_child(FcUiTables.label("Career id %s. Saved to slot career_1; load it from the main menu. The calendar and games arrive in the next phase." % card["profile_id"], 14))
+	box.add_child(FcUiTables.label("Career id %s. Saved to slot career_1; load it from the main menu." % card["profile_id"], 14))
 	var row := HBoxContainer.new()
 	row.add_child(FcUiTables.button("Save", func():
 		var r := career.save(saves)
@@ -812,17 +806,7 @@ func _career_role_row() -> Control:
 
 
 func _career_card_tab(card: Dictionary) -> Control:
-	var columns := HBoxContainer.new()
-	for group in card["groups"]:
-		var rows: Array = []
-		for row in group["rows"]:
-			rows.append([row[0], row[1], row[2]])
-		var part := VBoxContainer.new()
-		part.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		part.add_child(FcUiTables.label(group["name"], 16, true))
-		part.add_child(FcTable.from_strings(["Attribute", "Now", "Can reach"], rows, [0, 50, 70]))
-		columns.add_child(part)
-	return columns
+	return FcCareerHub.card_tab(card)
 
 
 func _career_develop_tab(_card: Dictionary, progress: Dictionary) -> Control:
@@ -832,12 +816,10 @@ func _career_develop_tab(_card: Dictionary, progress: Dictionary) -> Control:
 	var head := FcUiTables.label("Overall %d of your %d potential%s    Development points: %d" % [pot["overall"], pot["potential"], "  (at your ceiling)" if pot["at_potential"] else "  (%d to go)" % pot["to_go"], progress["development_points"]], 17, true)
 	head.tooltip_text = "Potential is the highest overall you can reach. You get there by choosing which skills to raise: skills that count more in overall give more per point."
 	box.add_child(head)
-	var bar := ProgressBar.new()
-	bar.min_value = 0
-	bar.max_value = 100
-	bar.value = pot["fraction"] * 100.0
-	bar.show_percentage = false
+	var bar := FcProgress.new(FcProgress.Variant.GOLD)
+	bar.set_progress(float(pot["fraction"]) * 100.0, 100.0)
 	bar.custom_minimum_size = Vector2(300, 14)
+	bar.tooltip_text = "%d of your %d potential" % [pot["overall"], pot["potential"]]
 	box.add_child(bar)
 	var best: Dictionary = view["best"]
 	if not best.is_empty():

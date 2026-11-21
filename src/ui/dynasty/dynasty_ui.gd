@@ -256,10 +256,8 @@ func panel(children: Array) -> PanelContainer:
 
 
 func progress_bar(value: int, maximum: int) -> ProgressBar:
-	var bar := ProgressBar.new()
-	bar.max_value = maxi(1, maximum)
-	bar.value = value
-	bar.show_percentage = false
+	var bar := FcProgress.new()
+	bar.set_progress(float(value), float(maxi(1, maximum)))
 	bar.custom_minimum_size = Vector2(110, 14)
 	return bar
 
