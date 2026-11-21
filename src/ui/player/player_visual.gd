@@ -22,6 +22,8 @@ const IMPLEMENTED_TIERS := [0, 1, 2]
 
 const SKIN_TONES := {"tone_1": "F6D7BD", "tone_2": "E9B98F", "tone_3": "CF9468", "tone_4": "A9703F", "tone_5": "7B4A27", "tone_6": "4E2D18"}
 const HAIR_COLORS := ["15110D", "2B1B12", "4A2E1B", "6B3F22", "8C8C8C"]
+## Which colour a hash picks: grey is one in twelve (there is no age in a visual, so a grey head on a young face should be rare).
+const HAIR_COLOR_PICK := [0, 0, 0, 1, 1, 1, 2, 2, 3, 3, 3, 4]
 const FALLBACK_OPTIONS := {
 	"skin": ["tone_1", "tone_2", "tone_3", "tone_4", "tone_5", "tone_6"],
 	"hair": ["bald", "short", "fade", "afro", "braids", "locs", "curly", "long"],
@@ -40,6 +42,24 @@ static func fnv1a(text: String) -> int:
 	return h
 
 
+## The face PROPORTIONS of a key: head width, jaw shape, eye spacing and size, brow, nose and mouth style, an optional headband and a
+## skin warmth shift. Derived from the key by hash only (never stored, never random), so two players with the same skin, hair and face
+## options still look like two people, and a Career player keeps these whatever look they built. Values are small integers or
+## quantised so the description compares exactly (golden test).
+static func proportions(key: String) -> Dictionary:
+	return {
+		"face_w": 80 + 3 * (fnv1a(key + "|face_w") % 5),   # head width as a percentage of its height
+		"jaw": fnv1a(key + "|jaw") % 3,                    # 0 round, 1 square, 2 pointed
+		"eye_gap": 31 + 2 * (fnv1a(key + "|eye_gap") % 4), # percent of the head radius
+		"eye_size": 90 + 10 * (fnv1a(key + "|eye_size") % 3),
+		"brow": fnv1a(key + "|brow") % 3,                  # 0 thin, 1 medium, 2 thick
+		"nose": fnv1a(key + "|nose") % 3,
+		"mouth": fnv1a(key + "|mouth") % 3,                # 0 smile, 1 neutral, 2 smirk
+		"accessory": 1 if fnv1a(key + "|accessory") % 7 == 0 else 0,   # 1 headband
+		"warmth": int(fnv1a(key + "|warmth") % 3) - 1,     # -1 cool, 0 neutral, 1 warm
+	}
+
+
 ## The visual description of `subject`: {key, tier, monogram, art_path, identity, uniform, poses}.
 ## subject: {"key": String (required: the entity's stable key), "name": String, "appearance": Dictionary, "art_path": String,
 ##           "team": {"primary": "#RRGGBB", "secondary": "#RRGGBB", "abbreviation": String, "name": String}, "jersey": int}
@@ -52,8 +72,9 @@ static func resolve(subject: Dictionary) -> Dictionary:
 		var stored := str(appearance.get(field, ""))
 		identity[field] = stored if options[field].has(stored) else options[field][fnv1a("%s|%s" % [key, field]) % options[field].size()]
 	identity["build"] = fnv1a(key + "|build") % 3
+	identity["proportions"] = proportions(key)
 	identity["skin_color"] = Color(str(SKIN_TONES.get(identity["skin"], "CF9468")))
-	identity["hair_color"] = Color(HAIR_COLORS[fnv1a(key + "|haircolor") % HAIR_COLORS.size()])
+	identity["hair_color"] = Color(HAIR_COLORS[HAIR_COLOR_PICK[fnv1a(key + "|haircolor") % HAIR_COLOR_PICK.size()]])
 	var art := str(subject.get("art_path", ""))
 	var tier := TIER_PROCEDURAL
 	if art != "" and FcDynastyStyle.art_texture(art) != null:

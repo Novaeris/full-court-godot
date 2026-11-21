@@ -122,8 +122,8 @@ func test_different_players_look_different() -> void:
 	var seen := {}
 	for i in 300:
 		var id: Dictionary = FcPlayerVisual.resolve(_subject("owner_player:%d" % i))["identity"]
-		seen["%s|%s|%s|%s|%s|%s" % [id["skin"], id["hair"], id["face"], id["facial_hair"], id["build"], id["hair_color"].to_html()]] = true
-	assert_true(seen.size() >= 250, "300 players gave %d distinct looks" % seen.size())
+		seen["%s|%s|%s|%s|%s|%s|%s" % [id["skin"], id["hair"], id["face"], id["facial_hair"], id["build"], id["hair_color"].to_html(), str(id["proportions"])]] = true   # the proportions are part of the look since Phase E
+	assert_true(seen.size() >= 290, "300 players gave %d distinct looks" % seen.size())
 
 
 func test_the_look_uses_the_whole_vocabulary() -> void:

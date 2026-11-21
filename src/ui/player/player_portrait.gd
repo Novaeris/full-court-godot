@@ -6,6 +6,8 @@ extends Control
 
 var visual: Dictionary = {}
 var subject: Dictionary = {}
+## "bust" (head and shoulders, the default) or "head" (cropped to the head, for small row portraits).
+var crop: String = "bust"
 
 
 func _init() -> void:
@@ -14,8 +16,10 @@ func _init() -> void:
 
 
 ## `subject` as in FcPlayerVisual.resolve (build it with FcPlayerPresentation, never by hand in a screen).
-func setup(player_subject: Dictionary, pixels: int = 48) -> FcPlayerPortrait:
+func setup(player_subject: Dictionary, pixels: int = 48, portrait_crop: String = "bust") -> FcPlayerPortrait:
 	subject = player_subject
+	crop = portrait_crop
+	clip_contents = true
 	visual = FcPlayerVisual.resolve(player_subject)
 	custom_minimum_size = Vector2(pixels, pixels)
 	tooltip_text = str(player_subject.get("name", ""))
@@ -32,7 +36,11 @@ func _draw() -> void:
 	well.set_corner_radius_all(int(size.x * 0.18))
 	draw_style_box(well, Rect2(Vector2.ZERO, size))
 	# the figure is clipped to the frame by drawing it inside a slightly smaller rectangle
-	FcPlayerFigure.draw(self, Rect2(Vector2(size.x * 0.06, size.y * 0.1), size * Vector2(0.88, 0.9)), visual)
+	var inner := Rect2(Vector2(size.x * 0.06, size.y * 0.1), size * Vector2(0.88, 0.9))
+	if crop == "head":
+		FcPlayerFigure.draw_headshot(self, Rect2(Vector2(size.x * 0.04, size.y * 0.04), size * Vector2(0.92, 0.92)), visual)
+	else:
+		FcPlayerFigure.draw(self, inner, visual)
 	var ring := StyleBoxFlat.new()
 	ring.draw_center = false
 	ring.border_color = uniform["primary"]

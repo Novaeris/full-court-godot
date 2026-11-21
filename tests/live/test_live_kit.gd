@@ -165,7 +165,7 @@ func test_the_gallery_runs_live_without_errors() -> void:
 	await frames(3)
 	gallery.set_skin(FcModeSkin.COLLECTIBLE)
 	await frames(3)
-	assert_true(gallery.section_titles().size() == 13, "all sections are built and laid out")
+	assert_true(gallery.section_titles().size() == 15, "all sections are built and laid out")
 	gallery.scroll_to_section("Motion")
 	await frames(2)
 	assert_true(gallery._page.get_v_scroll_bar().max_value > 0.0, "the page is taller than the window, so it scrolls")

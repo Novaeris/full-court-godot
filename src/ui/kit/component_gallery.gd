@@ -52,6 +52,7 @@ func build() -> void:
 	_section_cards()
 	_section_teams()
 	_section_players()
+	_section_portraits()
 	_section_broadcast()
 	_section_franchise()
 	_section_motion()
@@ -468,6 +469,57 @@ func _section_players() -> void:
 	showcase.add_child(_captioned("Uniform", FcUniformPreview.new().setup(stage.visual, 90)))
 	var other := FcShowcaseStage.new().setup(FcPlayerPresentation.subject("owner_player:12", "Lena Voss", teams[1], 23), 200)
 	showcase.add_child(_captioned("Showcase stage (derived look)", other))
+
+
+## The portrait contact sheet (Phase E): 96 SAMPLE players as headshots, one player at every size, every skin tone by every hair style,
+## and the figures with each facial-hair option. Reviewed from screenshots at the founder checkpoint.
+func _section_portraits() -> void:
+	var s := _section("Portraits", "SAMPLE players made up for this page. The same hash gives the same face at every size; faces differ in head shape, jaw, eyes, brows, nose and mouth even when skin, hair and face options match.")
+	var teams := [{"name": "Harbor Kings", "abbreviation": "HBK", "primary": "#1F3A5F", "secondary": "#C8A951"}, {"name": "Sky City", "abbreviation": "SKY", "primary": "#8B1E2D", "secondary": "#F5E6C8"},
+		{"name": "Pine Wolves", "abbreviation": "PNW", "primary": "#0B6E4F", "secondary": "#F4F1DE"}, {"name": "Ridge Barons", "abbreviation": "RDG", "primary": "#3B2F8F", "secondary": "#F0F0F0"}]
+	var sheet := _flow()
+	s.add_child(_captioned("96 headshots at 56 px", sheet, true))
+	for i in 96:
+		sheet.add_child(FcPlayerPortrait.new().setup(FcPlayerPresentation.subject("portrait_sheet:%d" % i, "Sample %d" % i, teams[i % 4], 1 + i % 99), 56, "head"))
+	var sizes := _flow()
+	s.add_child(_captioned("One player at 24, 32, 48, 64, 96, 128 px (bust)", sizes, true))
+	var one := FcPlayerPresentation.subject("portrait_sheet:7", "Sample Seven", teams[1], 7)
+	for px in [24, 32, 48, 64, 96, 128]:
+		sizes.add_child(_captioned(str(px), FcPlayerPortrait.new().setup(one, px)))
+	for px in [32, 48, 64]:
+		sizes.add_child(_captioned("head %d" % px, FcPlayerPortrait.new().setup(one, px, "head")))
+	var family := _flow()
+	s.add_child(_captioned("The player family: chip rows, small and medium tiles (Owner and Career, rating tiers) beside the Dynasty cards of the same sizes (rarity)", family, true))
+	var vm := {"subject": one, "name": "Sample Seven", "position": "SG", "secondary": "SF", "overall": 78, "team": teams[1]}
+	var chips := VBoxContainer.new()
+	chips.custom_minimum_size.x = 300
+	for rating in [91, 78, 66, 52]:
+		var row := vm.duplicate()
+		row["overall"] = rating
+		row["name"] = "Sample Player %d" % rating
+		chips.add_child(FcPlayerChip.new().setup(row, "SG  ·  26  ·  SKY"))
+	family.add_child(chips)
+	family.add_child(_captioned("Tile small", FcPlayerCards.make(vm, FcPlayerCards.Size.SMALL)))
+	family.add_child(_captioned("Tile medium", FcPlayerCards.make(vm, FcPlayerCards.Size.MEDIUM)))
+	family.add_child(_captioned("Dynasty small", FcCardFace.new().setup(_demo_card("rare", 78, "Sample Seven"), {"size": FcCardFace.SIZE_SMALL})))
+	family.add_child(_captioned("Dynasty standard", FcCardFace.new().setup(_demo_card("legendary", 91, "Sample Seven"), {"size": FcCardFace.SIZE_STANDARD})))
+	s = _section("Portrait variety", "Skin tones by hair styles, facial hair, and the full-body showcase stage.")
+	var grid := _flow()
+	s.add_child(_captioned("Every skin tone (rows) by every hair style (columns)", grid, true))
+	for skin in ["tone_1", "tone_2", "tone_3", "tone_4", "tone_5", "tone_6"]:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 4)
+		for hair in ["bald", "short", "fade", "afro", "braids", "locs", "curly", "long"]:
+			row.add_child(FcPlayerPortrait.new().setup(FcPlayerPresentation.subject("portrait_grid:%s:%s" % [skin, hair], "Grid", teams[0], 5, {"skin": skin, "hair": hair, "face": "face_2", "facial_hair": "none"}), 56))
+		grid.add_child(row)
+	var beards := _flow()
+	s.add_child(_captioned("Facial hair: none, stubble, goatee, beard", beards, true))
+	for fh in ["none", "stubble", "goatee", "beard"]:
+		beards.add_child(FcPlayerPortrait.new().setup(FcPlayerPresentation.subject("portrait_fh:" + fh, "Beard", teams[2], 9, {"skin": "tone_4", "hair": "short", "face": "face_3", "facial_hair": fh}), 96))
+	var stages := _flow()
+	s.add_child(_captioned("Showcase stage (full body)", stages, true))
+	for i in 3:
+		stages.add_child(FcShowcaseStage.new().setup(FcPlayerPresentation.subject("portrait_stage:%d" % i, "Stage %d" % i, teams[i], 10 + i), 160))
 
 
 func _section_broadcast() -> void:

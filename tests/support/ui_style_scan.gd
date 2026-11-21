@@ -4,12 +4,12 @@ extends RefCounted
 ##   color        literal colour constructors (Color(...)): colours belong in FcUiTokens
 ##   font         direct font-size overrides (add_theme_font_size_override): sizes belong in the theme and type scale
 ##   sized_label  FcUiTables.label(text, <number>...) calls with a literal size
-## The theme, the tokens and everything under src/ui/kit, shell, cards, team and art (crests, team colours and drawn pictures) are exempt (they are where such values live). test_ui_style_lint.gd
+## The theme, the tokens and everything under src/ui/kit, shell, cards, team, art and player (crests, team colours, portraits and drawn pictures) are exempt (they are where such values live). test_ui_style_lint.gd
 ## compares the counts with tests/support/ui_style_baseline.json: a count may fall (migrating a screen) but never rise.
 
 const ROOT := "res://src/ui"
 const EXEMPT_FILES := ["res://src/ui/ui_theme.gd", "res://src/ui/ui_tokens.gd"]
-const EXEMPT_DIRS := ["res://src/ui/kit/", "res://src/ui/shell/", "res://src/ui/cards/", "res://src/ui/team/", "res://src/ui/art/"]
+const EXEMPT_DIRS := ["res://src/ui/kit/", "res://src/ui/shell/", "res://src/ui/cards/", "res://src/ui/team/", "res://src/ui/art/", "res://src/ui/player/"]
 
 
 ## {"res://src/ui/app.gd": {"color": 0, "font": 0, "sized_label": 41}, ...} for every non-exempt file with at least one hit.

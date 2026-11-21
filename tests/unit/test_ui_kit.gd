@@ -431,13 +431,13 @@ func test_the_gallery_builds_every_section_in_every_skin_and_layout() -> void:
 		assert_true(expected in titles, "section " + expected)
 	for skin in FcModeSkin.ids():
 		gallery.set_skin(skin)
-		assert_eq(gallery.section_titles().size(), 13, "%s skin keeps every section" % skin)
+		assert_eq(gallery.section_titles().size(), 15, "%s skin keeps every section" % skin)
 	for index in 3:
 		gallery.set_text_index(index)
-		assert_eq(gallery.section_titles().size(), 13)
+		assert_eq(gallery.section_titles().size(), 15)
 	FcUiTokens.touch_mode = true
 	gallery.build()
-	assert_eq(gallery.section_titles().size(), 13, "touch layout builds too")
+	assert_eq(gallery.section_titles().size(), 15, "touch layout builds too")
 	var closed := []
 	gallery.closed.connect(func() -> void: closed.append(true))
 	_find_button(gallery, "Back").pressed.emit()
