@@ -137,7 +137,7 @@ static func rows_from_strings(titles: Array, text_rows: Array) -> Array:
 
 ## The number inside a formatted cell ("$29.4M" 29400000, "1,250" 1250, "40%" 40, "+3" 3); NAN when there is none.
 static func parse_number(text: String) -> float:
-	var t := text.strip_edges().replace("$", "").replace(",", "").replace("%", "").replace("*", "").replace("+", "")
+	var t := text.replace("$", "").replace(",", "").replace("%", "").replace("*", "").replace("+", "").strip_edges()
 	if t == "" or t == "-":
 		return NAN
 	var factor := 1.0
