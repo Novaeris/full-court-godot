@@ -3,6 +3,15 @@
 Newest first. Written so someone returning after a break can see where things stand.
 The repository was published to GitHub on 2026-11-17 at the founder's request (public: https://github.com/Novaeris/full-court-godot, remote `origin`, branch `main`). Later commits stay local until the founder asks for a push.
 
+## 2026-11-21: Release validation and Dynasty content readiness
+
+- **Release tests.** New real-viewport screen matrix (`tests/live/test_live_screen_matrix.gd`): every Dynasty screen (both layouts), all 13 Owner tabs, Career steps and menus x 7 window shapes x 3 text sizes, dialogs, ultrawide. It found and we fixed: Owner action row not wrapping at Large text (broke the 800 px rule), two tabs open at once after a rebuild, blank empty tables, buttons narrower than a finger, a post-game score bug wider than a 360 px phone. Release-readiness unit tests now cover all 11 mobile Dynasty screens at 3 text sizes and all 13 Owner tabs at small and large text.
+- **Dynasty content.** The bundled release is now the Founding Series (40 original players, 46 cards, 5 packs, 14 challenges, a season, 2 tournaments), built through the real publisher (D-055). Verified end to end from a fresh install (`tools/dynasty_initial_check.ps1`, `docs/DYNASTY_FOUNDING_REPORT.md`). Economy untouched.
+- **Builds.** Windows release exported, package checked (`tools/inspect_export.ps1`), packaged self-test extended to Dynasty and passing. Android preset added (D-056), debug APK built and run on an emulator, which found two phone display defects (fixed). Android hardware validation, iOS: outstanding (`docs/DEVICE_VALIDATION.md`, `docs/PLATFORM_BUILDS.md`).
+- **Owner presentation audit** of all 13 tabs (`docs/validation/OWNER_PRESENTATION_AUDIT.md`), **manual audit** status (`docs/validation/MANUAL_QUALITY_AUDIT.md`), **release report** with the six categories (`docs/RELEASE_READINESS.md`).
+- Tests: unit 1133 pass, live 75 pass; tools and simulation checks all pass.
+- **Founder decisions open:** package name and keystore, keep or replace the Founding Series, lawyer review, portrait lock, music.
+
 ## 2026-11-20: UI/UX polish, Phase 4 (card system)
 
 new src/ui/cards (FcRarityStyle: five rarities each with its own frame, background pattern and effects, with a safe fallback for unknown rarities; FcCardFace: the whole card drawn in one node with hover lift, focus ring, selected, inspected, face-down back, flip, a shader light sweep on rare and up, mastery frames, NEW and other tags, accessible text). FcCardView.build keeps its API, so every Dynasty screen already uses the new cards. The gallery has a Cards section (all rarities, states, sizes). Card text is drawn, so tests read a card's accessible_text(). Results: docs/validation/ui/phase4_results.txt.

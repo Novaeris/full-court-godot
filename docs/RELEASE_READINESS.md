@@ -1,48 +1,84 @@
-# Release readiness: UI polish and presentation (Phase 13)
+# Release readiness report
 
-Written 2026-11-20 at the end of the UI/UX Polish milestone (docs/UI_POLISH_PLAN.md, decisions D-047 to D-054). It says what was verified, by
-which command, and, just as important, what was NOT verified because it needs a person, a device or a lawyer.
+Updated 2026-11-21 at the end of the Release Validation and Dynasty Content Readiness milestone (earlier version: UI polish Phase 13, 2026-11-20).
+Environment for everything below: Windows 11, Godot 4.7.2.stable.official, `godot_console`, NVIDIA RTX 4060, JDK 21, Android SDK build-tools 34, emulator API 34.
+The goal is a trustworthy release candidate and an exact list of what still blocks release; **the game is not declared finished.**
 
-## What was checked, and how
+## 1. Automated checks passed
 
-| Area | Evidence |
+| Check | Command | Result |
+|---|---|---|
+| Unit suite | `godot_console --headless --path . --script res://tests/run_tests.gd` | exit 0, **1133 passed, 0 failed**, 709 s |
+| Live UI suite | `... --script res://tests/run_live_tests.gd` | exit 0, **75 passed, 0 failed**, 118 s |
+| Release screen matrix (inside the live suite) | `... run_live_tests.gd -- --filter=screen_matrix` | 7 tests pass: see "What the matrix proves" |
+| Simulation calibration | `... --script res://tools/simulate_games.gd -- games=1000 seed=2026 strict=1` | exit 0, 0 of 16 checks outside the realistic range, 12 s |
+| Owner economy | `... tools/economy_check.gd` (defaults: 50 seasons) | exit 0, RESULT ok, 878 s |
+| Owner stress | `... tools/owner_stress.gd` | exit 0, RESULT ok, 659 s |
+| Career playthrough | `... tools/career_playthrough.gd` | exit 0, 0 problems, 54 s |
+| Owner click test | `... tools/click_test.gd` | exit 0, 67 real clicks, 0 problems |
+| Career click test | `... tools/career_click_test.gd` | exit 0, 22 clicks, 0 problems |
+| Dynasty health | `... tools/dynasty_check.gd` | exit 0 (50 games with saves, a tournament, save and reload) |
+| Dynasty Founding Series end to end | `... tools/dynasty_initial_check.gd` | exit 0, RESULT ok, 0 failures (`docs/DYNASTY_FOUNDING_REPORT.md`) |
+| Creator Studio smoke | `godot_console --headless --path creator_studio --script res://tools/studio_smoke.gd` | PASS |
+| GitHub Actions | `gh run list` | CI **success** on the screen-matrix commit `90b0204` (14 m 13 s). The commit that carries this report is checked after it is pushed (see the progress log). |
+| Pack outcomes, economy and simulation unchanged | Gameplay, economy, pack and save code were not edited; the diff touches presentation code, content data, tests, tools and docs only. | The 400-roll / 30-game digest of Phase 13 was not re-run because nothing it covers changed. |
+
+### What the matrix proves (`tests/live/test_live_screen_matrix.gd`, helper `tests/support/ui_viewport_audit.gd`)
+Each screen is laid out inside a REAL `SubViewport` of the window size, then the audit looks for controls outside the window, sideways overflow, taps below 44 px
+(touch layouts), dialogs larger than the window and buttons the keyboard cannot reach.
+- **Dynasty (every tab plus the entry screen), desktop and mobile layouts, 7 sizes (360x800, 412x915, 800x600, 1024x768, 1280x800, 1920x1080, 2560x1080) x 3 text sizes:** 0 problems.
+- **All 13 Owner tabs, Career home, all 5 Career creator steps, main menu, settings, new league, About, from 800x600 up, 3 text sizes:** 0 problems. On the two phone sizes these desktop-designed screens are NOT required to fit (D-030, D6): 93 combinations overflow there, printed for information.
+- A confirmation dialog stays inside every window; on ultrawide (1920, 2560 and 3440 wide) every control sits inside the centred 1600 px column and the dialog is centred and compact.
+- Three levels are kept apart: `test_release_readiness.gd` proves "builds" and the quick minimum-size "fits"; the matrix proves "fits a real viewport" and "usable" (touch size, scrolling, dialogs, focus style). "Looks and feels right" is a person's judgement.
+- Large-text phone fit covers all 11 mobile Dynasty screens at all 3 text sizes; the minimum-size probe covers all 13 Owner tabs at small, normal and large text. No ratchet baseline was loosened; `screen_matrix_baseline.json` starts empty and may only shrink.
+
+## 2. Locally verified (run here, not on hardware)
+
+| Item | Evidence |
 |---|---|
-| Unit tests | `godot_console --headless --path . --script res://tests/run_tests.gd` (exit 0). Both runners now fail a test on any runtime script error. |
-| Live UI tests | `godot_console --headless --path . --script res://tests/run_live_tests.gd`: tweens, timers, focus, real input (touch emulated in a phone-sized viewport), pack reveal, audio voices. |
-| Pack outcomes, games and saved profile unchanged | A digest of 400 pack rolls, 30 simulated Dynasty games and the saved profile for a fixed seed is **identical** on the commit before the UI work (6c963ac) and on the final commit (checked with a temporary git worktree). |
-| Simulation calibration | `tools/simulate_games.ps1` with 1000 games and `strict=1`: 0 of 16 checks outside the realistic range. |
-| Economy | `tools/economy_check.gd` (12 teams, 15 seasons): RESULT ok. |
-| Click tests | `tools/click_test.gd` (67 real mouse clicks, 0 problems) and `tools/career_click_test.gd` (22 clicks, 0 problems; it now walks the creator's five steps). |
-| Creator Studio | `studio_smoke.gd` PASS with the shared theme. |
-| Dynasty health | `tools/dynasty_check.gd`: 50 games with saves, a tournament, save and reload OK. |
-| Window shapes | Dynasty tabs build at 360x800, 412x915, 800x600, 1024x768, 1280x800, 1920x1080 and 2560x1080 (`test_release_readiness.gd`); screenshots in `docs/validation/ui/final/` (6 sizes, 7 screens). |
-| Phone fit | Every Dynasty screen needs at most 412 px in the mobile layout (hard test), also with Large text. |
-| Owner and Career minimum window | Every Owner and Career screen needs at most 800 px (D6; hard test). |
-| Navigation | Every Dynasty tab is on the bar or in More; Back from every Dynasty tab reaches the main menu; every Owner tab builds. |
-| Collection performance | 500 and 2,000 cards build in a time budget with one node per card (`test_ui_collection.gd`); a Dynasty screen builds in a few milliseconds. |
-| Accessibility | Contrast of every text colour on every surface, rarity colours on their cards, mastery frames; every enabled button and card takes keyboard focus; reduced motion; three text sizes; hints can be turned off. |
-| Audio | 17 sounds built by the game, deterministic, never clipped; a pack reveal asks for the matching sting; skipping is quiet; the game is fully usable muted. |
-| Style discipline | Style lint and layout ratchets only ever tighten (`tests/support/*_baseline.json`). |
+| **Windows release export** | `./tools/export_windows.ps1`: exit 0, 111 MB `FullCourt.exe`; `./tools/inspect_export.ps1` confirms 642 packaged files with nothing from tests, tools, docs or Creator Studio and every font, icon, shader, licence text and the bundled content present (`docs/validation/export_report.md`). |
+| **Exported exe run outside the editor** | `FullCourt.exe --headless -- --selftest`: SELFTEST OK, exit 0 (league played, saved, loaded back; Dynasty content loaded, profile created, game played, pack opened, profile saved and reloaded). A windowed start ran 240 frames with a clean log. Only on the development PC. |
+| **Android debug APK** | `./tools/export_android.ps1`: exit 0, 30 MB, signed, package `com.novaeris.fullcourt` 0.1.0 (code 1), arm64-v8a, portrait, no permissions. |
+| **APK on an Android EMULATOR (not hardware)** | Installs, starts, loads the bundled release (46 cards), creates a profile, survives a stop and restart, Android Back returns to the menu. It found two real phone defects (UI drawn at desktop size; safe-area margins in the wrong units), both fixed (`docs/validation/android_emulator/README.md`). |
+| **Dynasty initial content, normal loader** | Fresh-install load through `FcContentService`, 40 players, legal lineup, starter collection of 15, packs (guarantee and pity measured over 200 rolls each), duplicate conversion, games, challenges, milestones, both tournaments, save and reload. |
+| **Owner Mode presentation audit** | All 13 tabs viewed (`docs/validation/OWNER_PRESENTATION_AUDIT.md`); four defects fixed. |
+| **Ultrawide** | Content column capped at 1600 px and centred; covered by the matrix. |
+| Screenshots | `docs/validation/ui/final/`, `docs/validation/android_emulator/`, `docs/validation/owner_audit/`. |
 
-## What was NOT verified (needs a person, a device or a decision)
+## 3. Verified on physical hardware
 
-- **How it sounds.** The headless run has no speakers. The built sounds are checked for length, loudness and key, not taste. A listening review is
-  needed; any sound can be replaced by an original recording (listed with its source and licence in `assets/audio/SOURCES.md`, enforced by a test).
-- **How it feels on a real phone.** Touch is emulated, safe areas and the Android back button are wired and unit-tested but never ran on hardware. No
-  iOS or Android build was made.
-- **Controller and screen reader.** Focus reach is tested; a real gamepad and a screen reader were not used. Cards expose accessible text but a screen reader pass is open.
-- **Frame rate on real GPUs.** Build times are measured; frame times and animation smoothness need a real window on target hardware (the gl_compatibility renderer was chosen for mobile).
-- **Ultrawide (21:9).** Fixed in the follow-up pass (2026-11-21): the content column never grows past 1600 px and is centred (`FcScreenHost.MAX_CONTENT_WIDTH`, unit-tested). Not looked at on a real ultrawide monitor.
-- **Owner Mode tabs.** Fixed in the follow-up pass: all 13 tabs and their sub-pages now sit in the kit's tab bar and panel (`FcTabPages`, replacing Godot's TabContainer), long sentences wrap, and every tab was measured at 715 px (the old measure was stale and hid five tabs that needed up to 1865 px; the layout probe now measures all 13). The tables inside are still the plain themed tables, not `FcDataTable`: they carry row selection that the buttons depend on.
-- **GitHub Actions.** Checked 2026-11-21 with `gh run list`: the CI runs for the Phase 11, 12 and 13 pushes all finished successfully (about 13 minutes each).
-- **Legal.** Player names, cards and branding are original, the sounds are built by the game and the fonts and icons are open-licence, but a lawyer should review before any commercial release (CLAUDE.md rule 9).
+**Nothing.** No physical phone, tablet, gamepad, speakers or screen reader was available. `docs/DEVICE_VALIDATION.md` is the checklist and is entirely OUTSTANDING.
+
+## 4. Not tested
+
+- iOS (no preset, no Mac, no Apple account).
+- Windows on any machine other than the development PC; Mac.
+- Gamepad, screen reader (NVDA, TalkBack), Windows high contrast, very large display scaling.
+- Frame times and animation smoothness on any real GPU; battery, heat, memory.
+- How the 17 built sounds sound (`docs/validation/MANUAL_QUALITY_AUDIT.md`).
+- Android: Back from every screen and from dialogs, suspension and resume, rotation, notches and gesture bars, the keyboard covering text fields, Large text, performance.
+- Owner Mode and Career Mode on a phone (not a target, D-030).
+- A Dynasty profile saved by an older build with the old two-card release (the save format did not change; the release-sync path is unit-tested but was not exercised with a real old profile).
+
+## 5. Blocked by missing tooling or hardware
+
+| Blocker | Needed |
+|---|---|
+| Physical Android validation | A phone with USB debugging; then `docs/DEVICE_VALIDATION.md` |
+| iOS | A Mac with Xcode, an Apple Developer account, signing, a device (`docs/PLATFORM_BUILDS.md`) |
+| Android release build (AAB) | A release keystore (founder), Gradle build template, Play Console account |
+| Windows code signing | A code-signing certificate |
+
+## 6. Requires a founder decision or external review
+
+- **Package name** (`com.novaeris.fullcourt` is a placeholder) and the **release keystore** (D-056).
+- **Dynasty content:** the Founding Series (D-055) is an invented starter pool; the founder said they will supply the official players. Keep, rename or replace it.
+- **Lawyer review:** generated and Founding Series names, team names with real cities, the title "Full Court", AI-assisted assets, licences, and above all paid random packs (loot-box law) before any monetization (`docs/LEGAL_CHECKLIST.md`).
+- **Music** is not included (a creative choice, not invented).
+- **Orientation:** Android is locked to portrait; allow landscape?
+- **Shader risk on low-end Android GPUs:** the emulator's software GPU failed at 261 fragment uniform vectors. Confirm on real devices before choosing the minimum supported phone.
 
 ## Known limits to carry forward
-
-- Music is not included (the Music bus exists and is empty).
-- Player visuals are tiers 0 to 2 (monogram, card art, procedural figure); full-body pose sprites and 3D (tiers 3 and 4) are designed slots, not built (D5).
-- Engine messages such as "Lambda capture ... was freed" appear when a live test frees a pack reveal while a tween runs; they are not script errors and do not fail a test.
-
-## Follow-up pass (2026-11-21)
-
-Still open and needing a person: the listening review, a real phone, a gamepad and screen reader, frame rate on real GPUs, the legal review, and music (a creative choice, so it was not invented).
+- Player visuals are tiers 0 to 2 (monogram, card art, procedural figure); full-body poses and 3D are designed slots, not built (D5).
+- Engine messages such as "Lambda capture ... was freed" appear when a live test frees a pack reveal while a tween runs; they are not script errors.
+- Owner tables are plain themed `Tree` tables with row selection, not `FcDataTable` (intentional legacy, see the Owner audit).

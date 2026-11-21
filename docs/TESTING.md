@@ -200,3 +200,10 @@ A test now FAILS if a runtime script error happens while it runs (setup, body, t
 
 ## Status at the end of the UI polish milestone (2026-11-20)
 Unit suite: 1,113 tests; live UI suite: 68 tests; both exit 0. See docs/RELEASE_READINESS.md for every other check and for what was not verified.
+
+## Release validation additions (2026-11-21)
+- **Screen matrix** (`tests/live/test_live_screen_matrix.gd`, helper `tests/support/ui_viewport_audit.gd`, ratchet `tests/support/screen_matrix_baseline.json`): real `SubViewport` of each window shape x 3 text sizes; checks controls outside the window, sideways overflow, touch size, dialogs, keyboard reach, theme focus styles and the ultrawide column. "Builds" (`test_release_readiness.gd`) is not "fits" (matrix) is not "feels right" (a person). Run: `./tools/run_live_tests.ps1 -Filter screen_matrix`.
+- `tests/unit/test_dynasty_founding.gd` and `./tools/dynasty_initial_check.ps1`: the bundled Founding Series release from a fresh install.
+- `tests/unit/test_release_fixes.gd`: regressions for what the matrix and the Owner audit found, plus the phone scale and safe-area conversions.
+- Exports: `./tools/export_windows.ps1`, `./tools/inspect_export.ps1 <package>`, `./tools/export_android.ps1`, packaged self-test `FullCourt.exe --headless -- --selftest` (docs/PLATFORM_BUILDS.md).
+- **Do not run two Godot test processes at once**: the Dynasty fixtures use shared `user://test_*` folders and a second process corrupts them (this produced false failures during this milestone).
