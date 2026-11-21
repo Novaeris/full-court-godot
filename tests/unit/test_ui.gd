@@ -82,9 +82,9 @@ func test_invalid_league_is_refused_with_a_message() -> void:
 
 func test_creating_a_league_leads_to_team_choice() -> void:
 	assert_true(app.on_create_league({"teams": 8, "conferences": 2, "divisions": 1, "free_agents": 10, "seed": "7"}))
-	var trees := _trees(app)
-	assert_eq(trees.size(), 1)
-	assert_eq((trees[0] as Tree).get_root().get_child_count(), 8, "every team is listed")
+	var tables := _tables(app)
+	assert_eq(tables.size(), 1)
+	assert_eq((tables[0] as FcTable).row_count(), 8, "every team is listed")
 
 
 func test_starting_a_game_shows_the_dashboard_with_all_tabs() -> void:
@@ -203,8 +203,8 @@ func test_spectator_mode_hides_owner_controls() -> void:
 func test_staff_tab_lists_staff() -> void:
 	_start_small_game()
 	var tab := app.build_tab("Staff")
-	var trees := _trees(tab)
-	assert_true(trees.size() == 1 and (trees[0] as Tree).get_root().get_child_count() >= 2, "GM and head coach are listed")
+	var tables := _tables(tab)
+	assert_true(tables.size() == 1 and (tables[0] as FcTable).row_count() >= 2, "GM and head coach are listed")
 	tab.free()
 
 
@@ -255,7 +255,7 @@ func test_history_tab_builds() -> void:
 	app.on_advance(10)
 	var tab := app.build_tab("History")
 	assert_true(tab is HBoxContainer and tab.get_child_count() == 2)
-	assert_true(not _trees(tab).is_empty())
+	assert_true(not _tables(tab).is_empty())
 	tab.free()
 
 

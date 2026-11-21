@@ -102,7 +102,7 @@ func test_ui_shows_news_and_box_scores() -> void:
 	var stack: Array = [news_tab]
 	while not stack.is_empty():
 		var n: Node = stack.pop_back()
-		if n is Tree:
+		if n is FcTable:
 			trees.append(n)
 		stack.append_array(n.get_children())
 	assert_eq(trees.size(), 1)

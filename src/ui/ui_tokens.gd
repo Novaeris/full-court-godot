@@ -29,6 +29,9 @@ const DANGER := Color("F5726F")
 const TEXT := Color("EAF0FA")
 const TEXT_MUTED := Color("9AA8C2")
 const TEXT_DISABLED := Color("6A7791")
+## Categorical chart colours (stacked bars, legends). Each is at least 3:1 on every surface (a test enforces it), and charts never rely on
+## colour alone: every segment also has a text label and value.
+const CHART := [Color("39A9FF"), Color("FF8A24"), Color("3DD68C"), Color("FFB547"), Color("B273F5"), Color("4CC3D9"), Color("F5726F"), Color("7C9DCB"), Color("D6A3E8"), Color("9AA8C2"), Color("A3E635"), Color("F472B6")]
 ## The dim layer behind a modal (translucent, so it is not a text colour).
 const SCRIM := Color(0.02, 0.03, 0.07, 0.72)
 const TRANSPARENT := Color(0, 0, 0, 0)

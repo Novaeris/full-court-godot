@@ -30,22 +30,27 @@ var _hover: int = -1
 var _header: FcTableRow
 var _scroll: ScrollContainer
 var _body: Control
-var _empty: FcEmptyState
+var _empty: Control
 var _pool: Array = []
 var _col_x: Array = []
 var _col_w: Array = []
 var _layout_width: float = 0.0
 var _pending_update := false
+## Multi-select mode (option "multi"): clicking a row toggles it and any number of rows can be picked (trades, protect lists).
+var multi: bool = false
+var _picked: Dictionary = {}
 
 
 func _init(column_defs: Array = [], row_data: Array = [], options: Dictionary = {}) -> void:
 	_options = options
+	multi = bool(options.get("multi", false))
 	columns = column_defs
 	row_height = int(options.get("row_height", maxi(FcUiTokens.min_target(), roundi(34 * FcUiTokens.text_scale))))
 	focus_mode = Control.FOCUS_ALL
 	add_theme_constant_override("separation", 0)
 	_header = FcTableRow.new(true)
 	_header.custom_minimum_size.y = row_height
+	_header.clip_contents = true
 	add_child(_header)
 	_scroll = ScrollContainer.new()
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -56,7 +61,15 @@ func _init(column_defs: Array = [], row_data: Array = [], options: Dictionary = 
 	_body.mouse_filter = Control.MOUSE_FILTER_PASS
 	_body.clip_contents = true
 	_scroll.add_child(_body)
-	_empty = FcEmptyState.new(str(options.get("empty_title", "Nothing here yet")), str(options.get("empty_text", "")))
+	if bool(options.get("compact_empty", false)):
+		var note := FcUiTables.label(str(options.get("empty_title", "Nothing to show yet.")), FcUiTokens.TYPE_SMALL)
+		note.theme_type_variation = "MutedLabel"
+		note.custom_minimum_size.y = row_height
+		_empty = note
+	else:
+		var state := FcEmptyState.new(str(options.get("empty_title", "Nothing here yet")), str(options.get("empty_text", "")))
+		state.body_label.custom_minimum_size.x = 0   # an empty table must not widen its screen (the empty state's usual 260 px is for full-page use)
+		_empty = state
 	_empty.visible = false
 	add_child(_empty)
 	_build_header()
@@ -65,6 +78,7 @@ func _init(column_defs: Array = [], row_data: Array = [], options: Dictionary = 
 	_body.resized.connect(_on_resized)
 	_scroll.resized.connect(_update_window)   # the number of rows in view depends on the height, which settles after the width
 	_scroll.get_v_scroll_bar().value_changed.connect(_on_scrolled)
+	resized.connect(_relayout)   # an empty table has no visible body, so the header is laid out from the table's own width
 	focus_entered.connect(_refresh_looks)
 	focus_exited.connect(_refresh_looks)
 	if options.has("sort_key"):
@@ -82,6 +96,70 @@ static func build(column_defs: Array, row_data: Array, options: Dictionary = {})
 	var table := FcTable.new(column_defs, row_data, options)
 	table.custom_minimum_size.y = table.row_height * (mini(row_data.size(), int(options.get("max_rows", 12))) + 1) + 2
 	return table
+
+
+## A table from plain text, the way the older tabs build their lists: `titles` (strings), `text_rows` (arrays of strings or values), `widths`
+## (0 = flexible). Each row's id is its index. Columns whose every filled cell looks like a number sort as numbers ("$29.4M", "12.5", "40%"),
+## and align right. Use it to move a plain list onto the table without changing its data; the selection is `selected_id` (the row index) or,
+## with {"multi": true}, `selected_ids()`.
+static func from_strings(titles: Array, text_rows: Array, widths: Array = [], options: Dictionary = {}) -> FcTable:
+	var column_defs: Array = []
+	for i in titles.size():
+		var numeric := _looks_numeric(i, text_rows)
+		var key := "c%d" % i
+		var def := {"key": key, "title": str(titles[i]), "kind": "number" if numeric else "text"}
+		if i < widths.size() and int(widths[i]) > 0:
+			def["width"] = int(widths[i])
+		if numeric:
+			def["sort_value"] = func(r: Dictionary): return parse_number(str(r.get(key, "")))
+		column_defs.append(def)
+	var row_data := rows_from_strings(titles, text_rows)
+	var opts := options.duplicate()
+	if not opts.has("compact_empty"):
+		opts["compact_empty"] = true
+	if not opts.has("max_rows"):
+		opts["max_rows"] = clampi(text_rows.size(), 1, 12)
+	var table := FcTable.new(column_defs, row_data, opts)
+	table.custom_minimum_size.y = table.row_height * (mini(maxi(text_rows.size(), 1), int(opts["max_rows"])) + 1) + 2
+	return table
+
+
+## The row dictionaries of a from_strings table for new text rows (for set_rows when the list changes while the screen is open).
+static func rows_from_strings(titles: Array, text_rows: Array) -> Array:
+	var row_data: Array = []
+	for r in text_rows.size():
+		var d := {"id": r}
+		for i in titles.size():
+			d["c%d" % i] = str(text_rows[r][i]) if i < text_rows[r].size() else ""
+		row_data.append(d)
+	return row_data
+
+
+## The number inside a formatted cell ("$29.4M" 29400000, "1,250" 1250, "40%" 40, "+3" 3); NAN when there is none.
+static func parse_number(text: String) -> float:
+	var t := text.strip_edges().replace("$", "").replace(",", "").replace("%", "").replace("*", "").replace("+", "")
+	if t == "" or t == "-":
+		return NAN
+	var factor := 1.0
+	var last := t.substr(t.length() - 1).to_upper()
+	if last == "M" or last == "K" or last == "B":
+		factor = {"K": 1000.0, "M": 1000000.0, "B": 1000000000.0}[last]
+		t = t.substr(0, t.length() - 1)
+	return float(t) * factor if t.is_valid_float() else NAN
+
+
+static func _looks_numeric(column: int, text_rows: Array) -> bool:
+	var seen := false
+	for row in text_rows:
+		if column >= row.size():
+			continue
+		var cell := str(row[column]).strip_edges()
+		if cell == "" or cell == "-":
+			continue
+		seen = true
+		if is_nan(parse_number(cell)):
+			return false
+	return seen
 
 
 # --- data ------------------------------------------------------------------------------------------------------------
@@ -129,12 +207,34 @@ func sort_by(key: String, ascending = null) -> void:
 	sort_changed.emit(sort_key, sort_ascending)
 
 
+## The picked ids in the order the rows were given (multi-select mode; a single selection gives a list of one).
+func selected_ids() -> Array:
+	if not multi:
+		return [] if selected_id == null else [selected_id]
+	var out: Array = []
+	for r in rows:
+		if _picked.has(r.get("id")):
+			out.append(r.get("id"))
+	return out
+
+
+func clear_selection() -> void:
+	_picked.clear()
+	selected_id = null
+	_refresh_looks()
+
+
 func select_id(id, emit: bool = true) -> void:
 	var i := _index_of_id(id)
 	if i < 0:
 		selected_id = null
 		_refresh_looks()
 		return
+	if multi:
+		if _picked.has(id):
+			_picked.erase(id)
+		else:
+			_picked[id] = true
 	selected_id = id
 	var pos := _order.find(i)
 	_ensure_visible(pos)
@@ -174,7 +274,7 @@ func _resort() -> void:
 
 ## -1, 0 or 1. Numbers compare as numbers, everything else as text without regard to case; blanks sort last.
 static func _is_blank(v) -> bool:
-	return v == null or (v is String and v == "")
+	return v == null or (v is String and v == "") or (v is float and is_nan(v))
 
 
 static func _compare(a, b) -> int:
@@ -284,9 +384,14 @@ func _on_scrolled(_value: float) -> void:
 
 
 func _on_resized() -> void:
-	if absf(_body.size.x - _layout_width) < 0.5:
+	_relayout()
+
+
+func _relayout() -> void:
+	var total := _body.size.x if _scroll.visible and _body.size.x > 0.0 else size.x
+	if total <= 0.0 or absf(total - _layout_width) < 0.5:
 		return
-	_layout_width = _body.size.x
+	_layout_width = total
 	_compute_columns(_layout_width)
 	_place_header()
 	for r in _pool:
@@ -307,13 +412,32 @@ func _compute_columns(total: float) -> void:
 		else:
 			flex += 1
 	var share := maxf(48.0, (total - fixed) / float(maxi(flex, 1)))
-	var x := 0.0
-	for c in columns:
-		var w := float(c.get("width", 0))
+	var widths: Array = []
+	var sum := 0.0
+	for i in columns.size():
+		var w := float(columns[i].get("width", 0))
 		w = w if w > 0.0 else share
+		w = maxf(w, _title_width(i))   # a column is never narrower than its own title (with the sort arrow)
+		widths.append(w)
+		sum += w
+	var squeeze := total / sum if sum > total and total > 0.0 else 1.0   # in a narrow container every column gives up the same share
+	var x := 0.0
+	for w in widths:
 		_col_x.append(x)
-		_col_w.append(w)
-		x += w
+		_col_w.append(float(w) * squeeze)
+		x += float(w) * squeeze
+
+
+## The width a column's title needs (text, sort arrow and the button padding).
+func _title_width(i: int) -> float:
+	if _header == null or i >= _header.cells.size():
+		return 0.0
+	var b: Button = _header.cells[i]
+	var title := str(columns[i].get("title", ""))
+	if title == "":
+		return 0.0
+	var font := b.get_theme_font("font")
+	return font.get_string_size(title + "  ↓", HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size("font_size")).x + 18.0
 
 
 func _place_header() -> void:
@@ -450,7 +574,8 @@ func _refresh_looks() -> void:
 		if row.display_index < 0:
 			continue
 		var id = rows[_order[row.display_index]].get("id")
-		row.set_look(row.display_index % 2 == 1, selected_id != null and id == selected_id, row.display_index == _hover, focused)
+		var is_picked: bool = _picked.has(id) if multi else (selected_id != null and id == selected_id)
+		row.set_look(row.display_index % 2 == 1, is_picked, row.display_index == _hover, focused)
 
 
 # --- mouse and keyboard ----------------------------------------------------------------------------------------------
@@ -494,6 +619,10 @@ func _set_hover(idx: int) -> void:
 func _gui_input(event: InputEvent) -> void:
 	if not event.is_pressed() or _order.is_empty():
 		return
+	if multi and event.is_action("ui_select") and selected_id != null:
+		accept_event()
+		select_id(selected_id)   # Space toggles the row the cursor is on
+		return
 	var cur := _order.find(_index_of_id(selected_id))
 	var page := maxi(1, int(_scroll.size.y / row_height) - 1)
 	var target := cur
@@ -518,6 +647,11 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	accept_event()
 	target = clampi(target, 0, _order.size() - 1)
+	if multi:
+		selected_id = rows[_order[target]].get("id")   # moving the cursor does not toggle; Space does
+		_ensure_visible(target)
+		_refresh_looks()
+		return
 	select_id(rows[_order[target]].get("id"))
 
 
