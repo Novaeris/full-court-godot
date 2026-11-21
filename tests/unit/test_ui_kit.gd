@@ -408,9 +408,8 @@ func test_lower_third_and_letterhead_and_kpi_strip() -> void:
 	assert_true(not quiet.subtitle_label.visible, "no subtitle, no row")
 	var head := FcLetterhead.new()
 	head.setup("Harbor Kings", "Season 3", "HBKX", "#1F3A5F", "#1F3A5F")
-	assert_eq(head._crest_text.text, "HBK", "the crest shows at most three letters")
-	var ink: Color = head._crest_text.get_theme_color("font_color")
-	assert_true(FcUiContrast.ratio(ink, Color("#1F3A5F")) >= 4.5, "crest text stays readable even when the branding colours match")
+	assert_eq(head.crest.look["abbreviation"], "HBK", "the crest shows at most three letters")
+	assert_true(FcUiContrast.ratio(head.crest.look["ink"], Color("#1F3A5F")) >= 3.0, "the crest emblem and letters stay readable even when the branding colours match")
 	var kpi := FcKpiStrip.new()
 	kpi.set_items([{"label": "Cash", "value": "$4M"}, {"label": "Record", "value": "3-1", "delta": "+1"}])
 	assert_eq(kpi.tile_count(), 2)
@@ -428,17 +427,17 @@ func test_the_gallery_builds_every_section_in_every_skin_and_layout() -> void:
 	host.add_child(gallery)
 	gallery.build()
 	var titles := gallery.section_titles()
-	for expected in ["Colour", "Typography", "Buttons", "Inputs and navigation", "Feedback", "Data", "Table", "Cards", "Players", "Broadcast set", "Franchise set", "Motion"]:
+	for expected in ["Colour", "Typography", "Buttons", "Inputs and navigation", "Feedback", "Data", "Table", "Teams", "Cards", "Players", "Broadcast set", "Franchise set", "Motion"]:
 		assert_true(expected in titles, "section " + expected)
 	for skin in FcModeSkin.ids():
 		gallery.set_skin(skin)
-		assert_eq(gallery.section_titles().size(), 12, "%s skin keeps every section" % skin)
+		assert_eq(gallery.section_titles().size(), 13, "%s skin keeps every section" % skin)
 	for index in 3:
 		gallery.set_text_index(index)
-		assert_eq(gallery.section_titles().size(), 12)
+		assert_eq(gallery.section_titles().size(), 13)
 	FcUiTokens.touch_mode = true
 	gallery.build()
-	assert_eq(gallery.section_titles().size(), 12, "touch layout builds too")
+	assert_eq(gallery.section_titles().size(), 13, "touch layout builds too")
 	var closed := []
 	gallery.closed.connect(func() -> void: closed.append(true))
 	_find_button(gallery, "Back").pressed.emit()

@@ -50,6 +50,7 @@ func build() -> void:
 	_section_data()
 	_section_table()
 	_section_cards()
+	_section_teams()
 	_section_players()
 	_section_broadcast()
 	_section_franchise()
@@ -406,6 +407,48 @@ func _section_cards() -> void:
 	for kind in ["mini", "small", "standard", "detail", "hero"]:
 		var card := FcCardFace.new().setup(_demo_card("legendary", 94, "Maya Okoro"), {"size": FcCardFace.size_for(kind)})
 		sizes.add_child(_captioned(kind, card))
+
+
+## Team identity: every emblem, every crest shape, one crest at every size, home/away/alternate uniforms and 32 sample teams
+## (made up for this page from the game's own nickname and colour-scheme lists, not real franchises).
+func _section_teams() -> void:
+	var s := _section("Teams", "One team, one crest everywhere: the shape comes from a hash of the team key, the emblem from the words of the nickname (a hash when no word matches), the colours from the branding. Teams below are SAMPLES.")
+	var world_data = JSON.parse_string(FileAccess.get_file_as_string("res://data/generation/world.json"))
+	var nicknames: Array = world_data["nicknames"]
+	var schemes: Array = world_data["color_schemes"]
+	var cities := ["Harbor", "Ridge", "Marlow", "Kestrel Bay", "Ashford", "Northgate", "Lakeview", "Cedar Falls", "Port Aurel", "Stonebridge", "Westmere", "Alder"]
+	var emblems := _flow()
+	s.add_child(_captioned("All %d emblems (on one crest shape)" % FcTeamLook.EMBLEMS.size(), emblems, true))
+	for e in FcTeamLook.EMBLEMS:
+		var l := FcTeamLook.resolve(FcTeamLook.subject("gallery_emblem", "Sample Team", "SMP", "#1F3A5F", "#F2F2F2", "#C8A951"))
+		l["emblem"] = e
+		l["shape"] = "shield"
+		emblems.add_child(_captioned(e, FcTeamCrest.new().setup(l, 64, false)))
+	var shapes := _flow()
+	s.add_child(_captioned("All %d crest shapes" % FcTeamLook.SHAPES.size(), shapes, true))
+	for sh in FcTeamLook.SHAPES:
+		var l := FcTeamLook.resolve(FcTeamLook.subject("gallery_shape", "Sample Team", "SMP", "#8B1E2D", "#F5E6C8", "#1B1B1B"))
+		l["shape"] = sh
+		l["emblem"] = "star"
+		shapes.add_child(_captioned(sh, FcTeamCrest.new().setup(l, 96)))
+	var sizes := _flow()
+	s.add_child(_captioned("One crest at 16, 24, 32, 48, 64, 96 and 128 px", sizes, true))
+	var sample := FcTeamLook.resolve(FcTeamLook.subject("gallery_team:3", "Kestrel Bay Falconers", "KBF", "#0E7490", "#FFFFFF", "#FBBF24"))
+	for px in [16, 24, 32, 48, 64, 96, 128]:
+		sizes.add_child(_captioned(str(px), FcTeamCrest.new().setup(sample, px)))
+	var uniforms := _flow()
+	s.add_child(_captioned("Home, away and alternate uniforms", uniforms, true))
+	for kind in ["home", "away", "alt"]:
+		var u: Dictionary = sample["uniforms"][kind]
+		uniforms.add_child(_captioned(kind, FcUniformPreview.new().setup({"uniform": {"primary": u["primary"], "secondary": u["secondary"], "number": 7, "abbreviation": sample["abbreviation"]}}, 72)))
+	s.add_child(_captioned("Wordmark with crest", FcTeamWordmark.crest_and_name(sample, 56, FcUiTokens.TYPE_H1)))
+	var teams := _flow()
+	s.add_child(_captioned("32 sample teams", teams, true))
+	for i in 32:
+		var nick := str(nicknames[(i * 3) % nicknames.size()])
+		var scheme: Array = schemes[i % schemes.size()]
+		var look := FcTeamLook.resolve(FcTeamLook.subject("gallery_team:%d" % i, "%s %s" % [cities[i % cities.size()], nick], str(nick).substr(0, 3).to_upper(), scheme[0], scheme[1], scheme[2], nick))
+		teams.add_child(_captioned(nick, FcTeamCrest.new().setup(look, 80)))
 
 
 func _section_players() -> void:

@@ -1,12 +1,12 @@
 class_name FcLetterhead
 extends PanelContainer
-## The Franchise header: a crest (the team's abbreviation on its colour, until logo art exists), the franchise name and a subtitle
-## ("Season 3 - General manager"), over an accent rule. The crest colours are the team's branding (FcTeamBranding) hex strings.
+## The Franchise header: the team's crest (FcTeamCrest, the same one every other screen shows for that team), the franchise name and a
+## subtitle ("Season 3 - General manager"), over an accent rule. Without a team subject it builds one from the abbreviation and colours
+## it is given, so it works for any caller.
 
 var name_label := Label.new()
 var subtitle_label := Label.new()
-var _crest := PanelContainer.new()
-var _crest_text := Label.new()
+var crest := FcTeamCrest.new()
 
 
 func _init() -> void:
@@ -14,12 +14,7 @@ func _init() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", FcUiTokens.SPACE_3)
 	add_child(row)
-	_crest.custom_minimum_size = Vector2(52, 52)
-	_crest_text.theme_type_variation = "DisplayLabel"
-	_crest_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_crest_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_crest.add_child(_crest_text)
-	row.add_child(_crest)
+	row.add_child(crest)
 	var column := VBoxContainer.new()
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -32,22 +27,13 @@ func _init() -> void:
 	column.add_child(subtitle_label)
 
 
-## `primary_hex` and `secondary_hex` are "#RRGGBB" (invalid values fall back to the steel and text colours).
-func setup(franchise_name: String, subtitle: String, abbreviation: String, primary_hex: String, secondary_hex: String) -> void:
+## `primary_hex` and `secondary_hex` are "#RRGGBB" (invalid values fall back to a palette colour and the text colour). `team_subject` (from
+## FcTeamLook.subject_for_team) gives the crest the team's full identity; without it the crest is built from the values above.
+func setup(franchise_name: String, subtitle: String, abbreviation: String, primary_hex: String, secondary_hex: String, team_subject: Dictionary = {}) -> void:
 	name_label.text = franchise_name
 	subtitle_label.text = subtitle
 	subtitle_label.visible = subtitle != ""
-	var fill := Color(primary_hex) if FcChecks.is_hex_color(primary_hex) else FcUiTokens.STEEL
-	var ink := Color(secondary_hex) if FcChecks.is_hex_color(secondary_hex) else FcUiTokens.TEXT
-	# the crest text must stay readable on the crest colour whatever the branding says
-	if FcUiContrast.ratio(ink, fill) < 4.5:
-		ink = FcUiContrast.readable_on(fill)
-	var box := StyleBoxFlat.new()
-	box.bg_color = fill
-	box.set_corner_radius_all(FcUiTokens.RADIUS_PANEL)
-	box.set_border_width_all(2)
-	box.border_color = ink
-	_crest.add_theme_stylebox_override("panel", box)
-	_crest_text.text = abbreviation.substr(0, 3).to_upper()
-	_crest_text.add_theme_color_override("font_color", ink)
-	_crest_text.add_theme_font_size_override("font_size", FcUiTokens.fs(FcUiTokens.TYPE_H2))
+	var subject := team_subject
+	if subject.is_empty():
+		subject = FcTeamLook.subject("letterhead:%s" % franchise_name, franchise_name, abbreviation, primary_hex, secondary_hex)
+	crest.setup(subject, 56)

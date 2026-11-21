@@ -230,7 +230,7 @@ func _add_header(title: String, header: Dictionary) -> void:
 			_root.add_child(tagline)
 		"letterhead":
 			var letterhead := FcLetterhead.new()
-			letterhead.setup(title, str(header.get("subtitle", "")), str(header.get("abbr", "")), str(header.get("primary", "")), str(header.get("secondary", "")))
+			letterhead.setup(title, str(header.get("subtitle", "")), str(header.get("abbr", "")), str(header.get("primary", "")), str(header.get("secondary", "")), header.get("team", {}))
 			_root.add_child(letterhead)
 		"lower_third":
 			var third := FcLowerThird.new(title, str(header.get("subtitle", "")))
@@ -1287,7 +1287,8 @@ func show_dashboard() -> void:
 	var primary: String = team.branding.primary_color if team != null else ""
 	var box := _reset(_team_name(controller.state.user_team_id), {"id": "dashboard", "skin_props": FcModeSkin.franchise(primary), "back": _confirm_leave_to_menu,
 		"header": {"kind": "letterhead", "subtitle": "Season %d-%02d   %s" % [s.year, (s.year + 1) % 100, "Owner" if controller.state.mode == FcGameState.MODE_OWNER else "Spectator"],
-			"abbr": team.identity.abbreviation if team != null else "", "primary": primary, "secondary": team.branding.secondary_color if team != null else ""}})
+			"abbr": team.identity.abbreviation if team != null else "", "primary": primary, "secondary": team.branding.secondary_color if team != null else "",
+			"team": FcTeamLook.subject_for_team(controller.state.world, team) if team != null else {}}})
 	var phase := controller.phase()
 	var info := FcUiTables.label("%s    Season %d-%02d    %s    Mode: %s" % [
 		controller.state.current_date.to_iso(), s.year, (s.year + 1) % 100,

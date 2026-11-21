@@ -1,0 +1,26 @@
+{
+	"_about": "Team identity (D-057, Phase C). Keyword rules pick a crest emblem from the words in a team's OWN nickname (the first rule with a matching word wins); a team no rule matches gets an emblem from a stable hash. Matching is by 'contains' on the lower-case nickname. Emblem ids are drawn by src/ui/team/team_emblems.gd.",
+	"emblem_rules": [
+		{"emblem": "swoop", "words": ["harrier", "falcon", "kestrel", "condor", "sparrow", "heron", "hawk", "eagle", "raven", "owl", "swallow", "crane", "osprey"]},
+		{"emblem": "wing", "words": ["skyrider", "aviator", "gryphon", "griffin", "wing", "pilot", "flyer", "phoenix"]},
+		{"emblem": "flame", "words": ["cinder", "ember", "bonfire", "firebrand", "flame", "fire", "blaze", "forger"]},
+		{"emblem": "anchor", "words": ["anchor", "mariner", "dock"]},
+		{"emblem": "wave", "words": ["tide", "corsair", "wave", "harbor", "sea", "voyager", "navigator"]},
+		{"emblem": "bolt", "words": ["storm", "dynamo", "thunder", "lightning"]},
+		{"emblem": "chevrons", "words": ["gale", "wind", "vanguard"]},
+		{"emblem": "arrow", "words": ["pathfinder", "archer", "longbow", "ranger", "arrow"]},
+		{"emblem": "tower", "words": ["sentinel", "rampart", "citadel", "gatekeeper", "warden", "fort", "castle", "guard", "bastion"]},
+		{"emblem": "crown", "words": ["baron", "king", "queen", "royal", "duke", "crown", "emissar"]},
+		{"emblem": "paw", "words": ["hound", "wolf", "bear", "lynx", "panther", "tiger", "cat", "fox", "dog"]},
+		{"emblem": "claw", "words": ["trapper", "brigand", "raider", "talon", "copperhead"]},
+		{"emblem": "peak", "words": ["quarry", "peak", "mountain", "summit", "ridge", "alp"]},
+		{"emblem": "bridge", "words": ["bridge"]},
+		{"emblem": "star", "words": ["comet", "star", "nova", "astro"]},
+		{"emblem": "spark", "words": ["beacon", "lantern", "lamplighter", "spark"]},
+		{"emblem": "sun", "words": ["harvester", "sun", "solar", "dawn"]},
+		{"emblem": "pine", "words": ["pine", "forest", "timber", "frontiersm"]},
+		{"emblem": "gem", "words": ["copper", "gold", "gem", "jewel", "crystal", "mercer"]},
+		{"emblem": "hoop", "words": ["hoop", "baller"]},
+		{"emblem": "crescent", "words": ["moon", "lunar", "night"]}
+	]
+}
