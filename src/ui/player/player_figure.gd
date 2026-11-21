@@ -11,14 +11,21 @@ extends RefCounted
 ## every size; head shape, eyes, brows, nose and mouth vary with the key's proportions (FcPlayerVisual.proportions).
 
 const DEFAULTS := {"face_w": 86, "jaw": 0, "eye_gap": 34, "eye_size": 100, "brow": 1, "nose": 1, "mouth": 0, "accessory": 0, "warmth": 0}
-## PROTOTYPE SWITCH (docs/PLAYER_VISUAL_PROPOSAL.md): false = the shipped figure. true routes the procedural figure through FcPlayerFigureHd.
-## Off by default; only the portrait sheet tool and the screenshot tool turn it on, until the founder approves the new look.
-static var hd_enabled: bool = false
+## true (the approved look, D-059): the procedural figure is the high-fidelity FcPlayerFigureHd. false keeps the previous simple figure; it exists
+## for the before-and-after pictures (tools/portrait_sheet.gd mode=current) and as a one-line way back.
+static var hd_enabled: bool = true
 const SHADOW := Color(0.04, 0.05, 0.1)
 const LIGHT := Color(1, 1, 1)
 
 
 static func draw(ci: CanvasItem, rect: Rect2, visual: Dictionary, full_body: bool = false) -> void:
+	if int(visual.get("tier", FcPlayerVisual.TIER_PROCEDURAL)) == FcPlayerVisual.TIER_PROCEDURAL and _draw_baked(ci, rect, visual, "full" if full_body else "bust"):
+		return
+	draw_live(ci, rect, visual, full_body)
+
+
+## Draws the figure now, never through the texture cache (the cache itself uses this to make its pictures; also the fallback).
+static func draw_live(ci: CanvasItem, rect: Rect2, visual: Dictionary, full_body: bool = false) -> void:
 	match int(visual.get("tier", FcPlayerVisual.TIER_PROCEDURAL)):
 		FcPlayerVisual.TIER_PORTRAIT:
 			var tex := FcDynastyStyle.art_texture(str(visual.get("art_path", "")))
@@ -39,11 +46,35 @@ static func draw_headshot(ci: CanvasItem, rect: Rect2, visual: Dictionary) -> vo
 	if int(visual.get("tier", FcPlayerVisual.TIER_PROCEDURAL)) != FcPlayerVisual.TIER_PROCEDURAL:
 		draw(ci, rect, visual)
 		return
+	if _draw_baked(ci, rect, visual, "head"):
+		return
+	draw_headshot_live(ci, rect, visual)
+
+
+## The head crop drawn now (no cache).
+static func draw_headshot_live(ci: CanvasItem, rect: Rect2, visual: Dictionary) -> void:
+	if int(visual.get("tier", FcPlayerVisual.TIER_PROCEDURAL)) != FcPlayerVisual.TIER_PROCEDURAL:
+		draw_live(ci, rect, visual)
+		return
 	var grown := Rect2(rect.position + Vector2(-rect.size.x * 0.22, -rect.size.y * 0.06), rect.size * Vector2(1.44, 1.52))
 	if hd_enabled:
 		FcPlayerFigureHd.bust(ci, grown, visual)
 		return
 	_bust(ci, grown, visual)
+
+
+## Draws the baked picture of this figure when the texture cache has it (one textured rectangle). False: draw it live instead.
+static func _draw_baked(ci: CanvasItem, rect: Rect2, visual: Dictionary, crop: String) -> bool:
+	var bake := FcPortraitBake.shared
+	if bake == null or not is_instance_valid(bake) or not ci.is_inside_tree():
+		return false
+	var scale := ci.get_global_transform_with_canvas().get_scale()
+	var tex := bake.texture_for(visual, rect.size, maxf(scale.x, scale.y), crop)
+	if tex == null:
+		return false
+	var m := rect.size * FcPortraitBake.MARGIN
+	ci.draw_texture_rect(tex, Rect2(rect.position - m, rect.size + m * 2.0), false)
+	return true
 
 
 static func _figure(ci: CanvasItem, rect: Rect2, visual: Dictionary, full_body: bool) -> void:

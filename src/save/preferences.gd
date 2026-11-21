@@ -12,6 +12,8 @@ var tutorial_done: bool = false
 var text_size: int = 1
 ## Reduced motion: animations are instant (fades at most 80 ms). Read by FcMotion; see docs/UI_POLISH_PLAN.md, section 6.
 var reduce_motion: bool = false
+## How a pack is opened: "cinematic" (the five-stage reveal, scaled by rarity) or "quick" (the plain reveal). Skip and reduced motion work in both.
+var pack_reveal_style: String = "cinematic"
 ## The Novaeris and Full Court logos shown when the game starts (any key skips them). Additive preference (D-057).
 var show_splash: bool = true
 ## "auto", "desktop" or "mobile": which presentation target to use (Settings; auto follows the device and window).
@@ -56,6 +58,9 @@ func load_file() -> void:
 		text_size = clampi(int(cfg.get_value("display", "text_size", 1)), 0, 2)
 		reduce_motion = bool(cfg.get_value("display", "reduce_motion", false))
 		show_splash = bool(cfg.get_value("display", "show_splash", true))
+		pack_reveal_style = str(cfg.get_value("display", "pack_reveal", "cinematic"))
+		if not pack_reveal_style in ["cinematic", "quick"]:
+			pack_reveal_style = "cinematic"
 		layout_override = str(cfg.get_value("display", "layout", "auto"))
 		if not layout_override in ["auto", "desktop", "mobile"]:
 			layout_override = "auto"
@@ -76,6 +81,7 @@ func save_file() -> bool:
 	cfg.set_value("display", "text_size", text_size)
 	cfg.set_value("display", "reduce_motion", reduce_motion)
 	cfg.set_value("display", "show_splash", show_splash)
+	cfg.set_value("display", "pack_reveal", pack_reveal_style)
 	cfg.set_value("display", "layout", layout_override)
 	cfg.set_value("audio", "master", audio_master)
 	cfg.set_value("audio", "ui", audio_ui)

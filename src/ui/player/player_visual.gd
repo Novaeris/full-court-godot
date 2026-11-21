@@ -61,7 +61,7 @@ static func proportions(key: String) -> Dictionary:
 
 
 ## The visual description of `subject`: {key, tier, monogram, art_path, identity, uniform, poses}.
-## subject: {"key": String (required: the entity's stable key), "name": String, "appearance": Dictionary, "art_path": String,
+## subject: {"key": String (required: the entity's stable key), "name": String, "appearance": Dictionary, "art_path": String, "age": int (optional), "physical": {height_cm, weight_kg} (optional), "position": String (optional),
 ##           "team": {"primary": "#RRGGBB", "secondary": "#RRGGBB", "abbreviation": String, "name": String}, "jersey": int}
 static func resolve(subject: Dictionary) -> Dictionary:
 	var key := str(subject.get("key", ""))
@@ -81,10 +81,19 @@ static func resolve(subject: Dictionary) -> Dictionary:
 		tier = TIER_PORTRAIT
 	else:
 		art = ""
-	return {
+	var out := {
 		"key": key, "tier": tier, "monogram": _monogram(str(subject.get("name", key))), "art_path": art,
 		"identity": identity, "uniform": _uniform(subject, key), "poses": ["idle"],
 	}
+	# OPTIONAL presentation inputs, present only when the subject knows them (never part of the identity, never stored): the player's real age
+	# (faces age), height and weight and position (body proportions). Without them the figure derives stable values from the key.
+	if int(subject.get("age", 0)) > 0:
+		out["age"] = int(subject["age"])
+	if subject.has("physical") or subject.has("position"):
+		var physical: Dictionary = (subject.get("physical", {}) as Dictionary).duplicate()
+		physical["position"] = str(subject.get("position", ""))
+		out["body_in"] = physical
+	return out
 
 
 ## The same subject drawn as the monogram only (the tier-0 fallback), for places with no room for a figure.

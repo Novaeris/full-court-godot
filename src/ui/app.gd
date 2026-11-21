@@ -27,6 +27,8 @@ var saves := FcSaveManager.new()
 var preferences := FcPreferences.new()
 ## The game's sound (Phase 11); screens fire cues through FcAudio.cue.
 var audio: FcAudio
+## The portrait texture cache (D-059): bounded to 20 MB, emptied when a game is left.
+var portrait_bake: FcPortraitBake
 ## First-run hints (Phase 12).
 var hints: FcHints
 ## Published content (Creator Studio releases, D-042): loaded at start-up; falls back safely and reports why.
@@ -140,6 +142,8 @@ func setup() -> void:
 	audio = FcAudio.new(preferences)
 	add_child(audio)
 	FcAudio.current = audio
+	portrait_bake = FcPortraitBake.new()
+	add_child(portrait_bake)
 	if is_inside_tree():
 		get_tree().node_added.connect(_on_node_added)   # every button makes the click sound; screens need no code for it
 	if ui_state == null:
@@ -214,6 +218,7 @@ func apply_text_size(index: int) -> void:
 ## Callable that shows the screen again, used when the window changes between desktop and mobile), skin (a FcModeSkin id) or
 ## skin_props (a resolved skin, e.g. FcModeSkin.franchise), header ({"kind": "plain" | "wordmark" | "letterhead" | "lower_third", ...}).
 func _reset(title: String, opts: Dictionary = {}) -> VBoxContainer:
+	_sync_player_ages()
 	var animate := navigator.enter(str(opts.get("id", title)), opts.get("back", Callable()), opts.get("rebuild", Callable()))
 	_apply_skin(opts.get("skin_props", FcModeSkin.resolve(str(opts.get("skin", FcModeSkin.NEUTRAL)))))
 	if animate:
@@ -352,6 +357,8 @@ func _confirm_leave_to_menu() -> void:
 
 func show_main_menu() -> void:
 	host.modals.close_all()
+	if portrait_bake != null:
+		portrait_bake.clear()   # leaving a game: its pictures are not needed any more
 	var box := _reset("FULL COURT", {"id": "menu", "rebuild": show_main_menu, "skin_props": FcModeSkin.resolve(FcModeSkin.NEUTRAL, {"background": "arena"}), "header": {"kind": "none"}})
 	var slots := saves.list_slots()
 	# the dropdown is kept (not shown): Load, Delete and Continue read the chosen save from it, so those methods and their tests keep working
@@ -406,6 +413,9 @@ func show_settings() -> void:
 		FcMotion.reduced = on))
 	display.add(FcToggle.make("Show the startup logos", preferences.show_splash, func(on: bool) -> void:
 		preferences.show_splash = on
+		preferences.save_file()))
+	display.add(FcToggle.make("Cinematic pack opening (off: quick reveal)", preferences.pack_reveal_style == "cinematic", func(on: bool) -> void:
+		preferences.pack_reveal_style = "cinematic" if on else "quick"
 		preferences.save_file()))
 	display.add(FcUiTables.label("Layout", FcUiTokens.TYPE_SMALL))
 	var layouts := FcChoiceGroup.new()
@@ -2533,3 +2543,13 @@ func _tab_league() -> Control:
 func _player_name(player_id: int) -> String:
 	var p: FcPlayer = controller.state.world.players.get_by_id(player_id)
 	return p.identity.full_name() if p != null else "-"
+
+
+## Faces age with the game: every screen is built with the current date of the running game as the date ages are counted from (UI only; no game data is read or written).
+func _sync_player_ages() -> void:
+	var state: FcGameState = null
+	if career != null and career.state != null:
+		state = career.state
+	elif controller != null and controller.state != null:
+		state = controller.state
+	FcPlayerPresentation.reference_date = state.current_date if state != null else null

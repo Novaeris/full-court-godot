@@ -14,8 +14,15 @@ const HAND_NAMES := ["Right", "Left", "Both"]
 
 
 ## The subject FcPlayerVisual.resolve needs, built the same way by every screen.
-static func subject(key: String, name: String, team: Dictionary = {}, jersey: int = 0, appearance: Dictionary = {}, art_path: String = "") -> Dictionary:
-	return {"key": key, "name": name, "team": team, "jersey": jersey, "appearance": appearance, "art_path": art_path}
+static func subject(key: String, name: String, team: Dictionary = {}, jersey: int = 0, appearance: Dictionary = {}, art_path: String = "", extra: Dictionary = {}) -> Dictionary:
+	var out := {"key": key, "name": name, "team": team, "jersey": jersey, "appearance": appearance, "art_path": art_path}
+	out.merge(extra, true)   # optional presentation inputs: age, physical {height_cm, weight_kg}, position
+	return out
+
+
+## The date ages are counted from on screen (UI only, set by FcApp whenever a screen is built from a running game). null: no age is passed and
+## the figure uses a stable age derived from the player's key.
+static var reference_date: FcDate = null
 
 
 ## A Dynasty card row (FcCollectionQuery) as a subject: the real player's id is the key, so editions share a face.
@@ -27,7 +34,13 @@ static func subject_for_card(row: Dictionary) -> Dictionary:
 static func subject_for_player(world: FcWorld, player_id: int, prefix: String = "owner_player") -> Dictionary:
 	var p: FcPlayer = world.players.get_by_id(player_id)
 	var team: FcTeam = world.team_of_player(player_id)
-	return subject("%s:%d" % [prefix, player_id], p.identity.full_name() if p != null else "?", _team_dict(world, team), 0)
+	var extra := {}
+	if p != null:
+		extra["physical"] = {"height_cm": p.physical.height_cm, "weight_kg": p.physical.weight_kg}
+		extra["position"] = FcPosition.abbreviation(p.primary_position)
+		if reference_date != null:
+			extra["age"] = p.age_on(reference_date)
+	return subject("%s:%d" % [prefix, player_id], p.identity.full_name() if p != null else "?", _team_dict(world, team), 0, {}, "", extra)
 
 
 static func _team_dict(world: FcWorld, team: FcTeam) -> Dictionary:
@@ -110,7 +123,10 @@ static func from_career(career: FcCareerController) -> Dictionary:
 	var card := career.card()
 	vm["jersey"] = profile.jersey_number
 	vm["archetype"] = str(card["archetype"])
-	vm["subject"] = subject("career_player:%d" % career.player().id, str(card["name"]), vm["team"], profile.jersey_number, profile.appearance)
+	var career_extra: Dictionary = {"physical": vm["physical"], "position": vm["position"]}
+	if int(vm["age"]) > 0:
+		career_extra["age"] = int(vm["age"])
+	vm["subject"] = subject("career_player:%d" % career.player().id, str(card["name"]), vm["team"], profile.jersey_number, profile.appearance, "", career_extra)
 	var progress := career.progress()
 	vm["progression"] = {"kind": "career", "level": progress["level"], "xp": progress["xp"], "into_level": progress["into_level"], "needed": progress["needed"],
 		"development_points": progress["development_points"], "skill_points": progress["skill_points"], "overall": card["overall"], "potential": card["potential"]}

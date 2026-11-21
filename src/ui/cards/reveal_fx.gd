@@ -121,30 +121,45 @@ func dim(amount: float, seconds: float = 0.3) -> void:
 	set_process(true)
 
 
-## A big word that pops in and fades out ("LEGENDARY!").
-func banner(text: String, color: Color, seconds: float = 1.1) -> void:
+## A big word that pops in and fades out, with an optional smaller supporting label under it (a legendary pull: the PLAYER's name is the
+## banner and "LEGENDARY" the label). Both are drawn as Labels under this node.
+func banner(text: String, color: Color, seconds: float = 1.1, sub_text: String = "") -> void:
 	if FcMotion.reduced:
 		return
 	while _banners.size() >= int(FcRevealSpec.caps()["banners_at_once"]):
-		var old: Label = _banners.pop_front()
+		var old: Control = _banners.pop_front()
 		if is_instance_valid(old):
 			old.queue_free()
+	var box := VBoxContainer.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.alignment = BoxContainer.ALIGNMENT_CENTER
+	box.add_theme_constant_override("separation", 0)
+	box.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)   # as wide as the stage, so the centred text is centred on the card
+	box.offset_top = 6.0
 	var label := FcUiTables.label(text, FcUiTokens.TYPE_DISPLAY_XL, true)
-	label.add_theme_color_override("font_color", color.lightened(0.3))
-	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
-	label.add_theme_constant_override("outline_size", 8)
+	label.add_theme_color_override("font_color", Color(1, 1, 1))
+	label.add_theme_color_override("font_outline_color", Color(color.darkened(0.3), 0.9))
+	label.add_theme_constant_override("outline_size", 10)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	label.position.y = 10
-	add_child(label)
-	_banners.append(label)
-	FcMotion.pop_in(label, 0.25)
-	var tw := label.create_tween()
+	box.add_child(label)
+	if sub_text != "":
+		var sub := FcUiTables.label(sub_text, FcUiTokens.TYPE_H2, true)
+		sub.add_theme_color_override("font_color", color.lightened(0.3))
+		sub.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+		sub.add_theme_constant_override("outline_size", 6)
+		sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		box.add_child(sub)
+	add_child(box)
+	_banners.append(box)
+	FcMotion.pop_in(box, 0.25)
+	var tw := box.create_tween()
 	tw.tween_interval(maxf(0.1, seconds - 0.25))
-	tw.tween_property(label, "modulate:a", 0.0, 0.25)
+	tw.tween_property(box, "modulate:a", 0.0, 0.25)
 	tw.tween_callback(func() -> void:
-		_banners.erase(label)
-		label.queue_free())
+		_banners.erase(box)
+		box.queue_free())
 
 
 ## Clears everything at once: used by Skip, by the summary and when the reveal is freed. Safe to call at any time.

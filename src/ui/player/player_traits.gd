@@ -48,6 +48,10 @@ static func of(key: String, age: int = 0) -> Dictionary:
 		"sleeve": 1 if _h(key, "sleeve", 9) == 0 else 0,
 		"chain": 1 if _h(key, "chain", 8) == 0 else 0,
 		"earring": 1 if _h(key, "earring", 7) == 0 else 0,
+		"scar": 1 if _h(key, "scar", 10) == 0 else 0,          # a short scar through one brow
+		"freckles": 1 if _h(key, "freckles", 8) == 0 else 0,
+		"glasses": 1 if _h(key, "glasses", 14) == 0 else 0,    # sport glasses
+		"brow_gap": _h(key, "brow_gap", 3),                    # 0 close-set ... 2 wide-set brows
 		"grey": _grey_level(key, shown_age),
 		"lines": clampi((shown_age - 24) / 5, 0, 3),   # 0 smooth ... 3 weathered
 	}
@@ -75,3 +79,38 @@ static func skin(base: Color, warmth: int, undertone: int) -> Color:
 ## Hair colour after greying (only a lighter mix at 1 to 3; the base colour is the identity's own).
 static func greyed(base: Color, grey: int) -> Color:
 	return base.lerp(Color(0.68, 0.68, 0.7), [0.0, 0.18, 0.45, 0.8][clampi(grey, 0, 3)])
+
+
+## Body proportions (percent, 100 = the standard figure) for the full-body and bust figure: height, shoulders, torso, arms, legs, girth, and the
+## shoe style. Derived from the key by hash (so two players of one build still differ a little), then nudged by what is KNOWN about the player,
+## when a subject supplies it: height and weight (a heavier player is broader, a taller one taller) and position (a very small nudge: guards a
+## touch leaner and longer in the leg, bigs a touch broader; never a fixed body type). `physical` is {height_cm, weight_kg, position}; every key
+## is optional. Same inputs, same output; nothing is stored.
+static func body(key: String, physical: Dictionary = {}) -> Dictionary:
+	var out := {
+		"height": 98 + _h(key, "b_height", 5),      # 98 to 102
+		"shoulder": 97 + _h(key, "b_shoulder", 7),  # 97 to 103
+		"torso": 97 + _h(key, "b_torso", 7),
+		"arm": 97 + _h(key, "b_arm", 7),
+		"leg": 97 + _h(key, "b_leg", 7),
+		"girth": 97 + _h(key, "b_girth", 7),
+		"shoe": _h(key, "b_shoe", 4),               # 0 white, 1 black, 2 team colour, 3 grey
+	}
+	var height_cm := int(physical.get("height_cm", 0))
+	if height_cm > 0:
+		out["height"] = clampi(roundi(100.0 + (float(height_cm) - 198.0) * 0.45), 91, 106)
+	var weight_kg := int(physical.get("weight_kg", 0))
+	if weight_kg > 0 and height_cm > 0:
+		var meters := float(height_cm) / 100.0
+		var bmi := float(weight_kg) / (meters * meters)
+		out["girth"] = clampi(out["girth"] + roundi((bmi - 24.5) * 1.8), 90, 112)
+		out["shoulder"] = clampi(out["shoulder"] + roundi((bmi - 24.5) * 0.9), 92, 110)
+	match str(physical.get("position", "")):
+		"PG", "SG":
+			out["leg"] += 2
+			out["shoulder"] -= 2
+		"PF", "C":
+			out["shoulder"] += 3
+			out["girth"] += 2
+			out["arm"] += 2
+	return out

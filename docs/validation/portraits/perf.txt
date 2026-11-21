@@ -1,0 +1,9 @@
+Portrait cache measurements (budget 20 MB, window 1280x800, vsync off)
+roster of 400, cold                baked   16  hits     0  misses    16  live   400  hit-rate   0%  evicted    0  cache  0.56 MB (peak  0.56)  bake   25.1 ms  texmem    9.5 MB  first frames 398.5 ms
+roster of 400: every picture baked after 25 frames
+roster of 400, forced redraw, cached baked  400  hits 16816  misses   400  live  5584  hit-rate  98%  evicted    0  cache 13.87 MB (peak 13.87)  bake  798.7 ms  texmem   27.2 MB  frame 19.37 ms
+roster of 400, forced redraw, live          frame 391.14 ms  (cache off)
+40 screens x 120 portraits         baked  120  hits  4288  misses   120  live   512  hit-rate  97%  evicted    0  cache  1.86 MB (peak  1.86)  bake  252.6 ms  texmem   11.7 MB  wall 1438 ms
+60 cards of one player             baked    1  hits     0  misses     1  live    60  hit-rate   0%  evicted    0  cache  0.06 MB (peak  0.06)  bake    2.4 ms  texmem   10.0 MB  
+profile opened and closed 30 times baked    1  hits    87  misses     1  live     3  hit-rate  99%  evicted    0  cache  0.31 MB (peak  0.31)  bake    2.0 ms  texmem   10.5 MB  
+700 players against a 2 MB budget  baked  112  hits     0  misses   112  live   700  hit-rate   0%  evicted   80  cache  1.97 MB (peak  1.97)  bake  205.9 ms  texmem   13.5 MB  ceiling held: yes

@@ -54,5 +54,5 @@ func test_the_skin_stays_in_its_tone_family() -> void:
 			assert_true(absf(shown.r - base.r) < 0.07 and absf(shown.g - base.g) < 0.04 and absf(shown.b - base.b) < 0.07, "%s undertone %d stays near its tone" % [tone, undertone])
 
 
-func test_the_hd_switch_is_off_by_default() -> void:
-	assert_true(not FcPlayerFigure.hd_enabled, "the shipped figure is the default until the new look is approved")
+func test_the_approved_figure_is_the_default() -> void:
+	assert_true(FcPlayerFigure.hd_enabled, "the high-fidelity figure (D-059, approved) is the default")

@@ -1,11 +1,65 @@
-# Player portraits and the Dynasty visual experience: investigation, prototypes and proposal (D-059, PROPOSED)
+# Player portraits and the Dynasty visual experience: investigation, proposal and implementation record (D-059, IMPLEMENTED)
 
-Status: **investigation and prototypes finished, waiting for founder approval.** Nothing here is switched on in the shipped game: the new portrait is behind `FcPlayerFigure.hd_enabled` and the cinematic pack opening behind `FcPackRevealCinematic.enabled` (both `false`). Every number, picture and recording below was made by running the real Godot code (not mock-ups).
+Status: **IMPLEMENTED (D-059, approved by the founder from the contact sheets and prototypes).** Sections 1 to 11 below are the original proposal and are kept as the record of why; section 0 is what was built, measured and what still needs a person.
 
-How to look at the results in two minutes:
-1. Portraits: open `docs/validation/portraits/bust_current.png` and `bust_hd.png` side by side (120 seeded fictional players each).
-2. Pack opening: play `docs/validation/pack_reveal/video/legendary_pack.mp4` (17 s, one pack with all five rarities), then look at `rarity_impacts.png`.
-3. Decide the six questions in section 10.
+## 0. Implementation record (the approved milestone)
+
+### Who uses which visual source (the three modes)
+| Mode | Players | Visual source | Rule |
+|---|---|---|---|
+| Owner | procedurally generated, key `owner_player:<id>` | the high-fidelity procedural figure | stable per key, ages with the player (the real age is passed in), body from the real height, weight and position |
+| Career | procedurally generated, key `career_player:<id>` | the same procedural figure | the options the player built (skin, hair, face, facial hair) are kept; the face never changes identity across 20 seasons, only age marks (lines, grey, hairline) |
+| Dynasty | static, curated cards, key `dynasty_player:<player_id>` | **approved artwork through `art_path`** (tier 1) | never replaced by a generated identity. Only when a card has NO readable artwork does the existing fallback draw the same stable procedural figure for that player id (or the monogram); every edition of one player is one face. Creator Studio publishing and loading are unchanged |
+One renderer serves all three: `FcPlayerFigure.draw` / `draw_headshot` take any resolved visual and pick the source by its tier (art, procedural, monogram). There is no second player type and no mode-specific renderer; the modes differ only in what the subject contains (`FcPlayerPresentation`).
+
+### What changed
+- `FcPlayerFigure.hd_enabled` is now `true`: the approved `FcPlayerFigureHd` is the production figure (headshot, bust, full body). The previous figure stays behind `hd_enabled = false` only for before-and-after pictures.
+- Identity untouched: `FcPlayerVisual.resolve` and the 50-key golden fixture are unchanged (47 identity tests pass). New presentation inputs are OPTIONAL and never stored: `age`, `physical {height_cm, weight_kg}`, `position`, passed by the subject builders from the game data that already exists. `FcPlayerTraits` derives every extra detail by FNV hash of the key (never `String.hash()`, never runtime randomness).
+- Faces age with the game: `FcApp` sets `FcPlayerPresentation.reference_date` from the running game whenever a screen is built; `subject_for_player` and the Career profile pass the player's age.
+- Body variety: `FcPlayerTraits.body()` gives height, shoulders, torso, arms, legs, girth and shoe style from the key, nudged by the known height, weight and position (a few percent: a heavier player is broader, a taller one taller, guards a touch longer in the leg, bigs a touch broader; never a fixed body type). Footwear: white, black, team colour or grey. Identifying details: scar, freckles, sport glasses, brow spacing were added to separate otherwise plain faces.
+- The texture cache `FcPortraitBake` (owned by `FcApp`, emptied when a game is left): hard 20 MB budget with least-recently-used eviction, keyed by everything that changes the picture, baked at the on-screen pixel size (rounded up to a size step), at most 16 new bakes per frame, drawn live until a picture is ready, falls back to live drawing if the renderer cannot read pixels back. It is an optimisation: correctness never depends on it.
+- Pack opening: `FcPackRevealCinematic` is the default; Settings has the toggle "Cinematic pack opening (off: quick reveal)" (`FcPreferences.pack_reveal_style`, additive, saved in `preferences.cfg`; Quick is the plain shipped `FcPackReveal`). In Cinematic mode common and uncommon turn over where they lie (one tap, uncommon with a subtle glow and sparks), rare comes forward briefly, epic is cinematic, legendary is the full event with the PLAYER NAME as the banner and LEGENDARY as the supporting label, the portrait card in the spotlight, dimmed room, rays, a deep hit and a swell. All numbers are data (`data/ui/reveal_effects.json`).
+- Integrity (all tested): the opening is never written, reordered or re-rolled; Skip equals watching (same cards, order, intensities, NEW and DUPLICATE counts, summary); Done acknowledges exactly once (three presses, one call); watching grants nothing before Done; reduced motion shows no pack show, spotlight, particles, rays, flash, dim, shake or banner; at most 160 particles and 3 flashes per second; audio gated so small stings do not pile under big ones; haptics follow the existing setting and only on phones.
+
+### Measurements (this machine, an RTX 4060 PC; `tools/portrait_perf.gd`, `tools/portrait_bench.gd`; the raw output is `docs/validation/portraits/perf.txt`)
+| Measure | Result |
+|---|---|
+| One portrait drawn live (HD), 64 / 128 / 256 px | 0.97 / 1.75 / 2.28 ms (the shipped figure: 0.2 ms) |
+| One portrait from the cache | 0.6 microseconds, 1 draw command |
+| Roster of 400 portraits, forced redraw every frame | 386 ms per frame live, **19 ms cached** (all 400 baked within 25 frames) |
+| Roster of 400, hit rate once warm | 98% |
+| Roster of 400, first frame (cold, drawn live) | 398 ms (a real roster shows about 20 rows, so about 20 ms) |
+| Cache memory for 400 portraits at 64 px | 13.9 MB (about 35 KB each); the hard ceiling is 20 MB |
+| Rapid navigation: 40 screens of 120 portraits | 97% hit rate, 1.9 MB held |
+| Profile opened and closed 30 times | 99% hit rate, 0.3 MB |
+| 60 cards of one player | one picture baked, shared by all |
+| Cache pressure: 700 players against a 2 MB budget | peak 1.97 MB, 80 evictions, ceiling held |
+| Flooding the real budget (unit test) | never above 20 MB at any step |
+Not measured: any phone or low-end device (see "Still needs a person"). Frame times on a phone will be higher; the cache is what keeps them reasonable, and the 20 MB budget and 16 bakes per frame are the tuning knobs.
+
+### Perceived variety (`tools/portrait_variety.gd`, `tests/unit/test_player_variety.gd`)
+400 seeded players, 96 px busts, 20 by 20 thumbnails, distance to the nearest other face: shipped figure min 0.00 / 5th percentile 0.21 / median 0.95 (several pixel-identical pairs); new figure min 0.41 / 5th percentile 0.88 / median 1.60. The unit test requires every feature group (face shape, eyes, brows, nose and mouth, hair, facial hair, skin and undertone, body, extras) to take many values, no two of 400 players to match in everything, almost every pair to differ in at least 5 of 9 groups, and no look-alikes inside a 15-man roster. Honest limit: the nearest pairs (`docs/validation/portraits/variety_hd_closest.png`) are bald or close-cropped players of the same dark or light skin with no facial hair; they differ in face shape and proportions but are the most similar faces in a league. More identifying details (scars, glasses, freckles) were added for exactly this; a further pass on bald-head faces is a candidate for the next polish.
+
+### Visual evidence (all made by running the real game code)
+- `docs/validation/portraits/`: `bust_hd.png` (120 players), `headshot_hd.png`, `full_hd.png`, `sizes_hd.png`, `uniforms_hd.png` (one player, 12 kits), `ages_hd.png` (age progression), `bodies_hd.png` (height, weight and position), `baked_hd.png` (served from the cache), the `*_current.png` pictures (before), `variety_*` (400 players and the closest pairs), `perf.txt`.
+- `docs/validation/portraits/ingame/`: the real screens at real sizes, before (`*_hd0.png`) and after (`*_hd1.png`): Dynasty collection, Owner roster, Career hub, the Dynasty profile, and the 412 px mobile collection.
+- `docs/validation/pack_reveal/`: `storyboard_stages.png`, `rarity_impacts.png`, `rarity_tease.png`, `skip.png`, `reduced_motion.png`, `before_shipped.png`, the raw frames, and `video/legendary_pack.mp4` (17 s, one pack with all five rarities).
+
+Creator Studio: its smoke test passes (`studio_smoke.gd`: PASS). Note for developers: after adding new `class_name` files run `godot_console --headless --path creator_studio --import --quit` once, or the Studio's class cache is stale and it reports parse errors.
+
+### Still needs a person (not verified here)
+- Animation timing and feel of the pack opening (only stills and a video were reviewed).
+- Audio quality: the sounds are synthesised (`reveal_swell`, `reveal_hit` and the existing stings) and have not been listened to on speakers; haptics only run on a phone.
+- Mobile presentation: the Dynasty collection was captured at 412 by 915, but the cinematic reveal and the portraits have NOT been run on a phone or emulator; touch targets of the pack tap need a device check.
+- Low-end device performance: only a desktop GPU was measured. Mobile and integrated graphics need their own run of `tools/portrait_perf.gd`.
+- Reduced motion: behaviour is tested (no spotlight, no effects, same result), but the feel has not been judged.
+- Whether the new faces are close enough to "believable player identities" for the founder's taste, especially bald and close-cropped players (see above).
+
+### Provenance
+The provenance file is `assets/ART_PROVENANCE.md` (there is no `docs/ART_PROVENANCE.md`; documents that said so now point to the real file). No new art file was added: every portrait here is drawn by code. Approved Dynasty artwork still needs a line there before it is committed.
+
+### Player profile (next milestone, not started)
+The portrait system was built to support it: `FcPlayerProfile` already reads a view-model (`FcPlayerPresentation`) that carries the subject (with age, physical data and position), so a large portrait (bust or full body, baked), the team kit, age, height, weight and position are available to the dossier without further plumbing. The dossier itself (personality, development, history, achievements, contract) is the next milestone and needs approval first.
 
 ## 1. Current portrait quality assessment
 
@@ -170,7 +224,7 @@ No gameplay mechanic is introduced by any of these.
 - **Phase 0 (done in this change)**: assessment, three directions, prototypes (HD figure, traits, bake cache, cinematic reveal, effects layer, spec data), contact sheets, storyboard, video, benchmark, tests.
 - **Phase 1: portraits to production quality.** Another polish pass on the weakest hair (long, locs), eyes at 56 to 90 px, jersey chest detail; tune the detail thresholds with the benchmark; wire `FcPortraitBake` into `FcPlayerPortrait`, `FcCardFace`, `FcPlayerTile`, `FcPlayerChip` and the showcase stage (live figure for the first frame, baked afterwards); pass the real `age` from the presentation view-model (Owner, Career); `hd_enabled` becomes true. Regenerate nothing: golden stays. Tests: determinism, identity untouched, bake correctness, style lint.
 - **Phase 2: featured Dynasty art pathway.** Provenance enforcement: a content-validator warning for art without a line in `assets/ART_PROVENANCE.md`; a Creator Studio preview that shows the card with the art and with the HD fallback; a style guide page (framing, lighting, colour) so commissioned pieces match the HD figure.
-- **Phase 3: cinematic pack opening to production.** `FcPackRevealCinematic` becomes the default behind a settings choice ("Pack opening: Cinematic or Quick", Quick = today's reveal); touch layout for 412 px; the haptics through `FcAudio`; a listening review of `reveal_swell` and `reveal_hit`; sound rebalancing on a real device.
+- **Phase 3: cinematic pack opening to production.** `FcPackRevealCinematic` becomes the default behind a settings toggle ("Cinematic pack opening", off = Quick = today's reveal); touch layout for 412 px; the haptics through `FcAudio`; a listening review of `reveal_swell` and `reveal_hit`; sound rebalancing on a real device.
 - **Phase 4: celebrations and moments.** Championship with the roster line-up, post-game stars, player inspection hero, card variants (foil and holo per edition).
 - **Phase 5: matchup and draft presentations.**
 - Gate before each phase: the founder reviews pictures and recordings produced by that phase.

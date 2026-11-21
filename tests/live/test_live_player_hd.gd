@@ -18,7 +18,7 @@ class Probe extends Control:
 
 
 func after_each() -> void:
-	FcPlayerFigure.hd_enabled = false
+	FcPlayerFigure.hd_enabled = true
 	super.after_each()
 
 

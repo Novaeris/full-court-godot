@@ -90,7 +90,7 @@ static func show_reveal(ui: FcDynastyUi, opening: Dictionary) -> void:
 	if listing.is_empty():
 		listing = {"name": str(ctl.catalog.packs().get(opening["pack_id"], {}).get("name", opening["pack_id"])), "cards_per_pack": opening["cards"].size(), "fixed": false, "odds": {}}
 	var pack_name := str(listing.get("name", opening["pack_id"]))
-	var reveal: FcPackReveal = FcPackRevealCinematic.new() if FcPackRevealCinematic.enabled else FcPackReveal.new()   # the cinematic one is a prototype switch, off until approved
+	var reveal: FcPackReveal = FcPackReveal.new() if ui.app.preferences.pack_reveal_style == "quick" else FcPackRevealCinematic.new()   # Settings: Pack opening
 	reveal.setup(opening, pack_name, listing,
 		func(card_id: String) -> Dictionary:
 			var row := ctl.card_detail(card_id)

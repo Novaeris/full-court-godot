@@ -62,7 +62,7 @@ func _initialize() -> void:
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 	DirAccess.make_dir_recursive_absolute(_out)
 	FcPlayerFigure.hd_enabled = _mode == "hd"
-	_jobs = ["bust", "headshot", "full", "sizes", "uniforms", "ages", "baked"]
+	_jobs = ["bust", "headshot", "full", "sizes", "uniforms", "ages", "bodies", "baked"]
 
 
 func _visual(i: int, age: int = 0, team_index: int = -1) -> Dictionary:
@@ -75,6 +75,8 @@ func _visual(i: int, age: int = 0, team_index: int = -1) -> Dictionary:
 
 func _process(_delta: float) -> bool:
 	_frames += 1
+	if _canvas != null:
+		_canvas.queue_redraw()   # the cache bakes in the background; redrawing lets the sheet pick the baked pictures up
 	if _canvas == null:
 		if _jobs.is_empty():
 			quit()
@@ -125,14 +127,20 @@ func _build(kind: String) -> void:
 			for i in 12:
 				var r := Rect2(Vector2(8 + (i % 6) * 250, 8 + (i / 6) * 270), Vector2(240, 260))
 				s.items.append({"rect": r, "visual": _visual(7, 27, i), "kind": "bust"})
-		"baked":   # the portrait bake cache (FcPortraitBake): 24 players drawn once into textures and shown from the cache
-			var bake := FcPortraitBake.new()
-			root.add_child(bake)
+		"baked":   # the portrait cache (FcPortraitBake): the same 24 players drawn through the cache (live the first frames, then from textures)
+			root.add_child(FcPortraitBake.new())
 			size = Vector2i(8 * 150 + 16, 3 * 150 + 16)
 			for i in 24:
 				var r := Rect2(Vector2(8 + (i % 8) * 150, 8 + (i / 8) * 150), Vector2(142, 142))
-				var v := _visual(i, 19 + FcPlayerVisual.fnv1a("age%d" % i) % 20)
-				s.items.append({"rect": r, "visual": v, "kind": "baked", "texture": bake.texture_for(v, Vector2i(142, 142))})
+				s.items.append({"rect": r, "visual": _visual(i, 19 + FcPlayerVisual.fnv1a("age%d" % i) % 20), "kind": "bust"})
+		"bodies":   # one player with different known body data: height, weight and position nudge the proportions, never caricature them
+			var data := [[176, 72, "PG"], [185, 80, "SG"], [196, 90, "SF"], [203, 102, "PF"], [211, 118, "C"], [190, 105, "SF"], [201, 84, "PF"], [180, 92, "PG"]]
+			size = Vector2i(8 * 150 + 16, 340)
+			for i in 8:
+				var v := _visual(21, 27)
+				v["body_in"] = {"height_cm": data[i][0], "weight_kg": data[i][1], "position": data[i][2]}
+				s.items.append({"rect": Rect2(Vector2(8 + i * 150, 8), Vector2(142, 322)), "visual": v, "kind": "full"})
+				s.labels.append({"pos": Vector2(14 + i * 150, 326), "text": "%d cm %d kg %s" % [data[i][0], data[i][1], data[i][2]], "size": 11})
 		"ages":
 			size = Vector2i(10 * 150 + 16, 2 * 160 + 16)
 			for j in 2:

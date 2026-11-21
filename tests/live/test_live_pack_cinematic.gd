@@ -41,7 +41,7 @@ func _card_log(reveal: FcPackReveal) -> Array:
 
 
 func test_the_five_stages_happen_in_order() -> void:
-	var reveal := _reveal(["common", "epic"])
+	var reveal := _reveal(["rare", "epic"])
 	await frames(3)
 	assert_eq(reveal.phase, FcPackRevealCinematic.Phase.PRESENT, "stage 1: the pack is presented")
 	assert_true(reveal._pack != null, "and it is on screen")
@@ -52,7 +52,7 @@ func test_the_five_stages_happen_in_order() -> void:
 	reveal.reveal_next()
 	await seconds(0.6)
 	assert_true(reveal.spotlight != null, "stage 3: the card comes forward")
-	reveal.reveal_next()   # continue: the common card lands, the epic one comes forward
+	reveal.reveal_next()   # continue: the rare card lands, the epic one comes forward
 	await seconds(2.2)
 	assert_true("special" in reveal.presentation_log.map(func(e: Dictionary) -> String: return e["stage"]), "stage 4: the epic card gets the special treatment")
 	reveal.reveal_next()
@@ -154,8 +154,8 @@ func test_a_legendary_pull_has_the_full_special_presentation() -> void:
 	await seconds(1.9)
 	var kinds: Array = reveal.presentation_log.map(func(e: Dictionary) -> String: return e["stage"])
 	assert_true("special" in kinds, "the impact happened")
-	var banners := reveal.fx.get_children().filter(func(c: Node) -> bool: return c is Label and (c as Label).text == "LEGENDARY!")
-	assert_eq(banners.size(), 1, "the banner")
+	var banner_labels := reveal.fx.find_children("*", "Label", true, false).filter(func(c: Node) -> bool: return (c as Label).text == "LEGENDARY")
+	assert_eq(banner_labels.size(), 1, "the supporting rarity label")
 	assert_true(reveal.spotlight.get_child_count() >= 1, "and the name plate")
 	assert_true(reveal.fx.stats["peak_particles"] > 60, "a big burst")
 

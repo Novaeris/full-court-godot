@@ -1,0 +1,9 @@
+Portrait variety, mode=hd, 400 players at 96 px, thumbnail 20x20
+nearest-neighbour distance: min 0.41  5th percentile 0.88  median 1.60  mean 1.68
+(higher is more varied; compare the two modes, the unit is arbitrary)
+closest pair 1: variety:227 and variety:106, distance 0.41
+closest pair 2: variety:58 and variety:83, distance 0.56
+closest pair 3: variety:128 and variety:164, distance 0.58
+closest pair 4: variety:96 and variety:227, distance 0.59
+closest pair 5: variety:371 and variety:38, distance 0.63
+closest pair 6: variety:313 and variety:227, distance 0.63

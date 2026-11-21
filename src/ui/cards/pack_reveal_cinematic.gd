@@ -1,8 +1,9 @@
 class_name FcPackRevealCinematic
 extends FcPackReveal
-## PROTOTYPE (docs/PLAYER_VISUAL_PROPOSAL.md, section 5): the five-stage pack opening. It is a drop-in replacement for FcPackReveal (same
-## setup(), same signals, same `entries`, `effects_log`, `reveal_next`, `reveal_all`), chosen by the Dynasty pack screen only when
-## FcPackRevealCinematic.enabled is true (off by default until the founder approves it).
+## The five-stage pack opening (D-059, approved; the default). It is a drop-in replacement for FcPackReveal (same setup(), same signals, same
+## `entries`, `effects_log`, `reveal_next`, `reveal_all`); the Dynasty pack screen uses it unless the player chose the Quick style in Settings
+## (FcPreferences.pack_reveal_style), which keeps the plain FcPackReveal. Presentation grows with the rarity (data/ui/reveal_effects.json):
+## common and uncommon turn over in their place (quick), rare comes forward briefly, epic and legendary get the full treatment.
 ##   1 PRESENT   the pack stands large with a rarity-tinted halo and a gentle pulse ("tap to open")
 ##   2 OPENING   the pack shakes, tears, light bursts out and the cards emerge face down in a row
 ##   3 REVEALING each card comes forward into a spotlight, builds tension (a glow, a swell), turns over, and lands in its place
@@ -15,11 +16,8 @@ extends FcPackReveal
 
 enum Phase { PRESENT, OPENING, REVEALING, SUMMARY }
 
-## The prototype switch the pack screen reads.
-static var enabled: bool = false
-
-const STAGE_HEIGHT := 610.0
-const SPOT_TOP := 64.0
+const STAGE_HEIGHT := 660.0
+const SPOT_TOP := 104.0
 const PACK_BIG := Vector2(225, 315)
 
 var phase: Phase = Phase.PRESENT
@@ -220,8 +218,33 @@ func _begin_card(animate: bool) -> void:
 			_update_status()
 			_build_actions()
 		return
+	if not bool(spec["spotlight"]):
+		_quick_turn(i, rarity, spec)   # common and uncommon: one tap, the card turns over where it lies
+		return
 	_pending_index = i
 	_spotlight_card(i, rarity, spec)
+	_update_status()
+	_build_actions()
+
+
+## The quick presentation: the card turns over in its row with its rarity glow (and a few sparks for uncommon). No spotlight, no waiting.
+func _quick_turn(i: int, rarity: String, spec: Dictionary) -> void:
+	var face := _faces[i]
+	face.setup(_rows[i], {"tag": "NEW" if bool(entries[i]["new"]) else "DUPLICATE", "face_down": true, "size": _row_size})
+	var flip := face.flip_to(false, float(spec["flip"]))
+	var intensity := FcRarityStyle.intensity(rarity)
+	if float(spec["glow"]) > 0.0:
+		face.set_glow(float(spec["glow"]))
+	if int(spec["particles"]) > 0 and face.is_inside_tree() and fx.is_inside_tree():
+		fx.burst(face.global_position - fx.global_position + face.size / 2.0, FcRarityStyle.color(rarity), int(spec["particles"]), 160.0)
+	_cue("rarity_%d" % clampi(intensity, 0, 4), intensity)
+	presentation_log.append({"stage": "impact", "index": i, "rarity": rarity})
+	if next_index >= entries.size():
+		if flip != null:
+			flip.finished.connect(_finish, CONNECT_ONE_SHOT)
+		else:
+			_finish()
+		return
 	_update_status()
 	_build_actions()
 
@@ -297,7 +320,10 @@ func _impact(i: int, rarity: String, spec: Dictionary) -> void:
 	if float(spec["shake"]) > 0.0:
 		_shake_card(spotlight, float(spec["shake"]))
 	if bool(spec["banner"]):
-		fx.banner(FcRarityStyle.label(rarity).to_upper() + "!", color)
+		if str(spec["banner_text"]) == "name":
+			fx.banner(str(_rows[i].get("name", "?")), color, 1.6, FcRarityStyle.label(rarity).to_upper())   # the player is the centrepiece, the rarity supports
+		else:
+			fx.banner(FcRarityStyle.label(rarity).to_upper() + "!", color)
 	_cue("rarity_%d" % clampi(intensity, 0, 4), intensity)
 	if bool(spec["hit"]):
 		_cue(str(FcRevealSpec.audio()["hit"]), intensity)
@@ -310,7 +336,14 @@ func _impact(i: int, rarity: String, spec: Dictionary) -> void:
 
 
 func _name_plate(i: int, color: Color) -> void:
-	_plate = FcUiTables.label("%s  %d" % [str(_rows[i].get("name", "?")), int(_rows[i].get("overall", 0))], FcUiTokens.TYPE_H2, true)
+	var plate_text := "%s  %d" % [str(_rows[i].get("name", "?")), int(_rows[i].get("overall", 0))]
+	if str(FcRevealSpec.of(str(_rows[i].get("rarity", "common")))["banner_text"]) == "name" and bool(FcRevealSpec.of(str(_rows[i].get("rarity", "common")))["banner"]):
+		var bits: Array = []
+		for part in [str(_rows[i].get("position", "")), str(_rows[i].get("team", ""))]:
+			if part != "":
+				bits.append(part)
+		plate_text = " · ".join(PackedStringArray(bits))   # the name is already the banner
+	_plate = FcUiTables.label(plate_text, FcUiTokens.TYPE_H2, true)
 	_plate.add_theme_color_override("font_color", color.lightened(0.35))
 	_plate.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.75))
 	_plate.add_theme_constant_override("outline_size", 6)
@@ -422,7 +455,7 @@ func _update_status() -> void:
 				var r := str(_rows[_pending_index].get("rarity", "common"))
 				status.text = "%s! Tap to continue." % FcRarityStyle.label(r) if FcRarityStyle.intensity(r) >= 2 else "Tap to continue."
 			else:
-				status.text = "Card %d of %d. Tap a card to bring it forward." % [mini(next_index + 1, entries.size()), entries.size()]
+				status.text = "Card %d of %d. Click the card to reveal it." % [mini(next_index + 1, entries.size()), entries.size()]
 
 
 func _build_actions() -> void:

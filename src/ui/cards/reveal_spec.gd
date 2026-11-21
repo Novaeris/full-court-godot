@@ -5,7 +5,7 @@ extends RefCounted
 ## PRESENTATION ONLY: nothing here is read by the pack-opening rules, the odds, the economy or the saved opening record.
 
 const PATH := "res://data/ui/reveal_effects.json"
-const FALLBACK_RARITY := {"flip": 0.3, "tease": 0.0, "dim": 0.0, "glow": 0.0, "sweep": false, "particles": 0, "flash": 0.0, "shake": 0.0, "rays": 0, "shockwave": false, "banner": false, "name_plate": false, "hold": 0.0, "haptic": 0, "swell": false, "hit": false}
+const FALLBACK_RARITY := {"flip": 0.3, "tease": 0.0, "dim": 0.0, "glow": 0.0, "sweep": false, "spotlight": false, "banner_text": "name", "particles": 0, "flash": 0.0, "shake": 0.0, "rays": 0, "shockwave": false, "banner": false, "name_plate": false, "hold": 0.0, "haptic": 0, "swell": false, "hit": false}
 const FALLBACK_CAPS := {"particles": 160, "flashes_per_second": 3, "rays_at_once": 2, "banners_at_once": 1}
 const FALLBACK_STAGES := {"present_pulse": 1.6, "tear": 0.5, "emerge": 0.55, "emerge_stagger": 0.07, "spotlight_in": 0.22, "settle": 0.3}
 const FALLBACK_AUDIO := {"swell": "reveal_swell", "hit": "reveal_hit", "min_gap_after_big": 0.9}

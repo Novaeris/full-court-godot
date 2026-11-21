@@ -33,12 +33,15 @@ static func bust(ci: CanvasItem, rect: Rect2, visual: Dictionary) -> void:
 
 ## The whole player standing, filling `rect`.
 static func full(ci: CanvasItem, rect: Rect2, visual: Dictionary) -> void:
-	var u := minf(rect.size.y / 264.0, rect.size.x / 108.0)
+	var body: Dictionary = FcPlayerTraits.body(str(visual.get("key", "")), visual.get("body_in", {}))
+	var leg_scale := float(body["leg"]) / 100.0
+	var floor_rel := 100.0 + 99.0 * leg_scale   # where the floor is, in figure units below the shoulder line
+	var u := minf(rect.size.y / (65.0 + floor_rel), rect.size.x / (108.0 * float(body["shoulder"]) / 100.0)) * float(body["height"]) / 106.0   # the tallest figure fills the rect
 	var c := _ctx(visual, u * 100.0)
 	var cx := rect.position.x + rect.size.x / 2.0
-	var chest_top := rect.position.y + rect.size.y - (264.0 - 65.0) * u
+	var chest_top := rect.position.y + rect.size.y - floor_rel * u
 	_legs(ci, cx, chest_top, u, c)
-	_character(ci, cx, chest_top, u, 62.0 * u, 36.0 * u, c)
+	_character(ci, cx, chest_top, u, 62.0 * u * float(body["torso"]) / 100.0, 36.0 * u * float(body["arm"]) / 100.0, c)
 
 
 ## A soft spotlight behind a figure in the team colour (for hero shots; the small portraits keep their flat well).
@@ -65,6 +68,7 @@ static func _ctx(visual: Dictionary, px: float) -> Dictionary:
 		"skin": FcPlayerTraits.skin(id["skin_color"], int(prop.get("warmth", 0)), int(t["undertone"])),
 		"hair": FcPlayerTraits.greyed(id["hair_color"], int(t["grey"])),
 		"uniform": visual["uniform"],
+		"body": FcPlayerTraits.body(key, visual.get("body_in", {})),
 	}
 
 
@@ -192,7 +196,8 @@ static func _character(ci: CanvasItem, cx: float, top: float, u: float, torso_le
 	var skin: Color = c["skin"]
 	var o := Vector2(cx, top)
 	var build := float(c["id"]["build"])
-	var sw := 0.93 + 0.07 * build
+	var body: Dictionary = c["body"]
+	var sw := (0.93 + 0.07 * build) * float(body["shoulder"]) / 100.0 * sqrt(float(body["girth"]) / 100.0)
 	var so := (1.0 - float(t["slope"])) * 1.6   # square shoulders sit higher
 	var nw := 8.3 + 1.5 * float(t["neck"]) + 0.5 * build
 	var tlen := torso_len / u
@@ -316,7 +321,12 @@ static func _legs(ci: CanvasItem, cx: float, top: float, u: float, c: Dictionary
 	var detail: int = c["detail"]
 	var hip := top + 58.0 * u
 	var shorts_end := top + 104.0 * u
-	var floor_y := top + 199.0 * u
+	var body: Dictionary = c["body"]
+	var leg_scale := float(body["leg"]) / 100.0
+	var leg_map := 0.82 * leg_scale
+	var floor_y := top + (100.0 + 99.0 * leg_scale) * u
+	var girth := float(body["girth"]) / 100.0
+	var shoe_color: Color = [Color(0.95, 0.96, 0.99), Color(0.13, 0.14, 0.17), secondary.lightened(0.15), Color(0.62, 0.64, 0.7)][int(body["shoe"])]
 	for side in [-1.0, 1.0]:
 		var s: float = side
 		var thigh_x := cx + s * 10.0 * u
@@ -327,19 +337,19 @@ static func _legs(ci: CanvasItem, cx: float, top: float, u: float, c: Dictionary
 		for side_list in [outer, inner]:
 			var mapped: Array = []
 			for p in side_list:
-				mapped.append(Vector2(p.x * s * 1.08, 100.0 + (p.y - 100.0) * 0.82))
+				mapped.append(Vector2(p.x * s * 1.08 * girth, 100.0 + (p.y - 100.0) * leg_map))
 			for p in _spline(mapped, 3, false):
 				poly.append(Vector2(cx + p.x * u, top + p.y * u))
 		_lit(ci, poly, skin.darkened(0.03 if s < 0.0 else 0.08), 0.04, 0.14)
 		if detail >= 3:   # kneecap and calf highlights
-			_soft(ci, Vector2(thigh_x - s * 1.5 * u, top + 123 * u), 4.5 * u, 4 * u, Color(WHITE, 0.08), 3)
-			_soft(ci, Vector2(thigh_x + s * 1.5 * u, top + 148 * u), 3.8 * u, 8 * u, Color(WHITE, 0.07), 3)
+			_soft(ci, Vector2(thigh_x - s * 1.5 * u, top + (100.0 + 23.0 * leg_scale) * u), 4.5 * u, 4 * u, Color(WHITE, 0.08), 3)
+			_soft(ci, Vector2(thigh_x + s * 1.5 * u, top + (100.0 + 48.0 * leg_scale) * u), 3.8 * u, 8 * u, Color(WHITE, 0.07), 3)
 		# sock and shoe
-		var sock_top := top + 179.0 * u
+		var sock_top := floor_y - 20.0 * u
 		ci.draw_rect(Rect2(thigh_x - 9.5 * u, sock_top, 19 * u, 18 * u), Color(0.95, 0.96, 0.98))
 		ci.draw_rect(Rect2(thigh_x - 9.5 * u, sock_top + 3 * u, 19 * u, 2.4 * u), secondary)
 		var shoe := PackedVector2Array([Vector2(thigh_x - 9 * u, floor_y - 3 * u), Vector2(thigh_x + 9 * u, floor_y - 3 * u), Vector2(thigh_x + 12 * u, floor_y + 2 * u), Vector2(thigh_x + 12.5 * u, floor_y + 7 * u), Vector2(thigh_x - 12.5 * u, floor_y + 7 * u), Vector2(thigh_x - 12 * u, floor_y + 2 * u)])
-		_lit(ci, shoe, Color(0.95, 0.96, 0.99), 0.0, 0.2)
+		_lit(ci, shoe, shoe_color, 0.0, 0.2)
 		ci.draw_rect(Rect2(thigh_x - 10.5 * u, floor_y + 5.2 * u, 24 * u, 3.4 * u), secondary)
 		if detail >= 3:
 			ci.draw_line(Vector2(thigh_x - 4 * u, floor_y), Vector2(thigh_x + 6 * u, floor_y + 2 * u), primary, maxf(1.0, 2.0 * u), true)
@@ -481,6 +491,23 @@ static func _features(ci: CanvasItem, hc: Vector2, rx: float, ry: float, skin: C
 		_taper(ci, brow, thick * 1.1, thick * 0.35, Color(hair.darkened(0.12), 0.92))
 	if detail < 2:
 		return
+	# identifying details: a scar through one brow, freckles over the nose and cheeks, sport glasses
+	if int(t["scar"]) == 1:
+		var sx := hc.x + gap * (1.0 if int(t["brow_gap"]) != 1 else -1.0)
+		ci.draw_line(Vector2(sx - ry * 0.03, ey - ry * 0.3), Vector2(sx + ry * 0.05, ey - ry * 0.1), Color(skin.lightened(0.35), 0.8), maxf(1.0, ry * 0.028), true)
+	if int(t["freckles"]) == 1 and detail >= 2:
+		for i in 12:
+			var fa := _rnd("fr" + str(prop.get("face_w", 0)), i)
+			var fb := _rnd("fq" + str(prop.get("jaw", 0)), i + 20)
+			ci.draw_circle(Vector2(hc.x + (fa * 2.0 - 1.0) * rx * 0.55, hc.y + ry * (0.02 + fb * 0.26)), maxf(0.7, ry * 0.017), Color(skin.darkened(0.45), 0.55))
+	if int(t["glasses"]) == 1 and detail >= 2:
+		var frame := Color(0.08, 0.09, 0.12, 0.95)
+		for side in [-1.0, 1.0]:
+			var s4: float = side
+			var lens_c := Vector2(hc.x + s4 * gap, ey)
+			_poly_line(ci, _ellipse_pts(lens_c, ew * 1.55, eh * 3.1, 18), frame, maxf(1.0, ry * 0.035))
+			_fill(ci, _ellipse_pts(lens_c, ew * 1.5, eh * 3.0, 18), Color(0.7, 0.85, 1.0, 0.1))
+		ci.draw_line(Vector2(hc.x - gap + ew * 1.55, ey), Vector2(hc.x + gap - ew * 1.55, ey), frame, maxf(1.0, ry * 0.03), true)
 	# nose: bridge shadow, wings, nostrils and a tip highlight
 	var nw := ry * (0.105 + 0.032 * float(t["nose_w"]) + 0.012 * float(prop.get("nose", 1)))
 	var nbase := hc.y + ry * 0.245
