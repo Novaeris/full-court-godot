@@ -2,7 +2,7 @@
 	"res://src/ui/app.gd": {
 		"color": 0,
 		"font": 0,
-		"sized_label": 76
+		"sized_label": 69
 	},
 	"res://src/ui/dynasty/dynasty_screens_collection.gd": {
 		"color": 0,

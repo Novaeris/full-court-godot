@@ -200,9 +200,10 @@ func _find_label(text: String) -> Label:
 	return null
 
 
-func _first_tree() -> Tree:
+## The first visible table: a Tree (older tabs) or an FcTable (the redesigned Owner tabs).
+func _first_tree() -> Control:
 	for n in _all():
-		if n is Tree and _visible(n):
+		if (n is Tree or n is FcTable) and _visible(n):
 			return n
 	return null
 
@@ -289,9 +290,21 @@ func _click_page(index: int) -> void:
 	_expect(pages.current_tab == index, "the Finances page %d opened" % index)
 
 
-func _click_tree_row(tree: Tree, index: int) -> void:
+func _click_tree_row(tree: Control, index: int) -> void:
 	if tree == null:
 		_fail("no table to click in")
+		return
+	if tree is FcTable:
+		# click the row where the player would: scroll it into view, then press the mouse on it
+		var table := tree as FcTable
+		var ids := table.ids()
+		if index >= ids.size():
+			_fail("the table has no row %d" % index)
+			return
+		table.select_id(ids[index], false)   # scrolls the row into view
+		await _frames(2)
+		var y := float(index * table.row_height) - float(table._scroll.scroll_vertical) + table.row_height / 2.0
+		await _click_at(table._body.get_global_rect().position + Vector2(table._body.size.x * 0.3, y))
 		return
 	var item := tree.get_root().get_child(index)
 	if item == null:

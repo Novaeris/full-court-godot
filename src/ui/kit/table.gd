@@ -63,6 +63,7 @@ func _init(column_defs: Array = [], row_data: Array = [], options: Dictionary = 
 	_body.gui_input.connect(_on_body_input)
 	_body.mouse_exited.connect(_on_mouse_exited)
 	_body.resized.connect(_on_resized)
+	_scroll.resized.connect(_update_window)   # the number of rows in view depends on the height, which settles after the width
 	_scroll.get_v_scroll_bar().value_changed.connect(_on_scrolled)
 	focus_entered.connect(_refresh_looks)
 	focus_exited.connect(_refresh_looks)
@@ -228,12 +229,34 @@ func _build_header() -> void:
 		b.clip_text = true
 		b.focus_mode = Control.FOCUS_ALL
 		b.alignment = _button_alignment(_align(c))
+		_style_header_button(b)
 		b.disabled = not bool(c.get("sortable", true))
 		b.tooltip_text = "Sort by %s" % str(c.get("title", "")) if not b.disabled else ""
 		var key := str(c.get("key", ""))
 		b.pressed.connect(sort_by.bind(key))
 		_header.add_child(b)
 		_header.cells.append(b)
+
+
+## Header buttons: flat, with small side padding so short titles in narrow columns ("MPG", "Ovr") are not clipped.
+static func _style_header_button(b: Button) -> void:
+	for state in ["normal", "disabled", "pressed", "hover_pressed"]:
+		b.add_theme_stylebox_override(state, _header_box(FcUiTokens.TRANSPARENT))
+	b.add_theme_stylebox_override("hover", _header_box(FcUiTokens.SURFACE_HIGH))
+	b.add_theme_stylebox_override("focus", b.get_theme_stylebox("focus", "Button"))
+	b.add_theme_color_override("font_color", FcUiTokens.TEXT_MUTED)
+	b.add_theme_color_override("font_hover_color", FcUiTokens.TEXT)
+	b.add_theme_color_override("font_disabled_color", FcUiTokens.TEXT_MUTED)
+
+
+static func _header_box(fill: Color) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = fill
+	box.content_margin_left = 8
+	box.content_margin_right = 8
+	box.content_margin_top = 2
+	box.content_margin_bottom = 2
+	return box
 
 
 static func _button_alignment(align: String) -> HorizontalAlignment:
@@ -407,7 +430,7 @@ func _place_row(row: FcTableRow, display_index: int) -> void:
 			cell.size = Vector2(w, row_height)
 			continue
 		var s := cell.get_combined_minimum_size()
-		s.x = minf(s.x, w)
+		s.x = w if bool(columns[i].get("fill", false)) else minf(s.x, w)
 		cell.size = s
 		var x := float(_col_x[i]) + pad
 		match _align(columns[i]):

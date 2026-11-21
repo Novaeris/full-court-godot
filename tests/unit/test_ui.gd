@@ -35,6 +35,15 @@ func _trees(node: Node, out: Array = []) -> Array:
 	return out
 
 
+## The FcTable controls in a node (the Owner tabs that moved off the plain Tree).
+func _tables(node: Node, out: Array = []) -> Array:
+	if node is FcTable:
+		out.append(node)
+	for c in node.get_children():
+		_tables(c, out)
+	return out
+
+
 func _labels_text(node: Node) -> String:
 	var text := ""
 	if node is Label:
@@ -92,21 +101,20 @@ func test_every_tab_shows_data() -> void:
 	for name in FcApp.TAB_NAMES:
 		var tab := app.build_tab(name)
 		assert_true(tab != null, name)
-		var trees := _trees(tab)
-		assert_true(not trees.is_empty() or name == "Overview" or name == "Trades", "%s has a table" % name)
+		var tables := _trees(tab) + _tables(tab)
+		assert_true(not tables.is_empty() or name == "Overview" or name == "Trades", "%s has a table" % name)
 		tab.free()
 	var roster_tab := app.build_tab("Roster")
-	var roster := _trees(roster_tab)[0] as Tree
-	assert_true(roster.get_root().get_child_count() >= 13, "the roster lists the players")
+	var roster := _tables(roster_tab)[0] as FcTable
+	assert_true(roster.row_count() >= 13, "the roster lists the players")
 	roster_tab.free()
 	var standings_tab := app.build_tab("Standings")
-	assert_eq(_trees(standings_tab).size(), 2, "one table per conference")
+	assert_eq(_tables(standings_tab).size(), 2, "one table per conference")
 	standings_tab.free()
 	var schedule_tab := app.build_tab("Schedule")
-	var schedule := _trees(schedule_tab)[0] as Tree
-	assert_true(schedule.get_root().get_child_count() > 10)
-	var first := schedule.get_root().get_child(0)
-	assert_true(first.get_text(4) != "", "played games show a result")
+	var schedule := _tables(schedule_tab)[0] as FcTable
+	assert_true(schedule.row_count() > 10)
+	assert_true(str(schedule.rows[0]["result"]) != "", "played games show a result")
 	schedule_tab.free()
 
 

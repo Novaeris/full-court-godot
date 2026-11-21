@@ -12,31 +12,40 @@ var badge: FcRatingBadge
 
 
 ## `view_model` is a FcPlayerPresentation dictionary; `detail` is the second line ("PG  ·  24  ·  HBK"), `show_rating` adds the badge.
+## Calling it again on the same chip UPDATES it in place (a table row is rebound while scrolling, so nothing is rebuilt per row).
 func setup(view_model: Dictionary, detail: String = "", show_rating: bool = true, portrait_px: int = 40, compact: bool = false) -> FcPlayerChip:
-	for c in get_children():
-		c.queue_free()
+	if portrait == null:
+		_build(show_rating)
+	portrait.setup(view_model["subject"], portrait_px, "head")
+	name_label.text = str(view_model.get("name", "?"))
+	detail_label.text = detail
+	detail_label.visible = detail != "" and not compact
+	if badge != null:
+		badge.set_rating(int(view_model.get("overall", 0)))
+	tooltip_text = "%s, %d overall" % [str(view_model.get("name", "?")), int(view_model.get("overall", 0))]
+	return self
+
+
+func _build(show_rating: bool) -> void:
 	add_theme_constant_override("separation", FcUiTokens.SPACE_2)
-	portrait = FcPlayerPortrait.new().setup(view_model["subject"], portrait_px, "head")
+	portrait = FcPlayerPortrait.new()
 	portrait.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	add_child(portrait)
 	var text := VBoxContainer.new()
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	text.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	text.add_theme_constant_override("separation", 0)
-	name_label = FcUiTables.label(str(view_model.get("name", "?")), FcUiTokens.TYPE_BODY)
+	name_label = FcUiTables.label("", FcUiTokens.TYPE_BODY)
 	name_label.clip_text = true
 	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	text.add_child(name_label)
-	detail_label = FcUiTables.label(detail, FcUiTokens.TYPE_SMALL - 1)
+	detail_label = FcUiTables.label("", FcUiTokens.TYPE_SMALL - 1)
 	detail_label.theme_type_variation = "MutedLabel"
 	detail_label.clip_text = true
 	detail_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	detail_label.visible = detail != "" and not compact
 	text.add_child(detail_label)
 	add_child(text)
 	if show_rating:
-		badge = FcRatingBadge.new(int(view_model.get("overall", 0)), FcRatingBadge.Size.SMALL)
+		badge = FcRatingBadge.new(0, FcRatingBadge.Size.SMALL)
 		badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		add_child(badge)
-	tooltip_text = "%s, %d overall" % [str(view_model.get("name", "?")), int(view_model.get("overall", 0))]
-	return self

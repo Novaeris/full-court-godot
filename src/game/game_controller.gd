@@ -1743,6 +1743,18 @@ func owner_report() -> Dictionary:
 	}
 
 
+## The user team's books season by season, oldest first (read-only; for the Owner screens' trend lines):
+## [{"year", "profit", "revenue", "valuation", "cash", "debt", "wins", "losses"}]. A team with a single settled season gives one row.
+func finance_series() -> Array:
+	var rows: Array = []
+	for rec in state.world.finances.all():
+		if rec.team_id == state.user_team_id:
+			rows.append({"year": rec.year, "profit": rec.profit(), "revenue": rec.total_revenue(), "valuation": rec.valuation_end, "cash": rec.cash_end,
+				"debt": rec.debt_end, "wins": rec.wins, "losses": rec.losses})
+	rows.sort_custom(func(a, b): return a["year"] < b["year"])
+	return rows
+
+
 ## Every team's books for the last settled season, best profit first, for comparison:
 ## [{"team", "name", "wins", "revenue", "profit", "payroll", "price", "attendance", "valuation", "profit_rank", "revenue_rank"}].
 func league_finances() -> Array:

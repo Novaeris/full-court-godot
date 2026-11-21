@@ -59,6 +59,7 @@ var _last_tab := 0
 var _form := {}
 ## The widgets of the main menu as built by FcMainMenu (mode_cards, save_cards, continue_button); tests and tools read it.
 var _menu := {}
+var _owner_context: FcOwnerContext = null
 ## The status line of the current screen. Hidden: messages are shown as toasts (notifier); the text stays here so tests, tools
 ## and later accessibility features can read the latest message.
 var _message: Label
@@ -1420,6 +1421,15 @@ func _team_name(team_id: int) -> String:
 	return t.identity.display_name(w.cities.get_by_id(t.city_id).name)
 
 
+## What the Owner tabs in src/ui/owner need from the app (the controller and the few things only the app can do). Rebuilt when the game changes.
+func _owner_ctx() -> FcOwnerContext:
+	if _owner_context == null or _owner_context.controller != controller:
+		_owner_context = FcOwnerContext.new(controller, _say, show_dashboard,
+			func(entry: Dictionary) -> void: FcPostGame.open(self, FcPostGame.for_owner(controller, entry["box"])),
+			func(player_id: int) -> void: FcPlayerProfile.open_modal(self, FcPlayerPresentation.from_player(controller.state.world, player_id, controller.state.current_season, controller.league_id)))
+	return _owner_context
+
+
 ## Builds one tab's content. Public so tests can open every tab.
 func build_tab(tab_name: String) -> Control:
 	match tab_name:
@@ -1924,139 +1934,15 @@ func _scrollable(content: Control) -> Control:
 
 
 func _tab_overview() -> Control:
-	var box := VBoxContainer.new()
-	var s := controller.season()
-	var rec := controller.user_record()
-	var kpis := FcKpiStrip.new()   # the franchise at a glance (Phase 10)
-	kpis.set_items([{"label": "Record", "value": "%d-%d" % [rec["wins"], rec["losses"]], "delta": str(rec["streak"])},
-		{"label": "League rank", "value": str(rec["rank"])}, {"label": "Games left", "value": str(rec["games_left"])}])
-	box.add_child(kpis)
-	var next := controller.next_user_game()
-	if next != null:
-		var opp := next.away_id if next.home_id == controller.state.user_team_id else next.home_id
-		box.add_child(FcUiTables.label("Next game: %s %s on %s" % ["vs" if next.home_id == controller.state.user_team_id else "at", _team_name(opp), s.date_of_day(next.day).to_iso()]))
-	if s.status == FcSeason.Status.COMPLETE:
-		box.add_child(FcUiTables.label("Champions: %s    Runner-up: %s" % [_team_name(s.champion_id), _team_name(s.runner_up_id)], 18, true))
-	var warning := controller.distress_warning()
-	if warning != "":
-		var alert := FcUiTables.label("Warning: " + warning, 15)
-		alert.add_theme_color_override("font_color", FcUiTheme.BAD)
-		alert.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		alert.custom_minimum_size = Vector2(300, 0)
-		box.add_child(alert)
-	var report := controller.owner_report()
-	if not report.is_empty():
-		box.add_child(FcUiTables.label("Owner report, %d-%02d season" % [report["year"], (report["year"] + 1) % 100], 18, true))
-		var money := FcKpiStrip.new()
-		money.set_items([{"label": "Profit", "value": FcUiTables.money(report["profit"])}, {"label": "Revenue", "value": FcUiTables.money(report["revenue"])},
-			{"label": "Franchise value", "value": FcUiTables.money(report["valuation"]), "delta": FcUiTables.money(report["valuation_change"]) + " this season"},
-			{"label": "Cash", "value": FcUiTables.money(report["cash"])}, {"label": "Debt", "value": FcUiTables.money(report["debt"])}])
-		box.add_child(money)
-		box.add_child(FcUiTables.label("Wins %d (expected about %d)    Owner approval: %d / 100" % [report["wins"], report["expected_wins"], report["approval"]]))
-	if controller.state.mode == FcGameState.MODE_OWNER:
-		var history := controller.owner_history()
-		var stints: Array[String] = []
-		for row in history:
-			var label := _team_name(row[1])
-			if stints.is_empty() or not stints[stints.size() - 1].begins_with(label):
-				stints.append("%s (1)" % label)
-			else:
-				var n := int(stints[stints.size() - 1].rsplit("(")[1].trim_suffix(")")) + 1
-				stints[stints.size() - 1] = "%s (%d)" % [label, n]
-		box.add_child(FcUiTables.label("Owner reputation: %d / 100.%s" % [controller.owner_reputation(), "  Your career, seasons per team: " + ", ".join(stints) if not stints.is_empty() else ""]))
-		var offers := controller.job_offers()
-		if not offers.is_empty():
-			box.add_child(FcUiTables.label("Job offers: other franchises would like you as their owner (you can change teams once a season, before the offseason starts)", 18, true))
-			var offer_rows: Array = []
-			var offer_ids: Array[int] = []
-			for o in offers:
-				offer_rows.append([o["name"], FcUiTables.money(o["valuation"]), o["wins"], FcUiTables.money(o["payroll"]), o["fan_interest"], FcUiTables.money(o["cash"]), FcUiTables.money(o["debt"]), o["seats"]])
-				offer_ids.append(o["team"])
-			var offer_table := FcUiTables.table(["Team", "Value", "Wins", "Payroll", "Fans", "Cash", "Debt", "Seats"], offer_rows, [0, 90, 50, 90, 50, 90, 90, 60])
-			offer_table.custom_minimum_size = Vector2(0, 150)
-			offer_table.size_flags_vertical = Control.SIZE_FILL
-			box.add_child(offer_table)
-			box.add_child(FcUiTables.button("Take the job with the selected team", func():
-				var picked := offer_table.get_selected()
-				if picked == null:
-					_say("Select a team first.")
-					return
-				var result := controller.transfer_to(offer_ids[picked.get_index()])
-				if result["ok"]:
-					show_dashboard()
-				_say(result["reason"])))
-	var news: Array = controller.state.world.news
-	if not news.is_empty():
-		box.add_child(FcUiTables.label("Latest news", 18, true))
-		for i in range(news.size() - 1, maxi(-1, news.size() - 7), -1):
-			box.add_child(FcUiTables.label("  %s  %s" % [news[i]["date"], news[i]["text"]]))
-	var rules := controller.state.world.rules_of_league(controller.league_id)
-	box.add_child(FcUiTables.label("League rules", 18, true))
-	for line in rules.playoffs.describe(controller.state.world.leagues.get_by_id(controller.league_id)):
-		box.add_child(FcUiTables.label("  " + line))
-	if rules.draft.lottery_teams > 0:
-		box.add_child(FcUiTables.label("  Draft lottery: the worst %d non-playoff teams enter and the top %d picks are drawn" % [rules.draft.lottery_teams, rules.draft.lottery_picks]))
-	else:
-		box.add_child(FcUiTables.label("  No draft lottery: the worst record picks first"))
-	box.add_child(FcUiTables.label("  Salary cap %s, tax line %s, hard limit %s" % [FcUiTables.money(rules.cap.salary_cap), FcUiTables.money(rules.cap.luxury_tax_line), FcUiTables.money(rules.cap.effective_limit())]))
-	return box
+	return FcOwnerOverview.build(_owner_ctx())
 
 
 func _tab_standings() -> Control:
-	var row := HBoxContainer.new()
-	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var league: FcLeague = controller.state.world.leagues.get_by_id(controller.league_id)
-	var st := controller.standings()
-	for conference in league.conferences:
-		var col := VBoxContainer.new()
-		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		col.add_child(FcUiTables.label("%s Conference" % conference.name, 18, true))
-		var order := st.conference_ranking(conference)
-		var rows: Array = []
-		for t in order:
-			var r: Dictionary = st.records[t]
-			var l10 := st.last_ten(t)
-			rows.append([("* " if t == controller.state.user_team_id else "") + _team_name(t), r["w"], r["l"], "%.3f" % st.win_pct(t), "%.1f" % st.games_behind(order[0], t), "%d-%d" % [l10[0], l10[1]], st.streak_text(t)])
-		col.add_child(FcUiTables.table(["Team", "W", "L", "Pct", "GB", "L10", "Strk"], rows, [0, 40, 40, 60, 50, 50, 50]))
-		row.add_child(col)
-	return row
+	return FcOwnerStandings.build(_owner_ctx())
 
 
 func _tab_schedule() -> Control:
-	var s := controller.season()
-	var tid := controller.state.user_team_id
-	var rows: Array = []
-	var keys: Array = []
-	for g in s.games:
-		if not g.involves(tid):
-			continue
-		keys.append([g.day, g.series])
-		var home := g.home_id == tid
-		var opp := g.away_id if home else g.home_id
-		var result := ""
-		if g.played:
-			var mine := g.home_score if home else g.away_score
-			var theirs := g.away_score if home else g.home_score
-			result = "%s %d-%d%s" % ["W" if mine > theirs else "L", mine, theirs, " (OT)" if g.overtimes > 0 else ""]
-		rows.append([s.date_of_day(g.day).to_iso(), "Playoffs" if g.series > 0 else "", "vs" if home else "at", _team_name(opp), result])
-	var table := FcUiTables.table(["Date", "Round", "", "Opponent", "Result"], rows, [110, 80, 40, 0, 140])
-	table.set_meta("keys", keys)
-	var box := VBoxContainer.new()
-	box.add_child(table)
-	var row := HBoxContainer.new()
-	row.add_child(FcUiTables.button("Box score of selected game", func():
-		var item := table.get_selected()
-		if item == null:
-			_say("Select a game first.")
-			return
-		var key: Array = keys[item.get_index()]
-		var entry := _stored_box(key[0], key[1])
-		_say("No box score is kept for that game (only your most recent games are stored)." if entry.is_empty() else "")
-		if not entry.is_empty():
-			FcPostGame.open(self, FcPostGame.for_owner(controller, entry["box"]))))
-	row.add_child(FcUiTables.label("Box scores are kept for your team's last %d games." % FcSeason.RECENT_BOX_LIMIT))
-	box.add_child(row)
-	return box
+	return FcOwnerSchedule.build(_owner_ctx())
 
 
 ## The stored box score entry ({day, series, box}) of a recently played game of the owner's team, or {}.
@@ -2144,81 +2030,7 @@ func _show_text_popup(title: String, text: String) -> void:
 
 
 func _tab_roster() -> Control:
-	var w := controller.state.world
-	var team: FcTeam = w.teams.get_by_id(controller.state.user_team_id)
-	var ratings := FcPlayerRatings.load_default()
-	var season_year := controller.state.current_season
-	var stats := controller.season().stats
-	var rows: Array = []
-	var players: Array = []
-	for pid in team.roster.player_ids:
-		players.append(w.players.get_by_id(pid))
-	players.sort_custom(func(a, b): return ratings.overall(a) > ratings.overall(b))
-	for p in players:
-		var c := w.active_contract_of(p.id)
-		rows.append([p.identity.full_name(), FcPosition.abbreviation(p.primary_position), p.age_on(FcDate.new(season_year, 7, 1)),
-			"%d cm" % p.physical.height_cm, roundi(ratings.overall(p)), p.development.potential,
-			FcUiTables.money(c.salary_for(season_year)) if c != null else "-", c.end_season() if c != null else "-",
-			"%.1f" % stats.per_game(p.id, "points"), "%.1f" % stats.per_game(p.id, "rebounds"), "%.1f" % stats.per_game(p.id, "ast"), "%.1f" % stats.per_game(p.id, "minutes"),
-			"" if p.games_out == 0 else "OUT %d games: %s" % [p.games_out, p.injury]])
-	var table := FcUiTables.table(["Player", "Pos", "Age", "Height", "Ovr", "Pot", "Salary", "Thru", "PPG", "RPG", "APG", "MPG", "Health"], rows, [0, 50, 50, 70, 50, 50, 90, 60, 55, 55, 55, 55, 0])
-	var ids: Array[int] = []
-	for p in players:
-		ids.append(p.id)
-	var box := VBoxContainer.new()
-	box.add_child(table)
-	var roster_hint := FcUiTables.label("Select a player, then extend his contract (only in the last year of the deal), release him, or open his profile.")
-	roster_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	roster_hint.custom_minimum_size = Vector2(200, 0)
-	box.add_child(roster_hint)
-	var row := HFlowContainer.new()   # wraps onto a second line in a small window instead of forcing the screen wider
-	var expiring := {}
-	for e in controller.expiring_players():
-		expiring[e["player"].id] = e
-	var ext_salary := SpinBox.new()
-	ext_salary.tooltip_text = "The yearly salary you offer, in millions, to keep this player. He accepts a little less than he asks."
-	ext_salary.min_value = 0.1
-	ext_salary.max_value = 100
-	ext_salary.step = 0.05
-	var ext_years := SpinBox.new()
-	ext_years.tooltip_text = "Length of the new contract in years. Players want long deals when young and short ones when older."
-	ext_years.min_value = 1
-	ext_years.max_value = 5
-	table.item_selected.connect(func():
-		var picked := table.get_selected()
-		if picked != null and expiring.has(ids[picked.get_index()]):
-			ext_salary.value = expiring[ids[picked.get_index()]]["ask"] / 1e6
-			ext_years.value = expiring[ids[picked.get_index()]]["years"])
-	row.add_child(FcUiTables.label("Extension $M"))
-	row.add_child(ext_salary)
-	row.add_child(FcUiTables.label("years"))
-	row.add_child(ext_years)
-	row.add_child(FcUiTables.button("Extend contract of selected player", func():
-		var item := table.get_selected()
-		if item == null:
-			_say("Select a player first.")
-			return
-		var r := controller.extend_contract(ids[item.get_index()], roundi(ext_salary.value * 1e6), int(ext_years.value))
-		if r["ok"]:
-			show_dashboard()
-		_say(r["reason"])))
-	row.add_child(FcUiTables.button("Release selected player (pay half his salary)", func():
-		var item := table.get_selected()
-		if item == null:
-			_say("Select a player first.")
-			return
-		var r := controller.release_player(ids[item.get_index()])
-		if r["released"]:
-			show_dashboard()
-		_say(r["reason"])))
-	row.add_child(FcUiTables.button("Player profile of selected player", func():
-		var item := table.get_selected()
-		if item == null:
-			_say("Select a player first.")
-			return
-		FcPlayerProfile.open_modal(self, FcPlayerPresentation.from_player(controller.state.world, ids[item.get_index()], controller.state.current_season, controller.league_id))))
-	box.add_child(row)
-	return box
+	return FcOwnerRoster.build(_owner_ctx())
 
 
 ## The Finances tab is split into four pages (the owner's levers are many): a summary with the

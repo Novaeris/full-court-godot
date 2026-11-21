@@ -12,11 +12,17 @@ var label_node := Label.new()
 
 
 func _init(text: String = "", chip_tone: Tone = Tone.NEUTRAL) -> void:
-	tone = chip_tone
 	label_node.text = text
 	label_node.theme_type_variation = "CaptionLabel"
 	label_node.add_theme_font_size_override("font_size", FcUiTokens.fs(FcUiTokens.TYPE_SMALL - 1))
 	add_child(label_node)
+	size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	set_tone(chip_tone)
+
+
+## Changes the tone (and so the colours) of an existing chip; table cells reuse one chip for different results.
+func set_tone(chip_tone: Tone) -> void:
+	tone = chip_tone
 	var color: Color = COLORS[tone]
 	var box := StyleBoxFlat.new()
 	box.bg_color = Color(color.r, color.g, color.b, 0.15)
@@ -29,7 +35,6 @@ func _init(text: String = "", chip_tone: Tone = Tone.NEUTRAL) -> void:
 	box.content_margin_bottom = 2
 	add_theme_stylebox_override("panel", box)
 	label_node.add_theme_color_override("font_color", color)
-	size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 
 
 static func make(text: String, chip_tone: Tone = Tone.NEUTRAL) -> FcStatusChip:
