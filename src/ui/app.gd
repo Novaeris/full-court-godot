@@ -1261,8 +1261,9 @@ func show_dashboard() -> void:
 		{"regular_season": "Regular season", "playoffs": "Playoffs", "season_complete": "Season complete", "offseason": "Offseason: free agency is open to you first", "draft": "The draft", "meeting": "The owners are meeting", "expansion": "Expansion draft: choose your protected players"}[phase],
 		"Owner" if controller.state.mode == FcGameState.MODE_OWNER else "Spectator"], 16)
 	box.add_child(info)
-	var actions := HBoxContainer.new()
-	actions.add_theme_constant_override("separation", 6)
+	var actions := HFlowContainer.new()   # wraps onto a second line instead of forcing the window wider (Large text at 800 px, D6)
+	actions.add_theme_constant_override("h_separation", 6)
+	actions.add_theme_constant_override("v_separation", 6)
 	match phase:
 		FcGameController.PHASE_REGULAR:
 			actions.add_child(FcUiTables.button("Next Day", func(): on_advance(1)))

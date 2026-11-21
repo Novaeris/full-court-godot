@@ -73,9 +73,8 @@ func _refresh() -> void:
 	theme_type_variation = VARIATIONS[variant]
 	icon = FcUiIcons.texture("loader" if loading else icon_name)
 	expand_icon = false
-	custom_minimum_size.y = FcUiTokens.min_target()
-	if variant == Variant.ICON:
-		custom_minimum_size.x = FcUiTokens.min_target()
+	# a short label such as "X" must still be as wide as a finger needs (found by the screen matrix, tests/live/test_live_screen_matrix.gd)
+	custom_minimum_size = Vector2(FcUiTokens.min_target(), FcUiTokens.min_target())
 
 
 func _on_down() -> void:

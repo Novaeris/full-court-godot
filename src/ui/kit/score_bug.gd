@@ -16,22 +16,24 @@ var _stripe_b := ColorRect.new()
 func _init() -> void:
 	theme_type_variation = "ScorePanel"
 	size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	# on a phone (touch layout) the bug is compact: the full-size one needs about 340 px and a 360 px phone has 328 px of room
+	var compact := FcUiTokens.touch_mode
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", FcUiTokens.SPACE_3)
+	row.add_theme_constant_override("separation", FcUiTokens.SPACE_1 if compact else FcUiTokens.SPACE_3)
 	add_child(row)
 	_stripe_a.custom_minimum_size = Vector2(6, 0)
 	_stripe_b.custom_minimum_size = Vector2(6, 0)
 	for l in [_abbr_a, _abbr_b]:
 		l.theme_type_variation = "HeadingLabel"
-		l.add_theme_font_size_override("font_size", FcUiTokens.fs(FcUiTokens.TYPE_H2))
+		l.add_theme_font_size_override("font_size", FcUiTokens.fs(FcUiTokens.TYPE_BODY if compact else FcUiTokens.TYPE_H2))
 	for l in [_score_a, _score_b]:
 		l.theme_type_variation = "DisplayLabel"
-		l.add_theme_font_size_override("font_size", FcUiTokens.fs(FcUiTokens.TYPE_DISPLAY))
-		l.custom_minimum_size.x = 56
+		l.add_theme_font_size_override("font_size", FcUiTokens.fs(FcUiTokens.TYPE_H1 if compact else FcUiTokens.TYPE_DISPLAY))
+		l.custom_minimum_size.x = 40 if compact else 56
 	_score_a.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_status.theme_type_variation = "CaptionLabel"
 	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_status.custom_minimum_size.x = 80
+	_status.custom_minimum_size.x = 48 if compact else 80
 	for node in [_stripe_a, _abbr_a, _score_a, _status, _score_b, _abbr_b, _stripe_b]:
 		row.add_child(node)
 

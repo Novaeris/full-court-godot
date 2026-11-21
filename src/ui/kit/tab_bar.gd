@@ -48,8 +48,10 @@ func set_tabs(tabs: Array, selected: String = "") -> void:
 ## Opens a tab without emitting.
 func select(id: String) -> void:
 	current_id = id
-	if _buttons.has(id):
-		(_buttons[id] as Button).set_pressed_no_signal(true)
+	# set_pressed_no_signal does not release the other buttons of the group: without this a screen that reopens on the tab the player was
+	# last on (every Owner screen rebuild) showed two tabs as open (found in the Owner presentation audit)
+	for key in _buttons:
+		(_buttons[key] as Button).set_pressed_no_signal(key == id)
 
 
 func tab_ids() -> Array:

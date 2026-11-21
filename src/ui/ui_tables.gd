@@ -25,6 +25,8 @@ static func table(columns: Array, rows: Array, widths: Array = []) -> Tree:
 		else:
 			tree.set_column_title_alignment(i, HORIZONTAL_ALIGNMENT_LEFT)
 	var root := tree.create_item()
+	if rows.is_empty():
+		tree.add_child(_empty_note())
 	for row in rows:
 		var item := tree.create_item(root)
 		for i in columns.size():
@@ -32,6 +34,18 @@ static func table(columns: Array, rows: Array, widths: Array = []) -> Tree:
 			if _is_numeric_column(i, rows):
 				item.set_text_alignment(i, HORIZONTAL_ALIGNMENT_RIGHT)
 	return tree
+
+
+## The message an empty table shows under its column titles, so an empty panel never looks broken. It ignores the mouse.
+static func _empty_note() -> Label:
+	var note := label("Nothing to show yet.", 14)
+	note.theme_type_variation = "MutedLabel"
+	note.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	note.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	note.offset_top = 44
+	note.offset_left = 12
+	note.name = "EmptyNote"
+	return note
 
 
 ## Numbers (and money, percentages, ratios such as 0.533) read best right-aligned;

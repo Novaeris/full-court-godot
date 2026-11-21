@@ -1,5 +1,7 @@
 extends FcTestCase
-## Phase 13: release-readiness sweeps. Every Dynasty screen in a matrix of window shapes, the Owner and Career minimum window (D6), large
+## Phase 13: release-readiness sweeps. WHAT EACH CHECK MEANS (docs/RELEASE_READINESS.md): "builds" = the screen was constructed with content;
+## "fits" = its minimum size fits the window (probe) or, in the live matrix, no control sits outside a real viewport; "usable" = fits AND touch
+## targets, scrolling and dialogs pass (tests/live/test_live_screen_matrix.gd). This file mostly proves "builds" and the quick "fits" numbers. Every Dynasty screen in a matrix of window shapes, the Owner and Career minimum window (D6), large
 ## text on a phone, navigation that always gets back to the main menu, and the collection performance budget. (What these cannot show, such as
 ## how it looks on a real phone or sounds on real speakers, is listed in docs/RELEASE_READINESS.md.)
 
@@ -93,9 +95,31 @@ func test_owner_and_career_screens_fit_the_800_pixel_minimum() -> void:
 
 
 func test_dynasty_still_fits_a_phone_with_large_text() -> void:
-	for screen in ["m_hub", "m_collection", "m_lineup", "m_packs", "m_play", "m_postgame"]:
-		var now := FcUiLayoutProbe.measure_screen(screen, 2)
-		assert_true(now["w"] <= FcUiLayoutProbe.MOBILE_LIMIT, "%s at large text needs %d px (limit %d)" % [screen, now["w"], FcUiLayoutProbe.MOBILE_LIMIT])
+	# EVERY mobile Dynasty screen the probe knows (not a hand-picked six), at all three text sizes
+	var checked := 0
+	for screen in FcUiLayoutProbe.SCREENS:
+		if not screen.begins_with("m_"):
+			continue
+		for text_size in [0, 1, 2]:
+			var now := FcUiLayoutProbe.measure_screen(screen, text_size)
+			assert_true(now["w"] <= FcUiLayoutProbe.MOBILE_LIMIT, "%s at text size %d needs %d px (limit %d)" % [screen, text_size, now["w"], FcUiLayoutProbe.MOBILE_LIMIT])
+			checked += 1
+	assert_eq(checked, 3 * 11, "all 11 mobile Dynasty screens were measured at 3 text sizes")
+
+
+func test_owner_career_and_menu_screens_fit_800_at_small_and_large_text_by_minimum_size() -> void:
+	# the probe reads each screen's minimum size right after it is built. It cannot see what happens after the first layout pass, so the real-viewport
+	# matrix (tests/live/test_live_screen_matrix.gd) is the stricter check; this one is the quick, headless first line.
+	var owner_tabs := 0
+	for screen in FcUiLayoutProbe.SCREENS:
+		if screen.begins_with("m_") or screen.begins_with("dynasty_"):
+			continue
+		if screen.begins_with("owner_"):
+			owner_tabs += 1
+		for text_size in [0, 2]:
+			var now := FcUiLayoutProbe.measure_screen(screen, text_size)
+			assert_true(now["w"] <= 800, "%s at text size %d needs %d px (D6: usable at 800 px wide)" % [screen, text_size, now["w"]])
+	assert_eq(owner_tabs, 13, "all 13 Owner tabs are measured")
 
 
 # --- navigation -------------------------------------------------------------------------------------------------------------------------------------

@@ -100,8 +100,8 @@ func _player_of_the_game() -> Control:
 	row.add_child(portrait)
 	var words := VBoxContainer.new()
 	words.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	words.add_child(FcUiTables.label(str(pog["name"]), FcUiTokens.TYPE_H2, true))
-	words.add_child(FcUiTables.label(str(pog["line"]), FcUiTokens.TYPE_BODY))
+	words.add_child(_wrapped(str(pog["name"]), FcUiTokens.TYPE_H2, true))
+	words.add_child(_wrapped(str(pog["line"])))   # a long stat line wraps instead of making the panel wider than a 360 px phone
 	var note := FcUiTables.label(str(pog["note"]), FcUiTokens.TYPE_SMALL)
 	note.theme_type_variation = "MutedLabel"
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -122,8 +122,8 @@ func _performers() -> Control:
 		row.add_theme_constant_override("separation", FcUiTokens.SPACE_2)
 		row.add_child(FcPlayerPortrait.new().setup(e["subject"], 44))
 		var words := VBoxContainer.new()
-		words.add_child(FcUiTables.label(str(e["name"]), FcUiTokens.TYPE_BODY, true))
-		var line := FcUiTables.label("%s  (%s)" % [e["line"], vm["sides"][int(e["side"])]["abbr"]], FcUiTokens.TYPE_SMALL)
+		words.add_child(_wrapped(str(e["name"]), FcUiTokens.TYPE_BODY, true))
+		var line := _wrapped("%s  (%s)" % [e["line"], vm["sides"][int(e["side"])]["abbr"]], FcUiTokens.TYPE_SMALL)
 		line.theme_type_variation = "MutedLabel"
 		words.add_child(line)
 		row.add_child(words)
@@ -145,8 +145,8 @@ func _after_game() -> Control:
 	return panel
 
 
-func _wrapped(text: String) -> Label:
-	var l := FcUiTables.label(text, FcUiTokens.TYPE_BODY)
+func _wrapped(text: String, type_size: int = FcUiTokens.TYPE_BODY, bold: bool = false) -> Label:
+	var l := FcUiTables.label(text, type_size, bold)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.custom_minimum_size.x = 120
 	return l
