@@ -233,7 +233,7 @@ func test_market_tab_lists_free_agents_and_draft() -> void:
 func test_trades_tab_builds_and_a_trade_can_be_proposed() -> void:
 	_start_small_game()
 	var tab := app.build_tab("Trades")
-	assert_true(tab is TabContainer and tab.get_tab_count() == 2, "an offers page and a propose page")
+	assert_true(tab is FcTabPages and tab.get_tab_count() == 2, "an offers page and a propose page")
 	tab.free()
 	var other := 1 if app.controller.state.user_team_id != 1 else 2
 	var r := app.controller.propose_trade(other, [], [], true)
@@ -285,7 +285,7 @@ func test_every_owner_lever_on_the_finance_and_staff_tabs_has_a_tooltip() -> voi
 		var stack: Array = [app.build_tab(tab_name)]
 		while not stack.is_empty():
 			var n: Node = stack.pop_back()
-			if n is SpinBox or n is OptionButton or (n is CheckBox) or (n is Button and (n as Button).toggle_mode):
+			if n is SpinBox or n is OptionButton or (n is CheckBox) or (n is Button and (n as Button).toggle_mode and (n as Button).theme_type_variation != "TabButton"):   # tab buttons are navigation, not levers
 				found += 1
 				if (n as Control).tooltip_text == "":
 					missing.append(n.get_class())

@@ -85,12 +85,56 @@
 		"h": 376,
 		"w": 775
 	},
+	"owner_draft": {
+		"h": 269,
+		"w": 715
+	},
+	"owner_finances": {
+		"h": 421,
+		"w": 715
+	},
+	"owner_history": {
+		"h": 427,
+		"w": 715
+	},
+	"owner_league": {
+		"h": 427,
+		"w": 715
+	},
+	"owner_market": {
+		"h": 300,
+		"w": 715
+	},
+	"owner_meeting": {
+		"h": 296,
+		"w": 715
+	},
+	"owner_news": {
+		"h": 242,
+		"w": 715
+	},
 	"owner_overview": {
-		"h": 181,
+		"h": 194,
 		"w": 715
 	},
 	"owner_roster": {
-		"h": 181,
+		"h": 273,
+		"w": 715
+	},
+	"owner_schedule": {
+		"h": 277,
+		"w": 715
+	},
+	"owner_staff": {
+		"h": 458,
+		"w": 715
+	},
+	"owner_standings": {
+		"h": 269,
+		"w": 715
+	},
+	"owner_trades": {
+		"h": 404,
 		"w": 715
 	}
 }

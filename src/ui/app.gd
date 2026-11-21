@@ -43,7 +43,7 @@ var _data := FcGenerationData.load_default()
 var _root: VBoxContainer
 var _content: Control
 var _pending_state: FcGameState
-var _tabs: TabContainer
+var _tabs: FcTabPages
 ## The team the user is talking to in the Trades tab (0 = first other team).
 var _trade_partner: int = 0
 ## Set after the warning about expiring contracts; a second press starts the next season.
@@ -552,20 +552,11 @@ func show_career_hub() -> void:
 	var progress := career.progress()
 	box.add_child(FcUiTables.label("Overall %d    Potential %d (your ceiling)    Level %d    XP %d (%d of %d to the next level)    Development points %d    Skill points %d" % [
 		card["overall"], card["potential"], progress["level"], progress["xp"], progress["into_level"], progress["needed"], progress["development_points"], progress["skill_points"]], 17, true))
-	var tabs := TabContainer.new()
-	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	var card_tab := _career_card_tab(card)
-	card_tab.name = "Card"
-	tabs.add_child(card_tab)
-	var season_tab := _career_season_tab()
-	season_tab.name = "Season"
-	tabs.add_child(season_tab)
-	var develop_tab := _career_develop_tab(card, progress)
-	develop_tab.name = "Develop"
-	tabs.add_child(develop_tab)
-	var skills_tab := _career_skills_tab(progress)
-	skills_tab.name = "Skills"
-	tabs.add_child(skills_tab)
+	var tabs := FcTabPages.new()
+	tabs.add_page(_career_card_tab(card), "Card")
+	tabs.add_page(_career_season_tab(), "Season")
+	tabs.add_page(_career_develop_tab(card, progress), "Develop")
+	tabs.add_page(_career_skills_tab(progress), "Skills")
 	tabs.current_tab = clampi(_last_career_tab, 0, 3)
 	tabs.tab_changed.connect(func(i): _last_career_tab = i)
 	box.add_child(tabs)
@@ -1301,12 +1292,9 @@ func show_dashboard() -> void:
 	box.add_child(actions)
 	if _tutorial_step >= 0 and _tutorial_step < tutorial_steps().size():
 		box.add_child(_tutorial_panel())
-	_tabs = TabContainer.new()
-	_tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_tabs = FcTabPages.new()
 	for name in TAB_NAMES:
-		var tab := build_tab(name)
-		tab.name = name
-		_tabs.add_child(tab)
+		_tabs.add_page(build_tab(name), name)
 	box.add_child(_tabs)
 	_tabs.current_tab = clampi(_last_tab, 0, TAB_NAMES.size() - 1)
 	_tabs.tab_changed.connect(func(i): _last_tab = i)
@@ -1513,7 +1501,7 @@ func _tab_trades() -> Control:
 		offer_table.custom_minimum_size = Vector2(0, 135)
 		offer_table.size_flags_vertical = Control.SIZE_FILL
 		offers_page.add_child(offer_table)
-		var offer_buttons := HBoxContainer.new()
+		var offer_buttons := HFlowContainer.new()
 		offer_buttons.add_child(FcUiTables.button("Accept selected offer", func():
 			var picked := offer_table.get_selected()
 			if picked == null:
@@ -1586,7 +1574,7 @@ func _tab_trades() -> Control:
 		for i in lists[index].get_selected_items():
 			out.append(ids_by_list[index][i])
 		return out
-	var row := HBoxContainer.new()
+	var row := HFlowContainer.new()
 	row.add_child(FcUiTables.button("Check the offer", func():
 		_say(controller.propose_trade(_trade_partner, pick.call(0), pick.call(1), true, pick_refs.call(0), pick_refs.call(1))["reason"])))
 	row.add_child(FcUiTables.button("Propose trade", func():
@@ -1597,12 +1585,9 @@ func _tab_trades() -> Control:
 	box.add_child(row)
 	if offers.is_empty():
 		offers_page.add_child(FcUiTables.label("No team has made you an offer right now. New offers can arrive every two weeks during the season and in the free-agency window."))
-	var pages := TabContainer.new()
-	pages.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	offers_page.name = "Offers from teams (%d)" % offers.size()
-	box.name = "Propose a trade"
-	pages.add_child(offers_page)
-	pages.add_child(box)
+	var pages := FcTabPages.new()
+	pages.add_page(offers_page, "Offers from teams (%d)" % offers.size())
+	pages.add_page(box, "Propose a trade")
 	pages.current_tab = (0 if not offers.is_empty() else 1) if _last_trade_page < 0 else clampi(_last_trade_page, 0, 1)
 	pages.tab_changed.connect(func(i): _last_trade_page = i)
 	return pages
@@ -1681,7 +1666,7 @@ func _tab_meeting() -> Control:
 			var first_index := mini(_last_meeting_item, summary_table.get_root().get_child_count() - 1)
 			summary_table.get_root().get_child(first_index).select(0)
 			show_item.call(first_index)
-		var buttons := HBoxContainer.new()
+		var buttons := HFlowContainer.new()
 		for choice in [["Vote yes", true], ["Vote no", false]]:
 			buttons.add_child(FcUiTables.button(choice[0], func():
 				var picked2 := summary_table.get_selected()
@@ -1704,7 +1689,7 @@ func _tab_meeting() -> Control:
 		box.add_child(buttons)
 		var proposable := controller.proposable_items()
 		if not proposable.is_empty():
-			var propose_row := HBoxContainer.new()
+			var propose_row := HFlowContainer.new()
 			propose_row.add_child(FcUiTables.label("Add a proposal of your own (%d points, once a meeting):" % FcOwnersMeeting.PROPOSE_COST))
 			var proposal_pick := OptionButton.new()
 			for p in proposable:
@@ -1719,7 +1704,7 @@ func _tab_meeting() -> Control:
 		var destinations := controller.relocation_options()
 		if not destinations.is_empty() and not controller.state.meeting.get("proposed", false):
 			box.add_child(FcUiTables.label("Move your franchise: you choose the city and may rename the team (needs two thirds of the owners, costs %d points)." % FcOwnersMeeting.PROPOSE_COST, 14))
-			var move_row := HBoxContainer.new()
+			var move_row := HFlowContainer.new()
 			var city_pick := OptionButton.new()
 			for d in destinations:
 				city_pick.add_item("%s (%s, %.1fM people)" % [d["name"], d["region"], d["population"] / 1e6])
@@ -1784,7 +1769,7 @@ func _tab_draft() -> Control:
 		ids.append(p.id)
 	var table := FcUiTables.table(["#", "Prospect", "Pos", "Age", "Height", "Overall", "Potential", "Worked out", "From"], rows2, [40, 0, 45, 45, 70, 70, 80, 130, 110])
 	left.add_child(table)
-	var buttons := HBoxContainer.new()
+	var buttons := HFlowContainer.new()
 	buttons.add_child(FcUiTables.button("Draft selected prospect", func():
 		var item := table.get_selected()
 		if item == null:
@@ -1853,7 +1838,7 @@ func _tab_market() -> Control:
 		agent_ids.append(p.id)
 	var fa_table := FcUiTables.table(["Player", "Pos", "Age", "Ovr", "Pot", "Asks", "Years"], rows, [0, 50, 50, 50, 50, 90, 50])
 	left.add_child(fa_table)
-	var offer_row := HBoxContainer.new()
+	var offer_row := HFlowContainer.new()
 	offer_row.add_child(FcUiTables.label("Offer $M a year"))
 	var offer_salary := SpinBox.new()
 	offer_salary.min_value = 0.1
@@ -2162,7 +2147,7 @@ func _tab_roster() -> Control:
 			FcUiTables.money(c.salary_for(season_year)) if c != null else "-", c.end_season() if c != null else "-",
 			"%.1f" % stats.per_game(p.id, "points"), "%.1f" % stats.per_game(p.id, "rebounds"), "%.1f" % stats.per_game(p.id, "ast"), "%.1f" % stats.per_game(p.id, "minutes"),
 			"" if p.games_out == 0 else "OUT %d games: %s" % [p.games_out, p.injury]])
-	var table := FcUiTables.table(["Player", "Pos", "Age", "Height", "Ovr", "Pot", "Salary", "Thru", "PPG", "RPG", "APG", "MPG", "Health"], rows, [0, 50, 50, 70, 50, 50, 90, 60, 55, 55, 55, 55, 220])
+	var table := FcUiTables.table(["Player", "Pos", "Age", "Height", "Ovr", "Pot", "Salary", "Thru", "PPG", "RPG", "APG", "MPG", "Health"], rows, [0, 50, 50, 70, 50, 50, 90, 60, 55, 55, 55, 55, 0])
 	var ids: Array[int] = []
 	for p in players:
 		ids.append(p.id)
@@ -2172,7 +2157,7 @@ func _tab_roster() -> Control:
 	roster_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	roster_hint.custom_minimum_size = Vector2(200, 0)
 	box.add_child(roster_hint)
-	var row := HBoxContainer.new()
+	var row := HFlowContainer.new()   # wraps onto a second line in a small window instead of forcing the screen wider
 	var expiring := {}
 	for e in controller.expiring_players():
 		expiring[e["player"].id] = e
@@ -2468,11 +2453,9 @@ func _tab_finances() -> Control:
 		line.custom_minimum_size = Vector2(200, 0)
 		arena_page.add_child(line)
 
-	var pages := TabContainer.new()
-	pages.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var pages := FcTabPages.new()
 	for entry in [["Summary", summary], ["Prices and shop", pricing], ["Sponsors and loans", money], ["Arena and facilities", arena_page]]:
-		entry[1].name = entry[0]
-		pages.add_child(entry[1])
+		pages.add_page(entry[1], entry[0])
 	pages.current_tab = clampi(_last_finance_page, 0, pages.get_tab_count() - 1)
 	pages.tab_changed.connect(func(i): _last_finance_page = i)
 	return pages
@@ -2501,7 +2484,7 @@ func _tab_staff() -> Control:
 			front.add_child(FcUiTables.label("You have no general manager, so you decide everything yourself. Hire one below."))
 		else:
 			front.add_child(FcUiTables.label("%s (talent evaluation %d, negotiation %d). A sharper eye means better re-signing, drafting and signings; leave an area unticked to decide it yourself." % [gm["name"], gm["talent_evaluation"], gm["negotiation"]]))
-			var checks := HBoxContainer.new()
+			var checks := HFlowContainer.new()
 			for entry in [["contracts", "Re-sign my players"], ["draft", "Run the draft"], ["free_agency", "Sign free agents"], ["trades", "Make trades"], ["injuries", "Replace injured players"]]:
 				var check := Button.new()
 				check.toggle_mode = true
@@ -2514,7 +2497,7 @@ func _tab_staff() -> Control:
 					check.text = ("[x] " if on else "[ ] ") + title)
 				checks.add_child(check)
 			front.add_child(checks)
-			var direction_row := HBoxContainer.new()
+			var direction_row := HFlowContainer.new()
 			direction_row.add_child(FcUiTables.label("Philosophy:"))
 			var philosophy_pick := OptionButton.new()
 			philosophy_pick.tooltip_text = "Tells your general manager what to value: win now (today's ability, veterans), balanced, or rebuild (youth and potential)."
@@ -2542,7 +2525,7 @@ func _tab_staff() -> Control:
 	var table := FcUiTables.table(["Role", "Name", "Reputation", "Experience", "Salary", "Through"], rows)
 	box.add_child(table)
 	if controller.state.mode == FcGameState.MODE_OWNER:
-		var row := HBoxContainer.new()
+		var row := HFlowContainer.new()
 		row.add_child(FcUiTables.button("Fire selected", func():
 			var item := table.get_selected()
 			if item != null and controller.fire_staff(ids[item.get_index()]):
@@ -2594,7 +2577,7 @@ func _tab_staff() -> Control:
 			if error == "":
 				show_dashboard()))
 		box.add_child(row)
-		var extend_row := HBoxContainer.new()
+		var extend_row := HFlowContainer.new()
 		extend_row.add_child(FcUiTables.label("Contract extension for the selected staff member: $M"))
 		var ext_pay := SpinBox.new()
 		ext_pay.tooltip_text = "The yearly salary you offer, in millions, to keep this staff member."
@@ -2623,11 +2606,9 @@ func _tab_staff() -> Control:
 		box.add_child(extend_row)
 	if controller.state.mode != FcGameState.MODE_OWNER:
 		return box
-	var pages := TabContainer.new()
-	pages.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var pages := FcTabPages.new()
 	for entry in [["Front office", front], ["People", box]]:
-		entry[1].name = entry[0]
-		pages.add_child(entry[1])
+		pages.add_page(entry[1], entry[0])
 	pages.current_tab = clampi(_last_staff_page, 0, 1)
 	pages.tab_changed.connect(func(i): _last_staff_page = i)
 	return pages

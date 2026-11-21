@@ -8,6 +8,7 @@ extends Control
 
 const BASE_MARGIN := 16
 const BOTTOM_BAR_HEIGHT := 68
+const MAX_CONTENT_WIDTH := 1600
 
 var content: VBoxContainer
 var bottom_slot: VBoxContainer
@@ -52,12 +53,25 @@ func _init() -> void:
 	set_safe_margins(_safe)
 
 
-## Applies a device safe area (see FcLayoutProfile.safe_margins) on top of the normal 16 px margin.
+## Applies a device safe area (see FcLayoutProfile.safe_margins) on top of the normal 16 px margin. On a very wide window the sides
+## also grow so the content stays at most MAX_CONTENT_WIDTH wide and centred (ultrawide screens, 21:9 and wider).
 func set_safe_margins(margins: Dictionary) -> void:
 	_safe = margins
+	var extra := side_padding(size.x)
 	for side in ["left", "top", "right", "bottom"]:
-		_margin.add_theme_constant_override("margin_" + side, BASE_MARGIN + int(margins.get(side, 0)))
+		var more := extra if side == "left" or side == "right" else 0
+		_margin.add_theme_constant_override("margin_" + side, BASE_MARGIN + int(margins.get(side, 0)) + more)
 	set_toast_inset(0)
+
+
+## Extra pixels to add to each side so content never gets wider than MAX_CONTENT_WIDTH. Zero for any normal window.
+static func side_padding(window_width: float) -> int:
+	return maxi(0, int((window_width - MAX_CONTENT_WIDTH) / 2.0))
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED and toasts != null:
+		set_safe_margins(_safe)
 
 
 ## Puts a control along the bottom edge of the window (the mobile navigation bar), above the safe-area margin, and lifts the toasts

@@ -287,10 +287,10 @@ func test_the_hub_has_card_develop_and_skills_tabs_that_work() -> void:
 	assert_true("Development points" in text and "Skill points" in text and "Level 1" in text)
 	var names: Array = []
 	var stack: Array = [app]
-	var tabs: TabContainer = null
+	var tabs: FcTabPages = null
 	while not stack.is_empty():
 		var n: Node = stack.pop_back()
-		if n is TabContainer:
+		if n is FcTabPages:
 			tabs = n
 		stack.append_array(n.get_children())
 	assert_true(tabs != null)

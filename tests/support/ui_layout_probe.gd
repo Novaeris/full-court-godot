@@ -11,7 +11,8 @@ const SAVE_DIR := "user://test_layout_probe_saves"
 const DYNASTY_DIR := "user://test_layout_probe_dynasty"
 
 const SCREENS := ["main_menu", "new_league", "career_home", "career_creator", "dynasty_entry", "dynasty_hub", "dynasty_collection",
-	"dynasty_packs", "dynasty_lineup", "owner_overview", "owner_roster",
+	"dynasty_packs", "dynasty_lineup", "owner_overview", "owner_standings", "owner_schedule", "owner_roster", "owner_finances", "owner_staff",
+	"owner_draft", "owner_market", "owner_trades", "owner_meeting", "owner_history", "owner_news", "owner_league",
 	"m_entry", "m_hub", "m_collection", "m_lineup", "m_packs", "m_market", "m_play", "m_challenges", "m_tournament", "m_season", "m_postgame"]
 ## The Dynasty screens in the MOBILE layout (names start with m_): they must fit a 412 px phone (the margins are included in the numbers).
 const MOBILE_LIMIT := 412
@@ -77,10 +78,11 @@ static func measure_screen(screen: String, text_size: int = 1) -> Dictionary:
 			else:
 				app.dynasty_ui.on_create("Probe Kings", "PRB")
 				app.dynasty_ui.show_tab(screen.trim_prefix("dynasty_"))
-		"owner_overview", "owner_roster":
-			app.on_create_league({"teams": 8, "conferences": 2, "divisions": 1, "free_agents": 10, "seed": "5", "name": "Probe League"})
-			app.on_start_game(app._pending_state.world.teams.ids()[2])
-			app._tabs.current_tab = FcApp.TAB_NAMES.find("Overview" if screen == "owner_overview" else "Roster")
+		_:
+			if screen.begins_with("owner_"):
+				app.on_create_league({"teams": 8, "conferences": 2, "divisions": 1, "free_agents": 10, "seed": "5", "name": "Probe League"})
+				app.on_start_game(app._pending_state.world.teams.ids()[2])
+				app._tabs.current_tab = FcApp.TAB_NAMES.find(screen.trim_prefix("owner_").capitalize())
 	# the app is a plain Control (it adds up nothing), so measure the container that holds the screen, plus the 16 px margins
 	var size := app._root.get_combined_minimum_size() + Vector2(32, 32)
 	Engine.get_main_loop().root.remove_child(app)

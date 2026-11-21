@@ -271,20 +271,21 @@ func _click_button(text: String) -> void:
 
 
 func _click_tab(name: String) -> void:
-	var bar: TabBar = _app._tabs.get_tab_bar()
-	var index := FcApp.TAB_NAMES.find(name)
-	var rect := bar.get_tab_rect(index)
-	await _click_at(bar.get_global_rect().position + rect.get_center())
+	var button: Button = _app._tabs.tab_button(FcApp.TAB_NAMES.find(name))
+	var scroller := button.get_parent().get_parent() as ScrollContainer
+	if scroller != null:
+		scroller.ensure_control_visible(button)
+		await _frames(2)
+	await _click_at(button.get_global_rect().get_center())
 
 
 ## Clicks one of the pages inside the open tab (Finances: 0 summary, 1 prices, 2 sponsors and loans, 3 arena; Trades: 0 offers, 1 propose).
 func _click_page(index: int) -> void:
-	var pages := _app._tabs.get_current_tab_control() as TabContainer
+	var pages := _app._tabs.get_current_tab_control() as FcTabPages
 	if pages == null:
 		_fail("the Finances tab has no pages")
 		return
-	var bar := pages.get_tab_bar()
-	await _click_at(bar.get_global_rect().position + bar.get_tab_rect(index).get_center())
+	await _click_at(pages.tab_button(index).get_global_rect().get_center())
 	_expect(pages.current_tab == index, "the Finances page %d opened" % index)
 
 

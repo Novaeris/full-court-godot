@@ -32,9 +32,9 @@ which command, and, just as important, what was NOT verified because it needs a 
   iOS or Android build was made.
 - **Controller and screen reader.** Focus reach is tested; a real gamepad and a screen reader were not used. Cards expose accessible text but a screen reader pass is open.
 - **Frame rate on real GPUs.** Build times are measured; frame times and animation smoothness need a real window on target hardware (the gl_compatibility renderer was chosen for mobile).
-- **Ultrawide (21:9).** Everything builds and is readable, but Dynasty content stretches across the full width. A maximum content width on very wide windows is a good follow-up.
-- **Owner Mode tabs.** The Owner screen keeps the older table-based tabs inside the new shell (D6). The Overview uses the new KPI strips; converting the other twelve tabs to the kit is incremental work.
-- **GitHub Actions.** The CI workflow now runs the live tests and links the Studio assets, but it has not been seen running on GitHub yet.
+- **Ultrawide (21:9).** Fixed in the follow-up pass (2026-11-21): the content column never grows past 1600 px and is centred (`FcScreenHost.MAX_CONTENT_WIDTH`, unit-tested). Not looked at on a real ultrawide monitor.
+- **Owner Mode tabs.** Fixed in the follow-up pass: all 13 tabs and their sub-pages now sit in the kit's tab bar and panel (`FcTabPages`, replacing Godot's TabContainer), long sentences wrap, and every tab was measured at 715 px (the old measure was stale and hid five tabs that needed up to 1865 px; the layout probe now measures all 13). The tables inside are still the plain themed tables, not `FcDataTable`: they carry row selection that the buttons depend on.
+- **GitHub Actions.** Checked 2026-11-21 with `gh run list`: the CI runs for the Phase 11, 12 and 13 pushes all finished successfully (about 13 minutes each).
 - **Legal.** Player names, cards and branding are original, the sounds are built by the game and the fonts and icons are open-licence, but a lawyer should review before any commercial release (CLAUDE.md rule 9).
 
 ## Known limits to carry forward
@@ -42,3 +42,7 @@ which command, and, just as important, what was NOT verified because it needs a 
 - Music is not included (the Music bus exists and is empty).
 - Player visuals are tiers 0 to 2 (monogram, card art, procedural figure); full-body pose sprites and 3D (tiers 3 and 4) are designed slots, not built (D5).
 - Engine messages such as "Lambda capture ... was freed" appear when a live test frees a pack reveal while a tween runs; they are not script errors and do not fail a test.
+
+## Follow-up pass (2026-11-21)
+
+Still open and needing a person: the listening review, a real phone, a gamepad and screen reader, frame rate on real GPUs, the legal review, and music (a creative choice, so it was not invented).
