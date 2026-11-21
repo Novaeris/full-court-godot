@@ -11,7 +11,7 @@ static func hero(card: Dictionary, progress: Dictionary, view_model: Dictionary,
 	row.add_theme_constant_override("h_separation", FcUiTokens.SPACE_5)
 	row.add_theme_constant_override("v_separation", FcUiTokens.SPACE_3)
 	row.name = "CareerHero"
-	var stage := FcShowcaseStage.new().setup(view_model["subject"], 170)
+	var stage := FcShowcaseStage.new().setup(view_model["subject"], 128)
 	row.add_child(stage)
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL

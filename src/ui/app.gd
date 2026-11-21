@@ -568,27 +568,36 @@ func show_career_hub() -> void:
 	var card := career.card()
 	var box := _reset("%s   #%d" % [card["name"], card["jersey"]], {"id": "career_hub", "skin": FcModeSkin.BROADCAST, "back": _confirm_leave_to_menu,
 		"header": {"kind": "lower_third", "subtitle": "%s   %s   Age %d" % [card["position"], card["archetype"], card["age"]]}})
+	var body := VBoxContainer.new()
+	body.add_theme_constant_override("separation", FcUiTokens.SPACE_3)
 	var progress := career.progress()
 	var view_model := FcPlayerPresentation.from_career(career)
-	box.add_child(FcCareerHub.hero(card, progress, view_model, func() -> void: FcPlayerProfile.open_modal(self, FcPlayerPresentation.from_career(career))))
+	body.add_child(FcCareerHub.hero(card, progress, view_model, func() -> void: FcPlayerProfile.open_modal(self, FcPlayerPresentation.from_career(career))))
 	var career_hint := hints.card("career_hub")
 	if career_hint != null:
-		box.add_child(career_hint)
+		body.add_child(career_hint)
 	var tabs := FcTabPages.new()
 	tabs.add_page(_career_card_tab(card), "Card")
 	tabs.add_page(_career_season_tab(), "Season")
 	tabs.add_page(_career_develop_tab(card, progress), "Develop")
 	tabs.add_page(_career_skills_tab(progress), "Skills")
+	tabs.custom_minimum_size.y = 380   # the tabs keep a usable height; the whole hub scrolls when the window is short
 	tabs.current_tab = clampi(_last_career_tab, 0, 3)
 	tabs.tab_changed.connect(func(i): _last_career_tab = i)
-	box.add_child(tabs)
-	box.add_child(FcUiTables.label("Career id %s. Saved to slot career_1; load it from the main menu." % card["profile_id"], 14))
+	body.add_child(tabs)
+	body.add_child(FcUiTables.label("Career id %s. Saved to slot career_1; load it from the main menu." % card["profile_id"], 14))
 	var row := HBoxContainer.new()
 	row.add_child(FcUiTables.button("Save", func():
 		var r := career.save(saves)
 		_say("Saved." if r.is_ok() else "Save failed: " + r.message)))
 	row.add_child(FcUiTables.button("Main Menu", show_main_menu))
-	box.add_child(row)
+	body.add_child(row)
+	var hub_scroll := ScrollContainer.new()   # the hero, the hint, the tabs and the buttons scroll together in a short window
+	hub_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	hub_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hub_scroll.add_child(body)
+	box.add_child(hub_scroll)
 
 
 ## Plays days for the career player and keeps the newest results for the Season tab.

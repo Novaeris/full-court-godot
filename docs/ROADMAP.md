@@ -34,6 +34,8 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 - Career Mode phases 1-6 (D-038 to D-040): build validation and creator, progression, season simulation, RPG layer (decisions, contracts, relationships, rivalries, sponsorships), potential-capped player-directed growth, scouting and draft pick; marked playable (710 tests at the 2026-11-19 stabilization run)
 - Content publishing (D-042, 758 tests): Creator Studio to game releases, local and offline: manifest and checksums, approval-gated publisher, immutable releases with crash-safe pointer, loader with visible fallback and rollback, bundled starter release. Remote hosting is not built.
 
+- Visual Identity and UI Transformation (D-057, D-058): brand, main menu, team identity, shared player presentation, Owner and Career redesign, Dynasty bracket, Creator Studio restyle, celebration and sound (`docs/VISUAL_IDENTITY_PLAN.md`, checkpoint notes in `docs/validation/ui/visual_identity/`).
+
 ## Current
 - Owner Mode depth (see `docs/PROGRESS_LOG.md`). A milestone plan is drafted in `docs/MILESTONE_PLAN.md` and is the plan of record; the "Next" list below is only a rough guide.
 - Stabilization (2026-11-19): fix doc and contract inconsistencies, run the full validation set, then founder manual playtesting, a visual and usability pass on the Owner and Career screens, and a rules freeze before the next major track.

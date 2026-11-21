@@ -291,3 +291,22 @@ Milestone acceptance: no inventoried screen uses default-styled Tree/ItemList/Op
 ## 20. Verification of this deliverable
 
 Documentation only. On approval the first actions are: save this as `docs/VISUAL_IDENTITY_PLAN.md`, record D-057+ in `docs/DECISIONS.md`, then start Phase A. Nothing in game code, saves, controller APIs or gameplay has been changed.
+
+---
+
+## Progress (recorded as the milestone ran)
+
+| Phase | Status | Checkpoint note |
+|---|---|---|
+| A Spec, brand assets, palette | done, pushed | (D-057, `docs/ASSET_SPEC.md`, `assets/ART_PROVENANCE.md`) |
+| B Design system and FcTable prototype | done, pushed; prototype gate passed (go) | `docs/validation/ui/visual_identity/CHECKPOINT_1.md` |
+| C Team identity | done, pushed | `CHECKPOINT_C_TEAM_IDENTITY.md` |
+| D Brand, startup, main menu | done, pushed | `CHECKPOINT_2_MAIN_MENU.md` |
+| E Shared player presentation | done, pushed | `CHECKPOINT_3_PLAYER_PRESENTATION.md` |
+| F Owner redesign | done (F1 Overview and Roster; F2 to F5 all other tabs), pushed | `CHECKPOINT_4_OWNER_OVERVIEW_ROSTER.md`, `CHECKPOINT_4B_OWNER_TABS.md` |
+| G Career redesign | done, pushed | `CHECKPOINT_5_CAREER_HUB.md` |
+| H Dynasty polish and Creator Studio restyle | done, pushed | `CHECKPOINT_6_DYNASTY_STUDIO.md` |
+| I Animation, audio, atmosphere | done, pushed | `CHECKPOINT_I_ANIMATION_AUDIO.md` |
+| J Final QA | done: suites, packaged build and self-test, click tools, documentation | `docs/RELEASE_READINESS.md` (last section), `docs/PROGRESS_LOG.md` |
+
+Deviations from this plan, with reasons, are in D-058 (`docs/DECISIONS.md`) and in the "Not done" paragraph of each checkpoint note: no high-contrast or colour-blind mode, no screen slide transition, no Owner playoff bracket drawing, no new form-control wrappers, no raster art. The seven founder checkpoints were run without hard stops, as instructed: each has screenshots and a written summary instead of a pause.
