@@ -190,6 +190,8 @@ Unit: `test_player_traits.gd` (6: deterministic, in range, integers, age changes
 
 `tests/unit/test_injury_history.gd` (7): history kept in order and bounded, saved through JSON and an older save loads empty (data version unchanged), a played season records its injuries, the Owner view-model and dossier show Health with the history newest first, an injured player shows the status chip and games out, a healthy player says so, a Dynasty card has no Health panel.
 
+`tests/unit/test_player_relationships.gd` (6): the words for a relationship value, Owner tenure and best teammates (best first, never himself), a traded player starts a new run, the Owner and Career dossiers show the Relationships panel (Career: trust, chemistry, rival and tags), a Dynasty card has none. `tests/unit/test_player_similarity.gd` (5): identical players score 100 and the score falls with the gap, the nearest list is sorted, stable and bounded, an Owner player plays like five other active players and computing it changes nothing, a Dynasty card plays like other players' cards.
+
 ## UI tests, the live runner and the screenshot matrix (UI polish milestone, D-047)
 The design system and component kit have their own tests, in three groups:
 - **Unit tests** (`tests/unit/test_ui_design_system.gd`, `test_ui_kit.gd`, `test_ui_motion.gd`): contrast of every text colour on every surface (WCAG 4.5:1), the three mode skins and their whitelist, the theme's variations, fonts and text scale, icons and licences, rating tiers, the reduce-motion preference, and every kit component's states and signals.

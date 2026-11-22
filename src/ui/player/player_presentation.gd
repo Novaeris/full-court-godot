@@ -4,7 +4,7 @@ extends RefCounted
 ## same dictionary, so the profile (and every list, comparison and result line) is built once. Nothing here writes to game data.
 ## Fields: mode, subject (for FcPlayerVisual), name, jersey, position, secondary, archetype, playstyle {label, text}, team {name, abbreviation,
 ## primary, secondary}, physical {height_cm, weight_kg, wingspan_cm, hand}, overall, potential, age, attributes [{key, name, category, value}],
-## badges [{key, name, description}], personality [{key, name, description, value}] and contract {salary, through, years_left, total, cornerstone, no_trade} relationships {kind, tenure_seasons, teams_played, team_name, teammates; Career adds coach_trust, chemistry, rival, tags} and health {games_out, injury, durability, history [{year, injury, games, severe}] newest first, games_missed, severe_count, medical_level (-1 when the player has no team)} (Owner and Career only; Dynasty cards have none), stats {columns, rows}, history {columns, rows}, awards [text], progression {kind, ...}.
+## badges [{key, name, description}], personality [{key, name, description, value}] and contract {salary, through, years_left, total, cornerstone, no_trade} similar [{name, position, age, overall, team, similarity, subject}] (the five most alike players of the league or the release) and relationships {kind, tenure_seasons, teams_played, team_name, teammates; Career adds coach_trust, chemistry, rival, tags} and health {games_out, injury, durability, history [{year, injury, games, severe}] newest first, games_missed, severe_count, medical_level (-1 when the player has no team)} (Owner and Career only; Dynasty cards have none), stats {columns, rows}, history {columns, rows}, awards [text], progression {kind, ...}.
 ## Sections a mode has no data for are left empty and the profile hides them; nothing is invented.
 ##
 ## Keys (the visual identity): Owner "owner_player:<id>", Career "career_player:<id>", Dynasty "dynasty_player:<player_id>" (so every edition
@@ -66,6 +66,7 @@ static func from_card(row: Dictionary, ctl: FcDynastyController) -> Dictionary:
 	if not stats.is_empty() and int(stats["games"]) > 0:
 		var g := float(stats["games"])
 		stat_rows.append(["With your team", stats["games"], "%.1f" % (float(stats["points"]) / g), "%.1f" % (float(stats["rebounds"]) / g), "%.1f" % (float(stats["assists"]) / g)])
+	var similar := _similar_cards(ctl, row)
 	var mastery := int(row.get("mastery", 0))
 	return {
 		"mode": "dynasty", "subject": subject_for_card(row), "name": str(row["name"]), "jersey": 0, "position": str(row.get("position", "")),
@@ -73,8 +74,32 @@ static func from_card(row: Dictionary, ctl: FcDynastyController) -> Dictionary:
 		"team": {"name": str(row.get("team", ""))}, "physical": {}, "overall": int(row.get("overall", 0)), "potential": 0, "age": 0,
 		"attributes": _attributes(ctl.defs, attrs), "badges": badges,
 		"stats": {"columns": ["", "Games", "PPG", "RPG", "APG"], "rows": stat_rows}, "history": {"columns": [], "rows": []}, "awards": [],
-		"progression": {"kind": "static", "mastery": mastery, "frame": ctl.catalog.config.mastery_frame(mastery), "note": "Card ratings never change; mastery is cosmetic."},
+		"similar": similar, "progression": {"kind": "static", "mastery": mastery, "frame": ctl.catalog.config.mastery_frame(mastery), "note": "Card ratings never change; mastery is cosmetic."},
 	}
+
+
+## The cards of the loaded release that are most like this card's player (one per real player, any edition; the card's own player is left out).
+static func _similar_cards(ctl: FcDynastyController, row: Dictionary) -> Array:
+	var own_player := str(row.get("player_id", ""))
+	var keys: Array = ctl.defs.attributes.keys()
+	var target: Dictionary = row.get("attributes", {})
+	var seen := {own_player: true}
+	var candidates: Array = []
+	var views := {}
+	for card_id in ctl.catalog.card_ids():
+		var v: Dictionary = ctl.catalog.view(card_id)
+		var pid := str(v.get("player_id", ""))
+		if not bool(v.get("available", false)) or seen.has(pid) or (v.get("attributes", {}) as Dictionary).is_empty():
+			continue
+		seen[pid] = true
+		candidates.append({"id": card_id, "values": v["attributes"]})
+		views[card_id] = v
+	var out: Array = []
+	for hit in FcPlayerSimilarity.nearest(target, candidates, keys, 5):
+		var v: Dictionary = views[str(hit["id"])]
+		out.append({"name": str(v.get("name", "?")), "position": str(v.get("position", "")), "age": 0, "overall": int(v.get("overall", 0)), "team": str(v.get("team", "")), "team_abbreviation": "",
+			"rarity": str(v.get("rarity", "common")), "similarity": int(hit["similarity"]), "subject": subject_for_card(v)})
+	return out
 
 
 # --- Owner / Career world player ------------------------------------------------------------------------------------------------
@@ -113,6 +138,7 @@ static func from_player(world: FcWorld, player_id: int, current_year: int, leagu
 	var health := {"games_out": p.games_out, "injury": p.injury, "durability": p.attributes.get_value("durability"), "history": injury_rows, "games_missed": games_missed,
 		"severe_count": severe_count, "medical_level": clinic.medical_level if clinic != null else -1}
 	var relationships := _team_ties(world, p, team, player_id)
+	var similar := _similar_in_world(world, p, player_id)
 	var personality: Array = []
 	for key in world.definitions.personality.keys():
 		var def := world.definitions.personality.get_def(key)
@@ -128,7 +154,7 @@ static func from_player(world: FcWorld, player_id: int, current_year: int, leagu
 		"archetype": "", "playstyle": FcPlaystyle.summary(composites), "team": branding_team if not branding_team.is_empty() else {"name": "Free agent"},
 		"physical": {"height_cm": p.physical.height_cm, "weight_kg": p.physical.weight_kg, "wingspan_cm": p.physical.wingspan_cm, "hand": HAND_NAMES[clampi(p.physical.handedness, 0, 2)]},
 		"overall": roundi(composites["overall"]), "potential": p.development.potential, "age": p.age_on(FcDate.new(current_year, 7, 1)),
-		"attributes": _attributes(world.definitions, _values(world.definitions, p)), "badges": [], "personality": personality, "contract": contract, "health": health, "relationships": relationships,
+		"attributes": _attributes(world.definitions, _values(world.definitions, p)), "badges": [], "personality": personality, "contract": contract, "health": health, "relationships": relationships, "similar": similar,
 		"stats": {"columns": ["Season", "Team", "GP", "MPG", "PPG", "RPG", "APG"], "rows": rows},
 		"history": {"columns": ["Season", "Team", "GP", "Points", "Rebounds", "Assists"], "rows": history}, "awards": awards,
 		"progression": {"kind": "outlook", "overall": roundi(composites["overall"]), "potential": p.development.potential, "peak_age": p.development.peak_age, "age": p.age_on(FcDate.new(current_year, 7, 1))},
@@ -174,6 +200,27 @@ static func from_career(career: FcCareerController) -> Dictionary:
 		awards.append(str(milestone).replace("_", " ").capitalize())
 	vm["awards"] = awards
 	return vm
+
+
+## The league's active players who play most like this one (attribute similarity, FcPlayerSimilarity): [{name, position, age, overall, team, similarity,
+## subject}]. Read-only; computed when a profile is built.
+static func _similar_in_world(world: FcWorld, p: FcPlayer, player_id: int) -> Array:
+	var keys: Array = world.definitions.attributes.keys()
+	var target := _values(world.definitions, p)
+	var candidates: Array = []
+	var ratings := FcPlayerRatings.load_default()
+	for q in world.players.all():
+		if q.id == player_id or q.status != FcPlayer.Status.ACTIVE:
+			continue
+		candidates.append({"id": q.id, "values": _values(world.definitions, q)})
+	var out: Array = []
+	for hit in FcPlayerSimilarity.nearest(target, candidates, keys, 5):
+		var q: FcPlayer = world.players.get_by_id(int(hit["id"]))
+		var team: FcTeam = world.team_of_player(q.id)
+		out.append({"name": q.identity.full_name(), "position": FcPosition.abbreviation(q.primary_position), "age": q.age_on(reference_date) if reference_date != null else 0,
+			"overall": roundi(ratings.compute(q)["overall"]), "team": world.team_display_name(team.id) if team != null else "Free agent", "team_abbreviation": team.identity.abbreviation if team != null else "FA",
+			"similarity": int(hit["similarity"]), "subject": subject_for_player(world, q.id)})
+	return out
 
 
 ## The player's ties to his club, from data the game already keeps: seasons in a row with the current team, how many teams he has played for, and

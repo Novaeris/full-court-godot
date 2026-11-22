@@ -167,6 +167,8 @@ func _overview() -> void:
 	flow.add_child(_development_panel())
 	if not (vm.get("personality", []) as Array).is_empty():
 		flow.add_child(_personality_panel())
+	if not (vm.get("similar", []) as Array).is_empty():
+		flow.add_child(_similar_panel())
 	if not (vm.get("relationships", {}) as Dictionary).is_empty():
 		flow.add_child(_relationships_panel())
 	if not (vm.get("health", {}) as Dictionary).is_empty():
@@ -245,6 +247,24 @@ func _personality_panel() -> FcPanel:
 		var row := _bar_row(str(t["name"]), int(t["value"]))
 		row.tooltip_text = str(t["description"])
 		panel.add(row)
+	return panel
+
+
+## Players like him: the five players (the league's, or the release's cards) with the most similar attributes, each with how alike they are.
+func _similar_panel() -> FcPanel:
+	var panel := _panel("Plays like")
+	for entry in vm["similar"]:
+		var bits: Array = [str(entry["position"])]
+		if int(entry.get("age", 0)) > 0:
+			bits.append(str(entry["age"]))
+		if str(entry.get("team_abbreviation", "")) != "":
+			bits.append(str(entry["team_abbreviation"]))
+		elif str(entry.get("rarity", "")) != "":
+			bits.append(FcRarityStyle.label(str(entry["rarity"])))
+		bits.append("%d%% alike" % int(entry["similarity"]))
+		var chip := FcPlayerChip.new().setup(entry, "  ·  ".join(PackedStringArray(bits)), true, 32, false)
+		chip.tooltip_text = "%s: %d%% alike in attributes" % [entry["name"], entry["similarity"]]
+		panel.add(chip)
 	return panel
 
 
