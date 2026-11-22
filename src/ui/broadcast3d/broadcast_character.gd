@@ -1,9 +1,9 @@
-class_name FcB1cCharacter
+class_name FcBroadcastCharacter
 extends Node3D
-## THROWAWAY prototype for milestone B1c (master plan 4.12): one basketball player built ENTIRELY IN CODE from the identity data the game
+## One basketball player (promoted from the B1c prototype into the game for B4) built ENTIRELY IN CODE from the identity data the game
 ## already has (FcPlayerVisual.resolve: skin tone, hair style and colour, facial hair, build class, height and weight, team colours, jersey
 ## number), with no model or animation file. A stylised low-poly body from capsules, spheres and boxes on a joint hierarchy, animated by
-## FcB1cPose (idle, run, dribble, shoot, layup, defend) with cross-fades. Units are feet (1 unit = 1 ft). The 2D portraits are NOT used:
+## FcBroadcastPose (idle, run, dribble, shoot, layup, defend) with cross-fades. Units are feet (1 unit = 1 ft). The 2D portraits are NOT used:
 ## they cannot become 3D (no depth); only the categorical identity data and colours drive the look.
 
 const DEFAULT_HEIGHT_CM := 198.0
@@ -19,7 +19,7 @@ var state: String = "idle"
 
 var _joints: Dictionary = {}     # name -> Node3D
 var _meshes: Array[MeshInstance3D] = []
-var _from_pose: Dictionary = FcB1cPose.pose_for("idle", 0.0)
+var _from_pose: Dictionary = FcBroadcastPose.pose_for("idle", 0.0)
 var _blend: float = 1.0
 var _time: float = 0.0
 var _phase_offset: float = 0.0
@@ -29,7 +29,7 @@ var _front_number: Label3D
 
 
 ## Builds the body for `subject` (the dictionary FcPlayerVisual.resolve takes) with an animation phase offset so a team does not move in unison.
-func setup(subject: Dictionary, phase_offset: float = 0.0) -> FcB1cCharacter:
+func setup(subject: Dictionary, phase_offset: float = 0.0) -> FcBroadcastCharacter:
 	var visual := FcPlayerVisual.resolve(subject)
 	identity = visual["identity"]
 	uniform = visual["uniform"]
@@ -126,7 +126,7 @@ func _build() -> void:
 	torso.add_child(_back_number)
 	_front_number = _label(str(jersey_number), secondary, Vector3(0.0, (shoulder_y - hip_y) * 0.6, 0.075 * h), 0.0, 0.1 * h)
 	torso.add_child(_front_number)
-	_apply_pose(FcB1cPose.pose_for("idle", _phase_offset))
+	_apply_pose(FcBroadcastPose.pose_for("idle", _phase_offset))
 
 
 func _label(text: String, color: Color, at: Vector3, yaw_degrees: float, size_feet: float) -> Label3D:
@@ -186,7 +186,7 @@ func _facial_hair(head_joint: Node3D, r: float) -> void:
 
 ## Switches to `new_state`, cross-fading from whatever pose the body is in now over BLEND_SECONDS (0 = at once).
 func set_state(new_state: String, blend_seconds: float = BLEND_SECONDS) -> void:
-	if new_state == state or not FcB1cPose.STATES.has(new_state):
+	if new_state == state or not FcBroadcastPose.STATES.has(new_state):
 		return
 	_from_pose = _current_pose()
 	state = new_state
@@ -198,12 +198,12 @@ var _blend_seconds: float = BLEND_SECONDS
 
 
 func _phase() -> float:
-	return fmod(_time / float(FcB1cPose.CYCLE[state]) + _phase_offset, 1.0)
+	return fmod(_time / float(FcBroadcastPose.CYCLE[state]) + _phase_offset, 1.0)
 
 
 func _current_pose() -> Dictionary:
-	var target := FcB1cPose.pose_for(state, _phase())
-	return FcB1cPose.blend(_from_pose, target, _blend) if _blend < 1.0 else target
+	var target := FcBroadcastPose.pose_for(state, _phase())
+	return FcBroadcastPose.blend(_from_pose, target, _blend) if _blend < 1.0 else target
 
 
 ## One step of time: moves the cross-fade and applies the pose to the joints.
@@ -215,7 +215,7 @@ func advance(delta: float) -> void:
 
 
 func _apply_pose(pose: Dictionary) -> void:
-	for name in FcB1cPose.JOINTS:
+	for name in FcBroadcastPose.JOINTS:
 		(_joints[name] as Node3D).rotation = pose["joints"][name]
 	var root: Vector3 = pose["root"]
 	(_joints["pelvis"] as Node3D).position = Vector3(root.x * height_feet, 0.53 * height_feet + root.y * height_feet, 0.0)

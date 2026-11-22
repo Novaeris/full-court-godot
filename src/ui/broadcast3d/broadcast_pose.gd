@@ -1,6 +1,6 @@
-class_name FcB1cPose
+class_name FcBroadcastPose
 extends RefCounted
-## THROWAWAY prototype for milestone B1c (master plan 4.12): the pure maths of a character's procedural animation, with no nodes and no assets.
+## The pure maths (promoted from the B1c prototype into the game for B4) of a character's procedural animation, with no nodes and no assets.
 ## A pose is {joint name: Vector3 euler rotation in radians} plus a root offset; each state is a function of a looping phase. States blend by
 ## linear interpolation of every joint, which is how the prototype checks the plan's "animation blending" question (no popping at a transition).
 ## Joints: pelvis, torso, head, l_shoulder, r_shoulder, l_elbow, r_elbow, l_hip, r_hip, l_knee, r_knee.
@@ -93,8 +93,8 @@ static func pose_for(state: String, phase: float) -> Dictionary:
 		"defend":
 			var shuffle := sin(phase * TAU)
 			j["torso"] = Vector3(0.2, 0.0, 0.0)
-			j["l_hip"] = Vector3(0.7, 0.0, 0.0)
-			j["r_hip"] = Vector3(0.7, 0.0, 0.0)
+			j["l_hip"] = Vector3(-0.55, 0.0, 0.0)
+			j["r_hip"] = Vector3(-0.55, 0.0, 0.0)
 			j["l_knee"] = Vector3(0.95, 0.0, 0.0)
 			j["r_knee"] = Vector3(0.95, 0.0, 0.0)
 			j["l_shoulder"] = Vector3(-0.3, 0.0, 1.25)

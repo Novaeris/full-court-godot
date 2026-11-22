@@ -88,3 +88,14 @@ Failures along the way (all explained in the audit): the baseline live run faile
 **Defects found by measurement and fixed:** the `shoot` loop did not close (found by the blend tests); an orphan node per cycle in the prototype (found by the leak check; first leak run is kept in the report).
 **Decisions:** D-070 **3D-REDUCED** (see DECISIONS.md); J1 (stored tenure numbers) not undertaken now, display numbers per game instead.
 **Local results (base `d732f82` plus these changes):** import exit 0; unit exit 0, **1,533 passed**; live exit 0, **178 passed**; Studio smoke PASS.
+
+**B1c CI:** run 45077455206 finished **success**.
+
+## B4: the 3D viewer in the replay screen
+**Delivered:** `src/ui/broadcast3d/` (`court_scene`, `broadcast3d_view`, `broadcast3d_rules`, `jersey_numbers`, plus the character and pose classes promoted from `prototypes/b1c`), replay screen stage with Broadcast 3D / Broadcast 2D / Flat views, `tests/unit/test_broadcast3d_rules.gd` (10), `tests/live/test_live_broadcast3d.gd` (6), `tools/perf_benchmark.gd` mode `replay3d`, `docs/validation/B4_3D_VIEWER.md`.
+**Verdict: PASS against the pre-registered limits (development machine only):** p95 2.19 to 2.34 ms, p99 up to 2.93 ms, no frame over 16.6 ms in 255,504 frames across standard, fast, camera and a 300 s soak; working set 284 to 289 MB; video 52 MB; leak growth 7 MB (limit 10), orphans 0.
+**Defects found and fixed:** defenders drawn seated (hip sign in the defend stance); the style ratchet failed for the new files, whose 28 colour literals are 3D world materials, so they were registered in `tests/support/ui_style_baseline.json` (a ratchet entry, not a token migration).
+**Decisions:** one `FcCameraRig` for both views; 3D failure leaves the 2D court with a note; display jersey numbers per game, no saved data (D-070).
+**Local results (base `becabb4` plus these changes):** import exit 0; unit full run 1,542 passed and 1 failed (style ratchet), then fixed and that test re-run: 3 passed, so **1,543 passed** (the whole suite was not re-run after the one-line baseline change; CI does); live **184 passed**, 0 failed. Studio smoke not re-run (no Studio files changed).
+**Not done:** 600 s soak (300 s run), lower-end hardware, 3D close-ups, mobile 3D.
+**Remaining:** B5, B6, B7, B8 decision, final report.

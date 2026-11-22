@@ -1,6 +1,6 @@
 class_name FcB1cShowcase
 extends Node3D
-## THROWAWAY prototype for milestone B1c: the B1b arena with the capsules replaced by TEN CODE-BUILT CHARACTERS (FcB1cCharacter), five a side, of
+## THROWAWAY prototype for milestone B1c: the B1b arena with the capsules replaced by TEN CODE-BUILT CHARACTERS (FcBroadcastCharacter), five a side, of
 ## different heights, weights, builds, skin tones, hair and facial hair, wearing 1 and 2 digit numbers, each in a different animation state, so
 ## the question "do these read as basketball players at broadcast distance, and do ten of them fit the budget" can be answered by looking at
 ## screenshots and by measuring. Scripted, no simulation. Wired into no shipped screen.
@@ -18,7 +18,7 @@ const SUBJECTS := [
 	{"name": "Away Center", "height": 216, "weight": 120, "position": "C", "jersey": 10, "state": "dribble", "skin": "tone_6", "hair": "afro", "facial_hair": "goatee"}]
 
 var arena: FcB1bArena
-var characters: Array[FcB1cCharacter] = []
+var characters: Array[FcBroadcastCharacter] = []
 var camera: Camera3D
 var _t: float = 0.0
 var _runs: Array = []   # {character, home, direction}
@@ -45,7 +45,7 @@ func build(crowd: int = 6000, shadows: bool = true, board: bool = true) -> void:
 			"appearance": {"skin": def["skin"], "hair": def["hair"], "facial_hair": def["facial_hair"]},
 			"physical": {"height_cm": def["height"], "weight_kg": def["weight"]},
 			"team": {"primary": "#2F6FED" if home else "#F28A2E", "secondary": "#F4F7FF" if home else "#1B1B1B", "abbreviation": "HOM" if home else "AWY", "name": "Home" if home else "Away"}}
-		var c := FcB1cCharacter.new().setup(subject, float(i) * 0.137)
+		var c := FcBroadcastCharacter.new().setup(subject, float(i) * 0.137)
 		c.set_state(str(def["state"]), 0.0)
 		c.position = Vector3(spots[i].x, 0.0, spots[i].y)
 		c.rotation_degrees = Vector3(0.0, 0.0 if i % 2 == 0 else 180.0, 0.0)   # half face the sideline camera, half show it their backs
@@ -90,8 +90,8 @@ func instance_count() -> int:
 func _process(delta: float) -> void:
 	_t += delta
 	for r in _runs:
-		var c: FcB1cCharacter = r["c"]
-		var speed := FcB1cPose.ground_speed("run", c.height_feet)
+		var c: FcBroadcastCharacter = r["c"]
+		var speed := FcBroadcastPose.ground_speed("run", c.height_feet)
 		c.position.x += float(r["dir"]) * speed * delta
 		var home: Vector3 = r["home"]
 		if absf(c.position.x - home.x) > 12.0:

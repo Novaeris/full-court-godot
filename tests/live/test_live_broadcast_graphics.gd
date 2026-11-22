@@ -67,7 +67,7 @@ func test_the_scorebug_second_line_follows_possession_fouls_and_the_bonus() -> v
 func test_the_graphic_strip_shows_the_top_item_for_every_event_and_never_takes_the_mouse() -> void:
 	var screen := await _screen()
 	await frames(2)
-	assert_eq(screen.overlay.get_parent(), screen.court, "it sits over the court")
+	assert_eq(screen.overlay.get_parent(), screen.stage, "it sits over the picture (2D court or 3D view)")
 	assert_eq(screen.overlay.mouse_filter, Control.MOUSE_FILTER_IGNORE)
 	var shown := 0
 	for i in range(0, screen.model.size(), 11):
@@ -107,7 +107,7 @@ func test_the_strip_stays_inside_the_court_on_a_phone() -> void:
 	await frames(3)
 	screen.seek(screen.model.final_index(), false)
 	await frames(3)
-	var court_rect := screen.court.get_global_rect()
+	var court_rect := screen.stage.get_global_rect()
 	var strip := screen.overlay.get_global_rect()
 	assert_true(strip.position.x >= court_rect.position.x - 1.0 and strip.end.x <= court_rect.end.x + 1.0, "inside the court sideways: strip %s court %s" % [str(strip), str(court_rect)])
 	assert_true(screen.get_combined_minimum_size().x <= 360.0, "the replay screen still fits a 360 px phone (%d)" % int(screen.get_combined_minimum_size().x))

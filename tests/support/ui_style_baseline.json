@@ -23,5 +23,20 @@
 		"color": 0,
 		"font": 1,
 		"sized_label": 0
+	},
+	"res://src/ui/broadcast3d/broadcast3d_view.gd": {
+		"color": 3,
+		"font": 0,
+		"sized_label": 0
+	},
+	"res://src/ui/broadcast3d/broadcast_character.gd": {
+		"color": 1,
+		"font": 0,
+		"sized_label": 0
+	},
+	"res://src/ui/broadcast3d/court_scene.gd": {
+		"color": 24,
+		"font": 0,
+		"sized_label": 0
 	}
 }

@@ -12,7 +12,8 @@ signal event_shown(index: int)
 const SPEEDS := [["0.25", "0.25x"], ["0.5", "0.5x"], ["1", "1x"], ["2", "2x"], ["4", "4x"]]
 ## The speed an instant replay plays at: half speed, so the play can be followed.
 const INSTANT_REPLAY_SPEED := 0.5
-const VIEWS := [["broadcast", "Broadcast view"], ["flat", "Flat view"]]
+const VIEWS_2D := [["broadcast", "Broadcast 2D"], ["flat", "Flat view"]]
+const VIEW_3D := ["broadcast3d", "Broadcast 3D"]
 const CAMERA_MODES := [["auto", "Auto"], ["hybrid", "Auto + manual"], ["manual", "Manual"]]
 const ZOOM_STEP := 1.25
 const FILTERS := [[FcReplayModel.FILTER_ALL, "All plays"], [FcReplayModel.FILTER_KEY, "Key plays"], [FcReplayModel.FILTER_SCORING, "Scoring"]]
@@ -28,6 +29,9 @@ var bug: FcScoreBug
 var overlay: FcBroadcastOverlay
 var team_card: GridContainer   # the team comparison card: label, home, away (FcBroadcastGraphics.team_card_at)
 var court: FcCourtView
+var court3d: FcBroadcast3DView   # null when the 3D view could not be built: the 2D court is then the only picture
+var stage: Control               # holds the 2D court, the 3D view, the graphic strip and the REPLAY badge, so the graphics sit over either
+var view_note: Label
 var caption: Label
 var sound_caption: Label   # what the crowd and court sounds are, in words (B3); empty when there is nothing to describe
 var feed: ItemList
@@ -69,6 +73,7 @@ func setup(replay_model: FcReplayModel, team_colors: Array = [], phone: bool = f
 	timeline = FcBroadcastTimeline.build(model)
 	_build()
 	seek(model.start_index(), false)
+	set_view("broadcast3d" if court3d != null and not compact else "broadcast")   # 3D by default on a desktop when it could be built; a phone keeps 2D (D-030)
 	return self
 
 
@@ -97,18 +102,37 @@ func _build() -> void:
 	court.colors = colors
 	court.custom_minimum_size = Vector2(300 if compact else 520, 170 if compact else 280)
 	court.home_abbreviation = str(model.box.abbreviations[0])
+	stage = Control.new()
+	stage.name = "Stage"
+	stage.custom_minimum_size = court.custom_minimum_size
+	stage.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stage.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	stage.clip_contents = true
+	stage.add_child(court)
+	court.set_anchors_preset(Control.PRESET_FULL_RECT)
+	court.custom_minimum_size = Vector2.ZERO
+	court3d = FcBroadcast3DView.new()
+	if court3d.setup(model, timeline, colors):
+		court3d.rig = court.rig   # one camera rig for both views: manual control and the director carry over when switching
+		court3d.name = "Court3D"
+		stage.add_child(court3d)
+		court3d.set_anchors_preset(Control.PRESET_FULL_RECT)
+		court3d.camera_moved_by_hand.connect(func() -> void: pass)
+	else:
+		court3d.free()
+		court3d = null
 	replay_badge = FcUiTables.label("REPLAY", FcUiTokens.TYPE_SMALL, true)
 	replay_badge.name = "ReplayBadge"
 	replay_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	replay_badge.add_theme_color_override("font_color", FcUiTokens.GOLD)
 	replay_badge.visible = false
-	court.add_child(replay_badge)
+	stage.add_child(replay_badge)
 	replay_badge.position = Vector2(FcUiTokens.SPACE_3, FcUiTokens.SPACE_2)
-	left.add_child(court)
+	left.add_child(stage)
 	left.add_child(_camera_controls())
 	overlay = FcBroadcastOverlay.new(colors)   # the broadcast graphic sits over the court's lower edge and never takes the mouse
 	overlay.size_flags_horizontal = Control.SIZE_FILL
-	court.add_child(overlay)
+	stage.add_child(overlay)
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE, Control.PRESET_MODE_MINSIZE, FcUiTokens.SPACE_2)
 	overlay.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	caption = FcUiTables.label("", FcUiTokens.TYPE_H3, true)
@@ -181,9 +205,18 @@ func _camera_controls() -> Control:
 	box.name = "CameraControls"
 	box.add_theme_constant_override("h_separation", FcUiTokens.SPACE_2)
 	view_group = FcChoiceGroup.new()
-	view_group.set_options(VIEWS, "broadcast")
+	var view_options: Array = []
+	if court3d != null:
+		view_options.append(VIEW_3D)
+	view_options.append_array(VIEWS_2D)
+	view_group.set_options(view_options, "broadcast")
 	view_group.selected.connect(set_view)
 	box.add_child(view_group)
+	view_note = FcUiTables.label("" if court3d != null else "The 3D view is not available here, so the 2D view is shown.", FcUiTokens.TYPE_SMALL)
+	view_note.theme_type_variation = "MutedLabel"
+	view_note.name = "ViewNote"
+	view_note.visible = court3d == null
+	box.add_child(view_note)
 	camera_group = FcChoiceGroup.new()
 	camera_group.set_options(CAMERA_MODES, "hybrid")
 	camera_group.selected.connect(set_camera_mode)
@@ -209,8 +242,19 @@ func toggle_trail() -> void:
 
 ## Switches between the projected broadcast view and the original flat top-down court. The replay position is untouched.
 func set_view(id: String) -> void:
+	var want_3d := id == "broadcast3d"
+	if want_3d and court3d == null:   # asked for 3D but it could not be built: stay in 2D, say so, lose nothing
+		id = "broadcast"
+		want_3d = false
+		view_note.text = "The 3D view is not available here, so the 2D view is shown."
+		view_note.visible = true
+	if court3d != null:
+		court3d.visible = want_3d
+	court.visible = not want_3d
 	court.set_flat(id == "flat")
 	view_group.select(id)
+	if want_3d:
+		court3d.show_event(_index, false)   # the replay position is the screen's: the 3D view just shows it
 
 
 ## "auto" (the director only), "hybrid" (the director, until you move the camera; it comes back after a few idle seconds) or "manual".
@@ -315,6 +359,8 @@ func seek(i: int, animate: bool = true) -> void:
 	overlay.show_item(FcBroadcastGraphics.top_item_at(timeline, _index))
 	_update_team_card(_index)
 	court.rig.request(FcCameraDirector.shot_for(timeline, _index))
+	if court3d != null and court3d.visible:
+		court3d.show_event(_index, animate)
 	sound_caption.text = ""   # a jump or a scrub makes no sound; stepping and playing set it again
 	caption.text = "%s  %s" % [st["clock_text"], st["text"]] if st["text"] != "" else st["clock_text"]
 	_update_rosters(st)
@@ -386,6 +432,8 @@ func _make_sounds(i: int) -> void:
 	var cues := FcBroadcastAudio.cues_at(timeline, i)
 	for id in cues:
 		FcAudio.cue(id)
+	if court3d != null and court3d.visible:
+		court3d.react(cues)   # the 3D crowd stands up for a cheer
 	var captions_on := FcAudio.current.prefs.sound_captions if FcAudio.current != null and is_instance_valid(FcAudio.current) else true
 	sound_caption.text = FcBroadcastAudio.caption_for(cues) if captions_on else ""
 

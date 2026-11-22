@@ -5,7 +5,8 @@ extends SceneTree
 ## and later the 3D viewer, with the SAME procedure, so a 3D result is always read against the 2D baseline on the same machine.
 ##
 ## Run (a window opens):  godot_console --path . --script res://tools/perf_benchmark.gd -- mode=2d run=standard [seconds=120] [seed=N]
-##   mode: 2d (the replay screen) | 3d (the B1b prototype in prototypes/b1b; options crowd=N shadows=0|1 board=0|1)
+##   mode: 2d (the replay screen with the 2D court) | replay3d (the same screen with the 3D view: master plan B4)
+##   (older line follows)  2d | 3d (the B1b prototype in prototypes/b1b; options crowd=N shadows=0|1 board=0|1)
 ##   run:  standard (1x, automatic camera) | fast (4x) | camera (scripted pan/zoom/preset sweep) | leak (enter/exit cycles) | soak (long run)
 ## Prints one block of numbers; writes nothing else.
 
@@ -20,6 +21,7 @@ var _shadows := true
 var _board := true
 var _shot := ""
 var _view := ""
+var _event := -1
 
 
 func _initialize() -> void:
@@ -35,6 +37,7 @@ func _initialize() -> void:
 			"crowd": _crowd = int(kv[1])
 			"shot": _shot = kv[1]
 			"view": _view = kv[1]
+			"event": _event = int(kv[1])
 			"shadows": _shadows = kv[1] != "0"
 			"board": _board = kv[1] != "0"
 	DisplayServer.window_set_size(Vector2i(1920, 1080))
@@ -112,6 +115,7 @@ func _make_screen(game: Dictionary) -> Control:
 	screen.size = Vector2(1900, 1060)
 	screen.position = Vector2(10, 10)
 	holder.add_child(screen)
+	screen.set_view("broadcast3d" if _mode == "replay3d" else "broadcast")   # the screen defaults to 3D when it can; the 2D baseline must stay 2D
 	holder.set_meta("screen", screen)
 	return holder
 
@@ -159,9 +163,13 @@ func _play(game: Dictionary) -> void:
 	var holder := _make_screen(game)
 	var screen: FcReplayScreen = holder.get_meta("screen")
 	var duration: float = _seconds if _seconds > 0.0 else float({"standard": 120.0, "fast": 60.0, "camera": 60.0, "soak": 600.0}.get(_run, 120.0))
+	screen.set_view("broadcast3d" if _mode == "replay3d" else "broadcast")   # the replay screen defaults to 3D when it can; the 2D baseline must stay 2D
 	screen.set_speed(4.0 if _run == "fast" else 1.0)
-	screen.seek(screen.model.start_index(), false)
+	screen.seek(screen.model.start_index() if _event < 0 else _event, false)
 	await _settle(10.0)
+	if _shot != "":
+		root.get_viewport().get_texture().get_image().save_png(_shot)
+		print("screenshot saved to %s" % _shot)
 	_memory("M2D-style snapshot (replay screen settled)")
 	var frames := PackedFloat64Array()
 	var started := Time.get_ticks_usec()

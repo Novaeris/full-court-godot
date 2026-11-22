@@ -222,6 +222,8 @@ func _draw_flat() -> void:
 # --- the broadcast view ------------------------------------------------------------------------------------------------------
 
 func _process(delta: float) -> void:
+	if not is_visible_in_tree():
+		return   # the 3D view drives the shared camera while it is showing
 	rig.reduced = FcMotion.reduced
 	if rig.advance(delta) and broadcast_view:
 		queue_redraw()
