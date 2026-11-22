@@ -243,3 +243,6 @@ See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
 
 ## 2026-11-22 Phase 4C: Career legacy and Story tab
 - Added `FcLegacy` (derived, never saved), `FcCareerStory` (public image, timeline, legacy page), the Career hub Story tab and the legacy page on a retired career. Verified locally: unit 1,404/0, live 146/0.
+
+## 2026-11-22 Phase 5: Dynasty expansion
+- Added `FcDynastyLadder` (Dynasty data version 3) and `FcDynastyGoals` (version 4), the Ladder panel on the Play screen, Goals on the Season screen, and tournament placement bonuses (D-064). Verified locally: unit 1,422/0, live 146/0, Studio PASS. Lesson: `FcUiTables.label` takes bold, not wrap; use `FcDynastyUi.wl` for wrapping text (it caused the phone-width failures).

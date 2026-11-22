@@ -10,7 +10,7 @@ Every other document points here instead of repeating numbers. These come only f
 
 | Kind | What it is | Last result | How to run |
 |---|---|---|---|
-| Unit | `tests/unit/test_*.gd`, headless, fixed seeds | **1,404 passed, 0 failed** | `./tools/run_tests.ps1` |
+| Unit | `tests/unit/test_*.gd`, headless, fixed seeds | **1,422 passed, 0 failed** | `./tools/run_tests.ps1` |
 | Live | `tests/live/test_live_*.gd`, real scene tree, awaits frames | **146 passed, 0 failed** | `./tools/run_live_tests.ps1` |
 | Creator Studio smoke | separate project, `creator_studio/tools/studio_smoke.gd` | **PASS** (13 checks) | `godot_console --headless --path creator_studio --script res://tools/studio_smoke.gd` |
 | Simulation and stress | `simulate_games`, `economy_check`, `owner_stress`, `ui_playthrough`, `career_balance` and similar tools in `tools/` | **Not re-run in Phase 1** (nothing in the simulation changed). Results are in `STABILITY_REPORT.md` and `RELEASE_READINESS.md` as historical records with their own dates. | `tools/*.ps1` |

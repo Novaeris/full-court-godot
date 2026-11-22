@@ -128,8 +128,10 @@ static func play_next(profile: FcDynastyProfile, catalog: FcDynastyCatalog) -> F
 		run["reward_txn"] = granted.data["txn"]["txn_id"]
 		profile.tournament["history"].append({"run_id": run["run_id"], "tournament_id": run["tournament_id"], "name": run["name"],
 			"placement": run["placement"], "reward_txn": run["reward_txn"], "rewards": FcDynastyProfile.normalize(rewards)})
+		var ladder := FcDynastyLadder.on_tournament(profile, catalog, str(run["placement"]))   # a placement moves the ranked rating too
+		(profile.tournament["history"][profile.tournament["history"].size() - 1] as Dictionary)["ladder_delta"] = int(ladder["delta"])
 		profile.tournament["active"] = {}
-		return FcDynastyResult.success({"summary": summary, "run": run, "finished": true, "rewards": rewards, "shown": shown})
+		return FcDynastyResult.success({"summary": summary, "run": run, "finished": true, "rewards": rewards, "shown": shown, "ladder": ladder})
 	return FcDynastyResult.success({"summary": summary, "run": run, "finished": false, "rewards": {}, "shown": shown})
 
 

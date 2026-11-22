@@ -12,4 +12,4 @@ const DATA_VERSION := 4
 
 ## Version of a Dynasty Mode profile file (user://dynasty). Separate from DATA_VERSION: a Dynasty profile is its own
 ## file with its own migrator (FcDynastyMigrator), so changing it never touches Owner or Career saves.
-const DYNASTY_DATA_VERSION := 2
+const DYNASTY_DATA_VERSION := 4

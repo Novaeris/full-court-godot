@@ -73,6 +73,8 @@ This is the one place that says what is built. `ROADMAP.md`, `RELEASE_READINESS.
 
 | Feature | Status | Evidence |
 |---|---|---|
+| Ranked ladder (`FcDynastyLadder`, `data/dynasty/ladder.json`): Elo rating from quick games, six tiers with credits, rank among a fixed computer field, seasonal soft reset with season credits, tournament placement bonus (Dynasty data version 3) | Built | `test_dynasty_ladder`, `test_dynasty_ui` (Ladder panel on the Play screen) |
+| Collection goals (`FcDynastyGoals`, `data/dynasty/goals.json`): 10 goals on ownership, positions, teams and card mastery, derived progress, claimed once through the ledger (Dynasty data version 4) | Built | `test_dynasty_goals`, `test_dynasty_ui` (Goals on the Season screen) |
 | Profile, ledger, idempotent requests, atomic commit, store recovery and migrations | Built | `test_dynasty_domain`, `test_dynasty_hardening` |
 | Content from releases: cards, editions, market, unavailable-card placeholders | Built | `test_dynasty_content`, `test_ecosystem_integrity` |
 | Bundled Founding Series (46 cards, 40 original players, challenges, season, tournaments) | Built | `test_dynasty_founding`; the founder's own content is still to come |
@@ -107,5 +109,5 @@ This is the one place that says what is built. `ROADMAP.md`, `RELEASE_READINESS.
 | 2 Game presentation | Play-by-play, visual replay, lineup selection before games, full box scores and game history in all modes | Planned |
 | 3 Franchise immersion | Retired jerseys, historical franchise records, league storylines, rivalry development, richer histories | Built for Owner (and a storylines panel in the Career hub); see the Owner table |
 | 4 Career expansion | Timeline, media and reputation, life decisions, legacy | Built (Career table) |
-| 5 Dynasty expansion | Collections, mastery, seasons, rankings, tournament depth | Planned |
+| 5 Dynasty expansion | Collections, mastery, seasons, rankings, tournament depth | Built in a first form (Dynasty table): goals (collections, mastery), ranked ladder with seasonal reset (rankings, seasons), tournament placement feeds the ladder. Not built: new tournament formats, new published collection kinds |
 | 6 Online foundations | Accounts, server-authoritative profiles, persistent collections, matchmaking, security and transactions | Planned |

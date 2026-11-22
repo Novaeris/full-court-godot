@@ -67,7 +67,7 @@ func test_the_kept_replays_stay_small() -> void:
 
 
 func test_an_older_profile_migrates_to_an_empty_replay_list() -> void:
-	assert_eq(FcVersion.DYNASTY_DATA_VERSION, 2)
+	assert_eq(FcVersion.DYNASTY_DATA_VERSION, 4)
 	var old := FcDynastyStore.new(DIR)
 	old.current_version = 1   # a version-1 game wrote this file
 	var p := env.profile()

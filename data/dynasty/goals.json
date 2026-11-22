@@ -1,0 +1,16 @@
+{
+	"schema": 1,
+	"note": "Dynasty collection goals: long-term targets about what you own and how far you have mastered it. Each is checked against the loaded content release by filters, never by card id, so a new release needs no change here. Types: owned (own `need` different cards matching `filter`: rarity, position, team, edition, min_overall), mastery_total (the sum of every card's mastery levels reaches `need`), mastery_card (one card reaches mastery level `need`), teams (own cards from `need` different teams). A goal is claimed once; the reward goes through the economy. Edit numbers here, not code.",
+	"goals": [
+		{"id": "first_ten", "name": "A real collection", "text": "Own 10 different cards.", "type": "owned", "filter": {}, "need": 10, "reward": {"credits": 200}},
+		{"id": "twenty_five", "name": "Serious collector", "text": "Own 25 different cards.", "type": "owned", "filter": {}, "need": 25, "reward": {"credits": 600, "tokens": 1}},
+		{"id": "five_rares", "name": "Rare finds", "text": "Own 5 rare cards.", "type": "owned", "filter": {"rarity": "rare"}, "need": 5, "reward": {"credits": 300}},
+		{"id": "an_epic", "name": "Something epic", "text": "Own an epic card.", "type": "owned", "filter": {"rarity": "epic"}, "need": 1, "reward": {"credits": 400}},
+		{"id": "a_legend", "name": "A living legend", "text": "Own a legendary card.", "type": "owned", "filter": {"rarity": "legendary"}, "need": 1, "reward": {"credits": 800, "tokens": 2}},
+		{"id": "every_position", "name": "Every position covered", "text": "Own a point guard, shooting guard, small forward, power forward and center.", "type": "positions", "need": 5, "reward": {"credits": 350}},
+		{"id": "many_teams", "name": "Across the league", "text": "Own cards from 5 different teams.", "type": "teams", "need": 5, "reward": {"credits": 300}},
+		{"id": "first_mastery", "name": "First polish", "text": "Raise any card to mastery level 1.", "type": "mastery_card", "need": 1, "reward": {"shards": 20}},
+		{"id": "mastery_three", "name": "Dedicated", "text": "Raise any card to mastery level 3.", "type": "mastery_card", "need": 3, "reward": {"credits": 300, "shards": 40}},
+		{"id": "mastery_ten", "name": "Master collector", "text": "Reach 10 mastery levels across all your cards.", "type": "mastery_total", "need": 10, "reward": {"credits": 600, "tokens": 2}}
+	]
+}

@@ -26,6 +26,7 @@ static func quick_game(profile: FcDynastyProfile, catalog: FcDynastyCatalog, lev
 	var seed_value := hash("%d:game:%d" % [profile.rng_seed, number])
 	var slots := FcDynastyOpponents.generate(catalog, clampi(target, 40, 99), seed_value)
 	var opponent := {"name": "%s Squad" % str(level["name"]), "abbreviation": "CPU", "slots": slots}
+	opponent["ladder_offset"] = int(level["offset"])   # a quick game is a ranked game (FcDynastyLadder)
 	return play_against(profile, catalog, opponent, seed_value, "quick", int(level.get("reward_percent", 100)))
 
 
@@ -42,10 +43,13 @@ static func play_against(profile: FcDynastyProfile, catalog: FcDynastyCatalog, o
 	if not recorded.ok:
 		return recorded
 	FcDynastyProgress.keep_replay(profile, catalog, int(recorded.data["game_number"]), summary, (played["box"] as FcBoxScore).to_dict(), played.get("events", {}))
+	var ladder := {}
+	if opponent.has("ladder_offset"):
+		ladder = FcDynastyLadder.on_game(profile, catalog, bool(summary["won"]), int(opponent["ladder_offset"]))
 	var challenges := FcDynastyChallenges.on_game(profile, catalog, summary)
 	var objectives := FcDynastySeason.on_game(profile, catalog, summary)
 	return FcDynastyResult.success({
-		"summary": summary, "reward": recorded.data["reward"], "game_number": recorded.data["game_number"],
+		"summary": summary, "reward": recorded.data["reward"], "game_number": recorded.data["game_number"], "ladder": ladder,
 		"completed_challenges": challenges, "completed_objectives": objectives,
 		# read-only pass-through for the post-game screen (D-053): the simulation's own box score, never saved or used by any rule
 		"box": (played["box"] as FcBoxScore).to_dict(), "user_side": played["user_side"], "cards": played["cards"],

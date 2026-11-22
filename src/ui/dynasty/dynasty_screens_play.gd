@@ -26,6 +26,7 @@ static func build_play(ui: FcDynastyUi) -> Control:
 		b.disabled = not problems.is_empty()
 		row.add_child(b)
 	root.add_child(row)
+	root.add_child(_ladder_panel(ui))
 	root.add_child(ui.heading("Recent games"))
 	var history: Array = ctl.profile().game_history
 	if history.is_empty():
@@ -40,6 +41,22 @@ static func build_play(ui: FcDynastyUi) -> Control:
 		if replays != null:
 			root.add_child(replays)
 	return root
+
+
+## The ranked ladder: rating, tier, rank, and the top of the standings (quick games are ranked games).
+static func _ladder_panel(ui: FcDynastyUi) -> Control:
+	var v := ui.ctl.ladder_view()
+	var panel := FcPanel.new("Ranked ladder", FcPanel.Variant.SURFACE)
+	panel.name = "LadderPanel"
+	panel.add(FcDynastyUi.wl("%s   rating %d   rank %d of %d" % [v["tier"], int(v["rating"]), int(v["rank"]), int(v["field_size"])], FcUiTokens.TYPE_H3, true))
+	var next_line := "Top tier reached." if str(v["next_tier"]) == "" else "%d more rating for %s." % [int(v["to_next"]), str(v["next_tier"])]
+	panel.add(FcDynastyUi.wl("%s  Peak %d, %d ranked games, %d wins." % [next_line, int(v["peak"]), int(v["games"]), int(v["wins"])], FcUiTokens.TYPE_SMALL, true))
+	for row in v["standings"]:
+		var line := FcDynastyUi.wl("%d.  %s   %d" % [int(row["rank"]), str(row["name"]), int(row["rating"])], FcUiTokens.TYPE_BODY, true)
+		if bool(row["you"]):
+			line.add_theme_color_override("font_color", FcUiTokens.GOLD)
+		panel.add(line)
+	return panel
 
 
 ## Pick one of the last few games and watch it again (their replays are kept in the profile).
@@ -263,6 +280,7 @@ static func build_season(ui: FcDynastyUi) -> Control:
 	if s.is_empty():
 		root.add_child(ui.heading("Season"))
 		root.add_child(ui.note("The loaded release has no season yet."))
+		root.add_child(_goals_panel(ui))
 		return root
 	root.add_child(ui.heading("Season: %s" % s["name"]))
 	if str(s["description"]) != "":
@@ -305,4 +323,26 @@ static func build_season(ui: FcDynastyUi) -> Control:
 		root.add_child(ui.note("None this season."))
 	if not s["tournament_ids"].is_empty():
 		root.add_child(FcDynastyUi.btn("Go to the season tournament", func() -> void: ui.show_tab("tournament")))
+	root.add_child(_goals_panel(ui))
 	return root
+
+
+## Long-term collection goals with a Claim button each (progress is derived from what you own).
+static func _goals_panel(ui: FcDynastyUi) -> Control:
+	var box := VBoxContainer.new()
+	box.name = "GoalsPanel"
+	box.add_child(ui.heading("Collection goals"))
+	for g in ui.ctl.goal_listing():
+		var row := HFlowContainer.new()
+		row.add_theme_constant_override("h_separation", 8)
+		var reward := FcDynastyChallenges.rewards_text(g["reward"])
+		row.add_child(FcDynastyUi.wl("%s: %s  %d/%d  (%s)" % [g["name"], g["text"], g["have"], g["need"], reward], 14))
+		var b := FcDynastyUi.btn("Claimed" if g["claimed"] else "Claim", func() -> void:
+			var r := ui.ctl.claim_goal(str(g["id"]))
+			ui.report(r, "Goal reward claimed.")
+			ui.refresh())
+		b.name = "Claim_%s" % g["id"]
+		b.disabled = not g["done"] or g["claimed"]
+		row.add_child(b)
+		box.add_child(row)
+	return box

@@ -240,6 +240,20 @@ func opponent_levels() -> Array:
 	return catalog.config.opponent_levels()
 
 
+## Collection goals with their progress, and the claim for a finished one.
+func goal_listing() -> Array:
+	return FcDynastyGoals.listing(profile(), catalog)
+
+
+func claim_goal(goal_id: String) -> FcDynastyResult:
+	return session.commit(func() -> FcDynastyResult: return FcDynastyGoals.claim(profile(), catalog, goal_id))
+
+
+## The ranked ladder for the ladder panel: rating, tier, rank among the computer field, the top of the standings and past seasons.
+func ladder_view() -> Dictionary:
+	return FcDynastyLadder.view(profile())
+
+
 func play_quick_game(level_id: String) -> FcDynastyResult:
 	var r := session.commit(func() -> FcDynastyResult: return FcDynastyPlay.quick_game(profile(), catalog, level_id))
 	if r.ok:

@@ -1,0 +1,20 @@
+{
+	"schema": 1,
+	"note": "Dynasty ranked ladder. Quick games change a rating (Elo style: k points at stake, more for an upset). The rating decides a tier and a rank among a fixed field of computer players made from the profile seed. A new Dynasty season softly resets the rating (halfway back to the start) and pays the season-end credits of the tier reached. Tier-reach credits are paid once per tier per season. Edit numbers here, not code.",
+	"start_rating": 1000,
+	"k_factor": 24,
+	"rating_floor": 100,
+	"opponent_rating_per_offset": 10,
+	"reset_keep_percent": 50,
+	"history_limit": 20,
+	"tournament_bonus": {"champion": 30, "finalist": 15, "semifinal": 8, "quarterfinal": 0},
+	"field": {"size": 99, "mean": 1000, "spread": 220, "names_first": ["Rapid", "Silent", "Golden", "Iron", "Velvet", "Crimson", "Lucky", "Prime", "Rogue", "Steady", "Sunset", "Thunder"], "names_last": ["Hawks", "Comets", "Kings", "Wolves", "Giants", "Pilots", "Sharks", "Ravens", "Titans", "Foxes", "Cobras", "Bears"]},
+	"tiers": [
+		{"id": "bronze", "name": "Bronze", "min": 0, "reach_credits": 0, "season_credits": 100},
+		{"id": "silver", "name": "Silver", "min": 950, "reach_credits": 150, "season_credits": 250},
+		{"id": "gold", "name": "Gold", "min": 1050, "reach_credits": 300, "season_credits": 500},
+		{"id": "platinum", "name": "Platinum", "min": 1150, "reach_credits": 500, "season_credits": 900},
+		{"id": "diamond", "name": "Diamond", "min": 1250, "reach_credits": 800, "season_credits": 1500},
+		{"id": "master", "name": "Master", "min": 1350, "reach_credits": 1200, "season_credits": 2500}
+	]
+}

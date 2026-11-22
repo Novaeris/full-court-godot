@@ -332,3 +332,9 @@ Full write-up, measurements, pictures and recordings: `docs/PLAYER_VISUAL_PROPOS
 - **Decision:** unlike franchise history (D-062), a career timeline and the public image are kept in the career profile: the numbers (fan favour, media image, hype, 0-100) are real state that changes sponsor pay, and a timeline row records a moment that cannot be re-derived later (an injury, a decision, a headline). Capped (300 rows, 12 headlines).
 - **Save change:** `FcVersion.DATA_VERSION` 3 to 4; the migration gives each profile the starting image and a timeline built from its history and decisions.
 - **Rules in data:** every threshold and weight is in `data/career/media.json`; a season is applied once (`public_year`).
+
+## D-064 Dynasty ladder and collection goals (2026-11-22, Phase 5)
+- **Decision:** the ranked ladder (rating, tiers, a fixed seed-made computer field for the rank) and collection goals are game-owned rules in `data/dynasty/*.json`, not published content, so no content kind, validator or feature flag changed. Goals describe cards by filters (rarity, position, team), so any release works.
+- **Why local rank:** there is no server yet (D-065); the field makes the rank real and reproducible offline.
+- **Save change:** `DYNASTY_DATA_VERSION` 2 to 3 (ladder) and 3 to 4 (claimed goals), each with a migration. Ladder money moves only through the ledger with request ids.
+- **Not done:** new tournament formats and new published collection kinds (they need content and validator work the founder should shape).

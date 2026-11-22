@@ -111,6 +111,10 @@ func test_the_full_loop_through_the_screens_api() -> void:
 	assert_true("FINAL" in _text(app).to_upper() and "Player of the game" in _text(app), "result screen")
 	assert_true("[Watch replay]" in _text(app), "the result and the recent-games list offer the replay")
 	assert_true(app.find_child("ReplayPicker", true, false) != null, "the last few games can be picked")
+	assert_true(app.find_child("LadderPanel", true, false) != null and "Ranked ladder" in _text(app) and "rating" in _text(app), "the Play screen shows the ranked ladder")
+	app.dynasty_ui.show_tab("season")
+	assert_true(app.find_child("GoalsPanel", true, false) != null and "Collection goals" in _text(app), "the Season screen lists the collection goals")
+	app.dynasty_ui.show_tab("play")
 	(app.find_child("WatchReplayButton", true, false) as Button).pressed.emit()
 	assert_true(app.find_child("ReplayScreen", true, false) != null, "Watch replay opens the replay of the picked game")
 	for i in 4:

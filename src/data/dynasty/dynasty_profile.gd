@@ -46,6 +46,10 @@ var challenges: Dictionary = {}
 var seasons: Dictionary = {}
 ## {"active": {} or a run, "history": [], "run_counter": int}  (see FcDynastyTournament)
 var tournament: Dictionary = {"active": {}, "history": [], "run_counter": 0}
+## The ranked ladder (FcDynastyLadder): {rating, peak, games, wins, season_id, reached, history}.
+var ladder: Dictionary = FcDynastyLadder.fresh()
+## Collection goals already claimed (FcDynastyGoals): {"claimed": [goal ids]}. Progress itself is derived, never stored.
+var goals: Dictionary = {"claimed": []}
 ## Set once the starter collection has been granted.
 var starter_granted: bool = false
 
@@ -99,6 +103,8 @@ func validate() -> Array[String]:
 	for id in cards:
 		if quantity_of(str(id)) < 1:
 			errors.append("card %s has no copies" % id)
+	if int(ladder.get("rating", 0)) < 0 or int(ladder.get("games", 0)) < 0:
+		errors.append("the ladder rating and games cannot be negative")
 	for slot in roster.slots:
 		if str(slot) != "" and not cards.has(str(slot)):
 			errors.append("roster holds %s, which is not owned" % slot)
@@ -121,7 +127,7 @@ func to_dict() -> Dictionary:
 		"record": record.duplicate(), "card_stats": card_stats.duplicate(true),
 		"game_counter": game_counter, "game_history": game_history.duplicate(true), "replays": replays.duplicate(true),
 		"challenges": challenges.duplicate(true), "seasons": seasons.duplicate(true),
-		"tournament": tournament.duplicate(true), "starter_granted": starter_granted,
+		"tournament": tournament.duplicate(true), "starter_granted": starter_granted, "ladder": ladder.duplicate(true), "goals": goals.duplicate(true),
 	}
 
 
@@ -157,6 +163,15 @@ static func from_dict(d: Dictionary) -> FcDynastyProfile:
 	var t := _dict(d.get("tournament"))
 	p.tournament = {"active": _dict(t.get("active")), "history": _arr(t.get("history")), "run_counter": int(t.get("run_counter", 0))}
 	p.starter_granted = bool(d.get("starter_granted", false))
+	p.goals = {"claimed": _arr(_dict(d.get("goals")).get("claimed"))}
+	var l := _dict(d.get("ladder"))
+	if not l.is_empty():
+		p.ladder = FcDynastyLadder.fresh()
+		for k in ["rating", "peak", "games", "wins"]:
+			p.ladder[k] = int(l.get(k, p.ladder[k]))
+		p.ladder["season_id"] = str(l.get("season_id", ""))
+		p.ladder["reached"] = _arr(l.get("reached"))
+		p.ladder["history"] = _arr(l.get("history"))
 	return p
 
 

@@ -143,7 +143,7 @@ func test_migration_chain_runs_in_order() -> void:
 	assert_true(r.ok, "migrates a version 1 file")
 	assert_eq(r.data["profile"].team_name, "Migrated", "the step ran")
 	var missing := FcDynastyStore.new(DIR)
-	missing.current_version = 3
+	missing.current_version = FcVersion.DYNASTY_DATA_VERSION + 1   # built-in steps exist up to the current version, not beyond
 	assert_eq(missing.load_slot("legacy").code, "migration_failed", "a missing step fails clearly")
 
 
