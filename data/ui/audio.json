@@ -1,6 +1,6 @@
 {
 	"_about": "The sound map. Identity: arena and hardwood. Every sound is an id on a bus (UI, SFX, Music). A sound plays the optional audio file when it exists, otherwise a short sound the game builds itself from the recipe in 'synth' (original, no third-party audio). A missing file or an unknown id is silent. Rarity stings climb in one key (C major): tap, bounce, chime, horn, arena horn.",
-	"buses": ["UI", "SFX", "Music"],
+	"buses": ["UI", "SFX", "Music", "Crowd"],
 	"sounds": {
 		"ui_click": {"bus": "UI", "gain_db": -8.0, "file": "res://assets/audio/ui_click.ogg", "synth": {"layers": [
 			{"wave": "sine", "freq": 190, "freq_to": 110, "ms": 70, "gain": 0.7, "decay": 38},
@@ -74,6 +74,33 @@
 			{"wave": "sine", "freq": 523, "ms": 160, "gain": 0.45, "decay": 14},
 			{"wave": "sine", "freq": 784, "start_ms": 120, "ms": 360, "gain": 0.5, "decay": 8},
 			{"wave": "sine", "freq": 1047, "start_ms": 120, "ms": 360, "gain": 0.25, "decay": 10}]}},
+		"court_swish": {"bus": "SFX", "gain_db": -9.0, "synth": {"layers": [
+			{"wave": "noise", "ms": 320, "gain": 0.45, "decay": 12, "attack_ms": 30, "lowpass": 0.35}]}},
+		"court_rim": {"bus": "SFX", "gain_db": -9.0, "synth": {"layers": [
+			{"wave": "sine", "freq": 380, "freq_to": 300, "ms": 170, "gain": 0.55, "decay": 16},
+			{"wave": "noise", "ms": 22, "gain": 0.4, "decay": 120, "lowpass": 0.7}]}},
+		"court_block": {"bus": "SFX", "gain_db": -7.0, "synth": {"layers": [
+			{"wave": "noise", "ms": 90, "gain": 0.8, "decay": 60, "lowpass": 0.9},
+			{"wave": "sine", "freq": 170, "freq_to": 100, "ms": 140, "gain": 0.5, "decay": 20}]}},
+		"court_squeak": {"bus": "SFX", "gain_db": -12.0, "synth": {"layers": [
+			{"wave": "triangle", "freq": 1400, "freq_to": 1900, "ms": 120, "gain": 0.35, "decay": 20}]}},
+		"court_whistle": {"bus": "SFX", "gain_db": -9.0, "synth": {"layers": [
+			{"wave": "sine", "freq": 2900, "ms": 420, "gain": 0.3, "decay": 5},
+			{"wave": "sine", "freq": 2960, "ms": 420, "gain": 0.3, "decay": 5}]}},
+		"court_buzzer": {"bus": "SFX", "gain_db": -8.0, "synth": {"layers": [
+			{"wave": "square", "freq": 220, "ms": 900, "gain": 0.3, "decay": 2, "lowpass": 0.3},
+			{"wave": "saw", "freq": 223, "ms": 900, "gain": 0.25, "decay": 2, "lowpass": 0.3}]}},
+		"crowd_cheer_small": {"bus": "Crowd", "gain_db": -8.0, "synth": {"layers": [
+			{"wave": "noise", "ms": 900, "gain": 0.55, "decay": 3.5, "attack_ms": 120, "lowpass": 0.18}]}},
+		"crowd_cheer_big": {"bus": "Crowd", "gain_db": -6.0, "synth": {"layers": [
+			{"wave": "noise", "ms": 1600, "gain": 0.65, "decay": 2.2, "attack_ms": 200, "lowpass": 0.22},
+			{"wave": "noise", "start_ms": 250, "ms": 1300, "gain": 0.4, "decay": 2.6, "attack_ms": 150, "lowpass": 0.32}]}},
+		"crowd_groan": {"bus": "Crowd", "gain_db": -9.0, "synth": {"layers": [
+			{"wave": "noise", "ms": 900, "gain": 0.45, "decay": 5, "attack_ms": 150, "lowpass": 0.12},
+			{"wave": "sine", "freq": 140, "freq_to": 110, "ms": 800, "gain": 0.2, "decay": 5}]}},
+		"crowd_oh": {"bus": "Crowd", "gain_db": -8.0, "synth": {"layers": [
+			{"wave": "noise", "ms": 700, "gain": 0.45, "decay": 6, "attack_ms": 90, "lowpass": 0.2},
+			{"wave": "triangle", "freq": 330, "freq_to": 440, "ms": 500, "gain": 0.15, "decay": 8}]}},
 		"championship": {"bus": "SFX", "gain_db": -5.0, "file": "res://assets/audio/championship.ogg", "synth": {"layers": [
 			{"wave": "saw", "freq": 262, "ms": 520, "gain": 0.24, "decay": 4, "attack_ms": 20, "lowpass": 0.18},
 			{"wave": "saw", "freq": 330, "start_ms": 180, "ms": 520, "gain": 0.24, "decay": 4, "attack_ms": 20, "lowpass": 0.18},

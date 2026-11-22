@@ -265,3 +265,6 @@ See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
 
 ## 2026-11-22 Broadcast timeline and 2D graphics (B2 and B2b option A, D-069)
 - Added `FcBroadcastTimeline` (pure running state over the replay model), `FcBroadcastGraphics` (view models for every graphic), `FcBroadcastOverlay` (the strip over the court), a second line on `FcScoreBug` and a team comparison card in the replay screen. All numbers are checked against the box score. Plan: `docs/plans/BROADCAST_PRESENTATION_PLAN.md`. Totals: `TESTING.md`.
+
+## 2026-11-22 Replay sounds and captions (B3, D-069)
+- Added `FcBroadcastAudio` (pure event-to-sound mapping and captions), ten procedural sounds, a Crowd bus with a volume slider, a Sound captions setting, and sounds and captions in the replay screen. No recorded or licensed audio. Totals: `TESTING.md`.

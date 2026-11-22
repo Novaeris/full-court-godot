@@ -23,6 +23,9 @@ var audio_master: int = 80
 var audio_ui: int = 80
 var audio_sfx: int = 80
 var audio_music: int = 60
+## Crowd and arena sounds of a game replay (B3), and the written captions that describe them for people who play without sound.
+var audio_crowd: int = 70
+var sound_captions: bool = true
 var audio_muted: bool = false
 var haptics: bool = true
 ## First-run hints on screens (Phase 12); the dismissed ones are remembered in the UI state file, not here.
@@ -68,6 +71,8 @@ func load_file() -> void:
 		audio_ui = clampi(int(cfg.get_value("audio", "ui", 80)), 0, 100)
 		audio_sfx = clampi(int(cfg.get_value("audio", "sfx", 80)), 0, 100)
 		audio_music = clampi(int(cfg.get_value("audio", "music", 60)), 0, 100)
+		audio_crowd = clampi(int(cfg.get_value("audio", "crowd", 70)), 0, 100)
+		sound_captions = bool(cfg.get_value("audio", "captions", true))
 		audio_muted = bool(cfg.get_value("audio", "muted", false))
 		haptics = bool(cfg.get_value("audio", "haptics", true))
 		hints_enabled = bool(cfg.get_value("ui", "hints", true))
@@ -87,6 +92,8 @@ func save_file() -> bool:
 	cfg.set_value("audio", "ui", audio_ui)
 	cfg.set_value("audio", "sfx", audio_sfx)
 	cfg.set_value("audio", "music", audio_music)
+	cfg.set_value("audio", "crowd", audio_crowd)
+	cfg.set_value("audio", "captions", sound_captions)
 	cfg.set_value("audio", "muted", audio_muted)
 	cfg.set_value("audio", "haptics", haptics)
 	cfg.set_value("ui", "hints", hints_enabled)

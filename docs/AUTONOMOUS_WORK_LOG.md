@@ -35,11 +35,20 @@ Failures along the way (all explained in the audit): the baseline live run faile
 ## Stage 2: Basketball authenticity audit
 **Delivered:** `docs/audits/BASKETBALL_AUTHENTICITY_AUDIT.md` (15 findings), `BASKETBALL_DATA_INTEGRITY_MATRIX.md`, `docs/plans/BASKETBALL_AUTHENTICITY_IMPLEMENTATION_PLAN.md`, `tools/audit_identity.ps1` (read-only measurements). Read-only: no `src/` or `data/` change.
 **Measured (20 leagues, seeds 5000-5019):** 13.3% of teams have a hashed jersey-number collision; 12.2% have primary/secondary colour contrast below 3:1; 0 `world.validate` problems; no duplicate names, abbreviations or arena names; plausible heights, weights and ages. Correction of an earlier assumption: `FcWorld.validate` already checks one roster per player, retired players on rosters, contracts and the roster maximum.
-**Commits:** `a09e7a9` (Stage 2) and `febbfac` (B0 plan, `docs/plans/BROADCAST_PRESENTATION_PLAN.md`), pushed; CI run 45061971778 for `febbfac` (docs and a read-only tool).
+**Commits:** `a09e7a9` (Stage 2) and `febbfac` (B0 plan, `docs/plans/BROADCAST_PRESENTATION_PLAN.md`), pushed together; GitHub Actions CI run 45061971778 on `febbfac` finished **success**.
 
 ## B2: broadcast timeline, and B2b option A: 2D broadcast graphics
 **Delivered:** `src/ui/replay/broadcast_timeline.gd` (B2), `broadcast_graphics.gd`, `broadcast_overlay.gd`, `FcScoreBug.show_broadcast`, the team comparison card and overlay wiring in `replay_screen.gd` (B2b A). Tests: `test_broadcast_timeline` (12), `test_broadcast_graphics` (10), `test_live_broadcast_graphics` (7).
 **Decisions:** the timeline is a separate pure class over `FcReplayModel` (the model stays small); clutch time is the fourth quarter or overtime, 5 minutes or less, margin 5 or less (D-069, presentation only, constants in the class); the bonus threshold is read from `data/simulation/tuning.json`; a graphic's text never states a fact the events do not hold (no shot clock, timeouts or tip-off).
 **Local results (base `febbfac` plus these changes):** import exit 0; unit exit 0, **1,499 passed**; live exit 0, **160 passed**; Studio smoke PASS.
 **Screenshot checked by eye:** the owner replay shows the scorebug second line (possession dot, fouls), the scoring strip over the court and the team comparison card.
+**Commits:** `e2f1bc9` (B2) and `18872d3` (B2b A), pushed together; CI run 45063748507 on `18872d3` finished **success**.
 **Remaining for B2b:** option B (2D camera, projected branded court, camera director logic) and C (replay trails, slow motion, instant replay), lower thirds for lineups (with B5).
+
+## B3: audio infrastructure and captions
+**Delivered:** `src/ui/replay/broadcast_audio.gd` (pure mapping from an event to at most three sounds, plus captions), ten procedural sounds in `data/ui/audio.json` on `SFX` and a new `Crowd` bus, `audio_crowd` and `sound_captions` preferences (older settings files get the defaults), a crowd slider and a captions toggle in Settings, and sounds and captions in `FcReplayScreen` (on play and stepping forward; scrubbing and stepping back are silent).
+**Decisions:** no recorded or licensed audio (D-069); the crowd favours the home team and groans at a home loss (a presentation choice, documented in the class); captions still show when the game is muted (they exist for players without sound); voice commentary is not part of B3 and stays a later, optional step that would use the operating system's speech only if its quality is acceptable (B7).
+**Existing tests changed (extended, not weakened):** `test_audio.gd` now expects the `Crowd` bus and five volume sliders (it checks the crowd volume too).
+**Tests:** `test_broadcast_audio` (7), `test_live_broadcast_audio` (4).
+**Local results (base `18872d3` plus these changes):** import exit 0; unit exit 0, **1,506 passed**; live exit 0, **164 passed**; Studio smoke PASS.
+**Remaining:** none for B3. Next: B2b options B and C.

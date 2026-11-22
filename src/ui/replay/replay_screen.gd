@@ -24,6 +24,7 @@ var overlay: FcBroadcastOverlay
 var team_card: GridContainer   # the team comparison card: label, home, away (FcBroadcastGraphics.team_card_at)
 var court: FcCourtView
 var caption: Label
+var sound_caption: Label   # what the crowd and court sounds are, in words (B3); empty when there is nothing to describe
 var feed: ItemList
 var scrubber: HSlider
 var play_button: FcButton
@@ -93,6 +94,10 @@ func _build() -> void:
 	caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	caption.custom_minimum_size.x = 120
 	left.add_child(caption)
+	sound_caption = FcUiTables.label("", FcUiTokens.TYPE_SMALL)
+	sound_caption.theme_type_variation = "MutedLabel"
+	sound_caption.name = "SoundCaption"
+	left.add_child(sound_caption)
 	left.add_child(_roster_strip())
 	left.add_child(_team_card())
 	body.add_child(left)
@@ -231,6 +236,7 @@ func seek(i: int, animate: bool = true) -> void:
 	bug.show_broadcast(timeline.snapshot(_index), model.box.abbreviations[0], model.box.abbreviations[1])
 	overlay.show_item(FcBroadcastGraphics.top_item_at(timeline, _index))
 	_update_team_card(_index)
+	sound_caption.text = ""   # a jump or a scrub makes no sound; stepping and playing set it again
 	caption.text = "%s  %s" % [st["clock_text"], st["text"]] if st["text"] != "" else st["clock_text"]
 	_update_rosters(st)
 	_silent = true
@@ -242,7 +248,10 @@ func seek(i: int, animate: bool = true) -> void:
 
 
 func step(direction: int) -> void:
+	var before := _index
 	seek(model.step(_index, direction, filter), true)
+	if direction > 0 and _index != before:
+		_make_sounds(_index)   # stepping forward plays the next event's sounds; stepping back is silent
 
 
 func toggle_play() -> void:
@@ -281,6 +290,18 @@ func advance(delta: float) -> void:
 		set_process(false)
 		return
 	seek(nxt, true)
+	_make_sounds(_index)
+
+
+## The crowd and court sounds of event `i` and their caption. Called when playback advances or the user steps forward (never when scrubbing or
+## jumping, so dragging the scrubber is silent). Sounds go through FcAudio.cue (silent when muted or no audio is running); the caption is
+## shown unless the player turned captions off.
+func _make_sounds(i: int) -> void:
+	var cues := FcBroadcastAudio.cues_at(timeline, i)
+	for id in cues:
+		FcAudio.cue(id)
+	var captions_on := FcAudio.current.prefs.sound_captions if FcAudio.current != null and is_instance_valid(FcAudio.current) else true
+	sound_caption.text = FcBroadcastAudio.caption_for(cues) if captions_on else ""
 
 
 func _process(delta: float) -> void:

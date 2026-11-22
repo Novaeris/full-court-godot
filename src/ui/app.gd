@@ -470,7 +470,7 @@ func _sound_panel() -> Control:
 	panel.add(FcToggle.make("Mute everything", preferences.audio_muted, func(on: bool) -> void:
 		preferences.audio_muted = on
 		_save_audio_settings()))
-	for entry in [["Master volume", "audio_master"], ["Interface sounds", "audio_ui"], ["Effects (cards, packs, games)", "audio_sfx"], ["Music", "audio_music"]]:
+	for entry in [["Master volume", "audio_master"], ["Interface sounds", "audio_ui"], ["Effects (cards, packs, games)", "audio_sfx"], ["Crowd and arena (game replays)", "audio_crowd"], ["Music", "audio_music"]]:
 		panel.add(FcUiTables.label(entry[0], FcUiTokens.TYPE_SMALL))
 		var slider := FcSlider.new(0, 100, 5, "%")
 		slider.set_value_silent(float(preferences.get(entry[1])))
@@ -478,6 +478,9 @@ func _sound_panel() -> Control:
 			preferences.set(entry[1], int(v))
 			_save_audio_settings())
 		panel.add(slider)
+	panel.add(FcToggle.make("Sound captions in game replays", preferences.sound_captions, func(on: bool) -> void:
+		preferences.sound_captions = on
+		_save_audio_settings()))
 	panel.add(FcToggle.make("Vibration on phones", preferences.haptics, func(on: bool) -> void:
 		preferences.haptics = on
 		_save_audio_settings()))

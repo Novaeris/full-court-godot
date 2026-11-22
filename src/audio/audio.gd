@@ -1,6 +1,6 @@
 class_name FcAudio
 extends Node
-## The game's sound, owned by FcApp (not an autoload). Four buses: Master, UI, SFX and Music (Music is empty for now: no music has been
+## The game's sound, owned by FcApp (not an autoload). Five buses: Master, UI, SFX, Music and Crowd (the game's crowd and arena reactions; Music is empty for now: no music has been
 ## licensed or made, and nothing unlicensed is ever added, decision D4). Sounds come from data/ui/audio.json: an id, a bus, and where the
 ## sound comes from, which is the audio file if it exists and otherwise a short sound built by FcAudioSynth. An unknown id, a missing
 ## file or a muted game is simply silent, so the game is fully playable with the sound off.
@@ -87,6 +87,8 @@ func bus_percent(bus_name: String) -> int:
 			return prefs.audio_sfx
 		"Music":
 			return prefs.audio_music
+		"Crowd":
+			return prefs.audio_crowd
 	return 100
 
 

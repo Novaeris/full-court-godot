@@ -70,7 +70,7 @@ func test_a_stream_is_a_16_bit_mono_wave() -> void:
 func test_the_map_is_well_formed() -> void:
 	var map := _map()
 	var buses: Array = map["buses"]
-	assert_eq(buses, ["UI", "SFX", "Music"])
+	assert_eq(buses, ["UI", "SFX", "Music", "Crowd"])
 	for id in map["sounds"]:
 		var def: Dictionary = map["sounds"][id]
 		assert_true(def["bus"] in buses, "%s is on a real bus" % id)
@@ -200,9 +200,9 @@ func test_the_settings_screen_has_a_sound_panel_that_saves() -> void:
 		if n is FcSlider:
 			sliders.append(n)
 		stack.append_array(n.get_children())
-	assert_eq(sliders.size(), 4, "master, interface, effects and music")
+	assert_eq(sliders.size(), 5, "master, interface, effects, crowd and music")
 	for slider in sliders:
 		(slider as FcSlider).value_changed.emit(40.0)
 	var saved := FcPreferences.new(PREFS)
-	assert_eq([app.preferences.audio_master, app.preferences.audio_ui, app.preferences.audio_sfx, app.preferences.audio_music], [40, 40, 40, 40], "each slider sets its own volume")
-	assert_eq([saved.audio_master, saved.audio_ui, saved.audio_sfx, saved.audio_music], [40, 40, 40, 40], "saved at once")
+	assert_eq([app.preferences.audio_master, app.preferences.audio_ui, app.preferences.audio_sfx, app.preferences.audio_music, app.preferences.audio_crowd], [40, 40, 40, 40, 40], "each slider sets its own volume")
+	assert_eq([saved.audio_master, saved.audio_ui, saved.audio_sfx, saved.audio_music, saved.audio_crowd], [40, 40, 40, 40, 40], "saved at once")
