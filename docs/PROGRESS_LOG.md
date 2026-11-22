@@ -274,3 +274,6 @@ See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
 
 ## 2026-11-22 Reconstruction feasibility spike (B1, D-069)
 - Added `FcReconstructor` and `FcReconstructionValidator` (headless) and `tools/reconstruct_spike.ps1`. Verdict PASS with a measured timing caveat; report in `docs/validation/B1_RECONSTRUCTION_SPIKE.md`. The independent validator found a real bug in its first run (substituted players stayed placed). Totals: `TESTING.md`.
+
+## 2026-11-22 3D performance prototype (B1b, D-069)
+- Thresholds and the 2D baseline were committed first (`PERFORMANCE_THRESHOLDS.md`); a throwaway 3D prototype under `prototypes/b1b` was then measured with the same procedure: PASS on the development machine. The benchmark also exposed and fixed a per-frame engine error in the 2D broadcast view. Reports in `docs/validation/`.

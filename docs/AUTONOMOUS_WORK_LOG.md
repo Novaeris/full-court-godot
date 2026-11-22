@@ -60,7 +60,7 @@ Failures along the way (all explained in the audit): the baseline live run faile
 **Tests:** `test_camera_director` (13), `test_live_camera` (7), `test_live_instant_replay` (7), replay window tests in `test_broadcast_timeline`. Two test flaws found and fixed while writing them (a vacuous assertion removed, an assertion relying on window length).
 **Screenshot checked by eye:** the broadcast view shows the projected court with a home-coloured paint, the camera framing a made shot, the scoring strip, and the camera controls.
 **Local results (base `ec439b4` plus these changes):** import exit 0; unit exit 0, **1,520 passed**; live exit 0, **178 passed**; Studio smoke PASS.
-**Commit / push / Actions:** `9ab8d52`, pushed; CI run 45068460597 (result recorded in the B1 entry below).
+**Commit / push / Actions:** `9ab8d52`, pushed; CI run 45068460597 finished **success**.
 **Remaining:** none for B2b.
 
 ## B1: reconstruction feasibility spike (headless)
@@ -70,3 +70,13 @@ Failures along the way (all explained in the audit): the baseline live run faile
 **Bug found by the validator and fixed:** substituted-out players stayed placed (11 on court).
 **Local results (base `9ab8d52` plus these changes):** import exit 0; unit exit 0, **1,526 passed**; live exit 0, **178 passed**; Studio smoke PASS.
 **Remaining:** B1b 3D performance prototype, B1c player-model prototype, then the 3D decision.
+**Commit / push / Actions (B1):** `f5593b4`, pushed; CI run 45070695237 finished **success**.
+
+## B1b: minimal 3D performance prototype
+**Step 1 (pre-registration), commit `baa3a43`:** `docs/validation/PERFORMANCE_THRESHOLDS.md` (machine, fixed benchmark game seed 1, run definitions, measured 2D baseline, limits by the fixed rules), `tools/perf_benchmark.ps1/.gd`, and a fix for a per-frame engine error found by the benchmark in the B2b broadcast view (degenerate centre-circle polygon; `FcCourtView.circle_polygon` plus a regression test, unit 14 passed in `test_camera_director`). CI run 45072291597 on `baa3a43` (result recorded below).
+**Step 2:** the prototype `prototypes/b1b/arena_prototype.gd`, the 3D mode of the benchmark tool, and `docs/validation/B1B_3D_PERFORMANCE_PROTOTYPE.md`.
+**Verdict: PASS (rendering budget, development machine only).** Frame time p95 0.76 ms and p99 0.88 ms (limits 16.6 and 33.3); one slow frame in 237,778; working set 202 to 280 MB (limit 2,048); video memory 26 to 32 MB (limit 1,024); leak growth 8 MB (limit 10); warm load 35 ms, cold 2.1 s (limit 5 s). Assumption confirmed: instanced crowd cards, a shadow-casting light and a live `SubViewport` scoreboard all work under `gl_compatibility`.
+**Not hidden:** one 176.67 ms frame, working-set growth to 280 MB in the first run, leak growth close to its limit, strong hardware.
+**Decisions:** budgets for B1c and B4 registered before they are measured (ten characters at most 6 ms p95 added, 200 MB working set, 150 MB video).
+**Test status:** the prototype is throwaway and not covered by the suites; only tools, a prototype folder and docs changed in this step, so the suites were not re-run locally (CI runs them).
+**Remaining:** B1c player-model and animation prototype, then the 3D decision.
