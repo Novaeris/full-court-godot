@@ -1,0 +1,49 @@
+:root {
+	--bg: #0b1020;
+	--surface: #111a2e;
+	--raised: #17233d;
+	--border: #2a3856;
+	--primary: #ff8a24;
+	--primary-deep: #e65300;
+	--text: #eaf0fa;
+	--muted: #9aa8c2;
+}
+* { box-sizing: border-box; }
+html { color-scheme: dark; }
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+a { color: var(--primary); }
+.wrap { max-width: 880px; margin: 0 auto; padding: 0 16px; }
+header.top { border-bottom: 1px solid var(--border); background: var(--surface); }
+header.top .wrap { display: flex; align-items: center; justify-content: space-between; padding-top: 14px; padding-bottom: 14px; }
+.brand { font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); text-decoration: none; }
+.brand span { color: var(--primary); }
+nav a { margin-left: 16px; text-decoration: none; color: var(--muted); }
+nav a:hover { color: var(--text); }
+.hero { padding: 64px 0 40px; }
+.hero h1 { font-size: clamp(2rem, 6vw, 3.2rem); line-height: 1.1; margin: 0 0 12px; }
+.hero p { color: var(--muted); font-size: 1.15rem; max-width: 40em; margin: 0 0 24px; }
+.btn {
+	display: inline-block;
+	padding: 12px 22px;
+	border-radius: 8px;
+	background: var(--primary);
+	color: #1a0d00;
+	font-weight: 700;
+	text-decoration: none;
+}
+.btn:hover { background: var(--primary-deep); color: #fff; }
+.note { color: var(--muted); font-size: 0.9rem; margin-top: 10px; }
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); padding: 24px 0 8px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+.card h2 { margin: 0 0 6px; font-size: 1.1rem; color: var(--primary); }
+.card p { margin: 0; color: var(--muted); }
+section.block { padding: 28px 0; }
+section.block h2 { margin-top: 0; }
+ol, ul { padding-left: 1.2em; }
+footer { border-top: 1px solid var(--border); margin-top: 40px; padding: 20px 0 40px; color: var(--muted); font-size: 0.9rem; }
+.draft { border: 1px dashed var(--primary); border-radius: 8px; padding: 12px 14px; color: var(--muted); }

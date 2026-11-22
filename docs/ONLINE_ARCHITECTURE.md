@@ -73,3 +73,9 @@ Until these are answered, the right next step is only more local hardening, not 
 - **Still open:** whether the live-match server is a small Godot headless server on a VPS (recommended, about $5 to 15 a month) or something else;
   how a person's offline Owner/Career save becomes a shared league (host uploads or hosts live); what Career 5v5/3v3 lets a person control; the
   privacy and age rules for accounts. Nothing past the local layer is built.
+
+## Answers on 2026-11-22 (D-068)
+- Headless Godot server for live matches: accepted for now. Career 5v5/3v3: chosen at queue time, almost no extra gameplay, cosmetics (arm sleeves and the like) later. Owner leagues: hosted live.
+- **Built next to these:** `FcOnlineConfig` (URL and public key from `user://online_config.json`, never committed; refuses a service-role key), `FcSupabaseAuth` (pure request builders and answer readers), `FcOnlineSession`, `FcOnlineHttp` (the only code that touches the network).
+- **Founder setup needed before sign-in can be tested for real:** create a Supabase project, copy its URL and the public **anon** key (never the service-role key) into `user://online_config.json` as `{"url": "...", "anon_key": "..."}`, and in the Supabase dashboard set Resend as the custom SMTP sender.
+- **Still open:** what the live Owner league lobby looks like (invite code or friend list), cosmetics design, and privacy and age rules.

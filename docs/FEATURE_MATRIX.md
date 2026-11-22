@@ -11,6 +11,8 @@ This is the one place that says what is built. `ROADMAP.md`, `RELEASE_READINESS.
 
 | Feature | Status | Evidence (test files in `tests/unit` unless noted) |
 |---|---|---|
+| Download site (`site/`, static HTML and CSS) and release script (`tools/publish_release.ps1`, dry run by default) | Partial | Written and described in [WEBSITE_AND_RELEASES.md](WEBSITE_AND_RELEASES.md). **Not viewed in a browser, not hosted, no release published, no domain.** The release script was not run. The privacy page is a draft needing legal review. |
+| Sign-in client (`FcOnlineConfig`, `FcSupabaseAuth`, `FcOnlineSession`, `FcOnlineHttp`): Supabase Auth requests (sign up, sign in, refresh, magic link, sign out), reading sessions and plain-language errors, token expiry, a guard that refuses a service-role key | Partial | `test_online_auth` (pure parts), `live/test_live_online_http` (unreachable-address error path). **Not verified against a real Supabase project** (none configured; the founder must create one and put the URL and public key in `user://online_config.json`). No sign-in screen yet. |
 | Online foundations, local only (`src/online/`): HMAC signing, accounts, loopback server (signature, freshness, replay, rate limit, idempotency, whitelist, rollback, signed receipts), rating matchmaking with server seeds, server-decided matches checked by re-simulation | Built (local) | `test_online`. No network, backend, sign-in or hosting: see [ONLINE_ARCHITECTURE.md](ONLINE_ARCHITECTURE.md) |
 | Seeded RNG, stable ID generation | Built | `test_rng`, `test_id_generator` |
 | Data model: attributes, player, team, contract, league, world integrity, dates | Built | `test_attributes`, `test_player`, `test_team`, `test_contract`, `test_league`, `test_world`, `test_repository`, `test_date` |
@@ -68,7 +70,7 @@ This is the one place that says what is built. `ROADMAP.md`, `RELEASE_READINESS.
 | Career timeline and public image (`FcCareerTimeline`, `FcCareerMedia`, `data/career/media.json`): moments recorded as they happen, fan favour, media image and hype from big games, seasons, titles and choices, headlines, sponsors pay by image (Career data version 4) | Built | `test_career_public`; shown on the Story tab (see Legacy below). |
 | Wider life decisions: 18 situational events (level, seasons, reputation, tags, fan favour, hype, coach trust, rival conditions; effects on the public image, trust and chemistry) with a data validator | Built | `test_career_events` (conditions, effects, clamping, validator). |
 | Legacy presentation and Story tab (`FcLegacy`, `FcCareerStory`, `data/career/legacy.json`): five pillars, tier, key moments, Hall of Fame and retired number; public-image panel, headlines, timeline; legacy page leads a retired career | Built | `test_legacy`, `live/test_live_career_story`; picture in `docs/validation/ui/career/` |
-| Online team play | Planned | Not planned for Career; see `CAREER_MULTIPLAYER_READINESS.md` |
+| Online team play (5v5 and 3v3 with the created player, cosmetics only) | Planned | Decided in D-066/D-068; nothing built. `CAREER_MULTIPLAYER_READINESS.md` is historical. |
 
 ## Dynasty Mode (PC and mobile)
 
@@ -113,4 +115,4 @@ This is the one place that says what is built. `ROADMAP.md`, `RELEASE_READINESS.
 | 3 Franchise immersion | Retired jerseys, historical franchise records, league storylines, rivalry development, richer histories | Built for Owner (and a storylines panel in the Career hub); see the Owner table |
 | 4 Career expansion | Timeline, media and reputation, life decisions, legacy | Built (Career table) |
 | 5 Dynasty expansion | Collections, mastery, seasons, rankings, tournament depth | Built in a first form (Dynasty table): goals (collections, mastery), ranked ladder with seasonal reset (rankings, seasons), tournament placement feeds the ladder. Sets (permanent and timed) and tournaments of 4/8/16/32 with entry windows are now built (D-067). Not built: double elimination and round-robin, goals filtered by set |
-| 6 Online foundations | Accounts, server-authoritative profiles, persistent collections, matchmaking, security and transactions | Built locally only (Shared systems table); no network, backend or hosting: awaiting founder decision (ONLINE_ARCHITECTURE.md) |
+| 6 Online foundations | Accounts, server-authoritative profiles, persistent collections, matchmaking, security and transactions | Local rules built; sign-in client built but unverified against a real project; no live server, no sign-in screen (ONLINE_ARCHITECTURE.md, D-066, D-068) |

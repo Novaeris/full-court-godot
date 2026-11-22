@@ -251,5 +251,8 @@ See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
 - Added the `set` content kind (`set_v1`), `FcContentWindow` (shared start/end rule), pack and market checks, store listing text, tournaments of 4/8/16/32 with entry windows (`tournament_v2`), the "early" placement, and the permanent Founding Series set in the bundled release. Guide: `docs/SETS_AND_TOURNAMENTS.md`. No save change.
 - Recorded the founder's online answers (D-066) in DECISIONS and ONLINE_ARCHITECTURE. No network code yet.
 
+## 2026-11-22 Accounts milestone, first part: sign-in client (D-068)
+- Added `FcOnlineConfig`, `FcSupabaseAuth`, `FcOnlineSession`, `FcOnlineHttp`; recorded the founder's server, Career and Owner-league answers (D-068). The client is unverified against a real Supabase project (none exists yet) and there is no sign-in screen.
+
 ## 2026-11-22 Phase 6: online foundations (local)
 - Added `src/online/` (`FcOnlineCrypto`, `FcOnlineAccount`, `FcOnlineServer` loopback, `FcOnlineMatchmaker`, `FcOnlineMatch`) and `docs/ONLINE_ARCHITECTURE.md` (D-065). No network code. Note: a static function named `sign` clashes with GDScript's built-in `sign()`; named `sign_dict`.
