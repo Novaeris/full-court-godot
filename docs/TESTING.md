@@ -5,6 +5,22 @@
 2. **Simulation and economy stress tests** (built, see below): `simulate_games` (16 league averages, close games, overtime), `economy_check` (decades of AI-only leagues: profit, cash, debt, payroll, titles), `owner_stress` (careful, naive and reckless owners), `ui_playthrough` (50 seasons through the real screens) and `click_test`. They exit with code 1 on a breach, so CI and scripts can rely on the exit code.
 3. **Manual playtesting** by the founder for feel, usability and fun. Claude provides step-by-step instructions with each UI feature.
 
+## Current totals (the one authoritative place)
+Every other document points here instead of repeating numbers. These come only from fresh runs, never from older documents. The last verified run was on 2026-11-21, on the tree of commit `5700ac9` (Phase 1A), with Godot 4.7.2 headless, one process at a time.
+
+| Kind | What it is | Last result | How to run |
+|---|---|---|---|
+| Unit | `tests/unit/test_*.gd`, headless, fixed seeds | **1,303 passed, 0 failed** | `./tools/run_tests.ps1` |
+| Live | `tests/live/test_live_*.gd`, real scene tree, awaits frames | **125 passed, 0 failed** | `./tools/run_live_tests.ps1` |
+| Creator Studio smoke | separate project, `creator_studio/tools/studio_smoke.gd` | **PASS** (13 checks) | `godot_console --headless --path creator_studio --script res://tools/studio_smoke.gd` |
+| Simulation and stress | `simulate_games`, `economy_check`, `owner_stress`, `ui_playthrough`, `career_balance` and similar tools in `tools/` | **Not re-run in Phase 1** (nothing in the simulation changed). Results are in `STABILITY_REPORT.md` and `RELEASE_READINESS.md` as historical records with their own dates. | `tools/*.ps1` |
+| Manual validation | founder playtests, Android device checklist, screenshot review | **Not automated.** Outstanding items are in `DEVICE_VALIDATION.md` and `RELEASE_READINESS.md` section 3 to 4. | by hand |
+
+Notes on reading the numbers:
+- Each number is a count of passing test methods, not files. They are not comparable with a raw count of `func test_` lines.
+- Known noise that is not a failure: the unit runner reports 6 "engine errors" (an intentional bad-image test and two `!is_inside_tree()` messages from existing UI tests) and the live runner reports 2 ("Lambda capture ... was freed"); both runners print them as non-failures. The exit-time lines about leaked RIDs and ObjectDB instances come from the headless renderer. All of this was the same before Phase 1; the Lambda messages are tracked in `INTEGRATION_AUDIT.md` (finding 16).
+- When these numbers change, update this table with the date and commit, and nothing else.
+
 ## Running tests
 From the project folder in PowerShell:
 
@@ -209,7 +225,8 @@ Shaders and animation looks cannot be checked headless: they are reviewed from s
 A test now FAILS if a runtime script error happens while it runs (setup, body, teardown, or the time spent awaiting in a live test), because Godot aborts the function that raised it and the remaining assertions would never run. This uses a `Logger` (`tests/support/script_error_logger.gd`), not console parsing. A test file that extends `FcTestCase` but defines no `test_` method also fails. Options: `--filter=text` and `--dir=res://folder`. `tests/unit/test_runner_detection.gd` proves the behaviour by running a second Godot process on the deliberately broken tests in `tests/runner_fixtures` (a folder both normal runners skip). Limits: `push_error` calls and engine messages are not failures; an infinite loop or an `await` that never resumes is left to the CI job timeout; the live runner returns exit code 2 if the run stops early. Details: docs/DYNASTY_HARDENING.md.
 
 
-## Status at the end of the UI polish milestone (2026-11-20)
+## Status at the end of the UI polish milestone (2026-11-20) (historical)
+*Historical record, kept as written. For current numbers see "Current totals" above.*
 Unit suite: 1,113 tests; live UI suite: 68 tests; both exit 0. See docs/RELEASE_READINESS.md for every other check and for what was not verified.
 
 ## Release validation additions (2026-11-21)
@@ -225,3 +242,8 @@ Unit suite: 1,113 tests; live UI suite: 68 tests; both exit 0. See docs/RELEASE_
 - Screenshots: `tools/screenshot.gd screen=menu_saves | credits | <Owner tab> | career_hub | gallery section=Teams|Portraits|"Portrait variety"|Table`; the checkpoint pictures are in `docs/validation/ui/visual_identity/`.
 - Ratchets changed on purpose (each noted in D-058): style lint now exempts `src/ui/art`, `team` and `player` (drawn pictures), `app.gd` sized labels 80 to 68; layout baseline heights for `owner_roster`, `owner_schedule`, `new_league` grew (real minimum table heights, dropdowns).
 - The real-click tools (`click_test.ps1`, `career_click_test.ps1`) click `FcTable` rows as well as Trees.
+
+## Ecosystem integration additions (Phase 1, 2026-11-21)
+- `tests/unit/test_ecosystem_integrity.gd` (11 tests): one position list (`FcPosition.PLAYABLE`), one rating calculation for Dynasty-built and Owner-generated players, attribute and badge keys across every data file, the bundled Founding Series validating with every reference resolving, dangling references rejected, and a roster card missing from the release reported and skipped safely. Pure checks, no scene.
+- `tests/live/test_live_mode_transitions.gd` (1 test): the real app through menu, Owner, Career, Dynasty and back, with saves, loading and Continue, all in scratch folders. It is the only test that covers a full cycle between the modes. It was checked by breaking an assertion on purpose and watching it fail.
+- Findings and their status: `docs/INTEGRATION_AUDIT.md`.
