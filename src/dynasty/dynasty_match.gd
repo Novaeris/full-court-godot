@@ -41,10 +41,11 @@ static func simulate(user: Dictionary, opponent: Dictionary, seed_value: int, us
 	var home: Dictionary = user if user_home else opponent
 	var away: Dictionary = opponent if user_home else user
 	var sim := FcGameSimulator.new()
+	sim.recorder = FcGameEventLog.new()   # the play-by-play of the game (read-only; the box score is the same with or without it)
 	var box := sim.simulate(home["team"], away["team"], FcRng.new(seed_value))
 	var cards: Dictionary = user["cards"].duplicate()
 	cards.merge(opponent["cards"])
-	return {"box": box, "user_side": 0 if user_home else 1, "cards": cards}
+	return {"box": box, "user_side": 0 if user_home else 1, "cards": cards, "events": sim.recorder.to_dict()}
 
 
 ## The plain facts of a finished game from the user's point of view (see FcDynastyChallenges for what is counted).

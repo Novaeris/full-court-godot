@@ -258,11 +258,12 @@ static func severe_loss(player_id: int, key: String) -> int:
 
 # --- news and box scores -----------------------------------------------------------------
 
-func _record_news_and_box(season: FcSeason, g: FcScheduledGame, box: FcBoxScore) -> void:
+func _record_news_and_box(season: FcSeason, g: FcScheduledGame, box: FcBoxScore, log: FcGameEventLog = null) -> void:
 	var date := season.date_of_day(g.day)
 	var watched := watched_teams.has(g.home_id) or watched_teams.has(g.away_id)
 	if watched:
-		var entry := {"day": g.day, "series": g.series, "box": box.to_dict()}
+		var entry := {"day": g.day, "series": g.series, "box": box.to_dict(),
+			"events": log.to_dict() if log != null else {"rows": []}}
 		season.recent_boxes.append(entry)
 		if season.recent_boxes.size() > FcSeason.RECENT_BOX_LIMIT:
 			season.recent_boxes.pop_front()
@@ -290,13 +291,17 @@ func _team(team_id: int) -> FcGameTeam:
 
 
 func _play_game(season: FcSeason, g: FcScheduledGame, rng: FcRng, playoff: bool) -> void:
+	# only games a watched team plays are written down play by play (the rest would cost time and save size for nobody)
+	var log: FcGameEventLog = FcGameEventLog.new() if watched_teams.has(g.home_id) or watched_teams.has(g.away_id) else null
+	_sim.recorder = log
 	var box := _sim.simulate(_team(g.home_id), _team(g.away_id), rng)
+	_sim.recorder = null
 	g.played = true
 	g.home_score = box.scores[0]
 	g.away_score = box.scores[1]
 	g.overtimes = box.overtimes
 	_apply_injuries(box, season.year)
-	_record_news_and_box(season, g, box)
+	_record_news_and_box(season, g, box, log)
 	if playoff:
 		season.playoff_stats.add_box_score(box)
 	else:

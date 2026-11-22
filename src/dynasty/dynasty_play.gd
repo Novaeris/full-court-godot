@@ -47,4 +47,5 @@ static func play_against(profile: FcDynastyProfile, catalog: FcDynastyCatalog, o
 		"summary": summary, "reward": recorded.data["reward"], "game_number": recorded.data["game_number"],
 		"completed_challenges": challenges, "completed_objectives": objectives,
 		# read-only pass-through for the post-game screen (D-053): the simulation's own box score, never saved or used by any rule
-		"box": (played["box"] as FcBoxScore).to_dict(), "user_side": played["user_side"], "cards": played["cards"]})
+		"box": (played["box"] as FcBoxScore).to_dict(), "user_side": played["user_side"], "cards": played["cards"],
+		"events": played.get("events", {})})

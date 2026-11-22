@@ -183,7 +183,8 @@ static func from_dict(d: Dictionary) -> FcSeason:
 			s.awards[str(key)] = int(value)
 	for entry in d.get("recent_boxes", []):
 		# normalize through FcBoxScore so integers stay integers after a JSON round trip
-		s.recent_boxes.append({"day": int(entry["day"]), "series": int(entry["series"]), "box": FcBoxScore.from_dict(entry["box"]).to_dict()})
+		s.recent_boxes.append({"day": int(entry["day"]), "series": int(entry["series"]), "box": FcBoxScore.from_dict(entry["box"]).to_dict(),
+			"events": FcGameEventLog.from_dict(entry.get("events", {})).to_dict()})   # the play-by-play (empty for older saves)
 	for row in d.get("draft", []):
 		s.draft.append([int(row[0]), int(row[1]), int(row[2]), int(row[3]), int(row[4]) if row.size() > 4 else int(row[2])])
 	var po: Dictionary = d.get("playoffs", {})

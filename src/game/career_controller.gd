@@ -555,7 +555,7 @@ func _collect_games() -> Array:
 			var reward := FcCareerRules.apply_game(profile(), line)
 			var game := {"day": int(entry["day"]), "opponent": str(box["team_names"][1 - side]), "score": "%d-%d" % [int(box["scores"][side]), int(box["scores"][1 - side])],
 				"won": won, "line": line, "xp": int(reward["xp"]), "levels_gained": int(reward["levels_gained"]), "milestones": reward["milestones"],
-				"box": box}   # the finished game, for the post-game screen (display only)
+				"box": box, "events": entry.get("events", {})}   # the finished game and its play-by-play, for the post-game and replay screens (display only)
 			# a night against the rival is also a duel
 			for other in box["players"]:
 				if profile().rival_player_id > 0 and int(other["player_id"]) == profile().rival_player_id and int(other["team_id"]) != state.user_team_id and int(other["seconds"]) > 0:

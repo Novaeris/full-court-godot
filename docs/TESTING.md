@@ -6,11 +6,11 @@
 3. **Manual playtesting** by the founder for feel, usability and fun. Claude provides step-by-step instructions with each UI feature.
 
 ## Current totals (the one authoritative place)
-Every other document points here instead of repeating numbers. These come only from fresh runs, never from older documents. The last verified run was on 2026-11-21, at the end of Phase 2A (play-by-play recording; the exact commit is in `FEATURE_MATRIX.md`), with Godot 4.7.2 headless, one process at a time.
+Every other document points here instead of repeating numbers. These come only from fresh runs, never from older documents. The last verified run was on 2026-11-21, at the end of Phase 2B (stored play-by-play; the exact commit is in `FEATURE_MATRIX.md`), with Godot 4.7.2 headless, one process at a time.
 
 | Kind | What it is | Last result | How to run |
 |---|---|---|---|
-| Unit | `tests/unit/test_*.gd`, headless, fixed seeds | **1,314 passed, 0 failed** | `./tools/run_tests.ps1` |
+| Unit | `tests/unit/test_*.gd`, headless, fixed seeds | **1,324 passed, 0 failed** | `./tools/run_tests.ps1` |
 | Live | `tests/live/test_live_*.gd`, real scene tree, awaits frames | **125 passed, 0 failed** | `./tools/run_live_tests.ps1` |
 | Creator Studio smoke | separate project, `creator_studio/tools/studio_smoke.gd` | **PASS** (13 checks) | `godot_console --headless --path creator_studio --script res://tools/studio_smoke.gd` |
 | Simulation and stress | `simulate_games`, `economy_check`, `owner_stress`, `ui_playthrough`, `career_balance` and similar tools in `tools/` | **Not re-run in Phase 1** (nothing in the simulation changed). Results are in `STABILITY_REPORT.md` and `RELEASE_READINESS.md` as historical records with their own dates. | `tools/*.ps1` |
@@ -250,3 +250,7 @@ Unit suite: 1,113 tests; live UI suite: 68 tests; both exit 0. See docs/RELEASE_
 
 ## Play-by-play recording (Phase 2A, 2026-11-21)
 - `tests/unit/test_game_events.gd` (11 tests): the recorder never changes a game (identical box score and identical random-generator state with it on or off, 8 seeds); the events alone reproduce the score of every period and every counting stat of every player; injuries match the box; five players on court at all times and starters match the box; the clock never runs backwards inside a period; every event reads as a sentence with no unfilled placeholders and the same text every time; an overtime game is labelled and still adds up; the log survives JSON and ignores damaged rows.
+
+## Game history (Phase 2B, 2026-11-21)
+- `tests/unit/test_game_history.gd` (10 tests): a watched game keeps its play-by-play and the events add up to the stored final; unwatched games are not recorded; the log survives a JSON round trip as whole numbers and a full save and load; unfinished seasons are never archived and a finished archived season drops boxes and replays; one replay stays under 70,000 characters (measured: 6,500 to 12,200 for 363 to 659 events, about 173 KB for the 20 kept games); the version 2 to 3 migration adds empty logs and touches nothing else (and a version 1 save walks both steps); Career games and Dynasty results carry the play-by-play, and a Dynasty profile save never holds it.
+- Existing tests that asserted the old data version now assert 3 (`test_career_foundation`, `test_injury_history`).

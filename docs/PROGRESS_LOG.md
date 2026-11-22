@@ -3,6 +3,9 @@
 Newest first. Written so someone returning after a break can see where things stand. This is a dated history: an entry describes the state on its date. **For what is built now, see [FEATURE_MATRIX.md](FEATURE_MATRIX.md); for current test totals, see [TESTING.md](TESTING.md).**
 The repository was published to GitHub on 2026-11-17 at the founder's request (public: https://github.com/Novaeris/full-court-godot, remote `origin`, branch `main`). Later commits stay local until the founder asks for a push.
 
+## 2026-11-21: Phase 2A and 2B: play-by-play recorded and kept
+The founder asked for the full plan to continue with a push after every milestone. Phase 2 (game presentation) starts with the data: the simulator can now write down every event of a game without changing it (`FcGameEventLog`, `FcPlayByPlay`; proven bit-for-bit neutral), and the events of every watched game are stored with its box score in Owner and Career saves (`DATA_VERSION` 3 with a real migration) and passed through Career and Dynasty results. About 8 KB per game, 20 kept. Next: the replay screen, then game-day lineups and history.
+
 ## 2026-11-21: Phase 1: ecosystem integration and documentation reconciliation
 No gameplay changed. Audited how Owner, Career and Dynasty share identities, definitions, position rules, rating calculations and content references (`docs/INTEGRATION_AUDIT.md`). One real defect: the five-position list was copied in five places; it is now one list (`FcPosition.PLAYABLE`). Added `tests/unit/test_ecosystem_integrity.gd` and the live `test_live_mode_transitions.gd` (menu to Owner to Career to Dynasty and back, saves, Continue). Made `docs/TESTING.md` the one place for current test totals (taken from fresh runs), created `docs/FEATURE_MATRIX.md` (every Built row names its passing tests), and marked stale statements in the architecture, design, roadmap and plan documents as historical instead of deleting them. No saved-data change, so no version bump. Phases 2 to 6 (play-by-play and replay, franchise history, Career expansion, Dynasty expansion, online) are design directions only and nothing of them was started.
 
@@ -200,3 +203,9 @@ Read docs/ROADMAP.md ("Next") and say "continue". Work order I intend to follow:
 
 ## Earlier
 See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
+
+## D-060 Play-by-play and replay across all modes (2026-11-21, Phase 2)
+- **Decision:** games are written down as compact integer events by an optional recorder inside the simulator (never touching the random generator); the period, score and sentences are derived from the events, never stored. Owner and Career keep the events of watched games beside the box score (20 games, dropped on archive); Dynasty shows its latest replay from memory.
+- **Why not re-simulate from a seed:** a replay would need the exact lineups, fatigue, injuries and tactics of that day; the events are about 8 KB per game and always right.
+- **Save change:** `FcVersion.DATA_VERSION` 2 to 3 with a migration (older stored games get an empty log); chosen over treating it as an "additive section" so the rule "a changed saved shape needs a version" holds without exceptions.
+- **Limit by design:** the simulation has no spatial model. The court picture is drawn from the event kinds (shot type, rebound, foul) and is illustrative, not a track of real positions.

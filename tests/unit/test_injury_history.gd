@@ -70,7 +70,7 @@ func test_the_history_is_saved_and_an_older_save_loads_as_empty() -> void:
 	var old: Dictionary = w.to_dict()
 	old.erase("injury_history")
 	assert_eq(FcWorld.from_dict(old, FcDefinitionSet.load_default()).injuries_of(3), [], "a save from before the history existed loads as empty")
-	assert_eq(FcVersion.DATA_VERSION, 2, "an additive section: the data version is unchanged")
+	assert_eq(FcVersion.DATA_VERSION, 3, "the injury history itself needed no version (an additive section); the version moved on for the play-by-play")
 
 
 func test_a_played_season_records_the_injuries_it_causes() -> void:
