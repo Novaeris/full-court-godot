@@ -379,12 +379,21 @@ func _arc_points(centre: Vector2, radius: float, from_angle: float, to_angle: fl
 	return out
 
 
+## The corners of a circle as a fillable polygon (court feet): `steps` distinct points, never the first one again at the end. A full-circle arc
+## repeats its start point, and a polygon with a repeated vertex cannot be triangulated (the engine logged "Invalid polygon data" on every frame).
+static func circle_polygon(centre: Vector2, radius: float, steps: int) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for k in maxi(3, steps):
+		out.append(centre + Vector2.from_angle(TAU * k / maxi(3, steps)) * radius)
+	return out
+
+
 func _draw_centre_mark(cam: Dictionary, branding: Color) -> void:
 	var centre := Vector2(FcCourtLayout.COURT_LENGTH / 2.0, FcCourtLayout.COURT_WIDTH / 2.0)
 	var ring := _arc_points(centre, 6.0, 0.0, TAU, 40)
 	var polygon := PackedVector2Array()
-	for p in ring:
-		polygon.append(_pp((p as Vector2).x, (p as Vector2).y, 0.0, cam))
+	for p in circle_polygon(centre, 6.0, 40):
+		polygon.append(_pp(p.x, p.y, 0.0, cam))
 	draw_colored_polygon(polygon, Color(branding.r, branding.g, branding.b, 0.3))
 	_line_path(ring, cam, 2.0)
 	if home_abbreviation != "":

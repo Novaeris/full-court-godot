@@ -256,3 +256,20 @@ func test_replaying_a_whole_game_through_the_rig_is_repeatable() -> void:
 	for cam in run.call():
 		assert_true(float(cam["zoom"]) >= FcCourtProjection.MIN_ZOOM and float(cam["zoom"]) <= FcCourtProjection.MAX_ZOOM)
 		assert_true(FcCourtLayout.inside_court(cam["focus"]))
+
+
+func test_the_centre_circle_is_a_polygon_the_engine_can_fill_even_after_projection() -> void:
+	# Regression: the filled centre circle used an arc whose last point repeated its first, so every frame logged "Invalid polygon data,
+	# triangulation failed" (found by the performance benchmark, which prints engine errors; the live tests do not fail on them).
+	for steps in [3, 12, 40]:
+		var circle := FcCourtView.circle_polygon(Vector2(47, 25), 6.0, steps)
+		assert_eq(circle.size(), steps)
+		for k in circle.size():
+			assert_true(circle[k].distance_to(circle[(k + 1) % circle.size()]) > 0.0001, "no repeated vertex (steps %d, point %d)" % [steps, k])
+		assert_true(not Geometry2D.triangulate_polygon(circle).is_empty(), "the flat polygon triangulates (%d steps)" % steps)
+	var p := FcCourtProjection.new(Vector2(520, 280))
+	for cam in [{}, {"focus": Vector2(20, 10), "zoom": 2.5}, {"focus": Vector2(80, 40), "zoom": 3.0}]:
+		var screen := PackedVector2Array()
+		for pt in FcCourtView.circle_polygon(Vector2(47, 25), 6.0, 40):
+			screen.append(p.project(pt.x, pt.y, 0.0, cam))
+		assert_true(not Geometry2D.triangulate_polygon(screen).is_empty(), "the projected polygon triangulates for camera %s" % str(cam))
