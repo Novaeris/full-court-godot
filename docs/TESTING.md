@@ -6,11 +6,11 @@
 3. **Manual playtesting** by the founder for feel, usability and fun. Claude provides step-by-step instructions with each UI feature.
 
 ## Current totals (the one authoritative place)
-Every other document points here instead of repeating numbers. These come only from fresh runs, never from older documents. The last verified run was on 2026-11-21, on the tree of commit `1e80edf` (end of Phase 1; code unchanged since `5700ac9`), with Godot 4.7.2 headless, one process at a time.
+Every other document points here instead of repeating numbers. These come only from fresh runs, never from older documents. The last verified run was on 2026-11-21, at the end of Phase 2A (play-by-play recording; the exact commit is in `FEATURE_MATRIX.md`), with Godot 4.7.2 headless, one process at a time.
 
 | Kind | What it is | Last result | How to run |
 |---|---|---|---|
-| Unit | `tests/unit/test_*.gd`, headless, fixed seeds | **1,303 passed, 0 failed** | `./tools/run_tests.ps1` |
+| Unit | `tests/unit/test_*.gd`, headless, fixed seeds | **1,314 passed, 0 failed** | `./tools/run_tests.ps1` |
 | Live | `tests/live/test_live_*.gd`, real scene tree, awaits frames | **125 passed, 0 failed** | `./tools/run_live_tests.ps1` |
 | Creator Studio smoke | separate project, `creator_studio/tools/studio_smoke.gd` | **PASS** (13 checks) | `godot_console --headless --path creator_studio --script res://tools/studio_smoke.gd` |
 | Simulation and stress | `simulate_games`, `economy_check`, `owner_stress`, `ui_playthrough`, `career_balance` and similar tools in `tools/` | **Not re-run in Phase 1** (nothing in the simulation changed). Results are in `STABILITY_REPORT.md` and `RELEASE_READINESS.md` as historical records with their own dates. | `tools/*.ps1` |
@@ -247,3 +247,6 @@ Unit suite: 1,113 tests; live UI suite: 68 tests; both exit 0. See docs/RELEASE_
 - `tests/unit/test_ecosystem_integrity.gd` (11 tests): one position list (`FcPosition.PLAYABLE`), one rating calculation for Dynasty-built and Owner-generated players, attribute and badge keys across every data file, the bundled Founding Series validating with every reference resolving, dangling references rejected, and a roster card missing from the release reported and skipped safely. Pure checks, no scene.
 - `tests/live/test_live_mode_transitions.gd` (1 test): the real app through menu, Owner, Career, Dynasty and back, with saves, loading and Continue, all in scratch folders. It is the only test that covers a full cycle between the modes. It was checked by breaking an assertion on purpose and watching it fail.
 - Findings and their status: `docs/INTEGRATION_AUDIT.md`.
+
+## Play-by-play recording (Phase 2A, 2026-11-21)
+- `tests/unit/test_game_events.gd` (11 tests): the recorder never changes a game (identical box score and identical random-generator state with it on or off, 8 seeds); the events alone reproduce the score of every period and every counting stat of every player; injuries match the box; five players on court at all times and starters match the box; the clock never runs backwards inside a period; every event reads as a sentence with no unfilled placeholders and the same text every time; an overtime game is labelled and still adds up; the log survives JSON and ignores damaged rows.

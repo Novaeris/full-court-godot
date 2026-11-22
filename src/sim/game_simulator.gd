@@ -43,6 +43,9 @@ var _game_pace_shift: float = 0.0
 ## Points each side has scored above (+) or below (-) what its shot odds expected so far.
 var _luck: Array[float] = [0.0, 0.0]
 var _injuries: Array = []
+## Optional play-by-play recorder. When set, the game is written down as it is played; it never changes the game
+## (the recorder only reads state and never uses the random generator).
+var recorder: FcGameEventLog = null
 
 
 ## `tuning` overrides the shipped values (used by tests and tools). `era`
@@ -97,6 +100,8 @@ func simulate(home: FcGameTeam, away: FcGameTeam, rng: FcRng) -> FcBoxScore:
 	_team_fouls = [0, 0]
 	_luck = [0.0, 0.0]
 	_injuries = []
+	if recorder != null:
+		recorder.clear()
 	for side in 2:
 		_court[side] = []
 		for p in _teams[side].players:
@@ -116,6 +121,7 @@ func simulate(home: FcGameTeam, away: FcGameTeam, rng: FcRng) -> FcBoxScore:
 		for p in _select_lineup(_teams[side]):
 			_put_on_court(side, p)
 			p.stats.started = true
+			_log(FcGameEventLog.EV_STARTER, side, p.id)
 
 	_game_pace_shift = _rng.gaussian(0.0, float(_t["game_pace_sd"]))
 	var possession_side := _rng.range_int(0, 1)  # who wins the opening tip
@@ -128,15 +134,18 @@ func simulate(home: FcGameTeam, away: FcGameTeam, rng: FcRng) -> FcBoxScore:
 		_period_points[1].append(0)
 		if _period > 1:
 			_recover_between_periods()
+		_log(FcGameEventLog.EV_PERIOD_START, 0, 0, 0, _period)
 		var side := (possession_side + _period - 1) % 2
 		while _clock > 0.0:
 			_play_possession(side)
 			side = 1 - side
 			_substitutions(0)
 			_substitutions(1)
+		_log(FcGameEventLog.EV_PERIOD_END, 0, 0, 0, _period)
 		if _period >= quarters and _score[0] != _score[1]:
 			break
 		_period += 1
+	_log(FcGameEventLog.EV_GAME_END, 0, 0)
 	return _finish()
 
 
@@ -150,7 +159,7 @@ func _play_possession(o: int) -> void:
 		if first and _fouling_to_stop_the_clock(o, d):
 			dur = minf(float(_t["intentional_foul_seconds"]), _clock)
 			_use_time(dur)
-			_commit_foul(d, _pick_fouler(d))
+			_commit_foul(d, _pick_fouler(d), FcGameEventLog.FOUL_INTENTIONAL)
 			var outcome := END
 			if _team_fouls[d] >= int(_t["bonus_fouls"]):
 				outcome = _free_throws(o, d, _pick_scorer(o), 2)
@@ -175,7 +184,7 @@ func _action(o: int, d: int, check_turnover: bool) -> int:
 	var aggression_d: float = _teams[d].tactics["aggression"]
 	var p_foul := float(_t["nonshooting_foul"]) + (aggression_d - 50.0) * float(_t["foul_aggression_slope"])
 	if _rng.chance(p_foul):
-		_commit_foul(d, _pick_fouler(d))
+		_commit_foul(d, _pick_fouler(d), FcGameEventLog.FOUL_PERSONAL)
 		if _team_fouls[d] >= int(_t["bonus_fouls"]):
 			return _free_throws(o, d, _pick_scorer(o), 2)
 		return CONTINUE
@@ -189,9 +198,12 @@ func _action(o: int, d: int, check_turnover: bool) -> int:
 		if _rng.chance(clampf(p_tov, 0.04, 0.3)):
 			var handler := _pick_weighted(_court[o], _weights(o, "ball_security", 2.0, true))
 			handler.stats.tov += 1
+			var thief_id := 0
 			if _rng.chance(float(_t["steal_share"])):
 				var thief := _pick_weighted(_court[d], _weights(d, "steal", 3.0, true))
 				thief.stats.stl += 1
+				thief_id = thief.id
+			_log(FcGameEventLog.EV_TURNOVER, o, handler.id, thief_id)
 			return END
 
 	# 3. shot
@@ -214,6 +226,7 @@ func _action(o: int, d: int, check_turnover: bool) -> int:
 			shooter.stats.fga += 1
 			var blocker := _pick_weighted(_court[d], _weights(d, "block", 3.0, true))
 			blocker.stats.blk += 1
+			_log(FcGameEventLog.EV_SHOT_BLOCKED, o, shooter.id, blocker.id, kind)
 			return _rebound(o, d)
 
 	# 4b. shooting foul
@@ -228,7 +241,7 @@ func _action(o: int, d: int, check_turnover: bool) -> int:
 	var made := _rng.chance(p_make)
 	_luck[o] += (shot_points if made else 0.0) - p_make * shot_points
 	if fouled:
-		_commit_foul(d, _pick_fouler(d))
+		_commit_foul(d, _pick_fouler(d), FcGameEventLog.FOUL_SHOOTING)
 		if made:
 			_record_field_goal(shooter, kind, passer, o)
 			return _free_throws(o, d, shooter, 1)
@@ -241,6 +254,7 @@ func _action(o: int, d: int, check_turnover: bool) -> int:
 	if made:
 		_record_field_goal(shooter, kind, passer, o, false)
 		return END
+	_log(FcGameEventLog.EV_SHOT_MISSED, o, shooter.id, 0, kind)
 	return _rebound(o, d)
 
 
@@ -256,6 +270,7 @@ func _record_field_goal(shooter: FcSimPlayer, kind: int, passer: FcSimPlayer, o:
 	shooter.stats.points += pts
 	if passer != null:
 		passer.stats.ast += 1
+	_log(FcGameEventLog.EV_SHOT_MADE, o, shooter.id, passer.id if passer != null else 0, kind)
 	_add_points(o, pts)
 
 
@@ -267,6 +282,7 @@ func _free_throws(o: int, d: int, shooter: FcSimPlayer, count: int) -> int:
 			+ shooter.form * 0.5 - (1.0 - shooter.freshness()) * 0.03
 		shooter.stats.fta += 1
 		made_last = _rng.chance(clampf(p, 0.3, 0.97))
+		_log(FcGameEventLog.EV_FREE_THROW, o, shooter.id, (i + 1) * 10 + count, 1 if made_last else 0)
 		if made_last:
 			shooter.stats.ftm += 1
 			shooter.stats.points += 1
@@ -278,7 +294,9 @@ func _free_throws(o: int, d: int, shooter: FcSimPlayer, count: int) -> int:
 
 func _rebound(o: int, d: int) -> int:
 	if _rng.chance(float(_t["team_rebound"])):
-		return END if _rng.chance(0.65) else CONTINUE
+		var team_ends := _rng.chance(0.65)
+		_log(FcGameEventLog.EV_REBOUND, d if team_ends else o, 0, 0, 0 if team_ends else 1)
+		return END if team_ends else CONTINUE
 	var off_w := _weights(o, "rebound", float(_t["rebound_exponent"]), true)
 	for i in off_w.size():
 		off_w[i] *= 0.6 + 0.8 * _court[o][i].tend_oreb / 100.0
@@ -291,16 +309,21 @@ func _rebound(o: int, d: int) -> int:
 		def_total += w
 	var p_off := float(_t["offensive_rebound_factor"]) * off_total / (float(_t["offensive_rebound_factor"]) * off_total + def_total)
 	if _rng.chance(p_off):
-		_pick_weighted(_court[o], off_w).stats.oreb += 1
+		var off_rebounder := _pick_weighted(_court[o], off_w)
+		off_rebounder.stats.oreb += 1
+		_log(FcGameEventLog.EV_REBOUND, o, off_rebounder.id, 0, 1)
 		return CONTINUE
-	_pick_weighted(_court[d], def_w).stats.dreb += 1
+	var def_rebounder := _pick_weighted(_court[d], def_w)
+	def_rebounder.stats.dreb += 1
+	_log(FcGameEventLog.EV_REBOUND, d, def_rebounder.id, 0, 0)
 	return END
 
 
-func _commit_foul(side: int, fouler: FcSimPlayer) -> void:
+func _commit_foul(side: int, fouler: FcSimPlayer, kind: int = FcGameEventLog.FOUL_PERSONAL) -> void:
 	fouler.fouls += 1
 	fouler.stats.pf += 1
 	_team_fouls[side] += 1
+	_log(FcGameEventLog.EV_FOUL, side, fouler.id, 0, kind)
 	if fouler.fouls >= int(_t["foul_out"]):
 		_force_substitution(side, fouler)
 
@@ -493,6 +516,7 @@ func _injure(side: int, p: FcSimPlayer) -> void:
 	p.injury_games = severity
 	p.injury_name = _injury_name(severity)
 	_injuries.append([p.id, severity, p.injury_name])
+	_log(FcGameEventLog.EV_INJURY, side, p.id, severity)
 	_force_substitution(side, p)
 
 
@@ -655,6 +679,15 @@ func _best_replacement(side: int, leaving: FcSimPlayer, bench: Array[FcSimPlayer
 func _swap(side: int, leaving: FcSimPlayer, entering: FcSimPlayer) -> void:
 	_take_off_court(side, leaving)
 	_put_on_court(side, entering)
+	_log(FcGameEventLog.EV_SUBSTITUTION, side, entering.id, leaving.id)
+
+
+# --- play-by-play recording -------------------------------------------------------
+
+## Writes one event to the recorder (if there is one). Reads state only: no random numbers, so it cannot change a game.
+func _log(type: int, side: int, a: int = 0, b: int = 0, x: int = 0) -> void:
+	if recorder != null:
+		recorder.add(type, roundi(_clock * 10.0), side, a, b, x)
 
 
 # --- scoring bookkeeping -------------------------------------------------------
