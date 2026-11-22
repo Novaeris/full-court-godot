@@ -296,7 +296,7 @@ func test_the_hub_has_card_develop_and_skills_tabs_that_work() -> void:
 	assert_true(tabs != null)
 	for i in tabs.get_tab_count():
 		names.append(tabs.get_tab_title(i))
-	assert_eq(names, ["Card", "Season", "Develop", "Skills"])
+	assert_eq(names, ["Card", "Season", "Develop", "Skills", "Story"])
 	var xp_before := app.career.profile().xp
 	app.career.train()
 	app.show_career_hub()

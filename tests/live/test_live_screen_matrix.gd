@@ -84,7 +84,7 @@ func _record(kind: String, screen: String, size: Vector2i, text_size: int, touch
 	var key := "%s|%s|%dx%d|%s" % [kind, screen, size.x, size.y, TEXT_NAMES[text_size]]
 	if not problems.is_empty():
 		_found[key] = problems.size()
-		_first_problem[key] = problems[0]
+		_first_problem[key] = " | ".join(PackedStringArray(problems.slice(0, 4).map(func(p): return str(p))))
 
 
 func _is_phone(size: Vector2i) -> bool:

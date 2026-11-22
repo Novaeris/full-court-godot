@@ -240,3 +240,6 @@ See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
 
 ## 2026-11-22 Phase 4B: wider Career life decisions
 - `FcCareerEvents` gained situational conditions (`meets`), new effects (fan favour, media image, hype, coach trust, chemistry) and `validate()`; 12 new events in `data/career/events.json` (18 total). No save change. Verified locally: unit 1,396/0, live 144/0.
+
+## 2026-11-22 Phase 4C: Career legacy and Story tab
+- Added `FcLegacy` (derived, never saved), `FcCareerStory` (public image, timeline, legacy page), the Career hub Story tab and the legacy page on a retired career. Verified locally: unit 1,404/0, live 146/0.

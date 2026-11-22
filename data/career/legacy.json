@@ -1,0 +1,19 @@
+{
+	"schema": 1,
+	"note": "How a finished (or running) Career is judged. Five pillars, each scored 0-100 and weighted. production uses the league's Hall of Fame score (full_at = the score worth 100); honours counts titles and awards; longevity is seasons played; public_image blends fan favour, media image and hype; character counts the tags earned by choices. The total picks a tier. Original names; edit numbers and words here, not code.",
+	"weights": {"production": 0.35, "honours": 0.25, "longevity": 0.15, "public_image": 0.15, "character": 0.10},
+	"production": {"full_at": 120},
+	"honours": {"mvp": 25, "finals_mvp": 15, "title": 12, "all_league_first": 10, "scoring_title": 8, "full_at": 60},
+	"longevity": {"full_at": 18},
+	"public_image": {"fan_weight": 0.45, "media_weight": 0.35, "hype_weight": 0.20},
+	"character": {"per_tag": 25, "good_tags": ["mentor", "community", "humble", "loyal_to_club", "family_first", "foundation", "agent_loyal"], "bad_tags": ["controversial", "agent_flashy"], "bad_cost": 15},
+	"tiers": [[0, "Passing Through"], [20, "Role Player"], [35, "Solid Pro"], [50, "Star"], [65, "Franchise Icon"], [80, "All-Time Great"]],
+	"labels": {"production": "On the court", "honours": "Honours", "longevity": "Longevity", "public_image": "Public image", "character": "Character"},
+	"lines": {
+		"production": ["A quiet statistical career", "A solid producer", "A big-time producer", "One of the great statistical careers"],
+		"honours": ["No major honours", "A few honours", "A decorated career", "A trophy case that fills a wall"],
+		"longevity": ["A short stay in the league", "A decent run", "A long career", "A career that lasted a generation"],
+		"public_image": ["Largely overlooked", "Respected by the crowd", "A fan and media favourite", "Adored everywhere"],
+		"character": ["Kept to themselves", "Left a mark off the court", "Known as a leader", "A role model"]
+	}
+}

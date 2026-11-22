@@ -105,6 +105,14 @@ func is_signed() -> bool:
 	return state.user_team_id > 0 and state.world.team_of_player(profile().player_id) != null
 
 
+## The player's legacy so far (or final, once retired): pillars, tier, key moments, Hall of Fame and retired number (FcLegacy). Never saved.
+func legacy() -> Dictionary:
+	var g := game()
+	if g == null:
+		return {}
+	return FcLegacy.summary(profile(), state.world, g.league_id, state.current_season, is_retired())
+
+
 ## True once the player has retired: the career is over (stage Legacy) and no more games are played.
 func is_retired() -> bool:
 	return player().status == FcPlayer.Status.RETIRED

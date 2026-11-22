@@ -3,7 +3,7 @@ extends SceneTree
 ## NOT headless: run with a window, e.g.
 ##   godot_console --path . --script res://tools/screenshot.gd -- screen=Roster out=C:/temp/roster.png days=20
 ## screen:
-##   menu | menu_saves | credits | settings | new_league | career_menu | career_creator | career_hub
+##   menu | menu_saves | credits | settings | new_league | career_menu | career_creator | career_hub | career_story
 ##   Overview | Standings | Schedule | Roster | Finances | Staff | Market | Trades | History | News | League   (Owner tabs)
 ##   dynasty_entry | dynasty_hub | dynasty_collection | dynasty_lineup | dynasty_packs | dynasty_reveal | dynasty_market | dynasty_play
 ##   gallery  (the development-only Component Gallery)
@@ -113,7 +113,7 @@ func _build_screen() -> void:
 		if _text != 1:
 			gallery.call("set_text_index", _text)
 		return
-	if _screen == "career_creator" or _screen == "career_hub":
+	if _screen == "career_creator" or _screen == "career_hub" or _screen == "career_story":
 		if _screen == "career_creator":
 			_app.show_career_creator()
 		else:
@@ -122,6 +122,14 @@ func _build_screen() -> void:
 			spec["last_name"] = "Okoro"
 			spec["jersey_number"] = 11
 			_app.on_create_career(spec, 4)
+			if _screen == "career_story":   # a signed player with one finished season, on the Story tab
+				_app.career.join_team(_app.career.state.world.teams.ids()[2])
+				var pending := _app.career.pending_event()
+				if not pending.is_empty():
+					_app.career.answer_event(str(pending["choices"][0]["key"]))
+				_app.career.finish_season()
+				_app._last_career_tab = 4
+				_app.show_career_hub()
 		return
 	if _screen.begins_with("dynasty"):
 		_build_dynasty()

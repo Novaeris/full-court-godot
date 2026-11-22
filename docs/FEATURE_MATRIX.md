@@ -64,9 +64,9 @@ This is the one place that says what is built. `ROADMAP.md`, `RELEASE_READINESS.
 | Decisions and events, relationships, rival, role, contracts, sponsorships | Built | `test_career_events`, `test_career_relationships`, `test_career_rival`, `test_career_role`, `test_career_contract`, `test_career_sponsor` |
 | Career hub and Owner-style dossier | Built | `test_ui_career_hub`, `test_player_dossier` |
 | Balance and full-run checks | Partial | `tools/career_balance`, `tools/career_playthrough` *(not re-run)* |
-| Career timeline and public image (`FcCareerTimeline`, `FcCareerMedia`, `data/career/media.json`): moments recorded as they happen, fan favour, media image and hype from big games, seasons, titles and choices, headlines, sponsors pay by image (Career data version 4) | Partial | `test_career_public`. Data and rules only: no screen shows them yet (timeline view and Legacy screen are phase 4C). |
+| Career timeline and public image (`FcCareerTimeline`, `FcCareerMedia`, `data/career/media.json`): moments recorded as they happen, fan favour, media image and hype from big games, seasons, titles and choices, headlines, sponsors pay by image (Career data version 4) | Built | `test_career_public`; shown on the Story tab (see Legacy below). |
 | Wider life decisions: 18 situational events (level, seasons, reputation, tags, fan favour, hype, coach trust, rival conditions; effects on the public image, trust and chemistry) with a data validator | Built | `test_career_events` (conditions, effects, clamping, validator). |
-| Legacy presentation | Planned | Not implemented |
+| Legacy presentation and Story tab (`FcLegacy`, `FcCareerStory`, `data/career/legacy.json`): five pillars, tier, key moments, Hall of Fame and retired number; public-image panel, headlines, timeline; legacy page leads a retired career | Built | `test_legacy`, `live/test_live_career_story`; picture in `docs/validation/ui/career/` |
 | Online team play | Planned | Not planned for Career; see `CAREER_MULTIPLAYER_READINESS.md` |
 
 ## Dynasty Mode (PC and mobile)
@@ -106,6 +106,6 @@ This is the one place that says what is built. `ROADMAP.md`, `RELEASE_READINESS.
 |---|---|---|
 | 2 Game presentation | Play-by-play, visual replay, lineup selection before games, full box scores and game history in all modes | Planned |
 | 3 Franchise immersion | Retired jerseys, historical franchise records, league storylines, rivalry development, richer histories | Built for Owner (and a storylines panel in the Career hub); see the Owner table |
-| 4 Career expansion | Timeline, media and reputation, life decisions, legacy | Planned |
+| 4 Career expansion | Timeline, media and reputation, life decisions, legacy | Built (Career table) |
 | 5 Dynasty expansion | Collections, mastery, seasons, rankings, tournament depth | Planned |
 | 6 Online foundations | Accounts, server-authoritative profiles, persistent collections, matchmaking, security and transactions | Planned |

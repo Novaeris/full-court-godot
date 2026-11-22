@@ -591,8 +591,9 @@ func show_career_hub() -> void:
 	tabs.add_page(_career_season_tab(), "Season")
 	tabs.add_page(_career_develop_tab(card, progress), "Develop")
 	tabs.add_page(_career_skills_tab(progress), "Skills")
+	tabs.add_page(_career_story_tab(), "Story")
 	tabs.custom_minimum_size.y = 380   # the tabs keep a usable height; the whole hub scrolls when the window is short
-	tabs.current_tab = clampi(_last_career_tab, 0, 3)
+	tabs.current_tab = clampi(_last_career_tab, 0, 4)
 	tabs.tab_changed.connect(func(i): _last_career_tab = i)
 	body.add_child(tabs)
 	body.add_child(FcUiTables.label("Career id %s. Saved to slot career_1; load it from the main menu." % card["profile_id"], 14))
@@ -671,6 +672,7 @@ func _career_season_tab() -> Control:
 	var box := VBoxContainer.new()
 	if career.is_retired():
 		box.add_child(FcUiTables.label("Your career is over: you retired after %d seasons. Your legacy is below." % career.profile().history.size(), 18, true))
+		box.add_child(FcCareerStory.legacy_page(career.legacy(), true))
 		box.add_child(_career_history_table())
 		return box
 	if not career.is_signed():
@@ -897,6 +899,19 @@ func _career_role_row() -> Control:
 		_say(r["reason"])
 		show_career_hub()))
 	return row
+
+
+## The story: public image and headlines, the legacy so far, and the career timeline.
+func _career_story_tab() -> Control:
+	var box := VBoxContainer.new()
+	box.name = "CareerStoryTab"
+	box.add_theme_constant_override("separation", FcUiTokens.SPACE_3)
+	box.add_child(FcCareerStory.public_image(career.profile()))
+	var summary := career.legacy()
+	if not summary.is_empty():
+		box.add_child(FcCareerStory.legacy_page(summary, career.is_retired()))
+	box.add_child(FcCareerStory.timeline(career.profile()))
+	return box
 
 
 func _career_card_tab(card: Dictionary) -> Control:
