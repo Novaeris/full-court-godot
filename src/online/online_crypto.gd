@@ -6,9 +6,27 @@ extends RefCounted
 ## nothing was changed on the way; it is not encryption (the transport, TLS, is a later decision: docs/ONLINE_ARCHITECTURE.md).
 
 
-## The canonical text of a value: stable key order, so equal data is equal text.
+## The canonical text of a value: stable key order, so equal data is equal text. Whole numbers are always written as integers: Godot
+## reads every JSON number back as a float, so without this a request signed as {"n": 5} would be seen as {"n": 5.0} after a trip over a
+## real transport and fail its signature check (docs/STABILIZATION_AUDIT.md S1-ONL-1). Fractions keep their decimal form.
 static func canonical(data: Variant) -> String:
-	return JSON.stringify(data, "", true)
+	return JSON.stringify(_normalize(data), "", true)
+
+
+static func _normalize(value: Variant) -> Variant:
+	if value is Dictionary:
+		var out := {}
+		for k in value:
+			out[k] = _normalize(value[k])
+		return out
+	if value is Array:
+		var list: Array = []
+		for item in value:
+			list.append(_normalize(item))
+		return list
+	if value is float and is_finite(value) and value == floorf(value) and absf(value) < 9007199254740992.0:
+		return int(value)
+	return value
 
 
 ## HMAC-SHA256 of `message` with `key`, as lowercase hex.

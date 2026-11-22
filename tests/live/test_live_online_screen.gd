@@ -17,6 +17,9 @@ func before_each() -> void:
 	app.preferences = FcPreferences.new(PREFS)
 	app.preferences.tutorial_done = true
 	app.saves = FcSaveManager.new("user://test_saves_live_online")
+	# Isolate from the developer's real files: FcApp would otherwise read user://online_config.json and user://online_session.json,
+	# so on a machine that is set up for online (or signed in) the "no config" test failed and a test could touch the real session.
+	app.online = FcOnlineController.new(null, SESSION)
 	host.add_child(app)
 	app.setup()
 
@@ -67,8 +70,11 @@ func test_a_configured_screen_shows_the_form_and_an_unreachable_service_gives_a_
 	email.text = "maya@example.com"
 	password.text = "longenough"
 	(_find(app, "SignIn") as Button).pressed.emit()
-	await frames(2)
+	# The busy state is set synchronously when the request starts (online_screen.gd _run) and cleared when the answer arrives. Check it
+	# right away: on a fast machine or CI a refused connection can answer within two frames, so waiting first made this test timing-sensitive
+	# (it failed on GitHub Actions run 45046140970 while passing locally).
 	assert_true((_find(app, "Busy") as Control).visible and (_find(app, "SignIn") as Button).disabled, "a working line and disabled buttons while waiting")
+	await frames(2)
 	for i in 100:   # up to ~5 real seconds for the timeout to come back
 		await seconds(0.05)
 		if "Could not reach" in _all_text(app):

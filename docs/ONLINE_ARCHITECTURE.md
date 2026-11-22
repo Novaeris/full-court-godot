@@ -43,7 +43,7 @@ cheating client cannot pick a lucky one, and any result a client reports can be 
 The play-by-play recorder never touches the random generator (tested), so recording does not change results.
 
 ## Security properties and their limits (honest list)
-- **Proven by tests:** tampered, replayed, stale, mis-signed and unknown-command requests are refused; a failed command changes nothing;
+- **Proven by tests:** tampered, replayed (including after 200+ newer requests, see the stabilization review below), stale, mis-signed and unknown-command requests are refused; a failed command changes nothing;
   receipts cannot be edited; two accounts cannot touch each other's data; the rate limit holds and refills.
 - **Not solved here (needs the real deployment):** transport security (TLS), how the session key reaches the client and is stored, sign-in
   (who a person is), account recovery, abuse reporting, real-money payment verification, server-side secrets storage, DDoS protection,
@@ -79,3 +79,22 @@ Until these are answered, the right next step is only more local hardening, not 
 - **Built next to these:** `FcOnlineConfig` (URL and public key from `user://online_config.json`, never committed; refuses a service-role key), `FcSupabaseAuth` (pure request builders and answer readers), `FcOnlineSession`, `FcOnlineHttp` (the only code that touches the network).
 - **Founder setup needed before sign-in can be tested for real:** create a Supabase project, copy its URL and the public **anon** key (never the service-role key) into `user://online_config.json` as `{"url": "...", "anon_key": "..."}`, and in the Supabase dashboard set Resend as the custom SMTP sender.
 - **Still open:** what the live Owner league lobby looks like (invite code or friend list), cosmetics design, and privacy and age rules.
+
+## Stabilization review (2026-11-22)
+Status words: **implemented** = code exists; **tested** = a named test covers it; **local-only** = runs inside one process with no transport, storage or deployment.
+
+**Implemented and tested (local-only):** HMAC-SHA256 over a canonical text, constant-time compare, OS secure random for keys (`FcOnlineCrypto`); accounts; the loopback server pipeline (signature, clock window, nonce, rate limit, idempotency, whitelist, rollback, signed receipts); matchmaking by rating with server-issued seeds; server-decided matches checked by re-simulation. Tests: `test_online.gd`, `test_online_auth.gd`, `test_online_controller.gd`, `test_live_online_screen.gd`.
+
+**Defects found and fixed in this review** (details and regression tests in `STABILIZATION_AUDIT.md`): S1-ONL-1 signatures did not survive a JSON round trip (Godot reads all JSON numbers as floats; `canonical` now writes whole numbers as integers); S1-ONL-2 a captured request could be replayed after 200 newer requests pushed its nonce out (nonces are now kept until they are too old to pass the clock window, with a hard cap that refuses rather than forgets); S1-ONL-3 a request id reused for a different command returned the first command's answer (now `request_conflict`); S1-ONL-4 no length limit on nonce and request id (64 characters).
+
+**Limits of the security claims:** HMAC proves the sender holds the key; it is not encryption (TLS is a transport decision). An identical envelope re-sent after a lost answer is refused as replayed, so a client must re-sign with a new nonce and the same request id (idempotency then returns the original answer). `register` is unthrottled and unauthenticated; `play_match` has no concurrency control; session keys sit in memory in plaintext (needed for HMAC).
+
+**Matchmaking and competitive integrity (verified by test and by reading):** duplicate queue entries are rejected, leaving works, the window widens with waiting time, pairing is deterministic (rating, join time, account id), a player cannot be paired with themselves, rosters are copied from the server-held profiles when the match is made, the seed comes from the server key, the result is the authoritative simulation, and both sides get equal and opposite rating changes (except where the floor clamps the loser) and a signed receipt. Not verified (no transport): `join` does not check that the account exists, and nothing was tested under concurrent requests.
+
+**What a restart loses today (everything):** accounts, session keys, server profiles, revisions, nonces, saved answers (idempotency), rate-limit buckets, the matchmaker queue and match counter, match records, receipt history, and the server key itself (so previously issued receipts and match seeds become unverifiable).
+
+**Persistence requirements (for a future store; no provider is chosen):** durable account identity separate from the display name; profile ownership and recovery that does not depend on the session key; atomic profile updates (the whole command in one transaction, rolled back on failure) with a revision checked on write; idempotency records stored with the transaction so a retry after a restart returns the same answer; nonce memory that survives a restart for at least twice the clock window; match history and signed receipts per account; encrypted backups and a tested restore; a stable server key (with rotation) so old receipts verify; match ids that never repeat after a restart; account deletion and data-retention rules (a legal review is needed before a commercial release); per-account serialisation of commands and of matches touching the same account.
+
+**Deployment requirements:** TLS; sign-in through Supabase (D-068) bound to the game account; encrypted storage of session keys; rate limits on registration and sign-in; monitoring and alerts; secrets only in the server environment (the game must never ship a service-role key, enforced by the config guard); a server-time endpoint or clock synchronisation for client clocks outside 120 seconds; a client library that signs every request and re-signs retries.
+
+**Still open (not decided here):** hosting and cost beyond D-068's rented server, the persistence provider and schema, the data-retention policy, which online features ship first, and any real-money feature.

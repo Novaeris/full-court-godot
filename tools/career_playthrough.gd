@@ -74,6 +74,14 @@ func _initialize() -> void:
 			if not saved.is_ok() or back == null or back.profile().checksum() != c.profile().checksum():
 				_fail("save and reload changed the career after season %d" % (i + 1))
 	print("Finished %d seasons in %.0f s. Level %d, %d badges, overall %d." % [c.profile().history.size(), (Time.get_ticks_msec() - t0) / 1000.0, c.profile().level, c.profile().badges_owned.size(), c.card()["overall"]])
+	# Stabilization check (S1-CAR-1): does the 300-row timeline cap drop early-career moments in a long career? Report only.
+	var kinds := {}
+	var first_year := 9999
+	for row in c.profile().timeline:
+		kinds[str(row["kind"])] = int(kinds.get(str(row["kind"]), 0)) + 1
+		first_year = mini(first_year, int(row["year"]))
+	var played_from := int((c.profile().history[0] as Dictionary)["year"]) if not c.profile().history.is_empty() else 0
+	print("Timeline: %d rows (cap %d), earliest kept year %d, career began %d, rows by kind %s" % [c.profile().timeline.size(), FcCareerTimeline.LIMIT, first_year, played_from, str(kinds)])
 	var dir := DirAccess.open("user://career_playthrough_%d" % OS.get_process_id())
 	if dir != null:
 		for f in dir.get_files():

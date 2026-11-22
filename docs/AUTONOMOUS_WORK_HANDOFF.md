@@ -1,0 +1,12 @@
+# Autonomous work handoff
+
+Read this first when resuming (new session, or the watchdog fires). Plan: master plan revision 2.4 (kept in the founder's Claude session files; the decisions and finish line are summarized in D-069 in [DECISIONS.md](DECISIONS.md)). History: [AUTONOMOUS_WORK_LOG.md](AUTONOMOUS_WORK_LOG.md).
+
+- **writer:** local session (only one agent pushes at a time; update this line if another agent takes over).
+- **Branch:** `main`. **Last pushed commit and Actions result:** see the latest entry in the work log (updated after each push).
+- **Current stage/milestone:** Stage 1 (stabilization) is finished and committed; next is **Stage 2, the basketball authenticity and data-integrity audit** (read-only: no `src/` or `data/` changes), producing `docs/audits/BASKETBALL_AUTHENTICITY_AUDIT.md`, `docs/audits/BASKETBALL_DATA_INTEGRITY_MATRIX.md` and `docs/plans/BASKETBALL_AUTHENTICITY_IMPLEMENTATION_PLAN.md`.
+- **Then, in order:** B0 reconcile, B2 broadcast timeline, B2b option C, B3 audio and captions, B1 reconstruction spike, B1b 3D performance prototype, B1c player-model prototype, the 3D decision (3D-PASS, 3D-REDUCED or 3D-FAIL with the 2D completion path), J1 jersey numbers (mandatory before B4 if 3D proceeds), B4, B5, B6, B7, B8.
+- **Rules that bind (from the plan):** one Godot process at a time; every milestone is committed, pushed and its GitHub Actions run read; no weakened tests; no save-format change unless the safety conditions are all shown (backup, deterministic migration, golden comparison of retired numbers, careers and records, nothing discarded); never force-push; performance limits are written down (`docs/validation/PERFORMANCE_THRESHOLDS.md`) and committed **before** the first 3D measurement; assets are procedural, nothing purchased or unlicensed.
+- **Watchdog:** a session-only cron job (every 30 minutes) re-enters the program; it ends if Claude Code closes. A new session should recreate it and read this file.
+- **Known facts to reuse:** the event log (`src/sim/game_event_log.gd`) has six integer columns and no positions or pass events; `FcCourtLayout` (feet, 94 by 50) is the shared court convention; league players have no stored jersey number (`FcFranchiseHistory.jersey_for` hashes the id); `world.careers` keeps one team per player-season ("last team"); the Dynasty profile seed is time-based (tests must pass a fixed seed); developer machine files in `user://` (online config and session) must never be used by tests.
+- **Open risks:** none blocking. Backlog items are in the audit (section 4).

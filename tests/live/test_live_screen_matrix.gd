@@ -72,7 +72,11 @@ func _open(size: Vector2i, text_size: int, touch: bool, dynasty: bool) -> void:
 		app.dynasty = FcDynastyController.new(app.content, app._defs, FcDynastyStore.new(DYNASTY))
 		app.dynasty.catalog = FcDynastyFixture.catalog()
 		app.dynasty_ui = FcDynastyUi.new(app, app.dynasty)
-		app.dynasty_ui.on_create("Matrix Kings", "MTX")
+		# A FIXED seed: the default is time-based, so every run played a different first game and some results (an overtime line score) were
+		# wider than a phone, which made this test fail one run in about twenty (S1-UI-2). The overtime case has its own regression test
+		# (test_live_post_game_line_score.gd); this test must be repeatable.
+		app.dynasty.create_profile("Matrix Kings", "MTX", "f58c29", 7)
+		app.dynasty_ui.show_tab("hub")
 		app.dynasty.auto_fill_lineup()
 		app.dynasty.play_quick_game("easy")
 	await frames(2)

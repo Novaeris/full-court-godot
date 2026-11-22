@@ -87,6 +87,64 @@ func test_a_replayed_envelope_is_refused() -> void:
 	assert_eq(server.handle(empty)["code"], "bad_nonce")
 
 
+# --- stabilization regressions (docs/STABILIZATION_AUDIT.md: findings S1-ONL-1 to S1-ONL-4) --------------------------------------
+
+func test_a_signed_request_still_verifies_after_a_json_round_trip() -> void:
+	# A real transport sends JSON, and Godot reads every JSON number back as a float. The signature must not depend on 1 versus 1.0.
+	var env := FcOnlineServer.make_request(session, "get_profile", {"count": 5, "list": [1, 2], "nested": {"n": 7}}, "rt-1", "rt-nonce", now_value)
+	var wire = JSON.parse_string(JSON.stringify(env))
+	assert_true(wire is Dictionary)
+	var r := server.handle(wire)
+	assert_true(r["ok"], "a request that crossed the wire as JSON is accepted (%s)" % str(r.get("code", "")))
+	assert_eq(FcOnlineCrypto.canonical({"a": 1, "b": [2, {"c": 3}]}), FcOnlineCrypto.canonical({"a": 1.0, "b": [2.0, {"c": 3.0}]}), "whole numbers are written the same either way")
+	assert_true(FcOnlineCrypto.canonical({"a": 0.5}) != FcOnlineCrypto.canonical({"a": 1}), "real fractions are still different from whole numbers")
+
+
+func test_an_old_nonce_is_remembered_for_as_long_as_its_request_could_still_pass_the_clock_check() -> void:
+	# A count-based memory forgot an old nonce after 200 newer ones, so a request captured earlier could be replayed (and run twice)
+	# while its issued_at was still inside the 120-second window.
+	var first := FcOnlineServer.make_request(session, "get_profile", {}, "", "captured-nonce", now_value)
+	assert_true(server.handle(first)["ok"])
+	for i in 205:
+		if i % 2 == 0:
+			now_value += 1   # about 2 requests a second: inside the rate limit, 103 seconds in all (inside the 120-second window)
+		assert_true(_ask("get_profile")["ok"], "request %d" % i)
+	assert_eq(server.handle(first)["code"], "replayed", "the captured request is still refused")
+
+
+func test_nonce_memory_is_released_once_a_request_is_too_old_to_be_replayed() -> void:
+	assert_true(server.handle(FcOnlineServer.make_request(session, "get_profile", {}, "", "short-lived", now_value))["ok"])
+	now_value += FcOnlineServer.MAX_SKEW + 5
+	assert_eq(server.nonce_count_of(session["account_id"]), 1, "still held until the next request prunes it")
+	assert_true(_ask("get_profile")["ok"])
+	assert_eq(server.nonce_count_of(session["account_id"]), 1, "the expired nonce is gone, only the new one is held")
+
+
+func test_a_request_id_cannot_be_reused_for_a_different_command() -> void:
+	assert_true(_ask("get_profile", {}, "shared-id")["ok"])
+	var other := _ask("claim_goal", {"goal_id": "mastery_ten"}, "shared-id")
+	assert_eq(other["code"], "request_conflict", "the cached answer of another command is never returned for it")
+	assert_true(_ask("get_profile", {}, "shared-id").get("repeated", false), "the true retry still gets the cached answer")
+
+
+func test_oversized_nonces_and_request_ids_are_refused() -> void:
+	var long_text := "x".repeat(FcOnlineServer.ID_MAX_LENGTH + 1)
+	assert_eq(server.handle(FcOnlineServer.make_request(session, "get_profile", {}, "", long_text, now_value))["code"], "bad_request")
+	assert_eq(server.handle(FcOnlineServer.make_request(session, "get_profile", {}, long_text, "ok-nonce", now_value))["code"], "bad_request")
+	assert_true(server.handle(FcOnlineServer.make_request(session, "get_profile", {}, "y".repeat(FcOnlineServer.ID_MAX_LENGTH), "ok-nonce-2", now_value))["ok"], "the limit itself is allowed")
+
+
+func test_a_flood_of_distinct_nonces_is_refused_instead_of_forgetting_old_ones() -> void:
+	var held := {}
+	for i in FcOnlineServer.NONCE_CAP:
+		held["f%d" % i] = now_value
+	server._nonces[session["account_id"]] = held   # as if that many distinct requests had just been received
+	var r := _ask("get_profile")
+	assert_eq(r["code"], "rate_limited", "beyond the cap, new requests wait rather than old nonces being dropped")
+	now_value += FcOnlineServer.MAX_SKEW + 1
+	assert_true(_ask("get_profile")["ok"], "after the window the memory is released and requests work again")
+
+
 func test_only_whitelisted_commands_run() -> void:
 	assert_eq(_ask("delete_everything")["code"], "unknown_command")
 	assert_eq(_ask("set_balance", {"credits": 999999})["code"], "unknown_command", "a client cannot state its own balance")

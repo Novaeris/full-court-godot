@@ -259,3 +259,6 @@ See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
 
 ## 2026-11-22 Phase 6: online foundations (local)
 - Added `src/online/` (`FcOnlineCrypto`, `FcOnlineAccount`, `FcOnlineServer` loopback, `FcOnlineMatchmaker`, `FcOnlineMatch`) and `docs/ONLINE_ARCHITECTURE.md` (D-065). No network code. Note: a static function named `sign` clashes with GDScript's built-in `sign()`; named `sign_dict`.
+
+## 2026-11-22 Stabilization (Stage 1 of the master plan; D-069)
+- CI on `main` was red (a timing-sensitive online screen test); fixed. Found and fixed: a Dynasty post-game line score wider than a phone when a game goes to overtime, four online-server defects (JSON signature round trip, nonce replay after eviction, request id reuse, unbounded ids), and two tests that depended on the developer's real files or on the clock. Details, backlog and evidence: `STABILIZATION_AUDIT.md`. No save format changed. Totals: `TESTING.md`.

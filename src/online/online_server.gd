@@ -6,15 +6,21 @@ extends RefCounted
 ## What it enforces, in this order, for every request envelope {account_id, command, params, request_id, nonce, issued_at, sig}:
 ##   1. the account exists and the signature matches the account's session key (nothing else about the request is trusted before this);
 ##   2. issued_at is within `max_skew` seconds of the server clock (an old captured request is refused);
-##   3. the nonce was not seen before for this account (a replayed request is refused);
+##   3. the nonce was not seen before for this account, and is remembered until its issued_at is too old to pass check 2 (a replayed
+##      request is refused; a retry must be re-signed with a NEW nonce and the SAME request_id);
 ##   4. the account has rate-limit tokens left;
 ##   5. an already answered request_id returns the SAME answer without doing anything again (idempotency: a retry never double-spends);
+##      the same request_id with a different command or params is refused (request_conflict);
 ##   6. only a whitelisted command runs, against the server-held profile, inside a transaction that is rolled back on failure.
 ## The profile lives on the server (authoritative): a client can ask for changes but never states a balance, a card or a result. Every
 ## answer carries a receipt signed with the server key. The clock is injectable (`now` Callable) so tests control time.
 
 const MAX_SKEW := 120
-const NONCE_MEMORY := 200
+## A nonce is remembered until a request carrying it could no longer pass the clock check (issued_at older than MAX_SKEW), never by
+## count: a count-based memory let a captured request be replayed after enough newer ones pushed its nonce out (S1-ONL-2). The cap only
+## stops a flood of distinct nonces from growing memory without limit; at the cap new requests wait, old nonces are never dropped.
+const NONCE_CAP := 2000
+const ID_MAX_LENGTH := 64
 const ANSWER_MEMORY := 200
 const RATE_CAPACITY := 20.0
 const RATE_REFILL_PER_SECOND := 2.0
@@ -31,8 +37,8 @@ var now: Callable = func() -> int: return int(Time.get_unix_time_from_system())
 var _accounts: Dictionary = {}   # account_id -> FcOnlineAccount
 var _profiles: Dictionary = {}   # account_id -> FcDynastyProfile (the authoritative copy)
 var _revisions: Dictionary = {}  # account_id -> int (counts every accepted change)
-var _nonces: Dictionary = {}     # account_id -> Array of nonces seen (newest last)
-var _answers: Dictionary = {}    # account_id -> {request_id: response}
+var _nonces: Dictionary = {}     # account_id -> {nonce: issued_at} for every nonce that could still be replayed
+var _answers: Dictionary = {}    # account_id -> {request_id: {"fp": fingerprint of command and params, "response": answer}}
 var _answer_order: Dictionary = {}   # account_id -> Array of request ids (oldest first)
 var _buckets: Dictionary = {}    # account_id -> {tokens: float, at: int}
 
@@ -68,6 +74,11 @@ func profile_of(account_id: String) -> FcDynastyProfile:
 	return _profiles.get(account_id)
 
 
+## How many nonces are held for the account (for tests and monitoring).
+func nonce_count_of(account_id: String) -> int:
+	return (_nonces.get(account_id, {}) as Dictionary).size()
+
+
 func revision_of(account_id: String) -> int:
 	return int(_revisions.get(account_id, 0))
 
@@ -93,27 +104,39 @@ func handle(env: Dictionary) -> Dictionary:
 	var nonce := str(env.get("nonce", ""))
 	if nonce == "":
 		return _refuse("bad_nonce", "A nonce is required.")
-	var seen: Array = _nonces.get(account_id, [])
-	if seen.has(nonce):
-		return _refuse("replayed", "That request was already received.")
-	seen.append(nonce)
-	while seen.size() > NONCE_MEMORY:
-		seen.pop_front()
-	_nonces[account_id] = seen
 	var request_id := str(env.get("request_id", ""))
+	if nonce.length() > ID_MAX_LENGTH or request_id.length() > ID_MAX_LENGTH:
+		return _refuse("bad_request", "The nonce or request id is too long.")
+	var seen: Dictionary = _nonces.get(account_id, {})
+	for old in seen.keys():
+		if int(seen[old]) + MAX_SKEW < t:
+			seen.erase(old)   # too old to pass the clock check any more, so it can no longer be replayed
+	if seen.has(nonce):
+		_nonces[account_id] = seen
+		return _refuse("replayed", "That request was already received.")
+	if seen.size() >= NONCE_CAP:
+		_nonces[account_id] = seen
+		return _refuse("rate_limited", "Too many requests: wait a moment.")
+	seen[nonce] = int(env.get("issued_at", 0))
+	_nonces[account_id] = seen
+	var command := str(env.get("command", ""))
+	var params: Dictionary = env.get("params", {}) if env.get("params") is Dictionary else {}
+	var fingerprint := FcOnlineCrypto.sha256_hex(FcOnlineCrypto.canonical({"command": command, "params": params}))
 	var kept: Dictionary = _answers.get(account_id, {})
 	if request_id != "" and kept.has(request_id):
-		var again: Dictionary = (kept[request_id] as Dictionary).duplicate(true)
+		var prior: Dictionary = kept[request_id]
+		if str(prior["fp"]) != fingerprint:
+			return _refuse("request_conflict", "That request id was already used for a different request.")   # S1-ONL-3
+		var again: Dictionary = (prior["response"] as Dictionary).duplicate(true)
 		again["repeated"] = true
 		return again
 	if not _take_token(account_id, t):
 		return _refuse("rate_limited", "Too many requests: wait a moment.")
-	var command := str(env.get("command", ""))
 	if not COMMANDS.has(command):
 		return _refuse("unknown_command", "That command is not allowed.")
 	var profile: FcDynastyProfile = _profiles[account_id]
 	var before := profile.to_dict()
-	var result: FcDynastyResult = call(COMMANDS[command], profile, env.get("params", {}) if env.get("params") is Dictionary else {}, request_id)
+	var result: FcDynastyResult = call(COMMANDS[command], profile, params, request_id)
 	if result == null or not result.ok:
 		_profiles[account_id] = FcDynastyProfile.from_dict(before)   # roll back: a failed command changes nothing
 		return _refuse(result.code if result != null else "internal", result.message if result != null else "The command failed.")
@@ -122,7 +145,7 @@ func handle(env: Dictionary) -> Dictionary:
 	var response := {"ok": true, "code": "", "message": "", "data": result.data, "revision": revision_of(account_id)}
 	response["receipt"] = _receipt(account_id, request_id, command, response)
 	if request_id != "":
-		kept[request_id] = response.duplicate(true)
+		kept[request_id] = {"fp": fingerprint, "response": response.duplicate(true)}
 		_answers[account_id] = kept
 		var order: Array = _answer_order.get(account_id, [])
 		order.append(request_id)

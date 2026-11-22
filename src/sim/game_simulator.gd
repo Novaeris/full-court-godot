@@ -20,8 +20,8 @@ extends RefCounted
 ##
 ## EVERY balance number is in data/simulation/tuning.json; player composite
 ## ratings are in data/simulation/ratings.json.
-## NOT included yet: injuries, intentional fouling, timeouts, technical fouls,
-## shot clock violations, individual matchups (defense uses lineup averages).
+## NOT included: timeouts, technical fouls, the shot clock (no violations), jump balls and individual matchups (defense uses lineup
+## averages). Injuries and intentional fouling ARE simulated (EV_INJURY, FOUL_INTENTIONAL in game_event_log.gd).
 
 const END := 0
 const CONTINUE := 1

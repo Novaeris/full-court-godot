@@ -351,6 +351,7 @@ Full write-up, measurements, pictures and recordings: `docs/PLAYER_VISUAL_PROPOS
 - **Backend (founder's choice of services):** Supabase (accounts, storage, realtime) and Resend (e-mail), plus a small Godot headless server for live matches (recommended, not yet approved). Transport WebSocket with TLS. No trading and no real-money purchases yet.
 - **Build order:** accounts, then Owner multiplayer, then Career team play.
 - **Nothing is built yet** beyond D-065; no network code until the accounts milestone starts.
+- **Status note (2026-11-22, stabilization; append-only):** lines 351 and 353 were refined the same day by D-068: the Godot headless server is accepted for now, and the sign-in client and sign-in screen are built (unverified against a real Supabase project). Current wording: Supabase for accounts and storage; a Godot headless server authoritative for live matches; nothing provisioned, nothing deployed.
 
 ## D-067 Published sets and Studio tournaments (founder, 2026-11-22)
 - **Sets:** a set is a named group of cards with its own packs. The Founding Series is the permanent base set. A set is permanent or timed (start and end). When a timed set ends its packs leave the store, cards already owned stay forever, and the founder may re-release it. A card belongs to exactly one set (a variation is a new card in a new set). Offline timing uses the device clock; online uses the server clock. Goals for an ended set keep what was earned but gain no new progress.
@@ -362,3 +363,12 @@ Full write-up, measurements, pictures and recordings: `docs/PLAYER_VISUAL_PROPOS
 - **Career online:** the person chooses 5v5 or 3v3 when they queue. Gameplay stays the text and box-score simulation with almost no extra control. Cosmetics (for example arm sleeves) are the planned extra; they change looks only and never ratings.
 - **Owner leagues:** hosted live (the host's game is the league and simulates it; guests join as owners). Not an upload of a save.
 - **Built:** the sign-in client (config, Supabase Auth request builders, sessions, HTTP executor). The service-role key is refused by the config guard because it must never ship in the game. No live server, lobby or sign-in screen yet.
+
+## D-060 to D-062 (pointer, added 2026-11-22)
+These were recorded in `PROGRESS_LOG.md` (2026-11-21) and are not repeated here: D-060 play-by-play and replay across all modes (events are compact integer rows written by an optional recorder that never touches the random generator; the simulation has no spatial model, so the court picture is illustrative; `DATA_VERSION` 2 to 3), D-061 Dynasty keeps its last 5 replays (`DYNASTY_DATA_VERSION` 1 to 2), D-062 see the log.
+
+## D-069 Autonomous execution of the stabilization, authenticity and broadcast program (founder, 2026-11-22)
+- **Decision:** the founder authorized independent execution of the master plan (revision 2.4): Stage 1 stabilization, Stage 2 authenticity audit, then the broadcast presentation milestones, each committed, pushed and checked on GitHub Actions. Routine decisions are made and recorded here instead of asked. Pushing to `main` is authorized for this program only (a standing rule remains: never force-push, never change remotes or visibility).
+- **Product direction recorded:** a full 3D basketball broadcast with automatic, manual and hybrid cameras is the aim, **conditional on three feasibility prototypes** (reconstruction, a 3D performance prototype, a player-model prototype) passing pre-registered limits; D-059's concerns (cost, mobile risk) are answered by measurement. A permanent 2D fallback and a 2D completion path exist if 3D fails. Mobile stays 2D only (D-030).
+- **Assets:** procedurally built, no purchases, no unlicensed assets. Save changes only under the safety conditions of the plan (backup, deterministic migration, golden comparison, no data loss).
+- **Detail:** `docs/AUTONOMOUS_WORK_LOG.md` (the full plan is kept with the founder's session files).

@@ -76,8 +76,19 @@ func _line_score() -> Control:
 	for row in line["rows"]:
 		for i in (row as Array).size():
 			grid.add_child(_cell(str(row[i]), false, i == 0 or i == (row as Array).size() - 1))
+	# Fixed-width cells: regulation (6 columns) fits a 360 px phone but each overtime adds a column, so seven or more can be wider than the
+	# window (docs/STABILIZATION_AUDIT.md S1-UI-2). The grid sits in a centred, sideways-scrolling holder so it never widens the screen.
+	var holder := HBoxContainer.new()
+	holder.alignment = BoxContainer.ALIGNMENT_CENTER
+	holder.add_child(grid)
+	var scroll := ScrollContainer.new()
+	scroll.name = "LineScoreScroll"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(holder)
 	var panel := FcPanel.new("Line score", FcPanel.Variant.FLAT)
-	panel.body.add_child(grid)
+	panel.body.add_child(scroll)
 	return panel
 
 
