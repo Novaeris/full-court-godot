@@ -245,3 +245,35 @@ func test_the_team_comparison_card_matches_the_box_score_at_the_end_and_counts_u
 			assert_true(fga >= last_fga, "attempts never go down during the game")
 			last_fga = fga
 	assert_eq(FcBroadcastGraphics.team_card_at(null, 0), {})
+
+
+func test_the_starting_lineup_card_shows_the_five_starters_of_each_team_with_unique_numbers() -> void:
+	for s in SEEDS:
+		var t := _timeline(s)
+		var box := t.model.box
+		var card := FcBroadcastGraphics.lineup_card(t)
+		assert_eq((card["sides"] as Array).size(), 2, "two sides (seed %d)" % s)
+		for side in 2:
+			var entry: Dictionary = card["sides"][side]
+			assert_eq(entry["abbreviation"], box.abbreviations[side])
+			var rows: Array = entry["rows"]
+			assert_eq(rows.size(), 5, "five starters for side %d (seed %d)" % [side, s])
+			var started: Array = t.model.state_at(t.model.start_index())["on_court"][side]
+			var names := []
+			for id in started:
+				for p in box.players:
+					if p.player_id == id:
+						names.append(FcPlayByPlay.short_name(p.name))
+			var shown := {}
+			var order := []
+			for r in rows:
+				assert_true(names.has(r[1]), "%s is a recorded starter" % r[1])
+				if r[0] != "":
+					assert_true(not shown.has(r[0]), "number %s is not shared" % r[0])
+					shown[r[0]] = true
+				order.append(r[2])
+			assert_eq(order.size(), 5)
+
+
+func test_the_lineup_card_of_an_empty_timeline_is_empty() -> void:
+	assert_true(FcBroadcastGraphics.lineup_card(null).is_empty())

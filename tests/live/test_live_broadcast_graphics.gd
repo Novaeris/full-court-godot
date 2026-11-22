@@ -144,3 +144,16 @@ func test_the_team_comparison_card_shows_the_box_score_at_the_end_and_grows_with
 	var early: Array = screen.team_card.get_children().map(func(c: Node) -> String: return (c as Label).text)
 	assert_eq(early[3 + 1], "0-0", "no shots at the tip-off")
 	assert_eq(early.size(), 3 * 9)
+
+
+func test_the_starting_lineups_card_is_in_the_screen_and_matches_the_starters() -> void:
+	var screen := await _screen()
+	await frames(2)
+	assert_true(screen.lineup_card != null, "the card exists")
+	assert_eq(screen.lineup_card.get_child_count(), 6 + 5 * 6, "a header row and five starters per side")
+	var texts: Array = screen.lineup_card.get_children().map(func(c: Node) -> String: return (c as Label).text)
+	var card := FcBroadcastGraphics.lineup_card(screen.timeline)
+	for side in 2:
+		for row in card["sides"][side]["rows"]:
+			assert_true(texts.has(str(row[1])), "%s is shown" % row[1])
+	assert_true(texts.has(str(screen.model.box.abbreviations[0])) and texts.has(str(screen.model.box.abbreviations[1])), "both team abbreviations")

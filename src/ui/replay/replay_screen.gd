@@ -27,6 +27,7 @@ var compact: bool = false
 
 var bug: FcScoreBug
 var overlay: FcBroadcastOverlay
+var lineup_card: GridContainer   # the starting lineups (FcBroadcastGraphics.lineup_card): number, name, position for each side
 var team_card: GridContainer   # the team comparison card: label, home, away (FcBroadcastGraphics.team_card_at)
 var court: FcCourtView
 var court3d: FcBroadcast3DView   # null when the 3D view could not be built: the 2D court is then the only picture
@@ -144,6 +145,7 @@ func _build() -> void:
 	sound_caption.name = "SoundCaption"
 	left.add_child(sound_caption)
 	left.add_child(_roster_strip())
+	left.add_child(_lineup_panel())
 	left.add_child(_team_card())
 	body.add_child(left)
 	var right := VBoxContainer.new()
@@ -273,6 +275,34 @@ func reset_camera() -> void:
 	for b in camera_buttons:
 		b.disabled = false
 	court.rig.request(FcCameraDirector.shot_for(timeline, _index))
+
+
+func _lineup_panel() -> Control:
+	var panel := FcPanel.new("Starting lineups", FcPanel.Variant.FLAT)
+	lineup_card = GridContainer.new()
+	lineup_card.name = "LineupCard"
+	lineup_card.columns = 6
+	lineup_card.add_theme_constant_override("h_separation", FcUiTokens.SPACE_3)
+	lineup_card.add_theme_constant_override("v_separation", FcUiTokens.SPACE_1)
+	lineup_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.body.add_child(lineup_card)
+	var card := FcBroadcastGraphics.lineup_card(timeline)
+	if not card.is_empty():
+		var sides: Array = card["sides"]
+		var head: Array = [str(sides[0]["abbreviation"]), "", "", str(sides[1]["abbreviation"]), "", ""]
+		for text in head:
+			var h := FcUiTables.label(text, FcUiTokens.TYPE_SMALL, true)
+			lineup_card.add_child(h)
+		for r in 5:
+			for s in 2:
+				var rows: Array = sides[s]["rows"]
+				var row: Array = rows[r] if r < rows.size() else ["", "", ""]
+				for col in 3:
+					var l := FcUiTables.label(str(row[col]), FcUiTokens.TYPE_SMALL)
+					l.theme_type_variation = "NumericLabel" if col == 0 else "CaptionLabel"
+					l.size_flags_horizontal = Control.SIZE_EXPAND_FILL if col == 1 else Control.SIZE_SHRINK_BEGIN
+					lineup_card.add_child(l)
+	return panel
 
 
 func _team_card() -> Control:

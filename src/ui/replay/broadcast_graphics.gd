@@ -125,6 +125,36 @@ static func team_card_at(timeline: FcBroadcastTimeline, index: int) -> Dictionar
 	return {"title": "Team comparison", "abbreviations": [abbr[0], abbr[1]], "rows": rows, "home": h, "away": a}
 
 
+## The starting-lineups card (pregame): per side the five starters, in position order, as rows [display number, short name, position]. Numbers are
+## the per-game DISPLAY numbers of FcJerseyNumbers (nothing stored; D-070); a player with no number (0) shows "". The starters are the five on court at
+## the tip-off, from the recorded starter events, never guessed.
+static func lineup_card(timeline: FcBroadcastTimeline) -> Dictionary:
+	if timeline == null or timeline.is_empty():
+		return {}
+	var model := timeline.model
+	var on_court: Array = model.state_at(model.start_index())["on_court"]
+	var numbers := FcJerseyNumbers.for_box(model.box)
+	var by_id := {}
+	for p in model.box.players:
+		by_id[p.player_id] = p
+	var sides: Array = []
+	for side in 2:
+		var rows: Array = []
+		var ids: Array = (on_court[side] as Array).duplicate()
+		ids.sort_custom(func(a: int, b: int) -> bool:
+			var pa: int = by_id[a].position if by_id.has(a) else 9
+			var pb: int = by_id[b].position if by_id.has(b) else 9
+			return pa < pb if pa != pb else a < b)
+		for id in ids:
+			if not by_id.has(id):
+				continue
+			var p = by_id[id]
+			var n := int(numbers.get(id, 0))
+			rows.append([str(n) if n > 0 else "", FcPlayByPlay.short_name(p.name), FcPosition.abbreviation(p.position)])
+		sides.append({"abbreviation": str(model.box.abbreviations[side]), "team": str(model.box.team_names[side]), "rows": rows})
+	return {"title": "Starting lineups", "sides": sides}
+
+
 ## The one graphic to show at event `i` ({} when there is none).
 static func top_item_at(timeline: FcBroadcastTimeline, index: int) -> Dictionary:
 	var items := items_at(timeline, index)

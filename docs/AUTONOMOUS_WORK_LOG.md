@@ -99,3 +99,8 @@ Failures along the way (all explained in the audit): the baseline live run faile
 **Local results (base `becabb4` plus these changes):** import exit 0; unit full run 1,542 passed and 1 failed (style ratchet), then fixed and that test re-run: 3 passed, so **1,543 passed** (the whole suite was not re-run after the one-line baseline change; CI does); live **184 passed**, 0 failed. Studio smoke not re-run (no Studio files changed).
 **Not done:** 600 s soak (300 s run), lower-end hardware, 3D close-ups, mobile 3D.
 **Remaining:** B5, B6, B7, B8 decision, final report.
+
+## B5 (first part): starting lineups
+**Delivered:** `FcBroadcastGraphics.lineup_card`, a Starting lineups panel in the replay screen (numbers from `FcJerseyNumbers`, nothing stored), 2 unit and 1 live test. Halftime/final panels and the game-day preview already existed from B2b and earlier.
+**Local results:** unit **1,545 passed**, live **185 passed**, 0 failed.
+**Not done:** pregame storylines package, introduction sequence (judged low value without a concrete scope).
