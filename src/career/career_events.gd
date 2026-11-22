@@ -25,21 +25,75 @@ static func get_event(key: String) -> Dictionary:
 	return {}
 
 
-## Events the profile can be offered now: its level is high enough and it has not answered this event in the last
-## `repeat_after_seasons` years (decisions are not repeated every season).
+const EFFECT_KEYS := ["xp", "development_points", "skill_points", "reputation", "currency", "fan_favor", "media_image", "hype", "coach_trust", "chemistry"]
+const WHEN_KEYS := ["min_level", "max_level", "min_seasons", "min_reputation", "requires_tags", "excludes_tags", "min_fan_favor", "max_fan_favor",
+	"min_media_image", "max_media_image", "min_hype", "max_hype", "min_coach_trust", "max_coach_trust", "has_rival", "repeat_after"]
+
+
+## Whether the profile's situation fits an event's `when` block (all the conditions in it must hold). Every key is optional.
+static func meets(profile: FcCareerProfile, when: Dictionary) -> bool:
+	if profile.level < int(when.get("min_level", 1)) or profile.level > int(when.get("max_level", 999)):
+		return false
+	if profile.history.size() < int(when.get("min_seasons", 0)) or profile.reputation < int(when.get("min_reputation", 0)):
+		return false
+	for tag in when.get("requires_tags", []):
+		if not profile.tags.has(str(tag)):
+			return false
+	for tag in when.get("excludes_tags", []):
+		if profile.tags.has(str(tag)):
+			return false
+	for pair in [["fan_favor", profile.fan_favor], ["media_image", profile.media_image], ["hype", profile.hype], ["coach_trust", profile.coach_trust]]:
+		if int(pair[1]) < int(when.get("min_" + str(pair[0]), 0)) or int(pair[1]) > int(when.get("max_" + str(pair[0]), 100)):
+			return false
+	if when.has("has_rival") and (profile.rival_player_id > 0) != bool(when["has_rival"]):
+		return false
+	return true
+
+
+## Events the profile can be offered now: its situation fits the event's `when` block and it has not answered this event in the last
+## `repeat_after` years (default 4; decisions are not repeated every season).
 static func eligible(profile: FcCareerProfile, year: int) -> Array:
 	var out: Array = []
 	for e in all():
-		if profile.level < int(e["when"].get("min_level", 1)):
+		if not meets(profile, e["when"]):
 			continue
 		var last := 0
 		for d in profile.decisions:
 			if d["key"] == e["key"]:
 				last = maxi(last, int(d["year"]))
-		if last > 0 and year - last < 4:
+		if last > 0 and year - last < int(e["when"].get("repeat_after", 4)):
 			continue
 		out.append(e)
 	return out
+
+
+## Problems in the event data (empty when it is sound): unique keys, 2+ choices each, only known effect and condition keys, and no choice that
+## changes nothing unless it says so in its note.
+static func validate() -> Array:
+	var problems: Array = []
+	var keys := {}
+	for e in all():
+		var k := str(e.get("key", ""))
+		if k == "" or keys.has(k):
+			problems.append("event key %s is missing or repeated" % k)
+		keys[k] = true
+		for w in e.get("when", {}):
+			if not WHEN_KEYS.has(w):
+				problems.append("%s: unknown condition %s" % [k, w])
+		var choices: Array = e.get("choices", [])
+		if choices.size() < 2:
+			problems.append("%s offers no real choice" % k)
+		var seen := {}
+		for c in choices:
+			if seen.has(c.get("key", "")):
+				problems.append("%s: repeated choice key" % k)
+			seen[c.get("key", "")] = true
+			for f in c.get("effects", {}):
+				if not EFFECT_KEYS.has(f):
+					problems.append("%s: unknown effect %s" % [k, f])
+			if (c.get("effects", {}) as Dictionary).is_empty() and str(c.get("note", "")) == "":
+				problems.append("%s/%s changes nothing and does not say so" % [k, c.get("key", "")])
+	return problems
 
 
 ## Chooses one eligible event for `year` with a seeded draw (the same profile and year always get the same event), or "" if none.
@@ -71,6 +125,9 @@ static func apply_choice(profile: FcCareerProfile, event_key: String, choice_key
 	profile.skill_points += int(effects.get("skill_points", 0))
 	profile.reputation = maxi(0, profile.reputation + int(effects.get("reputation", 0)))
 	profile.currency = maxi(0, profile.currency + int(effects.get("currency", 0)))
+	FcCareerMedia.apply(profile, effects)
+	profile.coach_trust = clampi(profile.coach_trust + int(effects.get("coach_trust", 0)), 0, 100)
+	profile.chemistry = clampi(profile.chemistry + int(effects.get("chemistry", 0)), 0, 100)
 	var tag := str(choice.get("tag", ""))
 	if tag != "" and not profile.tags.has(tag):
 		profile.tags.append(tag)

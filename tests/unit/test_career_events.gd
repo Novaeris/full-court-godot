@@ -26,7 +26,7 @@ func _career(seed_value: int = 61) -> FcCareerController:
 
 
 func test_the_event_data_is_well_formed_and_every_choice_changes_something_or_says_so() -> void:
-	assert_true(FcCareerEvents.all().size() >= 6)
+	assert_true(FcCareerEvents.all().size() >= 18)
 	var keys := {}
 	for e in FcCareerEvents.all():
 		assert_true(not keys.has(e["key"]), "unique key %s" % e["key"])
@@ -37,7 +37,7 @@ func test_the_event_data_is_well_formed_and_every_choice_changes_something_or_sa
 			assert_true(not choice_keys.has(c["key"]))
 			choice_keys[c["key"]] = true
 			for field in c["effects"]:
-				assert_true(field in ["xp", "development_points", "skill_points", "reputation", "currency"], "%s uses a known effect (%s)" % [e["key"], field])
+				assert_true(field in FcCareerEvents.EFFECT_KEYS, "%s uses a known effect (%s)" % [e["key"], field])
 			assert_true(str(c.get("note", "")) != "", "%s/%s explains itself" % [e["key"], c["key"]])
 
 
@@ -45,7 +45,7 @@ func test_eligibility_follows_the_level_and_decisions_are_not_repeated_at_once()
 	var p := _profile(1)
 	assert_eq(FcCareerEvents.eligible(p, 2026).map(func(e): return e["key"]), ["agent_pitch"])
 	p.level = 10
-	assert_eq(FcCareerEvents.eligible(p, 2026).size(), FcCareerEvents.all().size())
+	assert_true(FcCareerEvents.eligible(p, 2026).size() > 1 and FcCareerEvents.eligible(p, 2026).size() < FcCareerEvents.all().size(), "a level-10 rookie meets some situational conditions, not all")
 	p.decisions.append({"year": 2026, "key": "agent_pitch", "choice": "loyal"})
 	assert_true(not FcCareerEvents.eligible(p, 2027).any(func(e): return e["key"] == "agent_pitch"), "not asked again for 4 seasons")
 	assert_true(FcCareerEvents.eligible(p, 2030).any(func(e): return e["key"] == "agent_pitch"), "asked again later")
@@ -145,3 +145,63 @@ func test_the_same_career_gets_the_same_decisions() -> void:
 		a.finish_season()
 		b.finish_season()
 	assert_eq(a.profile().checksum(), b.profile().checksum(), "deterministic")
+
+
+# --- phase 4B: situational decisions ----------------------------------------------------------------------------
+
+func test_the_event_data_passes_its_own_validator() -> void:
+	assert_eq(FcCareerEvents.validate(), [])
+
+
+func test_conditions_gate_events_by_level_tags_image_trust_and_rival() -> void:
+	var p := _profile(1)
+	assert_true(FcCareerEvents.meets(p, {}))
+	assert_true(not FcCareerEvents.meets(p, {"min_level": 2}))
+	p.level = 10
+	assert_true(not FcCareerEvents.meets(p, {"max_level": 9}))
+	assert_true(not FcCareerEvents.meets(p, {"min_seasons": 1}), "no seasons played yet")
+	p.history.append({"year": 2026})
+	assert_true(FcCareerEvents.meets(p, {"min_seasons": 1}))
+	assert_true(not FcCareerEvents.meets(p, {"requires_tags": ["mentor"]}))
+	p.tags.append("mentor")
+	assert_true(FcCareerEvents.meets(p, {"requires_tags": ["mentor"]}))
+	assert_true(not FcCareerEvents.meets(p, {"excludes_tags": ["mentor"]}))
+	assert_true(not FcCareerEvents.meets(p, {"min_hype": 10}))
+	p.hype = 10
+	assert_true(FcCareerEvents.meets(p, {"min_hype": 10}))
+	assert_true(not FcCareerEvents.meets(p, {"max_coach_trust": 40}), "trust is 50")
+	assert_true(not FcCareerEvents.meets(p, {"has_rival": true}))
+	p.rival_player_id = 9
+	assert_true(FcCareerEvents.meets(p, {"has_rival": true}))
+	assert_true(not FcCareerEvents.meets(p, {"has_rival": false}))
+
+
+func test_a_new_player_is_offered_only_early_events_and_a_veteran_gets_more() -> void:
+	var rookie := FcCareerEvents.eligible(_profile(1), 2026)
+	for e in rookie:
+		assert_true(int(e["when"].get("min_level", 1)) <= 1)
+	var star := _profile(20)
+	star.history.resize(10)
+	star.reputation = 50
+	star.hype = 60
+	star.fan_favor = 40
+	var veteran := FcCareerEvents.eligible(star, 2030)
+	assert_true(veteran.size() > rookie.size())
+
+
+func test_choices_move_the_public_image_trust_and_chemistry_and_clamp() -> void:
+	var p := _profile(6)
+	p.coach_trust = 98
+	p.chemistry = 3
+	p.fan_favor = 50
+	var r := FcCareerEvents.apply_choice(p, "coach_clash", "apologize", 2026)
+	assert_true(r["ok"], str(r.get("reason", "")))
+	assert_eq(p.coach_trust, 100, "clamped at 100")
+	assert_eq(p.chemistry, 5)
+	var r2 := FcCareerEvents.apply_choice(p, "foundation", "found", 2026)
+	assert_true(r2["ok"])
+	assert_eq([p.fan_favor, p.media_image], [56, 54])
+	assert_true(p.tags.has("foundation"))
+	var drop := FcCareerEvents.apply_choice(p, "loyalty_call", "listen", 2026)
+	assert_true(drop["ok"])
+	assert_eq(p.fan_favor, 50)

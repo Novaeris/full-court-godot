@@ -237,3 +237,6 @@ See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
 - Added `FcCareerTimeline` and `FcCareerMedia` (rules in `data/career/media.json`), Career data version 4 with migration, controller hooks, sponsor offers scaled by image (D-063). No screen yet.
 - Fixed a CI-only failure found by checking GitHub: the Dynasty Play screen replay picker (added in 2E) widened the page on a 360 px window with CI fonts; it now clips its text and has a small minimum width. Not reproducible locally, so confirm on the next CI run.
 - Verified locally: unit 1,392/0, live 144/0, Studio smoke PASS.
+
+## 2026-11-22 Phase 4B: wider Career life decisions
+- `FcCareerEvents` gained situational conditions (`meets`), new effects (fan favour, media image, hype, coach trust, chemistry) and `validate()`; 12 new events in `data/career/events.json` (18 total). No save change. Verified locally: unit 1,396/0, live 144/0.

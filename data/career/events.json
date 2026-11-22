@@ -1,6 +1,6 @@
 {
 	"schema": 1,
-	"note": "Career decisions. One eligible event is offered each season after the offseason; the player must answer it before playing on. Every choice has real effects on the career (XP, development and skill points, reputation, currency) and may add a tag the rest of the game can read. No choice is cosmetic. Effects never take reputation or currency below zero. Add events here only.",
+	"note": "Career decisions. One eligible event is offered each season after the offseason; the player must answer it before playing on. Every choice has real effects on the career (XP, development and skill points, reputation, currency, fan favour, media image, hype, coach trust, chemistry) and may add a tag the rest of the game can read. No choice is cosmetic. Effects never take reputation or currency below zero. Add events here only.",
 	"events": [
 		{"key": "agent_pitch", "title": "Two agents want to represent you", "text": "A loyal veteran agent promises steady growth. A flashy agent promises a big payday now.",
 			"when": {"min_level": 1},
@@ -34,6 +34,70 @@
 			"when": {"min_level": 10},
 			"choices": [
 				{"key": "accept", "label": "Accept the challenge", "effects": {"xp": 150, "reputation": 2}, "tag": "rival", "note": "+150 XP, +2 reputation."},
-				{"key": "ignore", "label": "Ignore it", "effects": {"development_points": 1}, "note": "+1 development point."}]}
+				{"key": "ignore", "label": "Ignore it", "effects": {"development_points": 1}, "note": "+1 development point."}]},
+		{"key": "family_summer", "title": "A summer with your family", "text": "Everyone wants your time before the season starts.",
+			"when": {"min_level": 2, "min_seasons": 1},
+			"choices": [
+				{"key": "family", "label": "Spend it at home", "effects": {"chemistry": 4, "fan_favor": 1}, "tag": "family_first", "note": "+4 chemistry, +1 fan favour."},
+				{"key": "gym", "label": "Stay in the gym", "effects": {"development_points": 1, "chemistry": -2}, "note": "+1 development point, -2 chemistry."}]},
+		{"key": "mentor_rookie", "title": "A rookie asks for guidance", "text": "A first-year teammate wants you to show them the ropes.",
+			"when": {"min_level": 6, "min_seasons": 2, "excludes_tags": ["mentor"]},
+			"choices": [
+				{"key": "mentor", "label": "Take them under your wing", "effects": {"chemistry": 6, "media_image": 2, "xp": 40}, "tag": "mentor", "note": "+6 chemistry, +2 media image, +40 XP."},
+				{"key": "busy", "label": "Focus on your own game", "effects": {"xp": 80}, "note": "+80 XP."}]},
+		{"key": "foundation", "title": "Start a foundation", "text": "Your name now carries weight. You could put it to work for your city.",
+			"when": {"min_level": 8, "min_reputation": 15, "excludes_tags": ["foundation"]},
+			"choices": [
+				{"key": "found", "label": "Launch the foundation", "effects": {"currency": -500, "fan_favor": 6, "media_image": 4, "reputation": 4}, "tag": "foundation", "note": "-500 currency, +6 fan favour, +4 media image, +4 reputation."},
+				{"key": "donate", "label": "Make a one-time donation", "effects": {"currency": -150, "fan_favor": 2}, "note": "-150 currency, +2 fan favour."},
+				{"key": "pass", "label": "Not now", "effects": {"xp": 30}, "note": "+30 XP."}]},
+		{"key": "endorsement_pitch", "title": "A brand wants your face", "text": "A sportswear company offers a bold campaign built around your name.",
+			"when": {"min_level": 7, "min_hype": 15},
+			"choices": [
+				{"key": "bold", "label": "Take the loud campaign", "effects": {"currency": 600, "hype": 8, "media_image": -2}, "tag": "agent_flashy", "note": "+600 currency, +8 hype, -2 media image."},
+				{"key": "quiet", "label": "Insist on a classy one", "effects": {"currency": 250, "media_image": 3}, "note": "+250 currency, +3 media image."},
+				{"key": "decline", "label": "Decline", "effects": {"coach_trust": 3}, "note": "+3 coach trust."}]},
+		{"key": "social_storm", "title": "A post goes viral", "text": "Something you said online is being picked apart by everyone.",
+			"when": {"min_level": 5, "min_hype": 10},
+			"choices": [
+				{"key": "apologize", "label": "Apologise publicly", "effects": {"media_image": 3, "hype": -6}, "note": "+3 media image, -6 hype."},
+				{"key": "double", "label": "Double down", "effects": {"hype": 10, "media_image": -4, "coach_trust": -3}, "tag": "controversial", "note": "+10 hype, -4 media image, -3 coach trust."},
+				{"key": "silence", "label": "Stay silent and play", "effects": {"xp": 60}, "note": "+60 XP."}]},
+		{"key": "comeback_story", "title": "The long road back", "text": "After a rough stretch, writers want the story of your comeback.",
+			"when": {"min_level": 6, "min_seasons": 2, "max_fan_favor": 55},
+			"choices": [
+				{"key": "open", "label": "Tell it honestly", "effects": {"fan_favor": 6, "media_image": 3}, "tag": "humble", "note": "+6 fan favour, +3 media image."},
+				{"key": "private", "label": "Keep it private", "effects": {"development_points": 1}, "note": "+1 development point."}]},
+		{"key": "loyalty_call", "title": "A rival club comes calling", "text": "Another franchise hints they would pay more. Your own club hopes you stay.",
+			"when": {"min_level": 9, "min_seasons": 3, "min_reputation": 10},
+			"choices": [
+				{"key": "loyal", "label": "Publicly commit to your club", "effects": {"fan_favor": 8, "coach_trust": 5, "currency": -200}, "tag": "loyal_to_club", "note": "+8 fan favour, +5 coach trust, -200 currency."},
+				{"key": "listen", "label": "Hear them out", "effects": {"currency": 400, "fan_favor": -6, "coach_trust": -4}, "note": "+400 currency, -6 fan favour, -4 coach trust."}]},
+		{"key": "retirement_thoughts", "title": "Thinking about the end", "text": "The years add up. People are starting to ask how long you will play.",
+			"when": {"min_level": 15, "min_seasons": 8},
+			"choices": [
+				{"key": "fight", "label": "Say you have plenty left", "effects": {"hype": 5, "xp": 100}, "tag": "competitor", "note": "+5 hype, +100 XP."},
+				{"key": "legacy", "label": "Talk about your legacy", "effects": {"media_image": 4, "fan_favor": 3}, "note": "+4 media image, +3 fan favour."}]},
+		{"key": "rival_talk", "title": "Your rival talks trash", "text": "Your rival has been all over the press about you.",
+			"when": {"min_level": 6, "has_rival": true},
+			"choices": [
+				{"key": "fire", "label": "Fire back", "effects": {"hype": 7, "media_image": -2, "xp": 60}, "tag": "outspoken", "note": "+7 hype, -2 media image, +60 XP."},
+				{"key": "respect", "label": "Answer with respect", "effects": {"media_image": 4, "fan_favor": 2}, "note": "+4 media image, +2 fan favour."}]},
+		{"key": "youth_camp", "title": "Youth camp in your hometown", "text": "Kids from your old neighbourhood would love to meet you.",
+			"when": {"min_level": 4, "min_seasons": 1},
+			"choices": [
+				{"key": "run", "label": "Run the camp yourself", "effects": {"fan_favor": 5, "currency": -100, "chemistry": 2}, "tag": "community", "note": "+5 fan favour, -100 currency, +2 chemistry."},
+				{"key": "sponsor", "label": "Pay for it and send a video", "effects": {"fan_favor": 2, "currency": -50}, "note": "+2 fan favour, -50 currency."}]},
+		{"key": "coach_clash", "title": "A clash with your coach", "text": "A heated argument over minutes spilled into the hallway.",
+			"when": {"min_level": 6, "max_coach_trust": 55},
+			"choices": [
+				{"key": "apologize", "label": "Smooth it over", "effects": {"coach_trust": 8, "chemistry": 2}, "note": "+8 coach trust, +2 chemistry."},
+				{"key": "stand", "label": "Stand your ground", "effects": {"coach_trust": -6, "hype": 4, "xp": 80}, "tag": "role_push", "note": "-6 coach trust, +4 hype, +80 XP."}]},
+		{"key": "documentary", "title": "A documentary crew", "text": "A streaming service wants to film a season of your life.",
+			"when": {"min_level": 12, "min_seasons": 4, "min_hype": 30},
+			"choices": [
+				{"key": "yes", "label": "Give them full access", "effects": {"hype": 10, "fan_favor": 4, "currency": 500, "chemistry": -3}, "note": "+10 hype, +4 fan favour, +500 currency, -3 chemistry."},
+				{"key": "limited", "label": "Allow a few interviews", "effects": {"media_image": 3, "currency": 150}, "note": "+3 media image, +150 currency."},
+				{"key": "no", "label": "Say no", "effects": {"development_points": 1, "coach_trust": 2}, "note": "+1 development point, +2 coach trust."}]}
 	]
 }
