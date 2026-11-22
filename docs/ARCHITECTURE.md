@@ -1,16 +1,16 @@
 # Architecture
 
-Items marked **(planned)** do not exist yet; everything else is implemented and tested.
+Items marked **(planned)** do not exist yet; everything else is implemented and tested. Current status per feature is in [FEATURE_MATRIX.md](FEATURE_MATRIX.md); sentences below that say "not yet" were true when that section was written and are marked *historical* where they are known to be out of date.
 
 ## Guiding idea
-One shared basketball universe + simulation core. Game modes (Owner now; Career and Dynasty later, see D-029) are thin layers that decide *what the player is allowed to do and see*, not separate games. The UI is a replaceable skin over the core.
+One shared basketball universe + simulation core. Game modes (Owner, Career and Dynasty, all built, see D-029) are thin layers that decide *what the player is allowed to do and see*, not separate games. The UI is a replaceable skin over the core.
 
 ## Layers (dependencies point downward only)
 
 ```
-UI (scenes, screens, widgets)                      (planned)
-Game Modes (Owner; Career and Dynasty later: permissions, flows)    (planned)
-League & Business Systems (schedule, standings,    (planned)
+UI (scenes, screens, widgets)                      IMPLEMENTED
+Game Modes (Owner, Career, Dynasty: permissions, flows)  IMPLEMENTED
+League & Business Systems (schedule, standings,    IMPLEMENTED
   draft, free agency, trades, finances, cap rules)
 Basketball Simulation (src/sim)                    IMPLEMENTED (v1)
 Data Model (src/data): players, teams, contracts,  IMPLEMENTED
@@ -20,7 +20,7 @@ Core (src/core): FcRng, FcIdGenerator, FcVersion   IMPLEMENTED
 Save system (src/save) beside the data model        IMPLEMENTED
 ```
 
-Save/load serializes the data model, never the UI. Procedural generation (planned) uses only `FcRng` and the data model.
+Save/load serializes the data model, never the UI. Procedural generation uses only `FcRng` and the data model.
 
 ## Data model rules
 1. Every entity has a stable integer `id` from `FcIdGenerator` (never reused, 0 = none).
@@ -113,7 +113,7 @@ FcWorldGenerator     seed -> complete FcWorld; new_game_state(seed, mode, team i
 - Player realism: attribute = overall level + position offset + a shared latent per category (skill / athleticism / IQ) + individual noise; height and weight follow the position profile; tendencies blend skill with position habits; potential grows with years left before the player's peak age. Young players have lower current level, old players decline (`age_adjusted_level`).
 - Places: 154 real cities in 83 countries and 7 areas (`data/generation/world.json`); teams are original franchises (100 generated nicknames, 16 color schemes, generated arenas). Cities are chosen by area + size/weighted-random, or from an exact list. Conferences/divisions are built geographically (west-east, then south-north) and are always equal in size at creation (`FcLeagueStructure`).
 - Contents per team: 15 players with mid-life contracts, a GM, head coach, 3 assistants, 3 scouts, medical and business staff with contracts; plus a free-agent pool. Players come from the team's own country 65% of the time, otherwise by country talent weight; staff 80% local. Payrolls are scaled to fit the league's salary rules (around the cap, never above the hard limit).
-- NOT generated yet (belongs to later systems): conferences/divisions/schedule, draft prospects, historical careers and league history, owners.
+- NOT generated yet (belongs to later systems): conferences/divisions/schedule, draft prospects, historical careers and league history, owners. *Historical: written when generation was first built. The season engine, draft and Owner Mode have since added schedules, prospects, owners and history as seasons are played; see FEATURE_MATRIX.md before relying on this line.*
 - All numbers (level ranges, salary curve, profile offsets) are first drafts to be tuned against the simulation.
 
 ## Save system (`src/save/`, root object `src/data/world/game_state.gd`)
@@ -136,7 +136,7 @@ Known limit: `team_of_player()` and `active_contract_of()` scan linearly; indexe
 FcDate.add_days / to_day_number     calendar arithmetic
 FcScheduleBuilder                   matchup plan -> dated calendar (<=1 game a day, even pacing, few back-to-backs, travel streaks limited, ~2 days per game)
 FcSeason                            saved: calendar + results + player stats + playoffs + awards + champion; status PENDING/REGULAR/PLAYOFFS/COMPLETE
-FcScheduledGame                     day, home, away, score, overtimes, series (compact; box scores are NOT stored)
+FcScheduledGame                     day, home, away, score, overtimes, series (compact; the box score is not part of this record, see "News and box scores")
 FcSeasonStats                       accumulated player totals (regular season and playoffs separately), leaders, per-game averages
 FcStandings                         records, home/away, division/conference, streaks, last 10, ranking with tiebreakers
 FcPlayoffBuilder                    bracket from standings + FcPlayoffRules (division leaders or pure seeding; conference or league bracket; byes; finals stage)
@@ -290,7 +290,7 @@ FcSeasonEngine                      start_season, play_day(s), play_regular_seas
 - **Player portraits and pack opening (D-059, `docs/PLAYER_VISUAL_PROPOSAL.md`).** One renderer, three visual sources: `FcPlayerVisual.resolve` (unchanged, golden-pinned) picks the tier (monogram, approved art via `art_path`, procedural); `FcPlayerFigure.draw`, `draw_headshot` and `draw_live` draw it. `src/ui/player/`: `FcPlayerTraits` (extra face and body variation by FNV hash in its own salt space, never stored; `body()` from optional height, weight and position), `FcPlayerFigureHd` (the production procedural figure: spline heads, eyes, hairlines that age, tattoos, glasses, kits, full body), `FcPortraitBake` (texture cache, hard 20 MB budget, LRU, keyed by everything that changes the picture; owned by `FcApp`, cleared when a game is left). The optional presentation inputs `age`, `physical` and `position` travel on the subject (`FcPlayerPresentation.subject(..., extra)`) and are copied onto the resolved visual only when known; `FcPlayerPresentation.reference_date` is set by `FcApp._reset`. Owner and Career players are procedural; Dynasty cards use curated artwork and fall back to the stable procedural figure only when no readable art exists. `src/ui/cards/`: `FcRevealSpec` (per-rarity presentation numbers from `data/ui/reveal_effects.json`; unknown rarity = common), `FcRevealFx` (one node: capped particles, rays, ring, flash, dim, name banner with a supporting label, through explicit methods; cleans itself up), `FcPackRevealCinematic` (the default pack opening, a subclass of `FcPackReveal`; Settings can choose Quick = the plain reveal). `FcCardFace` has `play_sweep()`, `set_glow()` and a `tease` glow for the back. Presentation only: no saved data, controller rule, odds or economy change.
 - **Player dossier (D-059 follow-up).** `FcPlayerProfile` (`src/ui/player/player_profile.gd`) is the dossier: hero (stage, OVR and POT, chips, team chip, vitals strip) and an Overview of panels (ratings radar, `FcDevelopmentTrack` career-arc timeline, personality, contract and team, latest season, honours), plus the existing Attributes, Badges, Stats, History and Awards tabs. View-model additions in `FcPlayerPresentation.from_player` (read-only): `personality`, `contract`, `health` (Owner and Career; status, durability, medical level and the injury history) and Career `peak_age`. `relationships` (club tenure, best teammates; Career adds trust, chemistry, rival, tags) and `achievements` (18 derived achievements, `FcAchievements`, data in `data/achievements/achievements.json`) and `similar` (five most alike players or cards, from `FcPlayerSimilarity` in `src/league/player_similarity.gd`) are read-only too. The injury history is `FcWorld.injury_history`, written by `FcSeasonEngine._apply_injuries`, saved additively (missing in older saves = empty, no data version change). A panel shows only when the mode has its data.
 - **Design system (UI polish milestone, D-047, `docs/UI_POLISH_PLAN.md`).** `FcUiTokens` holds the colours, type scale, spacing, radii and motion times ("Hardwood Night"); `FcUiFonts` loads Inter (body) and Barlow Condensed (headings, numbers) from `assets/fonts`; `FcUiTheme.build(text_size, skin)` builds the Godot Theme with type-variations for the kit; `FcModeSkin` gives each mode its personality (Broadcast, Collectible, Franchise, Neutral) through a small whitelist of properties; `FcUiRatingTiers` colours ratings from `data/ui/rating_tiers.json`; `FcUiIcons` loads the Lucide icons in `assets/icons/lucide`; `FcMotion` is the only way components animate and honours the Reduce motion preference (`FcPreferences.reduce_motion`). Components live in `src/ui/kit/` (buttons, tabs, choice groups, dropdowns, toggles, sliders, progress, search, filter bars, modals, toasts, loading, empty states, data tables, rating badges, stat tiles, and the Broadcast and Franchise sets) and are shown in the development-only `FcComponentGallery`. Screens not yet migrated still use `FcUiTables`; `FcUiTables.label` now follows the text-size setting and `bold` makes a heading. **The shell (Phase 3, `src/ui/shell/`, D-051):** `FcScreenHost` is the frame (backdrop per skin, a sideways-scrolling content area, a bottom-bar slot, the dialog layer `FcModalHost` and the toast layer); `FcNavigator` records the current screen and where Back goes; `FcNotifier` turns messages into toasts and a history; `FcLayoutProfile` decides desktop or mobile and the size class; `FcNavBar` is the navigation in each form. `FcApp._reset(title, opts)` starts every screen (id, back, rebuild, skin, header) and is backward compatible with `_reset(title)`. Screens migrate to the kit in later phases.
-- Status: the original plain version (tables and buttons) intended for testing the rules, now wearing the new theme. Smoke tests prove every screen builds with real data, a whole season and the next one can be played, and saving/loading works; they cannot judge appearance, layout or usability, which needs a human. A News tab, a box score viewer (Schedule tab, last 20 games of your team) and a player profile (Roster tab: bio, ratings, personality, tendencies, contract, career) exist. Not yet: draft and free agency screens, trade screens, responsive/mobile layouts, a theme with real typography, icons and team logos.
+- Status: the original plain version (tables and buttons) intended for testing the rules, now wearing the new theme. Smoke tests prove every screen builds with real data, a whole season and the next one can be played, and saving/loading works; they cannot judge appearance, layout or usability, which needs a human. A News tab, a box score viewer (Schedule tab, last 20 games of your team) and a player profile (Roster tab: bio, ratings, personality, tendencies, contract, career) exist. *Historical: when this was written, draft, free agency and trade screens, responsive layouts, real typography, icons and team logos were not yet built. They have since been built (see the sections above and FEATURE_MATRIX.md).*
 
 ## Game controller (`src/game/game_controller.gd`)
 The single object a screen talks to. It owns the `FcGameState` and drives everything; it has no UI code.
@@ -312,7 +312,7 @@ FcFinanceEngine    demand(), attendance(), best_price(), initial_business(), inv
 - Money values are for a $140M cap and scale with the cap; per-game prices scale with season length (a 40-game season charges twice the ticket price) so the economy balances at any season length.
 - `FcSeasonEngine.finish_season` settles all teams automatically. `FcSeasonEngine.human_teams` lists the teams whose owner sets price and marketing (Owner Mode); AI teams re-price and use default marketing each season.
 - Calibrated (30 teams, 80 games): average revenue about 1.8x the cap, about 11% average margin, a third of teams lose money, large markets earn up to $120M profit, small markets lose up to $45M. Check with `tools/finances.ps1`.
-- Not yet: sponsorship deals as negotiable contracts, loans and owner capital injections, arena expansion beyond facilities level, merchandise lines, season tickets, revenue sharing beyond the tax, owner distributions, bankruptcy rules.
+- *Historical (several of these were built later; see FEATURE_MATRIX.md):* Not yet: sponsorship deals as negotiable contracts, loans and owner capital injections, arena expansion beyond facilities level, merchandise lines, season tickets, revenue sharing beyond the tax, owner distributions, bankruptcy rules.
 
 ## Offseason (`src/league/offseason.gd`, `player_progression.gd`, `player_market.gd`)
 ```
@@ -325,7 +325,7 @@ FcOffseason.run      1 progress_and_retire -> 2 expire_contracts -> 3 re_sign ->
 - Free agency: up to 14 rounds; teams with the most cap space act first; each round a team signs the best affordable free agent. Rosters end between the league minimum and maximum (minimum contracts fill gaps; excess is waived). 12 fresh free agents enter each year so the pool never dries up.
 - Verified over 3 consecutive seasons: world integrity (including contract rules and payroll limits) holds every year, talent stays level, average age stays 24-30.
 - Trades (`FcTrades`, run after the draft): contenders (top third by record) and rebuilding teams (bottom third) swap players one for one when both teams gain by their own valuation (contenders value ability now, rebuilders potential and youth), both pass `FcCapRules.check_trade` (hard limit and salary matching), no-trade clauses are respected, contracts move unchanged, at most 2 trades per team a year. Typical result: 1-4 trades per offseason in a 20-team league.
-- Not yet: three-team or multi-player trades, draft pick trading, trades during the season, human trade offers, cap holds applied to the market, restricted/qualifying offers, player preferences beyond loyalty, the draft lottery, two-way/G-League players.
+- *Historical (draft pick trading, the draft lottery and AI-proposed offers were built later; see FEATURE_MATRIX.md):* Not yet: three-team or multi-player trades, draft pick trading, trades during the season, human trade offers, cap holds applied to the market, restricted/qualifying offers, player preferences beyond loyalty, the draft lottery, two-way/G-League players.
 
 ## Simulation (`src/sim/`, balance in `data/simulation/`)
 ```
@@ -345,8 +345,8 @@ FcPlayerGameStats  one player's box score line
 - **Injuries**: a player is hurt in a game with a chance per minute played (`injury_per_minute` 0.00025, scaled by durability: fragile players about 2x as often as durable ones). He leaves the game (unless nobody can replace him) and misses 1-82 games (60% minor 1-5, 28% moderate 6-20, 9% serious 21-60, 3% season-ending 61-82). The season engine records `FcPlayer.games_out` / `injury`, counts down one per game of his team, rebuilds the team's lineup without him (a team always fields at least 8), and severe injuries (60+ games) permanently cost 1-3 points of speed, agility, vertical and stamina. The summer heals 60 games; longer injuries carry over. About 12% of games have an injury; a player misses roughly 8-9% of games. Medical staff matter: the average injury-prevention skill of the team's medical staff scales the injury chance (x1.25 at skill 0, x0.75 at 100) and the average rehabilitation skill scales the time out (+15% at 0, -15% at 100).
 - **Not modeled yet**: intentional fouling and timeouts, technical fouls, shot clock violations, individual defensive matchups (defense uses lineup averages), player-vs-player chemistry, clutch ratings, the player progression that follows a game.
 
-## Game mode architecture (planned)
-A mode defines a permission set (which actions the player does directly vs. delegates to AI staff) and which UI screens are available. Both modes call the same core services.
+## Game mode architecture
+A mode defines a permission set (which actions the player does directly vs. delegates to AI staff) and which UI screens are available. All three modes (Owner, Career, Dynasty) call the same core services where they share the league (Owner and Career) or the same simulation (Dynasty builds `FcPlayer` instances from published cards for it; see [INTEGRATION_AUDIT.md](INTEGRATION_AUDIT.md)).
 
 ## UI structure
 Code-built Control screens (`FcApp`, `FcDynastyUi`) on a shared theme and component kit (see "User interface" above). PC and mobile get separate presentation layouts from the same screen logic (Phase 3 adds the layout profile and the screen shell).

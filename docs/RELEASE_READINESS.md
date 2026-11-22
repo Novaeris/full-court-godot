@@ -3,6 +3,7 @@
 Updated 2026-11-21 at the end of the Release Validation and Dynasty Content Readiness milestone (earlier version: UI polish Phase 13, 2026-11-20).
 Environment for everything below: Windows 11, Godot 4.7.2.stable.official, `godot_console`, NVIDIA RTX 4060, JDK 21, Android SDK build-tools 34, emulator API 34.
 The goal is a trustworthy release candidate and an exact list of what still blocks release; **the game is not declared finished.**
+*Reading note (Phase 1, 2026-11-21): the test counts and timings in this report are dated records from the milestones named in each section, not current totals. Current totals are in [TESTING.md](TESTING.md) and current feature status in [FEATURE_MATRIX.md](FEATURE_MATRIX.md).*
 
 ## 1. Automated checks passed
 

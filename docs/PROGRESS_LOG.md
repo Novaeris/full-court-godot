@@ -1,7 +1,10 @@
 # Progress Log
 
-Newest first. Written so someone returning after a break can see where things stand.
+Newest first. Written so someone returning after a break can see where things stand. This is a dated history: an entry describes the state on its date. **For what is built now, see [FEATURE_MATRIX.md](FEATURE_MATRIX.md); for current test totals, see [TESTING.md](TESTING.md).**
 The repository was published to GitHub on 2026-11-17 at the founder's request (public: https://github.com/Novaeris/full-court-godot, remote `origin`, branch `main`). Later commits stay local until the founder asks for a push.
+
+## 2026-11-21: Phase 1: ecosystem integration and documentation reconciliation
+No gameplay changed. Audited how Owner, Career and Dynasty share identities, definitions, position rules, rating calculations and content references (`docs/INTEGRATION_AUDIT.md`). One real defect: the five-position list was copied in five places; it is now one list (`FcPosition.PLAYABLE`). Added `tests/unit/test_ecosystem_integrity.gd` and the live `test_live_mode_transitions.gd` (menu to Owner to Career to Dynasty and back, saves, Continue). Made `docs/TESTING.md` the one place for current test totals (taken from fresh runs), created `docs/FEATURE_MATRIX.md` (every Built row names its passing tests), and marked stale statements in the architecture, design, roadmap and plan documents as historical instead of deleting them. No saved-data change, so no version bump. Phases 2 to 6 (play-by-play and replay, franchise history, Career expansion, Dynasty expansion, online) are design directions only and nothing of them was started.
 
 ## 2026-11-21: Dossier additions: health, relationships, plays like, achievements
 At the founder's request (in that order): a Health panel with a new additive injury history (Owner and Career only), Relationships (club tenure, best teammates; Career: coach trust, chemistry, rival, tags), Plays like (pure `FcPlayerSimilarity`, all three modes) and Achievements (18 derived achievements in data, Owner and Career). All read-only or additive; no data version change. See `docs/PLAYER_VISUAL_PROPOSAL.md`.
@@ -181,6 +184,7 @@ Run the tests with `./tools/run_tests.ps1`.
 Era presets and star usage; league balance (team spread tightened); no draft lottery; simple AI (best affordable player); finance constants (about 11% average margin, a third of teams lose money); price scaling with season length. Every number is in a JSON file under `data/` and can be changed.
 
 ### Known gaps and things to watch
+*Historical list as of the first Owner milestones; several items below have since been built (box score viewer, draft, free agency and trade screens, AI-proposed trades, mobile layouts for Dynasty). Current status: FEATURE_MATRIX.md.*
 - **UI is a first plain version**: no box score viewer, no draft / free agency / trade screens, no theme polish, no mobile layout.
 - Dynasties: in one 6-season test (30 teams, seed 2026) a team won 4 titles with a 71-9 record, but eight-season runs of 20-team leagues with two other seeds spread the titles across 4-5 champions, so it looks seed-specific. The AI now makes simple one-for-one offseason trades; keep watching parity.
 - League average age drifts young (about 24.6 after six seasons; real is about 26). Retirement and the draft supply are the levers.

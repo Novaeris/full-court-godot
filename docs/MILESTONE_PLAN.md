@@ -1,5 +1,7 @@
 # Milestone Plan (DRAFT for founder review)
 
+*Historical planning document. Current feature status is in [FEATURE_MATRIX.md](FEATURE_MATRIX.md); where it differs from this plan, the matrix wins.*
+
 Status: **draft v3, 2026-11-17 (reviewed; see "Status update and review" below).** Earlier: draft v2, 2026-11-16. The founder answered the first round of questions (recorded as D-029); this version
 reflects them. The order is still waiting for approval. Once approved it replaces the "Next" list in `docs/ROADMAP.md`.
 

@@ -6,7 +6,7 @@ A deep basketball management simulation set in the real world's cities, with ori
 Pillars: strategic depth, credible simulation (attributes truly drive outcomes), interlocking business and basketball systems, long-term replayability, clear information-dense UI.
 
 ## Modes
-### Owner Mode (first)
+### Owner Mode (built first)
 Player owns a franchise and runs it as a business; delegates basketball work to hired GM/coaches while setting direction.
 - Organization: hire/fire GM, coaches, executives; philosophy and expectations; evaluate performance.
 - Finance: budgets, payroll, revenue/expense, debt/loans, forecasts, franchise valuation.
@@ -16,8 +16,8 @@ Player owns a franchise and runs it as a business; delegates basketball work to 
 - Legacy: franchise value and stability over decades.
 Key tradeoff loop: winning raises attendance, sponsors, valuation; but payroll, facilities and operating costs erode profit.
 
-### Career Mode (later)
-The player creates a single player and guides them through an RPG-style career of about 20 years (progression, choices, contracts, teams, milestones). Uses randomized players and the same simulation and league core as Owner Mode. Detailed design still to come from the founder.
+### Career Mode (built, D-038 to D-040; see docs/CAREER_MODE_PLAN.md)
+The player creates a single player and guides them through an RPG-style career of about 20 years (progression, choices, contracts, teams, milestones). Uses randomized players and the same simulation and league core as Owner Mode.
 
 ### Dynasty Mode (built, offline, 2026-11-20; see docs/DYNASTY_MODE_PLAN.md)
 A card-collecting basketball game inspired by the collection and roster-building of NBA 2K MyTeam, with its own identity. Collect fictional player cards (editions of one player are separate cards with their own ratings), open packs with published odds, buy cards directly, build a 13-player roster (5 starters, 7 bench, 1 reserve), and compete: simulated games, challenges, an eight-team tournament and a season with milestones. Loop: Collect, Build, Compete, Earn, Improve. Cards are **static**: ratings, attributes and badges never change; duplicates become Shards or cosmetic mastery. Currencies: Credits (games, challenges), Dynasty Tokens (milestones, special rewards), Duplicate Shards. All official content comes from Creator Studio releases; the economy is free to play with no real-money code (any future paid features and random-pack rules still need legal review, see docs/LEGAL_CHECKLIST.md). Online play is a future goal; the storage boundary (`FcDynastyStore`) and domain services keep it possible.
@@ -45,7 +45,7 @@ Original cities, teams, branding, arenas, conferences, rules, players, coaches, 
 - A typical generated team: 15 players (stars rated in the high 70s, bench in the 40s), average age about 26-27, payroll roughly $65M-$195M, and 10 staff.
 
 ## Simulation principles
-Implemented in v1: possession-based games where attributes (via composite ratings) decide every shot, turnover, foul and rebound; tendencies and coach style shape shot selection and pace; fatigue, foul trouble, close games and blowouts drive substitutions; box scores with advanced stats. Style follows the 2010-2020 NBA (default mid-2010s: about 103 points and 96 possessions per team, 28% of shots are threes; early 2010s are slower and mid-range, late 2010s faster and three-heavy). Scoring leaders average about 30 points, the top five on a team play 30-36 minutes, home court is worth 2-3 points and the best teams win about 70% of their games. Not yet: injuries, timeouts, end-game fouling, individual matchups.
+Implemented in v1: possession-based games where attributes (via composite ratings) decide every shot, turnover, foul and rebound; tendencies and coach style shape shot selection and pace; fatigue, foul trouble, close games and blowouts drive substitutions; box scores with advanced stats. Style follows the 2010-2020 NBA (default mid-2010s: about 103 points and 96 possessions per team, 28% of shots are threes; early 2010s are slower and mid-range, late 2010s faster and three-heavy). Scoring leaders average about 30 points, the top five on a team play 30-36 minutes, home court is worth 2-3 points and the best teams win about 70% of their games. Since built: injuries. Not yet: timeouts, end-game fouling, individual matchups.
 
 - Attributes (offense, defense, physical, mental) must change outcomes; no decorative stats.
 - Possession-based engine accounting for tendencies, roles, tactics, matchups, fatigue, injuries, home court, pace, variance.
@@ -56,6 +56,7 @@ Implemented in v1: possession-based games where attributes (via composite rating
 Free-to-play; premium Dynasty Mode, expansions, extra leagues, cosmetics are candidates. No pay-to-win, no predatory mechanics, nothing core behind a paywall. No infrastructure until justified.
 
 ## Open design questions (need founder input as they arise)
+*Historical list: league structure, size and playoff format were settled by D-017 and D-018. The others remain open.*
 - League structure and size (teams, season length, playoff format).
 - How much realism vs. approachability in the financial model.
 - Real-time vs. sim-by-day pacing and presentation of games.

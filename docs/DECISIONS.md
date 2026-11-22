@@ -3,7 +3,7 @@
 Newest at the bottom. Mark revised decisions rather than deleting them.
 
 ## Established by the founder (2026-11-15)
-Full Court name; basketball management sim; fully fictional universe; Godot 4.x standard + GDScript; Windows first, then Mac/Android/iOS; solo dev; free-to-play; Owner Mode first, Dynasty Mode later; not an MVP; Claude Code as development assistant; Git/GitHub; automated + manual testing.
+Full Court name; basketball management sim; fully fictional universe (changed 2026-11-15 to real places with original teams and people, see D-014 and below); Godot 4.x standard + GDScript; Windows first, then Mac/Android/iOS; solo dev; free-to-play; Owner Mode first, Dynasty Mode later; not an MVP; Claude Code as development assistant; Git/GitHub; automated + manual testing.
 
 ## D-001 Project folder
 Project lives in `C:\Users\dynam\Documents\Full Court` (the folder the Claude session is opened in), not `C:\Projects\FullCourt` as originally written. Decided by founder.

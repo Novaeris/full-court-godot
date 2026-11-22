@@ -1,5 +1,7 @@
 # Career Mode: repository audit and implementation plan (Phase 0)
 
+*Planning record. Current Career feature status, with test evidence, is in [FEATURE_MATRIX.md](FEATURE_MATRIX.md).*
+
 Status 2026-11-18. Written from the actual repository. The founder was away, so every open question below was answered with Claude's recommended answer and is marked **[Decision]**; change any of them before Phase 2 and the plan adapts. **Update 2026-11-19: phases 1-6 are built and Career Mode is playable** (test count and validation results: `docs/validation/`). Later decisions: D-039 (potential is the overall cap; growth is player-directed; one calculation behind the preview and the raise) and D-040 (a light prospect step: scouting report and draft pick from the player's rating); the profile id contract is D-041. The text below is the original Phase 0 audit and is kept as written. Supersedes the shorter `docs/CAREER_MODE_DRAFT.md` where they differ.
 
 ## 1. Repository architecture assessment
