@@ -277,3 +277,6 @@ See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
 
 ## 2026-11-22 3D performance prototype (B1b, D-069)
 - Thresholds and the 2D baseline were committed first (`PERFORMANCE_THRESHOLDS.md`); a throwaway 3D prototype under `prototypes/b1b` was then measured with the same procedure: PASS on the development machine. The benchmark also exposed and fixed a per-frame engine error in the 2D broadcast view. Reports in `docs/validation/`.
+
+## 2026-11-22 Player-model prototype and the 3D decision (B1c, D-070)
+- Ten code-built characters with six procedural animations from the existing identity data; PASS at broadcast and medium distance, not good enough for close-ups. Decision D-070: **3D-REDUCED** (broadcast, wide and medium cameras only, display jersey numbers per game, 2D fallback). The tests found two real animation defects and the leak check an orphan-node leak in the prototype; all fixed. Totals: `TESTING.md`.

@@ -19,6 +19,7 @@ var _crowd := 6000
 var _shadows := true
 var _board := true
 var _shot := ""
+var _view := ""
 
 
 func _initialize() -> void:
@@ -33,6 +34,7 @@ func _initialize() -> void:
 			"seed": _seed = int(kv[1])
 			"crowd": _crowd = int(kv[1])
 			"shot": _shot = kv[1]
+			"view": _view = kv[1]
 			"shadows": _shadows = kv[1] != "0"
 			"board": _board = kv[1] != "0"
 	DisplayServer.window_set_size(Vector2i(1920, 1080))
@@ -86,6 +88,12 @@ func _benchmark_game() -> Dictionary:
 
 func _make_arena() -> Node3D:
 	var t0 := Time.get_ticks_usec()
+	if _mode == "b1c":   # the B1b arena with ten code-built characters instead of capsules
+		var showcase := FcB1cShowcase.new()
+		root.add_child(showcase)
+		showcase.build(_crowd, _shadows, _board)
+		showcase.set_meta("build_ms", float(Time.get_ticks_usec() - t0) / 1000.0)
+		return showcase
 	var arena := FcB1bArena.new()
 	arena.crowd_count = _crowd
 	arena.shadows = _shadows
@@ -110,12 +118,15 @@ func _make_screen(game: Dictionary) -> Control:
 
 func _play_3d() -> void:
 	var load_start := Time.get_ticks_usec()
-	var arena: FcB1bArena = _make_arena() as FcB1bArena
+	var arena: Node3D = _make_arena()
 	await process_frame
-	print("3d config: crowd %d instances, shadows %s, viewport scoreboard %s; arena built in %.0f ms, first frame %.0f ms after the request" % [arena.instance_count(), str(_shadows), str(_board), float(arena.get_meta("build_ms")), float(Time.get_ticks_usec() - load_start) / 1000.0])
+	print("3d config: crowd %d instances, shadows %s, viewport scoreboard %s; arena built in %.0f ms, first frame %.0f ms after the request" % [arena.call("instance_count"), str(_shadows), str(_board), float(arena.get_meta("build_ms")), float(Time.get_ticks_usec() - load_start) / 1000.0])
 	var duration: float = _seconds if _seconds > 0.0 else float({"standard": 120.0, "fast": 60.0, "camera": 60.0, "soak": 300.0}.get(_run, 120.0))
 	await _settle(10.0)
 	_memory("3D scene settled")
+	if _view != "" and arena.has_method("view"):
+		arena.call("view", _view)
+		await _settle(1.0)
 	if _shot != "":
 		root.get_viewport().get_texture().get_image().save_png(_shot)
 		print("screenshot saved to %s" % _shot)
@@ -135,14 +146,14 @@ func _play_3d() -> void:
 		if elapsed >= next_cut:
 			next_cut += cut_every   # a director-like cut every few seconds (the camera run uses 5 s as in the 2D run)
 			var pick: Array = shots[cut % shots.size()]
-			arena.set_camera(pick[0], pick[1])
+			arena.call("set_camera", pick[0], pick[1])
 			cut += 1
 	_memory("memory at the end of the run")
 	_report("3d/%s for %.0f s" % [_run, duration], frames)
 
 
 func _play(game: Dictionary) -> void:
-	if _mode == "3d":
+	if _mode == "3d" or _mode == "b1c":
 		await _play_3d()
 		return
 	var holder := _make_screen(game)
@@ -200,7 +211,7 @@ func _leak_3d() -> void:
 
 
 func _leak(game: Dictionary) -> void:
-	if _mode == "3d":
+	if _mode == "3d" or _mode == "b1c":
 		await _leak_3d()
 		return
 	print("leak check: 10 enter/exit cycles of the %s replay (15 s play each, 5 s settle after exit)" % _mode)

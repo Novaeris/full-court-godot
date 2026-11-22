@@ -73,10 +73,18 @@ Failures along the way (all explained in the audit): the baseline live run faile
 **Commit / push / Actions (B1):** `f5593b4`, pushed; CI run 45070695237 finished **success**.
 
 ## B1b: minimal 3D performance prototype
-**Step 1 (pre-registration), commit `baa3a43`:** `docs/validation/PERFORMANCE_THRESHOLDS.md` (machine, fixed benchmark game seed 1, run definitions, measured 2D baseline, limits by the fixed rules), `tools/perf_benchmark.ps1/.gd`, and a fix for a per-frame engine error found by the benchmark in the B2b broadcast view (degenerate centre-circle polygon; `FcCourtView.circle_polygon` plus a regression test, unit 14 passed in `test_camera_director`). CI run 45072291597 on `baa3a43` (result recorded below).
+**Step 1 (pre-registration), commit `baa3a43`:** `docs/validation/PERFORMANCE_THRESHOLDS.md` (machine, fixed benchmark game seed 1, run definitions, measured 2D baseline, limits by the fixed rules), `tools/perf_benchmark.ps1/.gd`, and a fix for a per-frame engine error found by the benchmark in the B2b broadcast view (degenerate centre-circle polygon; `FcCourtView.circle_polygon` plus a regression test, unit 14 passed in `test_camera_director`). CI run 45072291597 on `baa3a43` finished **success**.
 **Step 2:** the prototype `prototypes/b1b/arena_prototype.gd`, the 3D mode of the benchmark tool, and `docs/validation/B1B_3D_PERFORMANCE_PROTOTYPE.md`.
 **Verdict: PASS (rendering budget, development machine only).** Frame time p95 0.76 ms and p99 0.88 ms (limits 16.6 and 33.3); one slow frame in 237,778; working set 202 to 280 MB (limit 2,048); video memory 26 to 32 MB (limit 1,024); leak growth 8 MB (limit 10); warm load 35 ms, cold 2.1 s (limit 5 s). Assumption confirmed: instanced crowd cards, a shadow-casting light and a live `SubViewport` scoreboard all work under `gl_compatibility`.
 **Not hidden:** one 176.67 ms frame, working-set growth to 280 MB in the first run, leak growth close to its limit, strong hardware.
 **Decisions:** budgets for B1c and B4 registered before they are measured (ten characters at most 6 ms p95 added, 200 MB working set, 150 MB video).
 **Test status:** the prototype is throwaway and not covered by the suites; only tools, a prototype folder and docs changed in this step, so the suites were not re-run locally (CI runs them).
 **Remaining:** B1c player-model and animation prototype, then the 3D decision.
+**Commit / push / Actions (B1b):** `d732f82`, pushed; CI run 45074040562 finished **success**.
+
+## B1c: player-model and animation prototype
+**Delivered:** `prototypes/b1c/` (`pose.gd`, `character.gd`, `showcase.gd`), a showcase and a `mode=b1c` in `tools/perf_benchmark.gd`, `tests/unit/test_b1c_prototype.gd` (6), `docs/validation/B1C_PLAYER_MODEL_PROTOTYPE.md`.
+**Verdict:** PASS for broadcast and medium distance (stylised, code-built, zero asset cost); not good enough for close-ups (blocky). Ten characters: average 0.90 ms, p95 1.25 ms, working set 227 MB, video 31 MB, 719 draw calls, leak growth 1 MB with orphans 0.
+**Defects found by measurement and fixed:** the `shoot` loop did not close (found by the blend tests); an orphan node per cycle in the prototype (found by the leak check; first leak run is kept in the report).
+**Decisions:** D-070 **3D-REDUCED** (see DECISIONS.md); J1 (stored tenure numbers) not undertaken now, display numbers per game instead.
+**Local results (base `d732f82` plus these changes):** import exit 0; unit exit 0, **1,533 passed**; live exit 0, **178 passed**; Studio smoke PASS.

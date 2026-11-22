@@ -12,6 +12,8 @@ const COURT_WIDTH := 50.0
 var crowd_count: int = 6000
 var shadows: bool = true
 var viewport_scoreboard: bool = true
+## false = skip the placeholder capsules (the B1c showcase brings its own characters).
+var placeholder_players: bool = true
 var camera: Camera3D
 
 var _players: Array[MeshInstance3D] = []
@@ -56,10 +58,11 @@ func _process(delta: float) -> void:
 		var base := _bases[i]
 		var phase := _t * 0.9 + float(i)
 		_players[i].position = base + Vector3(sin(phase) * 3.0, 0.0, cos(phase * 0.8) * 2.5)
-	var a := _players[int(_t * 0.5) % 10].position
-	var b := _players[(int(_t * 0.5) + 3) % 10].position
-	var f := fmod(_t * 0.5, 1.0)
-	_ball.position = a.lerp(b, f) + Vector3(0.0, 3.0 + 5.0 * sin(f * PI), 0.0)
+	if _players.size() == 10:
+		var a := _players[int(_t * 0.5) % 10].position
+		var b := _players[(int(_t * 0.5) + 3) % 10].position
+		var f := fmod(_t * 0.5, 1.0)
+		_ball.position = a.lerp(b, f) + Vector3(0.0, 3.0 + 5.0 * sin(f * PI), 0.0)
 	if _t >= _next_wave:
 		_next_wave += 2.0
 		_stand_section(_wave % _sections.size())
@@ -243,6 +246,8 @@ func _add_scoreboard() -> void:
 
 
 func _add_players_and_ball() -> void:
+	if not placeholder_players:
+		return   # the showcase brings its own characters and ball (nothing is created here, so nothing is left outside the tree)
 	var shape := FcCourtLayout.formation(true)
 	var spots: Array[Vector2] = []
 	spots.append_array(shape["offense"])
