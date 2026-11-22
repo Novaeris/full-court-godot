@@ -7,13 +7,14 @@ extends RefCounted
 ## Not covered by an automated test against a real server (there is no project to call yet); the error path is tested against an address
 ## nothing listens on.
 
-const TIMEOUT_SECONDS := 15.0
+## How long to wait for an answer. A closed or filtered address can take this long to give up. Tests lower it.
+static var timeout_seconds := 15.0
 const METHODS := {"GET": HTTPClient.METHOD_GET, "POST": HTTPClient.METHOD_POST, "PATCH": HTTPClient.METHOD_PATCH, "PUT": HTTPClient.METHOD_PUT, "DELETE": HTTPClient.METHOD_DELETE}
 
 
 static func send(host: Node, request: Dictionary) -> Dictionary:
 	var http := HTTPRequest.new()
-	http.timeout = TIMEOUT_SECONDS
+	http.timeout = timeout_seconds
 	host.add_child(http)
 	var headers: PackedStringArray = []
 	for key in request.get("headers", {}):

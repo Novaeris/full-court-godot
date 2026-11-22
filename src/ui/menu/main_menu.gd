@@ -145,6 +145,10 @@ static func _footer(page: VBoxContainer, actions: Dictionary, compact: bool) -> 
 	buttons.add_theme_constant_override("h_separation", FcUiTokens.SPACE_2)
 	buttons.add_child(FcButton.make("Settings", FcButton.Variant.GHOST, actions["settings"], "settings"))
 	buttons.add_child(FcButton.make("Credits", FcButton.Variant.GHOST, actions["credits"], "info"))
+	if actions.has("online"):
+		var online := FcButton.make("Online", FcButton.Variant.GHOST, actions["online"], "user")
+		online.name = "OnlineButton"
+		buttons.add_child(online)
 	if actions.has("gallery"):
 		buttons.add_child(FcButton.make("Gallery (dev)", FcButton.Variant.GHOST, actions["gallery"], "layers"))
 	if actions.has("set_sound"):   # a quick mute for the whole game (the full controls are in Settings)

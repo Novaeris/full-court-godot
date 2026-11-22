@@ -5,6 +5,7 @@ extends FcLiveTestCase
 
 
 func test_an_unreachable_address_gives_a_clear_error_result() -> void:
+	FcOnlineHttp.timeout_seconds = 1.0   # a closed address can take 15 seconds to give up
 	var before := host.get_child_count()
 	var result: Dictionary = await FcOnlineHttp.send(host, {"method": "POST", "url": "http://127.0.0.1:9/auth/v1/token", "headers": {"apikey": "x"}, "body": {"a": 1}})
 	assert_eq(int(result["status"]), 0)
@@ -13,3 +14,4 @@ func test_an_unreachable_address_gives_a_clear_error_result() -> void:
 	assert_true("Could not reach" in FcSupabaseAuth.read_error(result), "the player-facing message")
 	await frames(2)
 	assert_eq(host.get_child_count(), before, "the request node is cleaned up")
+	FcOnlineHttp.timeout_seconds = 15.0

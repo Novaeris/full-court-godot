@@ -35,6 +35,7 @@ var hints: FcHints
 var content: FcContentService
 ## Dynasty Mode: the controller screens use and the screens' shell (built in setup).
 var dynasty: FcDynastyController
+var online: FcOnlineController   # created by show_online
 var dynasty_ui: FcDynastyUi
 ## The open step of the tutorial (-1 = closed). Kept here because the dashboard is rebuilt often.
 var _tutorial_step: int = -1
@@ -373,7 +374,7 @@ func show_main_menu() -> void:
 		"delete": func(slot_id: String) -> void:
 			_select_slot(slot_id)
 			request_delete_selected(),
-		"select": _select_slot, "settings": show_settings, "credits": show_credits, "quit": func() -> void: get_tree().quit(),
+		"select": _select_slot, "settings": show_settings, "credits": show_credits, "online": func() -> void: show_online(), "quit": func() -> void: get_tree().quit(),
 		"sound_on": not preferences.audio_muted, "set_sound": func(on: bool) -> void:
 			preferences.audio_muted = not on
 			preferences.save_file()
@@ -1077,6 +1078,15 @@ func show_credits() -> void:
 			FcSafeFile.make_dir(preferences.effective_content_root())
 			OS.shell_open(ProjectSettings.globalize_path(preferences.effective_content_root()))},
 		content.report.summary() if content != null else "")
+
+
+## The Online screen (optional sign-in, D-066). `message` is the result of the last action. Online is created on first use so an offline-only
+## player never touches the config or session files.
+func show_online(message: String = "") -> void:
+	if online == null:
+		online = FcOnlineController.new(FcOnlineConfig.load_file())
+	var box := _reset("Online", {"id": "online", "back": show_main_menu, "rebuild": show_online})
+	FcOnlineScreen.build(box, online, {"back": show_main_menu, "host": self, "refresh": func(text: String) -> void: show_online(text)}, message)
 
 
 ## Kept under its old name: tests, tools and older code call it.

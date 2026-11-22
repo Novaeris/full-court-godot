@@ -3,7 +3,7 @@ extends SceneTree
 ## NOT headless: run with a window, e.g.
 ##   godot_console --path . --script res://tools/screenshot.gd -- screen=Roster out=C:/temp/roster.png days=20
 ## screen:
-##   menu | menu_saves | credits | settings | new_league | career_menu | career_creator | career_hub | career_story
+##   menu | menu_saves | credits | online | online_in | settings | new_league | career_menu | career_creator | career_hub | career_story
 ##   Overview | Standings | Schedule | Roster | Finances | Staff | Market | Trades | History | News | League   (Owner tabs)
 ##   dynasty_entry | dynasty_hub | dynasty_collection | dynasty_lineup | dynasty_packs | dynasty_reveal | dynasty_market | dynasty_play
 ##   gallery  (the development-only Component Gallery)
@@ -91,6 +91,14 @@ func _build_screen() -> void:
 		return
 	if _screen == "credits":
 		_app.show_credits()
+		return
+	if _screen == "online" or _screen == "online_in":   # sign-in screen with a made-up address and key (nothing is contacted)
+		var payload := Marshalls.raw_to_base64(JSON.stringify({"role": "anon"}).to_utf8_buffer()).replace("+", "-").replace("/", "_").trim_suffix("=")
+		_app.online = FcOnlineController.new(FcOnlineConfig.make("https://example-project.supabase.co", "eyJ.%s.sig" % payload), "user://screenshot_online_session.json")
+		if _screen == "online_in":
+			_app.online.finish("sign_in", {"status": 200, "body": {"access_token": "t", "refresh_token": "r", "expires_in": 3600, "user": {"id": "u", "email": "maya@example.com"}}})
+		_app.show_online()
+		DirAccess.remove_absolute("user://screenshot_online_session.json")
 		return
 	if _screen == "new_league":
 		_app.show_new_league()

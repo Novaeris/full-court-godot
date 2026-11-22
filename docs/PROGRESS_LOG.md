@@ -254,5 +254,8 @@ See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
 ## 2026-11-22 Accounts milestone, first part: sign-in client (D-068)
 - Added `FcOnlineConfig`, `FcSupabaseAuth`, `FcOnlineSession`, `FcOnlineHttp`; recorded the founder's server, Career and Owner-league answers (D-068). The client is unverified against a real Supabase project (none exists yet) and there is no sign-in screen.
 
+## 2026-11-22 Accounts milestone, part 2: Online screen
+- Added `FcOnlineController` (request/answer split so it is testable without a network), `FcOnlineScreen`, the menu Online button, the secret-key guard for `sb_secret_` keys, screenshots. Lesson: on Windows a closed address can take the full 15 s timeout to fail, so tests lower `FcOnlineHttp.timeout_seconds`. Still no real Supabase project to test against.
+
 ## 2026-11-22 Phase 6: online foundations (local)
 - Added `src/online/` (`FcOnlineCrypto`, `FcOnlineAccount`, `FcOnlineServer` loopback, `FcOnlineMatchmaker`, `FcOnlineMatch`) and `docs/ONLINE_ARCHITECTURE.md` (D-065). No network code. Note: a static function named `sign` clashes with GDScript's built-in `sign()`; named `sign_dict`.
