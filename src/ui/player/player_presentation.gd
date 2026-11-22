@@ -4,7 +4,7 @@ extends RefCounted
 ## same dictionary, so the profile (and every list, comparison and result line) is built once. Nothing here writes to game data.
 ## Fields: mode, subject (for FcPlayerVisual), name, jersey, position, secondary, archetype, playstyle {label, text}, team {name, abbreviation,
 ## primary, secondary}, physical {height_cm, weight_kg, wingspan_cm, hand}, overall, potential, age, attributes [{key, name, category, value}],
-## badges [{key, name, description}], personality [{key, name, description, value}] and contract {salary, through, years_left, total, cornerstone, no_trade} and health {games_out, injury, durability, history [{year, injury, games, severe}] newest first, games_missed, severe_count, medical_level (-1 when the player has no team)} (Owner and Career only; Dynasty cards have none), stats {columns, rows}, history {columns, rows}, awards [text], progression {kind, ...}.
+## badges [{key, name, description}], personality [{key, name, description, value}] and contract {salary, through, years_left, total, cornerstone, no_trade} relationships {kind, tenure_seasons, teams_played, team_name, teammates; Career adds coach_trust, chemistry, rival, tags} and health {games_out, injury, durability, history [{year, injury, games, severe}] newest first, games_missed, severe_count, medical_level (-1 when the player has no team)} (Owner and Career only; Dynasty cards have none), stats {columns, rows}, history {columns, rows}, awards [text], progression {kind, ...}.
 ## Sections a mode has no data for are left empty and the profile hides them; nothing is invented.
 ##
 ## Keys (the visual identity): Owner "owner_player:<id>", Career "career_player:<id>", Dynasty "dynasty_player:<player_id>" (so every edition
@@ -112,6 +112,7 @@ static func from_player(world: FcWorld, player_id: int, current_year: int, leagu
 		severe_count += 1 if bool(h["severe"]) else 0
 	var health := {"games_out": p.games_out, "injury": p.injury, "durability": p.attributes.get_value("durability"), "history": injury_rows, "games_missed": games_missed,
 		"severe_count": severe_count, "medical_level": clinic.medical_level if clinic != null else -1}
+	var relationships := _team_ties(world, p, team, player_id)
 	var personality: Array = []
 	for key in world.definitions.personality.keys():
 		var def := world.definitions.personality.get_def(key)
@@ -127,7 +128,7 @@ static func from_player(world: FcWorld, player_id: int, current_year: int, leagu
 		"archetype": "", "playstyle": FcPlaystyle.summary(composites), "team": branding_team if not branding_team.is_empty() else {"name": "Free agent"},
 		"physical": {"height_cm": p.physical.height_cm, "weight_kg": p.physical.weight_kg, "wingspan_cm": p.physical.wingspan_cm, "hand": HAND_NAMES[clampi(p.physical.handedness, 0, 2)]},
 		"overall": roundi(composites["overall"]), "potential": p.development.potential, "age": p.age_on(FcDate.new(current_year, 7, 1)),
-		"attributes": _attributes(world.definitions, _values(world.definitions, p)), "badges": [], "personality": personality, "contract": contract, "health": health,
+		"attributes": _attributes(world.definitions, _values(world.definitions, p)), "badges": [], "personality": personality, "contract": contract, "health": health, "relationships": relationships,
 		"stats": {"columns": ["Season", "Team", "GP", "MPG", "PPG", "RPG", "APG"], "rows": rows},
 		"history": {"columns": ["Season", "Team", "GP", "Points", "Rebounds", "Assists"], "rows": history}, "awards": awards,
 		"progression": {"kind": "outlook", "overall": roundi(composites["overall"]), "potential": p.development.potential, "peak_age": p.development.peak_age, "age": p.age_on(FcDate.new(current_year, 7, 1))},
@@ -142,6 +143,13 @@ static func from_career(career: FcCareerController) -> Dictionary:
 	var card := career.card()
 	vm["jersey"] = profile.jersey_number
 	vm["archetype"] = str(card["archetype"])
+	var ties: Dictionary = (vm["relationships"] as Dictionary).duplicate(true)
+	ties["kind"] = "career"
+	ties["coach_trust"] = profile.coach_trust
+	ties["chemistry"] = profile.chemistry
+	ties["rival"] = career.rival()
+	ties["tags"] = profile.tags.duplicate()
+	vm["relationships"] = ties
 	var career_extra: Dictionary = {"physical": vm["physical"], "position": vm["position"]}
 	if int(vm["age"]) > 0:
 		career_extra["age"] = int(vm["age"])
@@ -166,6 +174,32 @@ static func from_career(career: FcCareerController) -> Dictionary:
 		awards.append(str(milestone).replace("_", " ").capitalize())
 	vm["awards"] = awards
 	return vm
+
+
+## The player's ties to his club, from data the game already keeps: seasons in a row with the current team, how many teams he has played for, and
+## the best teammates (by overall). Owner Mode shows exactly this; Career adds the coach, chemistry and the rival (from_career).
+static func _team_ties(world: FcWorld, p: FcPlayer, team: FcTeam, player_id: int) -> Dictionary:
+	var rows: Array = world.careers.get(player_id, [])
+	var tenure := 0
+	var teams := {}
+	for i in range(rows.size() - 1, -1, -1):
+		teams[int(rows[i][1])] = true
+		if team != null and int(rows[i][1]) == team.id and tenure == rows.size() - 1 - i:
+			tenure += 1
+	var mates: Array = []
+	if team != null:
+		var ratings := FcPlayerRatings.load_default()
+		for pid in team.roster.player_ids:
+			if int(pid) == player_id:
+				continue
+			var q: FcPlayer = world.players.get_by_id(int(pid))
+			if q == null:
+				continue
+			mates.append({"id": int(pid), "name": q.identity.full_name(), "position": FcPosition.abbreviation(q.primary_position), "overall": roundi(ratings.compute(q)["overall"]),
+				"subject": subject_for_player(world, int(pid))})
+		mates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["overall"] > b["overall"] or (a["overall"] == b["overall"] and int(a["id"]) < int(b["id"])))
+		mates = mates.slice(0, 4)
+	return {"kind": "owner", "tenure_seasons": tenure, "teams_played": teams.size(), "team_name": world.team_display_name(team.id) if team != null else "", "teammates": mates}
 
 
 # --- helpers ----------------------------------------------------------------------------------------------------------------

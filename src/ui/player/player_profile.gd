@@ -167,6 +167,8 @@ func _overview() -> void:
 	flow.add_child(_development_panel())
 	if not (vm.get("personality", []) as Array).is_empty():
 		flow.add_child(_personality_panel())
+	if not (vm.get("relationships", {}) as Dictionary).is_empty():
+		flow.add_child(_relationships_panel())
 	if not (vm.get("health", {}) as Dictionary).is_empty():
 		flow.add_child(_health_panel())
 	if not (vm.get("contract", {}) as Dictionary).is_empty():
@@ -243,6 +245,58 @@ func _personality_panel() -> FcPanel:
 		var row := _bar_row(str(t["name"]), int(t["value"]))
 		row.tooltip_text = str(t["description"])
 		panel.add(row)
+	return panel
+
+
+## A 0-100 relationship value in words.
+static func relationship_word(value: int) -> String:
+	if value < 30:
+		return "Strained"
+	if value < 45:
+		return "Cool"
+	if value < 60:
+		return "Steady"
+	if value < 75:
+		return "Good"
+	return "Strong"
+
+
+## Relationships (Owner and Career only): years with the club and the teams he has played for, the best teammates, and for a Career player the
+## coach's trust, the chemistry with the team, the rival and the reputation tags (all values the game already keeps).
+func _relationships_panel() -> FcPanel:
+	var panel := _panel("Relationships")
+	var r: Dictionary = vm["relationships"]
+	if str(r["kind"]) == "career":
+		var trust_row := _bar_row("Coach's trust", int(r["coach_trust"]))
+		trust_row.tooltip_text = "How much the coach trusts him: %s" % relationship_word(int(r["coach_trust"]))
+		panel.add(trust_row)
+		panel.add(FcStatLine.make("Coach", relationship_word(int(r["coach_trust"]))))
+		var chem_row := _bar_row("Team chemistry", int(r["chemistry"]))
+		chem_row.tooltip_text = "How well he fits with his teammates: %s" % relationship_word(int(r["chemistry"]))
+		panel.add(chem_row)
+		panel.add(FcStatLine.make("Teammates", relationship_word(int(r["chemistry"]))))
+		var rival: Dictionary = r.get("rival", {})
+		if not rival.is_empty():
+			panel.add(FcStatLine.make("Rival", "%s (%s, %d overall)" % [rival["name"], rival["team"], rival["overall"]]))
+			panel.add(FcStatLine.make("Head to head", "%d won, %d lost" % [rival["wins"], rival["losses"]]))
+		var tags: Array = r.get("tags", [])
+		if not tags.is_empty():
+			var chips := HFlowContainer.new()
+			chips.add_theme_constant_override("h_separation", FcUiTokens.SPACE_2)
+			chips.add_theme_constant_override("v_separation", FcUiTokens.SPACE_2)
+			for t in tags:
+				chips.add_child(FcStatusChip.make(str(t).replace("_", " ").capitalize(), FcStatusChip.Tone.NEUTRAL))
+			panel.add(chips)
+	if str(r.get("team_name", "")) != "":
+		var seasons := int(r["tenure_seasons"])
+		panel.add(FcStatLine.make("With %s" % r["team_name"], "%d season%s in a row" % [seasons, "" if seasons == 1 else "s"] if seasons > 0 else "first season"))
+	if int(r["teams_played"]) > 1:
+		panel.add(FcStatLine.make("Teams played for", str(r["teams_played"])))
+	var mates: Array = r.get("teammates", [])
+	if not mates.is_empty():
+		panel.add(FcUiTables.label("Best teammates", FcUiTokens.TYPE_SMALL, true))
+		for m in mates:
+			panel.add(FcPlayerChip.new().setup(m, "%s" % m["position"], true, 32, false))
 	return panel
 
 
