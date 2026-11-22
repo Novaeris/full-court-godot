@@ -217,7 +217,7 @@ func compute_awards(season: FcSeason, standings: FcStandings) -> Dictionary:
 
 ## Newly hurt players start missing games; every injured player of the two teams that
 ## just played is one game closer to returning. Severe injuries cost athleticism for good.
-func _apply_injuries(box: FcBoxScore) -> void:
+func _apply_injuries(box: FcBoxScore, year: int = 0) -> void:
 	var fresh := {}
 	for row in box.injuries:
 		var p: FcPlayer = _world.players.get_by_id(row[0])
@@ -233,6 +233,7 @@ func _apply_injuries(box: FcBoxScore) -> void:
 			var clinic: FcTeamBusiness = _world.businesses.get_by_id(owner_team.id)
 			var clinic_factor := 1.0 - 0.06 * (clinic.medical_level if clinic != null else 0)
 			p.games_out = maxi(1, roundi(row[1] * (1.15 - rehab / 333.0) * clinic_factor))
+		_world.record_injury(p.id, year, str(row[2]), p.games_out, row[1] >= 60)
 		if row[1] >= 60:
 			for key in ["speed", "agility", "vertical", "stamina"]:
 				p.attributes.set_clamped(key, p.attributes.get_value(key) - severe_loss(p.id, key))
@@ -294,7 +295,7 @@ func _play_game(season: FcSeason, g: FcScheduledGame, rng: FcRng, playoff: bool)
 	g.home_score = box.scores[0]
 	g.away_score = box.scores[1]
 	g.overtimes = box.overtimes
-	_apply_injuries(box)
+	_apply_injuries(box, season.year)
 	_record_news_and_box(season, g, box)
 	if playoff:
 		season.playoff_stats.add_box_score(box)

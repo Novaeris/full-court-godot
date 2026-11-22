@@ -188,6 +188,8 @@ Unit: `test_player_traits.gd` (6: deterministic, in range, integers, age changes
 
 `tests/unit/test_player_dossier.gd` (8): the Owner view-model carries personality and a contract that match the game data, building a dossier changes nothing, the Owner overview shows Ratings, Development, Personality and Contract panels, a Dynasty card shows no contract or personality or career arc, the Career dossier has the arc and level, the development track describes itself in words, the hero keeps its layout contract and shows both ratings.
 
+`tests/unit/test_injury_history.gd` (7): history kept in order and bounded, saved through JSON and an older save loads empty (data version unchanged), a played season records its injuries, the Owner view-model and dossier show Health with the history newest first, an injured player shows the status chip and games out, a healthy player says so, a Dynasty card has no Health panel.
+
 ## UI tests, the live runner and the screenshot matrix (UI polish milestone, D-047)
 The design system and component kit have their own tests, in three groups:
 - **Unit tests** (`tests/unit/test_ui_design_system.gd`, `test_ui_kit.gd`, `test_ui_motion.gd`): contrast of every text colour on every surface (WCAG 4.5:1), the three mode skins and their whitelist, the theme's variations, fonts and text scale, icons and licences, rating tiers, the reduce-motion preference, and every kit component's states and signals.

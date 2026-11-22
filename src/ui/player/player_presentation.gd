@@ -4,7 +4,7 @@ extends RefCounted
 ## same dictionary, so the profile (and every list, comparison and result line) is built once. Nothing here writes to game data.
 ## Fields: mode, subject (for FcPlayerVisual), name, jersey, position, secondary, archetype, playstyle {label, text}, team {name, abbreviation,
 ## primary, secondary}, physical {height_cm, weight_kg, wingspan_cm, hand}, overall, potential, age, attributes [{key, name, category, value}],
-## badges [{key, name, description}], personality [{key, name, description, value}] and contract {salary, through, years_left, total, cornerstone, no_trade} (Owner and Career only; empty otherwise), stats {columns, rows}, history {columns, rows}, awards [text], progression {kind, ...}.
+## badges [{key, name, description}], personality [{key, name, description, value}] and contract {salary, through, years_left, total, cornerstone, no_trade} and health {games_out, injury, durability, history [{year, injury, games, severe}] newest first, games_missed, severe_count, medical_level (-1 when the player has no team)} (Owner and Career only; Dynasty cards have none), stats {columns, rows}, history {columns, rows}, awards [text], progression {kind, ...}.
 ## Sections a mode has no data for are left empty and the profile hides them; nothing is invented.
 ##
 ## Keys (the visual identity): Owner "owner_player:<id>", Career "career_player:<id>", Dynasty "dynasty_player:<player_id>" (so every edition
@@ -102,6 +102,16 @@ static func from_player(world: FcWorld, player_id: int, current_year: int, leagu
 			if int(h[pair[0]]) > 0:
 				awards.append("%dx %s" % [h[pair[0]], pair[1]] if int(h[pair[0]]) > 1 else str(pair[1]))
 	var branding_team := _team_dict(world, team)
+	var clinic: FcTeamBusiness = world.businesses.get_by_id(team.id) if team != null else null
+	var injury_rows: Array = world.injuries_of(player_id).duplicate(true)
+	injury_rows.reverse()   # newest first
+	var games_missed := 0
+	var severe_count := 0
+	for h in injury_rows:
+		games_missed += int(h["games"])
+		severe_count += 1 if bool(h["severe"]) else 0
+	var health := {"games_out": p.games_out, "injury": p.injury, "durability": p.attributes.get_value("durability"), "history": injury_rows, "games_missed": games_missed,
+		"severe_count": severe_count, "medical_level": clinic.medical_level if clinic != null else -1}
 	var personality: Array = []
 	for key in world.definitions.personality.keys():
 		var def := world.definitions.personality.get_def(key)
@@ -117,7 +127,7 @@ static func from_player(world: FcWorld, player_id: int, current_year: int, leagu
 		"archetype": "", "playstyle": FcPlaystyle.summary(composites), "team": branding_team if not branding_team.is_empty() else {"name": "Free agent"},
 		"physical": {"height_cm": p.physical.height_cm, "weight_kg": p.physical.weight_kg, "wingspan_cm": p.physical.wingspan_cm, "hand": HAND_NAMES[clampi(p.physical.handedness, 0, 2)]},
 		"overall": roundi(composites["overall"]), "potential": p.development.potential, "age": p.age_on(FcDate.new(current_year, 7, 1)),
-		"attributes": _attributes(world.definitions, _values(world.definitions, p)), "badges": [], "personality": personality, "contract": contract,
+		"attributes": _attributes(world.definitions, _values(world.definitions, p)), "badges": [], "personality": personality, "contract": contract, "health": health,
 		"stats": {"columns": ["Season", "Team", "GP", "MPG", "PPG", "RPG", "APG"], "rows": rows},
 		"history": {"columns": ["Season", "Team", "GP", "Points", "Rebounds", "Assists"], "rows": history}, "awards": awards,
 		"progression": {"kind": "outlook", "overall": roundi(composites["overall"]), "potential": p.development.potential, "peak_age": p.development.peak_age, "age": p.age_on(FcDate.new(current_year, 7, 1))},

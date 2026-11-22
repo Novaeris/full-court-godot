@@ -3,7 +3,7 @@ extends VBoxContainer
 ## The player profile as a DOSSIER (D-059 follow-up), the same view in every mode: a hero (the player standing in his team's kit on a stage, name,
 ## overall and potential, position, archetype, team, style summary) over a strip of vitals (age, height, weight, wingspan, hand, number), then
 ## tabs. The Overview is a set of panels: ratings (a radar of the attribute groups and the strongest attributes), development (a timeline of
-## the player's career arc), personality, contract and team, the latest season and honours; Attributes, Badges, Stats, History and Awards are
+## the player's career arc), personality, health and injuries (Owner and Career only), contract and team, the latest season and honours; Attributes, Badges, Stats, History and Awards are
 ## the deep views. A panel a mode has no data for is not shown (a Dynasty card has no contract or personality; nothing is invented).
 ## A tab a mode has no data for is not shown (Dynasty cards have no season history; nothing is invented). Built from the view-model of
 ## FcPlayerPresentation, so it never reads game objects and never changes them. Mobile layouts stack the stage above the text.
@@ -93,6 +93,10 @@ func _header() -> Control:
 	if str(vm["archetype"]) != "":
 		chips.add_child(FcStatusChip.make(str(vm["archetype"]), FcStatusChip.Tone.INFO))
 	chips.add_child(FcStatusChip.make(str(vm["playstyle"]["label"]), FcStatusChip.Tone.SUCCESS))
+	var health: Dictionary = vm.get("health", {})
+	if not health.is_empty():
+		var out := int(health["games_out"])
+		chips.add_child(FcStatusChip.make("Out %d game%s: %s" % [out, "" if out == 1 else "s", str(health["injury"])] if out > 0 else "Healthy", FcStatusChip.Tone.WARNING if out > 0 else FcStatusChip.Tone.SUCCESS))
 	words.add_child(chips)
 	var team: Dictionary = vm["team"]
 	if str(team.get("name", "")) != "":
@@ -163,6 +167,8 @@ func _overview() -> void:
 	flow.add_child(_development_panel())
 	if not (vm.get("personality", []) as Array).is_empty():
 		flow.add_child(_personality_panel())
+	if not (vm.get("health", {}) as Dictionary).is_empty():
+		flow.add_child(_health_panel())
 	if not (vm.get("contract", {}) as Dictionary).is_empty():
 		flow.add_child(_contract_panel())
 	var rows: Array = vm["stats"]["rows"]
@@ -237,6 +243,33 @@ func _personality_panel() -> FcPanel:
 		var row := _bar_row(str(t["name"]), int(t["value"]))
 		row.tooltip_text = str(t["description"])
 		panel.add(row)
+	return panel
+
+
+## Health (Owner and Career only: Dynasty cards are never injured): the status now, how injury-resistant the player is, what the club's medical
+## investment does for recoveries, and the player's injury history (from the injury log the game keeps).
+func _health_panel() -> FcPanel:
+	var panel := _panel("Health")
+	var h: Dictionary = vm["health"]
+	var out := int(h["games_out"])
+	panel.add(FcStatLine.make("Status", "Out %d game%s (%s)" % [out, "" if out == 1 else "s", str(h["injury"])] if out > 0 else "Healthy", out > 0))
+	panel.add(_bar_row("Durability", int(h["durability"])))
+	if int(h["medical_level"]) >= 0:
+		var level := int(h["medical_level"])
+		panel.add(FcStatLine.make("Team medical level", "%d of 3%s" % [level, "  (recoveries about %d%% shorter)" % (6 * level) if level > 0 else ""]))
+	var history: Array = h["history"]
+	if history.is_empty():
+		var none := FcUiTables.label("No injuries on record.", FcUiTokens.TYPE_SMALL)
+		none.theme_type_variation = "MutedLabel"
+		panel.add(none)
+		return panel
+	panel.add(FcStatLine.make("Games missed (on record)", str(h["games_missed"])))
+	if int(h["severe_count"]) > 0:
+		panel.add(FcStatusChip.make("%d serious injur%s: lasting loss of athleticism" % [h["severe_count"], "y" if int(h["severe_count"]) == 1 else "ies"], FcStatusChip.Tone.DANGER))
+	var rows: Array = []
+	for row in history.slice(0, 6):
+		rows.append(["%d-%02d" % [row["year"], (int(row["year"]) + 1) % 100], str(row["injury"]).substr(0, 1).to_upper() + str(row["injury"]).substr(1), int(row["games"])])
+	panel.add(FcDataTable.build(["Season", "Injury", "Games"], rows))
 	return panel
 
 

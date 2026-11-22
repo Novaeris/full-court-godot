@@ -43,6 +43,10 @@ var news: Array = []
 ## Career statistics by player id: rows of [year, team id, gp, seconds, points, fgm, fga, tpm, tpa, ftm, fta, oreb, dreb, ast, stl, blk, tov, pf]
 ## (one per regular season). Kept forever, unlike the season's own detailed statistics.
 var careers: Dictionary = {}
+## Injury history by player id: rows {year, injury, games, severe} (the season it happened in, what it was, games missed after medical care, and whether it
+## cost athleticism for good). Newest last, at most INJURY_HISTORY_LIMIT per player. Added after the first saves existed: a save without it loads as empty.
+var injury_history: Dictionary = {}
+const INJURY_HISTORY_LIMIT := 12
 ## Draft picks that changed hands: "year:round:original team id" -> owner team id.
 ## A pick not listed belongs to the team it was created for. `year` is the year of the
 ## season that starts after the draft (the 2027 draft follows the 2026-27 season).
@@ -126,6 +130,20 @@ func add_news(date: FcDate, kind: String, text: String, team_id: int = 0) -> voi
 	news.append({"date": date.to_iso(), "kind": kind, "text": text, "team": team_id})
 	if news.size() > NEWS_LIMIT:
 		news = news.slice(news.size() - NEWS_LIMIT)
+
+
+## Remembers an injury in the player's history (the oldest rows drop off past the limit).
+func record_injury(player_id: int, year: int, injury: String, games: int, severe: bool) -> void:
+	if not injury_history.has(player_id):
+		injury_history[player_id] = []
+	var rows: Array = injury_history[player_id]
+	rows.append({"year": year, "injury": injury, "games": games, "severe": severe})
+	if rows.size() > INJURY_HISTORY_LIMIT:
+		rows.pop_front()
+
+
+func injuries_of(player_id: int) -> Array:
+	return injury_history.get(player_id, [])
 
 
 func team_display_name(team_id: int) -> String:
@@ -399,6 +417,7 @@ func to_dict() -> Dictionary:
 		"businesses": _dicts_of(businesses),
 		"news": news.duplicate(true),
 		"careers": _careers_dict(),
+		"injury_history": _injury_history_dict(),
 		"pick_owners": pick_owners.duplicate(),
 		"finances": _dicts_of(finances),
 	}
@@ -443,6 +462,13 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 				ints.append(int(v))
 			rows.append(ints)
 		w.careers[int(key)] = rows
+	var raw_injuries = data.get("injury_history", {})   # added later: missing = empty
+	if raw_injuries is Dictionary:
+		for key in raw_injuries:
+			var rows: Array = []
+			for row in raw_injuries[key]:
+				rows.append({"year": int(row.get("year", 0)), "injury": str(row.get("injury", "")), "games": int(row.get("games", 0)), "severe": bool(row.get("severe", false))})
+			w.injury_history[int(key)] = rows
 	for item in data.get("news", []):
 		w.news.append({"date": str(item["date"]), "kind": str(item["kind"]), "text": str(item["text"]), "team": int(item["team"])})
 	for d in data.get("businesses", []):
@@ -450,6 +476,13 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 	for d in data.get("finances", []):
 		_report(w.finances.add(FcFinanceRecord.from_dict(d)), "finance record", errors)
 	return w
+
+
+func _injury_history_dict() -> Dictionary:
+	var out := {}
+	for pid in injury_history:
+		out[str(pid)] = injury_history[pid].duplicate(true)
+	return out
 
 
 func _careers_dict() -> Dictionary:

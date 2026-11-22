@@ -206,6 +206,15 @@ func _process(_delta: float) -> bool:
 		else:
 			FcCardCompare.open_for(_app.dynasty_ui, first, FcDynastyFixture.card_id(1))
 	if _frames == 5 and _demo == "profile" and not _screen.begins_with("dynasty"):   # the dossier for the Career player or the best Owner player
+		# for the picture only: a made-up injury and history, so the Health panel has something to show (the game itself is not touched on disk)
+		var demo_world: FcWorld = _app.career.state.world if _screen == "career_hub" else _app.controller.state.world
+		var demo_id: int = _app.career.player().id if _screen == "career_hub" else int(demo_world.teams.get_by_id(_app.controller.state.user_team_id).roster.player_ids[0])
+		var demo_player: FcPlayer = demo_world.players.get_by_id(demo_id)
+		demo_player.games_out = 12
+		demo_player.injury = "sprained ankle"
+		demo_world.record_injury(demo_id, 2024, "bruised knee", 5, false)
+		demo_world.record_injury(demo_id, 2025, "torn ACL", 82, true)
+		demo_world.record_injury(demo_id, 2026, "sprained ankle", 12, false)
 		if _screen == "career_hub":
 			FcPlayerProfile.open_modal(_app, FcPlayerPresentation.from_career(_app.career))
 		elif _app.controller != null:
