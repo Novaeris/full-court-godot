@@ -262,3 +262,6 @@ See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
 
 ## 2026-11-22 Stabilization (Stage 1 of the master plan; D-069)
 - CI on `main` was red (a timing-sensitive online screen test); fixed. Found and fixed: a Dynasty post-game line score wider than a phone when a game goes to overtime, four online-server defects (JSON signature round trip, nonce replay after eviction, request id reuse, unbounded ids), and two tests that depended on the developer's real files or on the clock. Details, backlog and evidence: `STABILIZATION_AUDIT.md`. No save format changed. Totals: `TESTING.md`.
+
+## 2026-11-22 Broadcast timeline and 2D graphics (B2 and B2b option A, D-069)
+- Added `FcBroadcastTimeline` (pure running state over the replay model), `FcBroadcastGraphics` (view models for every graphic), `FcBroadcastOverlay` (the strip over the court), a second line on `FcScoreBug` and a team comparison card in the replay screen. All numbers are checked against the box score. Plan: `docs/plans/BROADCAST_PRESENTATION_PLAN.md`. Totals: `TESTING.md`.

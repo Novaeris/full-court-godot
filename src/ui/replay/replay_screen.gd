@@ -13,12 +13,15 @@ const SPEEDS := [["1", "1x"], ["2", "2x"], ["4", "4x"]]
 const FILTERS := [[FcReplayModel.FILTER_ALL, "All plays"], [FcReplayModel.FILTER_KEY, "Key plays"], [FcReplayModel.FILTER_SCORING, "Scoring"]]
 
 var model: FcReplayModel
+var timeline: FcBroadcastTimeline   # the running state for the broadcast graphics (derived from the model, read-only)
 var colors: Array = [FcUiTokens.INFO, FcUiTokens.PRIMARY]
 var filter: String = FcReplayModel.FILTER_ALL
 var speed: float = 1.0
 var compact: bool = false
 
 var bug: FcScoreBug
+var overlay: FcBroadcastOverlay
+var team_card: GridContainer   # the team comparison card: label, home, away (FcBroadcastGraphics.team_card_at)
 var court: FcCourtView
 var caption: Label
 var feed: ItemList
@@ -50,6 +53,7 @@ func setup(replay_model: FcReplayModel, team_colors: Array = [], phone: bool = f
 		return self
 	for p in model.box.players:
 		_names[p.player_id] = FcPlayByPlay.short_name(p.name)
+	timeline = FcBroadcastTimeline.build(model)
 	_build()
 	seek(model.start_index(), false)
 	return self
@@ -80,11 +84,17 @@ func _build() -> void:
 	court.colors = colors
 	court.custom_minimum_size = Vector2(300 if compact else 520, 170 if compact else 280)
 	left.add_child(court)
+	overlay = FcBroadcastOverlay.new(colors)   # the broadcast graphic sits over the court's lower edge and never takes the mouse
+	overlay.size_flags_horizontal = Control.SIZE_FILL
+	court.add_child(overlay)
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE, Control.PRESET_MODE_MINSIZE, FcUiTokens.SPACE_2)
+	overlay.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	caption = FcUiTables.label("", FcUiTokens.TYPE_H3, true)
 	caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	caption.custom_minimum_size.x = 120
 	left.add_child(caption)
 	left.add_child(_roster_strip())
+	left.add_child(_team_card())
 	body.add_child(left)
 	var right := VBoxContainer.new()
 	right.add_theme_constant_override("separation", FcUiTokens.SPACE_2)
@@ -140,6 +150,36 @@ func _controls() -> Control:
 	return box
 
 
+func _team_card() -> Control:
+	var panel := FcPanel.new("Team comparison", FcPanel.Variant.FLAT)
+	team_card = GridContainer.new()
+	team_card.name = "TeamCard"
+	team_card.columns = 3
+	team_card.add_theme_constant_override("h_separation", FcUiTokens.SPACE_4)
+	team_card.add_theme_constant_override("v_separation", FcUiTokens.SPACE_1)
+	team_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.body.add_child(team_card)
+	return panel
+
+
+func _update_team_card(index: int) -> void:
+	var card := FcBroadcastGraphics.team_card_at(timeline, index)
+	if card.is_empty():
+		return
+	for child in team_card.get_children():
+		team_card.remove_child(child)
+		child.queue_free()
+	var cells: Array = [["", str(card["abbreviations"][0]), str(card["abbreviations"][1])]]
+	cells.append_array(card["rows"])
+	for row in cells:
+		for col in 3:
+			var l := FcUiTables.label(str(row[col]), FcUiTokens.TYPE_SMALL, row == cells[0])
+			l.theme_type_variation = "CaptionLabel" if col == 0 else "NumericLabel"
+			l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT if col == 0 else HORIZONTAL_ALIGNMENT_RIGHT
+			team_card.add_child(l)
+
+
 func _roster_strip() -> Control:
 	var grid := HBoxContainer.new()
 	grid.add_theme_constant_override("separation", FcUiTokens.SPACE_4)
@@ -188,6 +228,9 @@ func seek(i: int, animate: bool = true) -> void:
 	var st := model.state_at(_index)
 	court.show_state(st, _names, animate)
 	bug.setup(model.box.abbreviations[0], st["home"], model.box.abbreviations[1], st["away"], model.status_at(_index), colors[0], colors[1])
+	bug.show_broadcast(timeline.snapshot(_index), model.box.abbreviations[0], model.box.abbreviations[1])
+	overlay.show_item(FcBroadcastGraphics.top_item_at(timeline, _index))
+	_update_team_card(_index)
 	caption.text = "%s  %s" % [st["clock_text"], st["text"]] if st["text"] != "" else st["clock_text"]
 	_update_rosters(st)
 	_silent = true

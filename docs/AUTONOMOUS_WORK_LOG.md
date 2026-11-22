@@ -28,6 +28,18 @@ Failures along the way (all explained in the audit): the baseline live run faile
 
 **Not run:** `economy_check`, `owner_stress`, `ui_playthrough`, `career_balance` (nothing in their code changed; weekly `long-checks.yml`).
 
-**Commit / push / Actions:** see the entry below once pushed.
+**Commit / push / Actions:** commit `7d05455`, pushed to `main`; GitHub Actions CI run 45060877350 finished **success** (the run on the previous commit `e7b7e9a` had failed).
 
 **Remaining:** Stage 2 (authenticity audit), then B0 and the B milestones per the plan.
+
+## Stage 2: Basketball authenticity audit
+**Delivered:** `docs/audits/BASKETBALL_AUTHENTICITY_AUDIT.md` (15 findings), `BASKETBALL_DATA_INTEGRITY_MATRIX.md`, `docs/plans/BASKETBALL_AUTHENTICITY_IMPLEMENTATION_PLAN.md`, `tools/audit_identity.ps1` (read-only measurements). Read-only: no `src/` or `data/` change.
+**Measured (20 leagues, seeds 5000-5019):** 13.3% of teams have a hashed jersey-number collision; 12.2% have primary/secondary colour contrast below 3:1; 0 `world.validate` problems; no duplicate names, abbreviations or arena names; plausible heights, weights and ages. Correction of an earlier assumption: `FcWorld.validate` already checks one roster per player, retired players on rosters, contracts and the roster maximum.
+**Commits:** `a09e7a9` (Stage 2) and `febbfac` (B0 plan, `docs/plans/BROADCAST_PRESENTATION_PLAN.md`), pushed; CI run 45061971778 for `febbfac` (docs and a read-only tool).
+
+## B2: broadcast timeline, and B2b option A: 2D broadcast graphics
+**Delivered:** `src/ui/replay/broadcast_timeline.gd` (B2), `broadcast_graphics.gd`, `broadcast_overlay.gd`, `FcScoreBug.show_broadcast`, the team comparison card and overlay wiring in `replay_screen.gd` (B2b A). Tests: `test_broadcast_timeline` (12), `test_broadcast_graphics` (10), `test_live_broadcast_graphics` (7).
+**Decisions:** the timeline is a separate pure class over `FcReplayModel` (the model stays small); clutch time is the fourth quarter or overtime, 5 minutes or less, margin 5 or less (D-069, presentation only, constants in the class); the bonus threshold is read from `data/simulation/tuning.json`; a graphic's text never states a fact the events do not hold (no shot clock, timeouts or tip-off).
+**Local results (base `febbfac` plus these changes):** import exit 0; unit exit 0, **1,499 passed**; live exit 0, **160 passed**; Studio smoke PASS.
+**Screenshot checked by eye:** the owner replay shows the scorebug second line (possession dot, fouls), the scoring strip over the court and the team comparison card.
+**Remaining for B2b:** option B (2D camera, projected branded court, camera director logic) and C (replay trails, slow motion, instant replay), lower thirds for lineups (with B5).
