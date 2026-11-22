@@ -2,7 +2,7 @@
 
 This is the one place that says what is built. `ROADMAP.md`, `RELEASE_READINESS.md` and the mode plans describe history and intent; if they disagree with this file, this file wins. Update it in the same change as the feature.
 
-- **Last verified:** 2026-11-21, tree of commit `5700ac9`. Every test named below passed in that run (unit 1,303, live 125, Studio smoke PASS: totals live in [TESTING.md](TESTING.md)).
+- **Last verified:** 2026-11-21, tree of commit `1e80edf` (code unchanged since `5700ac9`). Every test named below passed in that run (unit 1,303, live 125, Studio smoke PASS: totals live in [TESTING.md](TESTING.md)).
 - **Status words:** **Built** = implemented and covered by the named automated test(s). **Partial** = some of it is built or it is only checked by tools or by eye; the note says what is missing. **Planned** = not implemented (a design direction only). **n/a** = does not apply to that area, by design.
 - A cell with no evidence is never "Built". Tools marked *(not re-run)* are historical results kept in their own reports, not Phase 1 evidence.
 - Layout: one table per area instead of one wide grid. **Shared systems** are the simulation, league and UI core the modes reuse (a feature there is available to every mode unless its row says otherwise); then **Owner**, **Career**, **Dynasty** and **Creator Studio** each have their own table, so a feature appears in the area that owns it.

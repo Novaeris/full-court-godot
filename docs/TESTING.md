@@ -6,7 +6,7 @@
 3. **Manual playtesting** by the founder for feel, usability and fun. Claude provides step-by-step instructions with each UI feature.
 
 ## Current totals (the one authoritative place)
-Every other document points here instead of repeating numbers. These come only from fresh runs, never from older documents. The last verified run was on 2026-11-21, on the tree of commit `5700ac9` (Phase 1A), with Godot 4.7.2 headless, one process at a time.
+Every other document points here instead of repeating numbers. These come only from fresh runs, never from older documents. The last verified run was on 2026-11-21, on the tree of commit `1e80edf` (end of Phase 1; code unchanged since `5700ac9`), with Godot 4.7.2 headless, one process at a time.
 
 | Kind | What it is | Last result | How to run |
 |---|---|---|---|
