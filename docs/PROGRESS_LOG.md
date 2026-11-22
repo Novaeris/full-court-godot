@@ -3,6 +3,9 @@
 Newest first. Written so someone returning after a break can see where things stand. This is a dated history: an entry describes the state on its date. **For what is built now, see [FEATURE_MATRIX.md](FEATURE_MATRIX.md); for current test totals, see [TESTING.md](TESTING.md).**
 The repository was published to GitHub on 2026-11-17 at the founder's request (public: https://github.com/Novaeris/full-court-godot, remote `origin`, branch `main`). Later commits stay local until the founder asks for a push.
 
+## 2026-11-21: Phase 2D: game day
+Owner dashboard and Career hub get a "Game day" button: a preview of the next game (both teams with crests, records, ranks, projected starting fives with ratings, who is out) and "Play this game", which plays up to it and opens its summary with the replay. The Career hub also lists recent games with a picker, Game summary and Watch replay. The preview was tested against reality: the five it names are the five who start. Owner lineups stay with the coaches by design.
+
 ## 2026-11-21: Phase 2C: the game replay screen
 A "Watch replay" button on the post-game screen of Owner, Career and Dynasty games opens the replay: a drawn full court with both teams, the ball and a gold flash on made baskets, a scoreboard, a clickable play-by-play feed, play and pause, step, 1x/2x/4x, All plays / Key plays / Scoring, jump to a quarter and a scrubber; phone layout stacks it. Pure model and geometry are unit tested (14), the screen has 11 live tests, and it was rendered and looked at on desktop and phone. Found and fixed a kit bug on the way (a choice group kept two buttons looking selected).
 

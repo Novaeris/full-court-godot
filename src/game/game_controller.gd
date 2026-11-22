@@ -250,6 +250,14 @@ func next_user_game() -> FcScheduledGame:
 	return null
 
 
+## How many days to play so that the user's next regular-season game is played too (0 when there is none).
+func days_to_next_user_game() -> int:
+	var g := next_user_game()
+	if g == null:
+		return 0
+	return maxi(1, g.day - season().next_day + 1)
+
+
 # --- trades ---------------------------------------------------------------------------------
 
 ## Is this AI team in a "win now" mood? The top third of the current standings are.

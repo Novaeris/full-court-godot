@@ -148,6 +148,11 @@ func _build_screen() -> void:
 		if not boxes.is_empty():
 			FcPostGame.open(_app, FcPostGame.for_owner(_app.controller, boxes[boxes.size() - 1]["box"], boxes[boxes.size() - 1].get("events", {})))
 		return
+	if _screen == "owner_gameday":
+		var preview := FcGameDay.for_owner(_app.controller)
+		if not preview.is_empty():
+			FcGameDay.open(_app, preview, _app.controller.state.world, func() -> void: pass)
+		return
 	if _screen == "owner_replay":
 		# the replay of the owner's latest game, paused on the first made three-pointer after the first quarter
 		var kept: Array = _app.controller.season().recent_boxes

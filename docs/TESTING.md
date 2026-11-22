@@ -6,12 +6,12 @@
 3. **Manual playtesting** by the founder for feel, usability and fun. Claude provides step-by-step instructions with each UI feature.
 
 ## Current totals (the one authoritative place)
-Every other document points here instead of repeating numbers. These come only from fresh runs, never from older documents. The last verified run was on 2026-11-21, at the end of Phase 2C (the replay screen; the exact commit is in `FEATURE_MATRIX.md`), with Godot 4.7.2 headless, one process at a time.
+Every other document points here instead of repeating numbers. These come only from fresh runs, never from older documents. The last verified run was on 2026-11-21, at the end of Phase 2D (game day; the exact commit is in `FEATURE_MATRIX.md`), with Godot 4.7.2 headless, one process at a time.
 
 | Kind | What it is | Last result | How to run |
 |---|---|---|---|
-| Unit | `tests/unit/test_*.gd`, headless, fixed seeds | **1,338 passed, 0 failed** | `./tools/run_tests.ps1` |
-| Live | `tests/live/test_live_*.gd`, real scene tree, awaits frames | **136 passed, 0 failed** | `./tools/run_live_tests.ps1` |
+| Unit | `tests/unit/test_*.gd`, headless, fixed seeds | **1,344 passed, 0 failed** | `./tools/run_tests.ps1` |
+| Live | `tests/live/test_live_*.gd`, real scene tree, awaits frames | **139 passed, 0 failed** | `./tools/run_live_tests.ps1` |
 | Creator Studio smoke | separate project, `creator_studio/tools/studio_smoke.gd` | **PASS** (13 checks) | `godot_console --headless --path creator_studio --script res://tools/studio_smoke.gd` |
 | Simulation and stress | `simulate_games`, `economy_check`, `owner_stress`, `ui_playthrough`, `career_balance` and similar tools in `tools/` | **Not re-run in Phase 1** (nothing in the simulation changed). Results are in `STABILITY_REPORT.md` and `RELEASE_READINESS.md` as historical records with their own dates. | `tools/*.ps1` |
 | Manual validation | founder playtests, Android device checklist, screenshot review | **Not automated.** Outstanding items are in `DEVICE_VALIDATION.md` and `RELEASE_READINESS.md` section 3 to 4. | by hand |
@@ -260,3 +260,8 @@ Unit suite: 1,113 tests; live UI suite: 68 tests; both exit 0. See docs/RELEASE_
 - `tests/live/test_live_replay.gd` (11 tests): the screen opens on the tip-off and draws; play, pause, speed and play-to-the-end then start-over; stepping, filters, period buttons and the scrubber; clicking the feed; five players listed per side; reduced motion shows events at once; a phone-width layout fits; an empty replay explains itself; space and arrow keys; and the real path: an Owner post-game dialog offers "Watch replay" and opens this game's replay (and offers none when no events were kept).
 - Looked at, not only tested: `./tools/screenshot.ps1 screen=owner_replay` renders it; pictures in `docs/validation/ui/replay/` (desktop 1280x800 and phone 412x915). The court is an illustration (see ARCHITECTURE).
 - Kit fix found while building it: `FcChoiceGroup.select()` left the previously chosen button looking pressed.
+
+## Game day (Phase 2D, 2026-11-21)
+- `tests/unit/test_game_day.gd` (6 tests): the preview describes the next game (home and away, the user's side, date, record and rank equal the standings, five different starters each); **the five it projects are the five who start the game** (6 games checked against the stored box scores, preview made on the morning of the game); days-to-next-game plays exactly up to it and is 0 when none is left; an injured star is listed as out and not projected; a Career team gets a preview; the simulator exposes its starters.
+- `tests/live/test_live_game_day.gd` (3 tests): from the Owner dashboard, Game day opens the preview without playing anything, Play this game plays that game and opens its summary with Watch replay, and the replay is that game; the same through the Career hub, whose recent games can be picked and replayed; the preview fits a phone width.
+- Picture: `docs/validation/ui/replay/gameday_desktop_1280x800.png` (`./tools/screenshot.ps1 screen=owner_gameday`).

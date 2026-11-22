@@ -610,6 +610,24 @@ func show_career_hub() -> void:
 	box.add_child(hub_scroll)
 
 
+## The game-day preview of the career team's next game. "Play this game" plays up to it and opens its summary and replay.
+func on_career_game_day() -> void:
+	var model := FcGameDay.for_owner(career.game())
+	if model.is_empty():
+		_say("There is no regular-season game left to preview.")
+		return
+	FcGameDay.open(self, model, career.state.world, play_career_game_day)
+
+
+func play_career_game_day() -> void:
+	var days := career.game().days_to_next_user_game()
+	if days <= 0:
+		return
+	var result := on_career_play(days)
+	if result["ok"] and not _career_log.is_empty():
+		FcPostGame.open(self, FcPostGame.for_career(career, _career_log[0]))
+
+
 ## Plays days for the career player and keeps the newest results for the Season tab.
 func on_career_play(days: int) -> Dictionary:
 	var result := career.advance_days(days)
@@ -759,6 +777,9 @@ func _career_season_tab() -> Control:
 	box.add_child(_career_role_row())
 	var buttons := HBoxContainer.new()
 	var done: bool = g.phase() == FcGameController.PHASE_COMPLETE
+	var preview := FcUiTables.button("Game day", on_career_game_day)
+	preview.disabled = done or next.is_empty()
+	buttons.add_child(preview)
 	var day := FcUiTables.button("Play next day", func(): on_career_play(1))
 	day.disabled = done
 	buttons.add_child(day)
@@ -788,11 +809,34 @@ func _career_season_tab() -> Control:
 		rows.append([game["opponent"], "W" if game["won"] else "L", game["score"], "%d" % l["minutes"], l["points"], l["rebounds"], l["assists"], "+%d" % game["xp"], ", ".join(game["milestones"]).replace("_", " ") + (" " if duel_text != "" and not game["milestones"].is_empty() else "") + duel_text])
 	box.add_child(FcUiTables.label("Recent games", 16, true))
 	if not _career_log.is_empty():
-		box.add_child(FcUiTables.button("Game summary: latest game", func() -> void: FcPostGame.open(self, FcPostGame.for_career(career, _career_log[0]))))
+		box.add_child(_career_game_picker())
 	box.add_child(FcTable.from_strings(["Opponent", "", "Score", "Min", "Pts", "Reb", "Ast", "XP", "Milestones"], rows, [0, 30, 70, 40, 40, 40, 40, 50, 0]))
 	box.add_child(FcUiTables.label("Career history", 16, true))
 	box.add_child(_career_history_table())
 	return box
+
+
+## Pick one of the recent games, then open its summary or its replay.
+func _career_game_picker() -> Control:
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", FcUiTokens.SPACE_2)
+	var items: Array = []
+	for i in _career_log.size():
+		var game: Dictionary = _career_log[i]
+		items.append(["%s  %s %s" % [game["opponent"], "W" if game["won"] else "L", game["score"]], i])
+	var picker := FcDropdown.make(items, 0)
+	picker.name = "GamePicker"
+	row.add_child(picker)
+	row.add_child(FcButton.make("Game summary", FcButton.Variant.SECONDARY, func() -> void: FcPostGame.open(self, FcPostGame.for_career(career, _career_log[int(picker.value())]))))
+	var watch := FcButton.make("Watch replay", FcButton.Variant.PRIMARY, func() -> void:
+		var built := FcReplay.for_career(career, _career_log[int(picker.value())])
+		if built.is_empty():
+			_say("No replay was kept for that game.")
+		else:
+			FcReplay.open(self, built))
+	watch.name = "WatchReplayButton"
+	row.add_child(watch)
+	return row
 
 
 func _career_history_table() -> Control:
@@ -1300,6 +1344,8 @@ func show_dashboard() -> void:
 	actions.add_theme_constant_override("v_separation", 6)
 	match phase:
 		FcGameController.PHASE_REGULAR:
+			if controller.next_user_game() != null:
+				actions.add_child(FcUiTables.button("Game day", on_game_day))
 			actions.add_child(FcUiTables.button("Next Day", func(): on_advance(1)))
 			actions.add_child(FcUiTables.button("Next Week", func(): on_advance(7)))
 			actions.add_child(FcUiTables.button("Next Month", func(): run_with_loading("Playing a month of games...", func(): on_advance(30))))
@@ -1339,6 +1385,27 @@ func show_dashboard() -> void:
 func on_advance(days: int) -> void:
 	controller.advance_days(days)
 	show_dashboard()
+
+
+## The game-day preview of the user's next game (Owner). "Play this game" plays up to it and opens its summary and replay.
+func on_game_day() -> void:
+	var model := FcGameDay.for_owner(controller)
+	if model.is_empty():
+		_say("There is no regular-season game left to preview.")
+		return
+	FcGameDay.open(self, model, controller.state.world, play_owner_game_day)
+
+
+func play_owner_game_day() -> void:
+	var game := controller.next_user_game()
+	if game == null:
+		return
+	var day := game.day
+	controller.advance_days(controller.days_to_next_user_game())
+	show_dashboard()
+	for entry in controller.season().recent_boxes:
+		if int(entry["day"]) == day and int(entry["series"]) == 0:
+			FcPostGame.open(self, FcPostGame.for_owner(controller, entry["box"], entry.get("events", {})))
 
 
 func on_sim_regular() -> void:

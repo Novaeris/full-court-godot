@@ -567,6 +567,11 @@ func _select_lineup(team: FcGameTeam) -> Array[FcSimPlayer]:
 	return chosen
 
 
+## The five who would start for `team` under the same rule the game uses (for the game-day preview).
+func projected_starters(team: FcGameTeam) -> Array[FcSimPlayer]:
+	return _select_lineup(team)
+
+
 ## Bonus for a player who fills a missing role (a guard or a big man).
 func _position_bonus(lineup: Array, candidate: FcSimPlayer) -> float:
 	var guards := 0
