@@ -51,4 +51,13 @@ Failures along the way (all explained in the audit): the baseline live run faile
 **Existing tests changed (extended, not weakened):** `test_audio.gd` now expects the `Crowd` bus and five volume sliders (it checks the crowd volume too).
 **Tests:** `test_broadcast_audio` (7), `test_live_broadcast_audio` (4).
 **Local results (base `18872d3` plus these changes):** import exit 0; unit exit 0, **1,506 passed**; live exit 0, **164 passed**; Studio smoke PASS.
-**Remaining:** none for B3. Next: B2b options B and C.
+**Commit / push / Actions:** `ec439b4`, pushed; CI run 45065912855 finished **success**.
+**Remaining:** none for B3.
+
+## B2b options B and C: 2D camera, projected court, replay presentation
+**Delivered:** `court_projection.gd`, `camera_director.gd`, `camera_rig.gd` (all pure), the broadcast view and ball trail in `src/ui/art/court_view.gd`, the camera and view controls, slow motion, instant replay and REPLAY badge in `replay_screen.gd`, `FcBroadcastTimeline.replay_window`, the gold edge in `broadcast_overlay.gd`.
+**Decisions:** the camera director is written once as pure code returning shots as data (court feet, zoom, hold, priority) so a 3D viewer can reuse it; default camera mode is hybrid; the flat view stays selectable; the ball trail and the camera use the replay's illustrative positions and say so in the code docs (no reconstruction yet, B1); an instant replay shows the possession that led to the event, at most 10 events, at half speed, every event whatever the feed filter is; clutch and run emphasis use gold.
+**Tests:** `test_camera_director` (13), `test_live_camera` (7), `test_live_instant_replay` (7), replay window tests in `test_broadcast_timeline`. Two test flaws found and fixed while writing them (a vacuous assertion removed, an assertion relying on window length).
+**Screenshot checked by eye:** the broadcast view shows the projected court with a home-coloured paint, the camera framing a made shot, the scoring strip, and the camera controls.
+**Local results (base `ec439b4` plus these changes):** import exit 0; unit exit 0, **1,520 passed**; live exit 0, **178 passed**; Studio smoke PASS.
+**Remaining:** none for B2b. Next: B1 reconstruction feasibility spike.

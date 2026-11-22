@@ -6,6 +6,11 @@ extends Control
 ## floor and line colours are literals here.
 ##
 ## Reduced motion: events are shown at once with no movement (FcMotion.tween_property finishes instantly).
+##
+## Two views (master plan B2b option B): the BROADCAST view (default) draws the same court through FcCourtProjection as a sideline camera sees
+## it, with the home team's colour on the paint and its abbreviation at centre court, depth-sorted players and a camera (FcCameraRig) that
+## the replay screen drives with the director's shots and the person can pan (drag) and zoom (wheel). The FLAT view is the original top-down
+## drawing and stays selectable. Both draw the same illustrative positions: nothing here is tracked play.
 
 const FLOOR := Color("B87A43")
 const FLOOR_DARK := Color("A5693A")
@@ -13,6 +18,21 @@ const LINE := Color("F4EBDD")
 const BALL := Color("F28A2E")
 const BALL_EDGE := Color("5A2B0C")
 const MOVE_SECONDS := 0.45
+
+signal camera_moved_by_hand
+
+## true = the projected broadcast view, false = the flat top-down view.
+var broadcast_view: bool = true
+var rig := FcCameraRig.new()
+var home_abbreviation: String = ""
+var _projection := FcCourtProjection.new()
+var _dragging: bool = false
+
+const TRAIL_MAX := 10
+## The ball's recent positions (court feet), oldest first, at most TRAIL_MAX: drawn as a fading line. These are the replay's illustrative
+## positions (the simulation has no tracked ball), so the trail is an illustration of the recent play, not a tracked path.
+var show_trail: bool = true
+var _trail: Array[Vector2] = []
 
 ## Team colours: [home, away].
 var colors: Array = [Color("39A9FF"), Color("FF8A24")]
@@ -41,6 +61,8 @@ func _init() -> void:
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	clip_contents = true
+	mouse_filter = Control.MOUSE_FILTER_PASS
+	set_process(true)
 
 
 ## Shows event `new_state`. With `animate` the players and the ball glide there; otherwise they jump.
@@ -156,6 +178,7 @@ func _layout_event() -> void:
 		FcGameEventLog.EV_INJURY:
 			_marks[a] = "hurt"
 	_ball_to = ball
+	_remember_ball(ball)
 
 
 static func _first_of(list: Array, index: int) -> Variant:
@@ -165,11 +188,19 @@ static func _first_of(list: Array, index: int) -> Variant:
 # --- drawing -----------------------------------------------------------------------------------------------------------------
 
 func _draw() -> void:
+	if broadcast_view:
+		_draw_broadcast()
+		return
+	_draw_flat()
+
+
+func _draw_flat() -> void:
 	var scale_px := minf(size.x / FcCourtLayout.COURT_LENGTH, size.y / FcCourtLayout.COURT_WIDTH)
 	var origin := (size - Vector2(FcCourtLayout.COURT_LENGTH, FcCourtLayout.COURT_WIDTH) * scale_px) / 2.0
 	_draw_floor(origin, scale_px)
 	if state.is_empty():
 		return
+	_draw_trail({})
 	var current := _current_positions()
 	var font := ThemeDB.fallback_font
 	var radius := 1.9 * scale_px
@@ -186,6 +217,204 @@ func _draw() -> void:
 		var width := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_px).x
 		draw_string(font, spot + Vector2(-width / 2.0, radius + font_px + 1.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_px, LINE)
 	_draw_ball(origin, scale_px)
+
+
+# --- the broadcast view ------------------------------------------------------------------------------------------------------
+
+func _process(delta: float) -> void:
+	rig.reduced = FcMotion.reduced
+	if rig.advance(delta) and broadcast_view:
+		queue_redraw()
+
+
+func _gui_input(event: InputEvent) -> void:
+	if not broadcast_view or rig.mode == FcCameraRig.Mode.AUTO:
+		return
+	if event is InputEventMouseButton:
+		var button := event as InputEventMouseButton
+		if button.button_index == MOUSE_BUTTON_LEFT:
+			_dragging = button.pressed
+		elif button.pressed and button.button_index == MOUSE_BUTTON_WHEEL_UP:
+			rig.manual_move(Vector2.ZERO, 1.15)
+			camera_moved_by_hand.emit()
+			accept_event()
+		elif button.pressed and button.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			rig.manual_move(Vector2.ZERO, 1.0 / 1.15)
+			camera_moved_by_hand.emit()
+			accept_event()
+	elif event is InputEventMouseMotion and _dragging:
+		var motion := event as InputEventMouseMotion
+		_projection.view_size = size
+		var cam := rig.camera()
+		var before := _projection.unproject(motion.position - motion.relative, cam)
+		var after := _projection.unproject(motion.position, cam)
+		rig.manual_move(before - after, 1.0)   # drag the court under the pointer
+		camera_moved_by_hand.emit()
+		accept_event()
+
+
+## The ball's recent path, oldest first (at most TRAIL_MAX points).
+func trail_points() -> Array[Vector2]:
+	return _trail.duplicate()
+
+
+func _remember_ball(at: Vector2) -> void:
+	if not _trail.is_empty() and _trail[_trail.size() - 1].is_equal_approx(at):
+		return
+	_trail.append(at)
+	while _trail.size() > TRAIL_MAX:
+		_trail.pop_front()
+
+
+## Forgets the path (after a jump or a scrub, where the earlier positions are no longer "just before").
+func clear_trail() -> void:
+	_trail.clear()
+	queue_redraw()
+
+
+func _draw_trail(cam: Dictionary) -> void:
+	if not show_trail or _trail.size() < 2:
+		return
+	for i in range(1, _trail.size()):
+		var a := _trail[i - 1]
+		var b := _trail[i]
+		var fade := float(i) / float(_trail.size())
+		var from_point := _pp(a.x, a.y, 3.0, cam) if broadcast_view else _flat_point(a)
+		var to_point := _pp(b.x, b.y, 3.0, cam) if broadcast_view else _flat_point(b)
+		draw_line(from_point, to_point, Color(BALL.r, BALL.g, BALL.b, 0.15 + 0.6 * fade), 1.5 + 2.0 * fade, true)
+
+
+func _flat_point(feet: Vector2) -> Vector2:
+	var scale_px := minf(size.x / FcCourtLayout.COURT_LENGTH, size.y / FcCourtLayout.COURT_WIDTH)
+	var origin := (size - Vector2(FcCourtLayout.COURT_LENGTH, FcCourtLayout.COURT_WIDTH) * scale_px) / 2.0
+	return origin + feet * scale_px
+
+
+func set_flat(flat: bool) -> void:
+	broadcast_view = not flat
+	queue_redraw()
+
+
+func _draw_broadcast() -> void:
+	_projection.view_size = size
+	var cam := rig.camera()
+	var corners := _projection.corners(cam)
+	draw_rect(Rect2(Vector2.ZERO, size), Color("0E1626"))   # the arena beyond the sidelines
+	draw_colored_polygon(corners, FLOOR)
+	for i in range(0, 10, 2):   # floorboards: every other tenth of the length a shade darker
+		var x0 := FcCourtLayout.COURT_LENGTH * i / 10.0
+		var x1 := FcCourtLayout.COURT_LENGTH * (i + 1) / 10.0
+		draw_colored_polygon(PackedVector2Array([_pp(x0, 0, 0, cam), _pp(x1, 0, 0, cam), _pp(x1, FcCourtLayout.COURT_WIDTH, 0, cam), _pp(x0, FcCourtLayout.COURT_WIDTH, 0, cam)]), FLOOR_DARK)
+	var branding: Color = colors[0]
+	for right in [false, true]:   # the home team's colour in both paints, and its mark at centre court
+		var base_x := FcCourtLayout.COURT_LENGTH if right else 0.0
+		var dir := -1.0 if right else 1.0
+		var paint := PackedVector2Array([_pp(base_x, 17, 0, cam), _pp(base_x + dir * 19.0, 17, 0, cam), _pp(base_x + dir * 19.0, 33, 0, cam), _pp(base_x, 33, 0, cam)])
+		draw_colored_polygon(paint, Color(branding.r, branding.g, branding.b, 0.45))
+	_draw_centre_mark(cam, branding)
+	_line_loop([Vector2(0, 0), Vector2(FcCourtLayout.COURT_LENGTH, 0), Vector2(FcCourtLayout.COURT_LENGTH, FcCourtLayout.COURT_WIDTH), Vector2(0, FcCourtLayout.COURT_WIDTH)], cam, 2.0)
+	_line_path([Vector2(FcCourtLayout.COURT_LENGTH / 2.0, 0), Vector2(FcCourtLayout.COURT_LENGTH / 2.0, FcCourtLayout.COURT_WIDTH)], cam, 2.0)
+	for right in [false, true]:
+		_draw_end(right, cam)
+	if state.is_empty():
+		return
+	_draw_trail(cam)
+	var current := _current_positions()
+	var ordered: Array = current.keys()
+	ordered.sort_custom(func(a, b) -> bool: return (current[a] as Vector2).y < (current[b] as Vector2).y)   # far players first, so near ones cover them
+	var font := ThemeDB.fallback_font
+	for id in ordered:
+		var at: Vector2 = current[id]
+		var side: int = _sides.get(id, 0)
+		var radius := _projection.pixels_at(1.9, at.y, cam)
+		var feet := _pp(at.x, at.y, 0.0, cam)
+		draw_set_transform(feet, 0.0, Vector2(1.0, 0.35))
+		draw_circle(Vector2.ZERO, radius, Color(0, 0, 0, 0.3))   # the shadow, flattened
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		var body := _pp(at.x, at.y, 3.0, cam)
+		draw_circle(body, radius, colors[side])
+		var mark: String = _marks.get(id, "")
+		var ring := FcUiTokens.TEXT if mark == "shooter" else (FcUiTokens.WARNING if mark == "foul" else (FcUiTokens.DANGER if mark == "hurt" else (FcUiTokens.SUCCESS if mark == "in" else Color(0, 0, 0, 0.45))))
+		draw_arc(body, radius, 0.0, TAU, 28, ring, 2.5 if mark != "" else 1.5, true)
+		var font_px := clampi(roundi(radius * 0.9), 9, 15)
+		var text := str(names.get(id, "?"))
+		var width := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_px).x
+		draw_string(font, body + Vector2(-width / 2.0, radius + font_px + 1.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_px, LINE)
+	var t := _ease(progress)
+	var ball := _ball_position()
+	var lift := sin(t * PI) * _ball_arc
+	var ball_screen := _pp(ball.x, ball.y, 3.0 + lift, cam)
+	var ball_radius := _projection.pixels_at(0.95, ball.y, cam)
+	draw_circle(_pp(ball.x, ball.y, 0.0, cam), ball_radius * 0.8, Color(0, 0, 0, 0.25))
+	draw_circle(ball_screen, ball_radius, BALL)
+	draw_arc(ball_screen, ball_radius, 0.0, TAU, 20, BALL_EDGE, 1.5, true)
+	if _hoop_flash > 0.0 and progress > 0.6:
+		var hoop := FcCourtLayout.basket(_flash_right)
+		draw_arc(_pp(hoop.x, hoop.y, 10.0, cam), _projection.pixels_at(2.4, hoop.y, cam), 0.0, TAU, 28, FcUiTokens.GOLD, 3.0, true)
+
+
+func _pp(x: float, y: float, z: float, cam: Dictionary) -> Vector2:
+	return _projection.project(x, y, z, cam)
+
+
+func _line_path(points: Array, cam: Dictionary, width: float) -> void:
+	var out := PackedVector2Array()
+	for p in points:
+		out.append(_pp((p as Vector2).x, (p as Vector2).y, 0.0, cam))
+	draw_polyline(out, LINE, width, true)
+
+
+func _line_loop(points: Array, cam: Dictionary, width: float) -> void:
+	var closed := points.duplicate()
+	closed.append(points[0])
+	_line_path(closed, cam, width)
+
+
+func _arc_points(centre: Vector2, radius: float, from_angle: float, to_angle: float, steps: int) -> Array:
+	var out: Array = []
+	for i in steps + 1:
+		var a := lerpf(from_angle, to_angle, float(i) / steps)
+		var p := centre + Vector2.from_angle(a) * radius
+		out.append(Vector2(clampf(p.x, 0.0, FcCourtLayout.COURT_LENGTH), clampf(p.y, 0.0, FcCourtLayout.COURT_WIDTH)))
+	return out
+
+
+func _draw_centre_mark(cam: Dictionary, branding: Color) -> void:
+	var centre := Vector2(FcCourtLayout.COURT_LENGTH / 2.0, FcCourtLayout.COURT_WIDTH / 2.0)
+	var ring := _arc_points(centre, 6.0, 0.0, TAU, 40)
+	var polygon := PackedVector2Array()
+	for p in ring:
+		polygon.append(_pp((p as Vector2).x, (p as Vector2).y, 0.0, cam))
+	draw_colored_polygon(polygon, Color(branding.r, branding.g, branding.b, 0.3))
+	_line_path(ring, cam, 2.0)
+	if home_abbreviation != "":
+		var font := ThemeDB.fallback_font
+		var px := clampi(roundi(_projection.pixels_at(4.0, centre.y, cam)), 10, 40)
+		var at := _pp(centre.x, centre.y, 0.0, cam)
+		var width := font.get_string_size(home_abbreviation, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
+		draw_string(font, at + Vector2(-width / 2.0, px * 0.35), home_abbreviation, HORIZONTAL_ALIGNMENT_LEFT, -1, px, LINE)
+
+
+func _draw_end(right: bool, cam: Dictionary) -> void:
+	var length := FcCourtLayout.COURT_LENGTH
+	var width := FcCourtLayout.COURT_WIDTH
+	var dir := -1.0 if right else 1.0
+	var base_x := length if right else 0.0
+	var hoop := FcCourtLayout.basket(right)
+	_line_loop([Vector2(base_x, width / 2.0 - 8.0), Vector2(base_x + dir * 19.0, width / 2.0 - 8.0), Vector2(base_x + dir * 19.0, width / 2.0 + 8.0), Vector2(base_x, width / 2.0 + 8.0)], cam, 1.5)
+	_line_path(_arc_points(Vector2(base_x + dir * 19.0, width / 2.0), 6.0, 0.0, TAU, 32), cam, 1.5)
+	_line_path(_arc_points(hoop, 4.0, -PI / 2.0 if not right else PI / 2.0, PI / 2.0 if not right else 3.0 * PI / 2.0, 16), cam, 1.5)
+	var corner_x := sqrt(FcCourtLayout.THREE_POINT_DISTANCE * FcCourtLayout.THREE_POINT_DISTANCE - FcCourtLayout.CORNER_THREE_DISTANCE * FcCourtLayout.CORNER_THREE_DISTANCE)
+	var arc_half := asin(FcCourtLayout.CORNER_THREE_DISTANCE / FcCourtLayout.THREE_POINT_DISTANCE)
+	var run_end := hoop.x + dir * corner_x
+	for y in [3.0, width - 3.0]:
+		_line_path([Vector2(base_x, y), Vector2(run_end, y)], cam, 1.5)
+	var centre_angle := PI if right else 0.0
+	_line_path(_arc_points(hoop, FcCourtLayout.THREE_POINT_DISTANCE, centre_angle - arc_half, centre_angle + arc_half, 24), cam, 1.5)
+	var backboard_from := _pp(base_x + dir * 4.0, width / 2.0 - 3.0, 9.0, cam)
+	var backboard_to := _pp(base_x + dir * 4.0, width / 2.0 + 3.0, 9.0, cam)
+	draw_line(backboard_from, backboard_to, LINE, 3.0)
+	draw_circle(_pp(hoop.x, hoop.y, 10.0, cam), _projection.pixels_at(0.75, hoop.y, cam), BALL)   # the rim, ten feet up
 
 
 func _draw_ball(origin: Vector2, scale_px: float) -> void:

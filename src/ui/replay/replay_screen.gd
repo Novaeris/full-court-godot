@@ -9,7 +9,12 @@ extends VBoxContainer
 
 signal event_shown(index: int)
 
-const SPEEDS := [["1", "1x"], ["2", "2x"], ["4", "4x"]]
+const SPEEDS := [["0.25", "0.25x"], ["0.5", "0.5x"], ["1", "1x"], ["2", "2x"], ["4", "4x"]]
+## The speed an instant replay plays at: half speed, so the play can be followed.
+const INSTANT_REPLAY_SPEED := 0.5
+const VIEWS := [["broadcast", "Broadcast view"], ["flat", "Flat view"]]
+const CAMERA_MODES := [["auto", "Auto"], ["hybrid", "Auto + manual"], ["manual", "Manual"]]
+const ZOOM_STEP := 1.25
 const FILTERS := [[FcReplayModel.FILTER_ALL, "All plays"], [FcReplayModel.FILTER_KEY, "Key plays"], [FcReplayModel.FILTER_SCORING, "Scoring"]]
 
 var model: FcReplayModel
@@ -31,6 +36,12 @@ var play_button: FcButton
 var filter_group: FcChoiceGroup
 var speed_group: FcChoiceGroup
 var period_group: FcChoiceGroup
+var view_group: FcChoiceGroup
+var camera_group: FcChoiceGroup
+var replay_button: Button
+var replay_badge: Label
+var trail_toggle: Button
+var camera_buttons: Array[Button] = []   # Wide, Zoom in, Zoom out: they move the camera by hand, so they are off in the automatic mode
 
 var _index: int = 0
 var _playing: bool = false
@@ -40,6 +51,7 @@ var _feed_indices: Array[int] = []
 var _roster_labels: Array = [[], []]   # per side: the five labels listing who is on court
 var _roster_heads: Array = [null, null]
 var _silent: bool = false
+var _instant: Dictionary = {}   # {start, end, return_index, speed}: an instant replay in progress ({} when live)
 
 
 ## Builds the screen for `replay_model`. `team_colors` are the home and away colours; `phone` picks the stacked layout.
@@ -84,7 +96,16 @@ func _build() -> void:
 	court = FcCourtView.new()
 	court.colors = colors
 	court.custom_minimum_size = Vector2(300 if compact else 520, 170 if compact else 280)
+	court.home_abbreviation = str(model.box.abbreviations[0])
+	replay_badge = FcUiTables.label("REPLAY", FcUiTokens.TYPE_SMALL, true)
+	replay_badge.name = "ReplayBadge"
+	replay_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	replay_badge.add_theme_color_override("font_color", FcUiTokens.GOLD)
+	replay_badge.visible = false
+	court.add_child(replay_badge)
+	replay_badge.position = Vector2(FcUiTokens.SPACE_3, FcUiTokens.SPACE_2)
 	left.add_child(court)
+	left.add_child(_camera_controls())
 	overlay = FcBroadcastOverlay.new(colors)   # the broadcast graphic sits over the court's lower edge and never takes the mouse
 	overlay.size_flags_horizontal = Control.SIZE_FILL
 	court.add_child(overlay)
@@ -153,6 +174,61 @@ func _controls() -> Control:
 			seek(int(v), false))
 	box.add_child(scrubber)
 	return box
+
+
+func _camera_controls() -> Control:
+	var box := HFlowContainer.new()
+	box.name = "CameraControls"
+	box.add_theme_constant_override("h_separation", FcUiTokens.SPACE_2)
+	view_group = FcChoiceGroup.new()
+	view_group.set_options(VIEWS, "broadcast")
+	view_group.selected.connect(set_view)
+	box.add_child(view_group)
+	camera_group = FcChoiceGroup.new()
+	camera_group.set_options(CAMERA_MODES, "hybrid")
+	camera_group.selected.connect(set_camera_mode)
+	box.add_child(camera_group)
+	for entry in [["Whole court", func() -> void: court.rig.manual_set(Vector2(FcCourtLayout.COURT_LENGTH / 2.0, FcCourtLayout.COURT_WIDTH / 2.0), 1.0)],
+			["Zoom in", func() -> void: court.rig.manual_move(Vector2.ZERO, ZOOM_STEP)], ["Zoom out", func() -> void: court.rig.manual_move(Vector2.ZERO, 1.0 / ZOOM_STEP)]]:
+		var button := FcButton.make(entry[0], FcButton.Variant.SECONDARY, entry[1])
+		camera_buttons.append(button)
+		box.add_child(button)
+	box.add_child(FcButton.make("Reset camera", FcButton.Variant.GHOST, reset_camera))
+	trail_toggle = FcButton.make("Ball trail: on", FcButton.Variant.GHOST, toggle_trail)
+	box.add_child(trail_toggle)
+	replay_button = FcButton.make("Instant replay", FcButton.Variant.PRIMARY, toggle_instant_replay)
+	box.add_child(replay_button)
+	return box
+
+
+func toggle_trail() -> void:
+	court.show_trail = not court.show_trail
+	trail_toggle.text = "Ball trail: on" if court.show_trail else "Ball trail: off"
+	court.queue_redraw()
+
+
+## Switches between the projected broadcast view and the original flat top-down court. The replay position is untouched.
+func set_view(id: String) -> void:
+	court.set_flat(id == "flat")
+	view_group.select(id)
+
+
+## "auto" (the director only), "hybrid" (the director, until you move the camera; it comes back after a few idle seconds) or "manual".
+func set_camera_mode(id: String) -> void:
+	court.rig.mode = {"auto": FcCameraRig.Mode.AUTO, "hybrid": FcCameraRig.Mode.HYBRID, "manual": FcCameraRig.Mode.MANUAL}.get(id, FcCameraRig.Mode.HYBRID)
+	camera_group.select(id)
+	for b in camera_buttons:
+		b.disabled = id == "auto"
+	court.rig.request(FcCameraDirector.shot_for(timeline, _index))
+
+
+## Gives the camera back to the director (and leaves manual mode).
+func reset_camera() -> void:
+	court.rig.reset()
+	camera_group.select("hybrid")
+	for b in camera_buttons:
+		b.disabled = false
+	court.rig.request(FcCameraDirector.shot_for(timeline, _index))
 
 
 func _team_card() -> Control:
@@ -231,11 +307,14 @@ func seek(i: int, animate: bool = true) -> void:
 	_index = clampi(i, 0, model.size() - 1)
 	_timer = 0.0
 	var st := model.state_at(_index)
+	if not animate:
+		court.clear_trail()   # a jump or scrub: the earlier positions are not "just before"
 	court.show_state(st, _names, animate)
 	bug.setup(model.box.abbreviations[0], st["home"], model.box.abbreviations[1], st["away"], model.status_at(_index), colors[0], colors[1])
 	bug.show_broadcast(timeline.snapshot(_index), model.box.abbreviations[0], model.box.abbreviations[1])
 	overlay.show_item(FcBroadcastGraphics.top_item_at(timeline, _index))
 	_update_team_card(_index)
+	court.rig.request(FcCameraDirector.shot_for(timeline, _index))
 	sound_caption.text = ""   # a jump or a scrub makes no sound; stepping and playing set it again
 	caption.text = "%s  %s" % [st["clock_text"], st["text"]] if st["text"] != "" else st["clock_text"]
 	_update_rosters(st)
@@ -265,7 +344,7 @@ func toggle_play() -> void:
 
 
 func set_speed(value: float) -> void:
-	speed = clampf(value, 0.5, 8.0)
+	speed = clampf(value, 0.25, 8.0)
 
 
 func set_filter(id: String) -> void:
@@ -282,6 +361,13 @@ func advance(delta: float) -> void:
 		return
 	_timer += delta * speed
 	if _timer < model.dwell(_index):
+		return
+	if not _instant.is_empty():
+		if _index >= int(_instant["end"]):
+			end_instant_replay()
+			return
+		seek(_index + 1, true)   # an instant replay shows every event of the play, whatever the feed filter is
+		_make_sounds(_index)
 		return
 	var nxt := model.step(_index, 1, filter)
 	if nxt == _index:
@@ -302,6 +388,51 @@ func _make_sounds(i: int) -> void:
 		FcAudio.cue(id)
 	var captions_on := FcAudio.current.prefs.sound_captions if FcAudio.current != null and is_instance_valid(FcAudio.current) else true
 	sound_caption.text = FcBroadcastAudio.caption_for(cues) if captions_on else ""
+
+
+## Starts or stops an instant replay of the possession that led to the current event (master plan B2b option C): the same events, at half
+## speed, with a REPLAY badge, then back to exactly where the live replay was. The replay is a cursor over the recorded events; nothing is
+## rewound, simulated or changed.
+func toggle_instant_replay() -> void:
+	if _instant.is_empty():
+		start_instant_replay()
+	else:
+		end_instant_replay()
+
+
+func start_instant_replay() -> void:
+	if model == null or model.is_empty() or not _instant.is_empty():
+		return
+	var window := timeline.replay_window(_index)
+	_instant = {"start": int(window["start"]), "end": int(window["end"]), "return_index": _index, "speed": speed, "was_playing": _playing}
+	replay_badge.visible = true
+	replay_button.text = "Back to the game"
+	court.clear_trail()
+	speed = INSTANT_REPLAY_SPEED
+	_playing = true
+	set_process(true)
+	play_button.text = "Pause"
+	seek(int(_instant["start"]), false)
+
+
+## Leaves the instant replay: the live position, speed and play or pause state come back exactly as they were.
+func end_instant_replay() -> void:
+	if _instant.is_empty():
+		return
+	var back := int(_instant["return_index"])
+	speed = float(_instant["speed"])
+	_playing = bool(_instant["was_playing"])
+	_instant = {}
+	replay_badge.visible = false
+	replay_button.text = "Instant replay"
+	set_process(_playing)
+	play_button.text = "Pause" if _playing else "Play"
+	court.clear_trail()
+	seek(back, false)
+
+
+func is_instant_replay() -> bool:
+	return not _instant.is_empty()
 
 
 func _process(delta: float) -> void:

@@ -268,3 +268,6 @@ See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
 
 ## 2026-11-22 Replay sounds and captions (B3, D-069)
 - Added `FcBroadcastAudio` (pure event-to-sound mapping and captions), ten procedural sounds, a Crowd bus with a volume slider, a Sound captions setting, and sounds and captions in the replay screen. No recorded or licensed audio. Totals: `TESTING.md`.
+
+## 2026-11-22 2D broadcast camera and replay presentation (B2b options B and C, D-069)
+- Added the projected broadcast court with a camera director and rig (automatic, hybrid and manual), slow motion, a ball trail and instant replay with an exact return to the live position. The flat view remains. Totals: `TESTING.md`.

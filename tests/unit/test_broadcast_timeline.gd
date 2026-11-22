@@ -246,3 +246,35 @@ func test_an_empty_or_missing_game_is_an_empty_timeline_not_an_error() -> void:
 	assert_eq(int(t.player_line(5, 1)["points"]), 0)
 	var none := FcBroadcastTimeline.build(null)
 	assert_true(none.is_empty())
+
+
+func test_the_instant_replay_window_is_the_possession_that_led_to_the_event() -> void:
+	for s in SEEDS:
+		var g := _game(s)
+		var t: FcBroadcastTimeline = g["timeline"]
+		var entries: Array[Dictionary] = (g["model"] as FcReplayModel).entries
+		var floor_index: int = (g["model"] as FcReplayModel).start_index()
+		for i in range(0, t.size(), 3):
+			var w := t.replay_window(i)
+			assert_eq(int(w["end"]), i, "the window ends at the event")
+			assert_true(int(w["start"]) <= i, "start %d end %d" % [int(w["start"]), i])
+			if i >= floor_index:
+				assert_true(int(w["start"]) >= floor_index, "never before the tip-off (start %d, tip-off %d)" % [int(w["start"]), floor_index])
+			else:
+				assert_eq(w, {"start": i, "end": i}, "the starters announced before the tip-off have no play to replay")
+			assert_true(int(w["end"]) - int(w["start"]) + 1 <= 10, "never longer than the limit")
+			for k in range(int(w["start"]), i):
+				assert_true(not FcBroadcastTimeline._ends_possession(entries[k]), "no possession ends inside the window (event %d)" % k)
+			if int(w["start"]) > maxi(floor_index, i - 9):
+				assert_true(FcBroadcastTimeline._ends_possession(entries[int(w["start"]) - 1]), "it starts right after the previous possession ended")
+			assert_eq(w, t.replay_window(i), "deterministic")
+	var g2 := _game(12)
+	var t2: FcBroadcastTimeline = g2["timeline"]
+	assert_eq(t2.replay_window(5, 3)["end"], 5)
+	assert_true(int(t2.replay_window(5, 3)["start"]) >= 3, "a smaller limit shortens it")
+	assert_eq(t2.replay_window(99999)["end"], t2.size() - 1, "out of range is clamped")
+	assert_eq(FcBroadcastTimeline.build(null).replay_window(4), {"start": 0, "end": 0})
+	var rows_before := FcOnlineCrypto.canonical((g2["log"] as FcGameEventLog).rows)
+	for i in t2.size():
+		t2.replay_window(i)
+	assert_eq(FcOnlineCrypto.canonical((g2["log"] as FcGameEventLog).rows), rows_before, "choosing a window changes nothing")

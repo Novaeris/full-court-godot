@@ -93,6 +93,36 @@ func clutch_start_index() -> int:
 	return -1
 
 
+## The events an instant replay of event `index` shows (master plan B2b option C): {"start", "end"}, where `end` is `index` and `start` is the
+## first event of the possession that led to it, never more than `max_events` back and never before the tip-off. A possession ends at a made
+## basket, a turnover, a defensive rebound or the end of a period, so the window runs from just after the previous one of those.
+## Pure and deterministic; it reads the recorded events only and changes nothing.
+func replay_window(index: int, max_events: int = 10) -> Dictionary:
+	if is_empty():
+		return {"start": 0, "end": 0}
+	index = clampi(index, 0, size() - 1)
+	var floor_index := model.start_index()
+	var start := maxi(floor_index, index - maxi(1, max_events) + 1)
+	var i := index - 1
+	while i >= start:
+		if _ends_possession(model.entries[i]):
+			start = i + 1
+			break
+		i -= 1
+	return {"start": mini(start, index), "end": index}
+
+
+static func _ends_possession(e: Dictionary) -> bool:
+	match int(e["type"]):
+		FcGameEventLog.EV_SHOT_MADE, FcGameEventLog.EV_TURNOVER, FcGameEventLog.EV_PERIOD_START, FcGameEventLog.EV_PERIOD_END:
+			return true
+		FcGameEventLog.EV_REBOUND:
+			return int(e["x"]) == 0
+		FcGameEventLog.EV_FREE_THROW:
+			return false
+	return false
+
+
 ## One player's line from the start of the game through event `upto`: {points, fgm, fga, tpm, tpa, ftm, fta, oreb, dreb, reb, ast, stl,
 ## blk, tov, pf, team_reb}. Counted from the same rows as the box score (the test compares every player at the final event).
 func player_line(upto: int, player_id: int) -> Dictionary:

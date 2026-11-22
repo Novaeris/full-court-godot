@@ -53,6 +53,8 @@ func show_item(item: Dictionary) -> void:
 	_detail.visible = _detail.text != ""
 	var side := int(item["side"])
 	_edge.color = _colors[side] if side >= 0 else FcUiTokens.STEEL
+	if [FcBroadcastGraphics.MILESTONE, FcBroadcastGraphics.RUN, FcBroadcastGraphics.FINAL, FcBroadcastGraphics.CLUTCH].has(str(item["kind"])):
+		_edge.color = FcUiTokens.GOLD   # runs, milestones, clutch time and the final get the gold edge
 	visible = true
 	FcMotion.fade_in(self, FcUiTokens.DUR_FAST)
 
