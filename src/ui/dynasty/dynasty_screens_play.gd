@@ -54,6 +54,8 @@ static func _replay_picker(ui: FcDynastyUi) -> Control:
 		items.append([str(kept[i]["label"]), i])
 	var picker := FcDropdown.make(items, kept.size() - 1)
 	picker.name = "ReplayPicker"
+	picker.clip_text = true   # a long game label must not widen the page on a narrow window
+	picker.custom_minimum_size.x = 150.0
 	row.add_child(picker)
 	var watch := FcDynastyUi.btn("Watch replay", func() -> void:
 		var entry: Dictionary = kept[int(picker.value())]

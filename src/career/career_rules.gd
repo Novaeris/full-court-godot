@@ -312,7 +312,7 @@ static func sponsor_offers(profile: FcCareerProfile, year: int, rng: FcRng, name
 	var out: Array = []
 	if profile.reputation < SPONSOR_MIN_REPUTATION or names.is_empty():
 		return out
-	var base := mini(2500, 150 + 25 * profile.reputation)
+	var base := roundi(mini(2500, 150 + 25 * profile.reputation) * FcCareerMedia.sponsor_multiplier(profile))   # fans and hype: 1.0 at the starting image
 	var pool := names.duplicate()
 	for i in 3:
 		if pool.is_empty():

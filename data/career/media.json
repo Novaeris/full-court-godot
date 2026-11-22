@@ -1,0 +1,48 @@
+{
+	"schema": 1,
+	"note": "Public image for Career Mode. Three numbers from 0 to 100: fan_favor (do supporters love you), media_image (how the press sees you) and hype (how loud the buzz is right now). They start at 50, 50 and 0, move with great games, winning, titles and the choices you make, and change what a sponsor will pay (sponsor.*). All of it is here so it can be rebalanced without code. Edit numbers, not keys.",
+	"start": {"fan_favor": 50, "media_image": 50, "hype": 0},
+	"notable_game": {"points": 35, "triple_double": 10, "hype": 4, "fan_favor": 1},
+	"season": {
+		"win_pct_baseline": 0.5, "fan_per_win_pct": 30, "title_fan": 6, "title_hype": 8,
+		"star_ppg": 20, "star_fan": 2, "star_hype": 3, "hype_decay_percent": 30, "fan_drift_toward_start": 1
+	},
+	"tag_effects": {
+		"outspoken": {"hype": 2, "media_image": -1},
+		"community": {"fan_favor": 1, "media_image": 1},
+		"humble": {"media_image": 1},
+		"controversial": {"hype": 2, "media_image": -2},
+		"mentor": {"media_image": 1, "fan_favor": 1},
+		"loyal_to_club": {"fan_favor": 1},
+		"competitor": {"hype": 1},
+		"agent_flashy": {"hype": 1, "media_image": -1},
+		"agent_loyal": {"media_image": 1}
+	},
+	"sponsor": {"fan_weight": 0.006, "hype_weight": 0.004, "min": 0.75, "max": 1.5},
+	"headline_limit": 12,
+	"labels": {
+		"fan_favor": [[0, "Despised"], [20, "Booed"], [40, "Tolerated"], [55, "Liked"], [70, "Beloved"], [85, "Adored"]],
+		"media_image": [[0, "Villain"], [25, "Controversial"], [45, "Neutral"], [60, "Respected"], [80, "Media darling"]],
+		"hype": [[0, "Unnoticed"], [15, "On the radar"], [35, "Buzzing"], [60, "Superstar buzz"], [85, "Phenomenon"]]
+	},
+	"headlines": {
+		"notable_points": [
+			"{name} erupts for {points} against {opponent}",
+			"{points}-point night: {name} cannot be stopped by {opponent}",
+			"{name} lights up {opponent} with {points}"
+		],
+		"triple_double": [
+			"{name} fills the stat sheet with a triple-double against {opponent}",
+			"Triple-double for {name} as {team} beat {opponent}",
+			"{name} does a little of everything against {opponent}"
+		],
+		"title": [
+			"{name} and {team} are champions",
+			"Champagne in {team}'s locker room: {name} leads the way"
+		],
+		"award": [
+			"{name} wins {award}",
+			"The league honours {name}: {award}"
+		]
+	}
+}

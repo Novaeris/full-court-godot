@@ -163,6 +163,7 @@ func join_team(team_id: int) -> Dictionary:
 	_game.career_player_id = profile().player_id
 	_roll_event()
 	state.world.add_news(state.current_date, "signing", "%s signed with %s." % [player().identity.full_name(), state.world.team_display_name(team_id)], team_id)
+	FcCareerTimeline.add(profile(), year, "team", "Signed a %d-year rookie contract with %s (pick %d of %d)" % [rules.cap.rookie_contract_years, state.world.team_display_name(team_id), int(outlook["pick"]), int(outlook["picks"])])
 	return {"ok": true, "reason": "You signed with %s on a %d-year rookie contract (pick %d)." % [state.world.team_display_name(team_id), rules.cap.rookie_contract_years, int(outlook["pick"])]}
 
 
@@ -231,6 +232,7 @@ func finish_season() -> Dictionary:
 	var year := state.current_season
 	var row := _record_season(year)
 	var milestone := FcCareerRules.claim_milestone(profile(), "season_complete")
+	_remember_season(year, row)
 	if profile().relationships_year != year:
 		profile().relationships_year = year
 		var line := season_line(year)
@@ -315,6 +317,7 @@ func answer_contract(action: String, salary: int = 0) -> Dictionary:
 		state.agreed_extensions.append(pid)
 		state.agreed_terms[pid] = [signed, int(offer["years"])]
 	profile().decisions.append({"year": state.current_season, "key": "contract", "choice": "%s %d" % [action, signed]})
+	FcCareerTimeline.add(profile(), state.current_season, "contract", message)
 	profile().contract_pending = false
 	profile().contract_resolved_year = state.current_season
 	return {"ok": true, "reason": message}
@@ -401,6 +404,59 @@ func _record_season(year: int) -> Dictionary:
 	return row
 
 
+## What one game adds to the career's story: the public image (a headline for a big night), milestones, levels and injuries on the timeline.
+## Returns the public-image result of the game ({} for an ordinary one).
+func _remember_game(box: Dictionary, line: Dictionary, reward: Dictionary, side: int) -> Dictionary:
+	var year := state.current_season
+	var opponent := str(box["team_names"][1 - side])
+	var public := FcCareerMedia.on_game(profile(), line, year, player().identity.full_name(), state.world.team_display_name(state.user_team_id), opponent)
+	if not public.is_empty():
+		FcCareerTimeline.add(profile(), year, "game", str(public["headline"]))
+	for m in reward["milestones"]:
+		FcCareerTimeline.add(profile(), year, "milestone", "Milestone: %s" % str(m).replace("_", " "))
+	if int(reward["levels_gained"]) > 0:
+		FcCareerTimeline.add(profile(), year, "level", "Reached level %d" % profile().level)
+	for injury in box.get("injuries", []):
+		if int(injury[0]) == profile().player_id:
+			FcCareerTimeline.add(profile(), year, "injury", "Hurt against %s: %s, out %d game%s" % [opponent, str(injury[2]), int(injury[1]), "" if int(injury[1]) == 1 else "s"])
+	return public
+
+
+## What a finished season adds to the career's story: the season line, a title, the awards, and the season's effect on the public image.
+## Safe to run twice for one season (the timeline ignores repeats and the public image is applied once).
+func _remember_season(year: int, row: Dictionary) -> void:
+	var g := game()
+	var name := player().identity.full_name()
+	var team_name := state.world.team_display_name(state.user_team_id)
+	FcCareerTimeline.add(profile(), year, "season", "%d-%02d: %.1f points, %.1f rebounds, %.1f assists for %s (%d-%d)" % [year, (year + 1) % 100, float(row["points"]), float(row["rebounds"]), float(row["assists"]), team_name, int(row["wins"]), int(row["losses"])])
+	var season := g.season()
+	var champion := season.champion_id == state.user_team_id and state.user_team_id > 0
+	if champion:
+		FcCareerTimeline.add(profile(), year, "title", "Won the championship with %s" % team_name)
+		FcCareerMedia.add_headline(profile(), year, FcCareerMedia.headline("title", year, {"name": name, "team": team_name, "points": 0, "award": ""}))
+	var pid := profile().player_id
+	var won: Array = []
+	if int(season.awards.get("mvp", 0)) == pid:
+		won.append("Most Valuable Player")
+	if int(season.awards.get("finals_mvp", 0)) == pid:
+		won.append("Finals MVP")
+	if int(season.awards.get("scoring_champion", 0)) == pid:
+		won.append("scoring champion")
+	for pair in [["all_league_first", "All-League first team"], ["all_league_second", "All-League second team"], ["all_league_third", "All-League third team"]]:
+		if (season.awards.get(pair[0], []) as Array).has(pid):
+			won.append(pair[1])
+	for award in won:
+		FcCareerTimeline.add(profile(), year, "award", "Named %s" % award)
+		FcCareerMedia.add_headline(profile(), year, FcCareerMedia.headline("award", year, {"name": name, "team": team_name, "points": 0, "award": award}))
+	row["awards"] = won
+	var played := float(row["wins"]) + float(row["losses"])
+	var public := FcCareerMedia.after_season(profile(), year, {"win_pct": float(row["wins"]) / maxf(1.0, played), "points": float(row["points"]), "champion": champion})
+	if not public.is_empty():
+		row["fan_change"] = int(public["fan_favor"])
+		row["media_change"] = int(public["media_image"])
+		row["hype_change"] = int(public["hype"])
+
+
 ## After the league's offseason: follow the player to the team he is on now, and if no team kept him he signs with the draft's team
 ## (agents and negotiations come with the career RPG phase).
 func _after_offseason() -> void:
@@ -409,6 +465,7 @@ func _after_offseason() -> void:
 		profile().rival_player_id = 0   # the rival retired: a new challenge may bring another
 	if is_retired():
 		profile().stage = FcCareerProfile.Stage.LEGACY   # the league retired him in the offseason: the career ends here
+		FcCareerTimeline.add(profile(), state.current_season, "retired", "Retired after %d seasons" % profile().history.size())
 		state.world.add_news(state.current_date, "retirement", "%s has retired after %d seasons." % [player().identity.full_name(), profile().history.size()], state.user_team_id)
 		return
 	var team := state.world.team_of_player(profile().player_id)
@@ -435,7 +492,10 @@ func sponsor_offers() -> Array:
 func sign_sponsor(sponsor_name: String) -> Dictionary:
 	for offer in sponsor_offers():
 		if offer["sponsor"] == sponsor_name:
-			return FcCareerRules.sign_sponsor(profile(), offer)
+			var signed := FcCareerRules.sign_sponsor(profile(), offer)
+			if signed["ok"]:
+				FcCareerTimeline.add(profile(), state.current_season, "sponsor", signed["reason"])
+			return signed
 	return {"ok": false, "reason": "That sponsor is not offering a deal."}
 
 
@@ -508,6 +568,7 @@ func answer_event(choice_key: String) -> Dictionary:
 		var r := rival()
 		if not r.is_empty():
 			result["reason"] += " Your rival: %s of %s." % [r["name"], r["team"]]
+			FcCareerTimeline.add(profile(), state.current_season, "rival", "Accepted a challenge from %s of %s" % [r["name"], r["team"]])
 	return result
 
 
@@ -553,9 +614,10 @@ func _collect_games() -> Array:
 			var line := {"minutes": float(row["seconds"]) / 60.0, "points": int(row["points"]), "rebounds": int(row["oreb"]) + int(row["dreb"]),
 				"assists": int(row["ast"]), "steals": int(row["stl"]), "blocks": int(row["blk"]), "turnovers": int(row["tov"]), "won": won}
 			var reward := FcCareerRules.apply_game(profile(), line)
+			var public := _remember_game(box, line, reward, side)
 			var game := {"day": int(entry["day"]), "opponent": str(box["team_names"][1 - side]), "score": "%d-%d" % [int(box["scores"][side]), int(box["scores"][1 - side])],
 				"won": won, "line": line, "xp": int(reward["xp"]), "levels_gained": int(reward["levels_gained"]), "milestones": reward["milestones"],
-				"box": box, "events": entry.get("events", {})}   # the finished game and its play-by-play, for the post-game and replay screens (display only)
+				"box": box, "events": entry.get("events", {}), "headline": str(public.get("headline", ""))}   # the finished game and its play-by-play, for the post-game and replay screens (display only)
 			# a night against the rival is also a duel
 			for other in box["players"]:
 				if profile().rival_player_id > 0 and int(other["player_id"]) == profile().rival_player_id and int(other["team_id"]) != state.user_team_id and int(other["seconds"]) > 0:

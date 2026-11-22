@@ -74,6 +74,16 @@ var tags: Array[String] = []
 var decisions: Array = []
 ## One row per season: {"year", "team_id", "games", "points", "rebounds", "assists", "awards": []}.
 var history: Array = []
+## The public image, 0-100 each (data/career/media.json, FcCareerMedia): do supporters love the player, how the press sees him, and how loud
+## the buzz is right now. `public_year` is the last season whose image changes were applied (a season is applied once, even across a save).
+var fan_favor: int = 50
+var media_image: int = 50
+var hype: int = 0
+var public_year: int = 0
+## The latest headlines about the player [{"year", "text"}] (newest last) and the career timeline [{"year", "kind", "text"}] (oldest first):
+## see FcCareerMedia and FcCareerTimeline. Display and legacy only: no rule reads them back.
+var headlines: Array = []
+var timeline: Array = []
 ## Reserved and unused: an account name for a possible future online feature (not planned for Career). Always empty today.
 var owner_account: String = ""
 
@@ -106,6 +116,8 @@ func validate() -> Array[String]:
 		errors.append("xp, points, reputation and currency cannot be negative and the level starts at 1")
 	if coach_trust < 0 or coach_trust > 100 or chemistry < 0 or chemistry > 100:
 		errors.append("relationships are 0-100")
+	if fan_favor < 0 or fan_favor > 100 or media_image < 0 or media_image > 100 or hype < 0 or hype > 100:
+		errors.append("the public image (fan favour, media image, hype) is 0-100")
 	if not ["auto", "starter", "bench"].has(role):
 		errors.append("role must be auto, starter or bench")
 	if absi(minutes_pref) > 1 or absi(usage_pref) > 1:
@@ -127,6 +139,8 @@ func to_dict() -> Dictionary:
 		"badges_owned": badges_owned.duplicate(), "badges_equipped": badges_equipped.duplicate(), "role": role, "minutes_pref": minutes_pref, "usage_pref": usage_pref, "growth_granted_year": growth_granted_year, "potential_banner_pending": potential_banner_pending, "sponsor_deal": sponsor_deal.duplicate(), "sponsor_paid_year": sponsor_paid_year, "rival_player_id": rival_player_id, "rival_wins": rival_wins, "rival_losses": rival_losses, "coach_trust": coach_trust, "chemistry": chemistry, "relationships_year": relationships_year, "contract_pending": contract_pending, "contract_resolved_year": contract_resolved_year, "pending_event": pending_event, "tags": tags.duplicate(), "milestones": milestones.duplicate(), "training_used": training_used.duplicate(),
 		"build_potential": build_potential, "build_version": build_version, "ruleset_version": ruleset_version,
 		"decisions": decisions.duplicate(true), "history": history.duplicate(true), "owner_account": owner_account,
+		"fan_favor": fan_favor, "media_image": media_image, "hype": hype, "public_year": public_year,
+		"headlines": headlines.duplicate(true), "timeline": timeline.duplicate(true),
 	}
 
 
@@ -186,11 +200,21 @@ static func from_dict(d: Dictionary) -> FcCareerProfile:
 	for row in d.get("history", []):
 		if row is Dictionary:
 			var clean: Dictionary = row.duplicate(true)
-			for key in ["year", "team_id", "games", "wins", "losses", "trust_change", "chemistry_change", "sponsor_paid"]:   # JSON turns whole numbers into floats
+			for key in ["year", "team_id", "games", "wins", "losses", "trust_change", "chemistry_change", "sponsor_paid", "fan_change", "media_change", "hype_change"]:   # JSON turns whole numbers into floats
 				if clean.has(key):
 					clean[key] = int(clean[key])
 			p.history.append(clean)
 	p.owner_account = str(d.get("owner_account", ""))
+	p.fan_favor = clampi(int(d.get("fan_favor", 50)), 0, 100)
+	p.media_image = clampi(int(d.get("media_image", 50)), 0, 100)
+	p.hype = clampi(int(d.get("hype", 0)), 0, 100)
+	p.public_year = int(d.get("public_year", 0))
+	for row in d.get("headlines", []):
+		if row is Dictionary:
+			p.headlines.append({"year": int(row.get("year", 0)), "text": str(row.get("text", ""))})
+	for row in d.get("timeline", []):
+		if row is Dictionary:
+			p.timeline.append({"year": int(row.get("year", 0)), "kind": str(row.get("kind", "")), "text": str(row.get("text", ""))})
 	return p
 
 

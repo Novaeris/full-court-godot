@@ -64,7 +64,8 @@ This is the one place that says what is built. `ROADMAP.md`, `RELEASE_READINESS.
 | Decisions and events, relationships, rival, role, contracts, sponsorships | Built | `test_career_events`, `test_career_relationships`, `test_career_rival`, `test_career_role`, `test_career_contract`, `test_career_sponsor` |
 | Career hub and Owner-style dossier | Built | `test_ui_career_hub`, `test_player_dossier` |
 | Balance and full-run checks | Partial | `tools/career_balance`, `tools/career_playthrough` *(not re-run)* |
-| Career timeline, media and public reputation, wider life decisions, legacy presentation | Planned | Not implemented |
+| Career timeline and public image (`FcCareerTimeline`, `FcCareerMedia`, `data/career/media.json`): moments recorded as they happen, fan favour, media image and hype from big games, seasons, titles and choices, headlines, sponsors pay by image (Career data version 4) | Partial | `test_career_public`. Data and rules only: no screen shows them yet (timeline view and Legacy screen are phase 4C). |
+| Wider life decisions, legacy presentation | Planned | Not implemented |
 | Online team play | Planned | Not planned for Career; see `CAREER_MULTIPLAYER_READINESS.md` |
 
 ## Dynasty Mode (PC and mobile)

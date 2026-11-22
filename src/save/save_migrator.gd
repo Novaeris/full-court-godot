@@ -8,7 +8,8 @@ extends RefCounted
 ## and 3->4 in order. Steps must never be edited after release.
 ##
 ## Built-in steps: 1 -> 2 (Career Mode) adds the empty `career_profiles` list. 2 -> 3 (play-by-play) gives every stored box
-## score an empty `events` log. Tests may register their own steps, which replace a built-in step with the same number.
+## score an empty `events` log. 3 -> 4 (Career Mode phase 4) gives every career profile its public image and a timeline built from
+## its history and decisions. Tests may register their own steps, which replace a built-in step with the same number.
 
 var _steps: Dictionary = {}
 
@@ -16,6 +17,7 @@ var _steps: Dictionary = {}
 func _init() -> void:
 	register(1, _v1_to_v2)
 	register(2, _v2_to_v3)
+	register(3, _v3_to_v4)
 
 
 ## Version 2 added the Career Mode section. A version-1 save has no career, so it gets an empty list.
@@ -38,6 +40,32 @@ func _v2_to_v3(payload: Dictionary) -> Dictionary:
 			for entry in season.get("recent_boxes", []):
 				if entry is Dictionary and not entry.has("events"):
 					entry["events"] = {"rows": []}
+	return out
+
+
+## Version 4 added the public image (fan_favor 50, media_image 50, hype 0, no headlines) and the career timeline to every career profile.
+## A career that already has seasons and decisions gets a timeline built from them (one row per season and per decision), so an older
+## career is not blank. Written inline on purpose: a released step must never change when other code does.
+func _v3_to_v4(payload: Dictionary) -> Dictionary:
+	var out := payload.duplicate(true)
+	for profile in out.get("career_profiles", []):
+		if not (profile is Dictionary):
+			continue
+		for key in [["fan_favor", 50], ["media_image", 50], ["hype", 0], ["public_year", 0]]:
+			if not profile.has(key[0]):
+				profile[key[0]] = key[1]
+		if not profile.has("headlines"):
+			profile["headlines"] = []
+		if not profile.has("timeline"):
+			var rows: Array = []
+			for h in profile.get("history", []):
+				if h is Dictionary:
+					rows.append({"year": int(h.get("year", 0)), "kind": "season", "text": "Season %d: %d games, %s points a game" % [int(h.get("year", 0)), int(h.get("games", 0)), str(h.get("points", 0))]})
+			for d in profile.get("decisions", []):
+				if d is Dictionary:
+					rows.append({"year": int(d.get("year", 0)), "kind": "decision", "text": "Decided: %s (%s)" % [str(d.get("key", "")), str(d.get("choice", ""))]})
+			rows.sort_custom(func(a, b) -> bool: return int(a["year"]) < int(b["year"]))
+			profile["timeline"] = rows.slice(maxi(0, rows.size() - 300))
 	return out
 
 

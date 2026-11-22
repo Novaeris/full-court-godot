@@ -232,3 +232,8 @@ See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
 - **Why:** it needs no migration, can never disagree with the data it reads, and changing a rule (for example the retirement threshold) re-reads every old league. Same approach as the Hall of Fame (`FcRecords`).
 - **Retired numbers:** league players have no shirt number in the data model, so the number is a stable display choice (a hash of the player id, moved to the next free number for that club). A retired Career player's own number is not used yet.
 - **Limits by design:** rivalries come from playoff series only (regular-season games are dropped when a season is archived); history before the first finished season is empty.
+
+## 2026-11-22 Phase 4A: Career timeline and public image
+- Added `FcCareerTimeline` and `FcCareerMedia` (rules in `data/career/media.json`), Career data version 4 with migration, controller hooks, sponsor offers scaled by image (D-063). No screen yet.
+- Fixed a CI-only failure found by checking GitHub: the Dynasty Play screen replay picker (added in 2E) widened the page on a 360 px window with CI fonts; it now clips its text and has a small minimum width. Not reproducible locally, so confirm on the next CI run.
+- Verified locally: unit 1,392/0, live 144/0, Studio smoke PASS.

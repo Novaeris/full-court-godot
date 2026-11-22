@@ -327,3 +327,8 @@ Full write-up, measurements, pictures and recordings: `docs/PLAYER_VISUAL_PROPOS
 - **Achievements (third of the founder's list):** derived, never stored (so no saved-format change), data-driven (`data/achievements/achievements.json`), three tiers, Owner and Career only; no gameplay reward is attached.
 - **Relationships and Plays like (founder's order: relationships, similar players, achievements):** both are derived read-only from existing data, no saved-format change. Relationships are Owner and Career only; Plays like is in all three modes.
 - **Profile dossier (follow-up, built on the founder's go-ahead):** `FcPlayerProfile` keeps its API and tabs and gains the dossier hero and Overview panels; only data the mode has is shown (no invented stats, achievements or contract for Dynasty cards). Items the game has no data for (relationships, similar players) are not built and are listed in `docs/PLAYER_VISUAL_PROPOSAL.md`.
+
+## D-063 Career timeline and public image are stored on the profile (2026-11-22, Phase 4A)
+- **Decision:** unlike franchise history (D-062), a career timeline and the public image are kept in the career profile: the numbers (fan favour, media image, hype, 0-100) are real state that changes sponsor pay, and a timeline row records a moment that cannot be re-derived later (an injury, a decision, a headline). Capped (300 rows, 12 headlines).
+- **Save change:** `FcVersion.DATA_VERSION` 3 to 4; the migration gives each profile the starting image and a timeline built from its history and decisions.
+- **Rules in data:** every threshold and weight is in `data/career/media.json`; a season is applied once (`public_year`).

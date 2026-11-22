@@ -325,7 +325,7 @@ func test_owner_mode_states_do_not_carry_or_need_career_data() -> void:
 
 
 func test_the_data_version_is_current_and_a_version_one_save_migrates_to_it() -> void:
-	assert_eq(FcVersion.DATA_VERSION, 3, "version 3 added the play-by-play (see test_game_history)")
+	assert_eq(FcVersion.DATA_VERSION, 4, "version 4 added the public image and timeline (see test_career_public)")
 	var dir := "user://test_saves_career"
 	var old := FcSaveManager.new(dir)
 	old.current_data_version = 1   # an old game wrote this

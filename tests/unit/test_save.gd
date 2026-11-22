@@ -196,7 +196,7 @@ func test_missing_or_failing_migration_is_reported() -> void:
 	manager.current_data_version = 1
 	manager.save("slot_1", _state())
 	var no_step := FcSaveManager.new(DIR)
-	no_step.current_data_version = FcVersion.DATA_VERSION + 1   # the built-in 1 -> 2 and 2 -> 3 steps exist, 3 -> 4 does not
+	no_step.current_data_version = FcVersion.DATA_VERSION + 1   # the built-in 1 -> 2 and 2 -> 3 and 3 -> 4 steps exist, 4 -> 5 does not
 	assert_eq(no_step.load_slot("slot_1", defs).code, Code.MIGRATION_FAILED)
 
 	var failing := FcSaveManager.new(DIR)

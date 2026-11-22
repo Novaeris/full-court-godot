@@ -75,6 +75,7 @@ static func apply_choice(profile: FcCareerProfile, event_key: String, choice_key
 	if tag != "" and not profile.tags.has(tag):
 		profile.tags.append(tag)
 	profile.decisions.append({"year": year, "key": event_key, "choice": choice_key})
+	FcCareerTimeline.add(profile, year, "decision", "%s: %s" % [str(event["title"]), str(choice["label"])])
 	if profile.pending_event == event_key:
 		profile.pending_event = ""
 	return {"ok": true, "reason": "%s: %s" % [choice["label"], choice.get("note", "")], "effects": effects.duplicate()}
