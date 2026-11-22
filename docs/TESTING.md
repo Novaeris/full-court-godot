@@ -6,12 +6,12 @@
 3. **Manual playtesting** by the founder for feel, usability and fun. Claude provides step-by-step instructions with each UI feature.
 
 ## Current totals (the one authoritative place)
-Every other document points here instead of repeating numbers. These come only from fresh runs, never from older documents. The last verified run was on 2026-11-21, at the end of Phase 2B (stored play-by-play; the exact commit is in `FEATURE_MATRIX.md`), with Godot 4.7.2 headless, one process at a time.
+Every other document points here instead of repeating numbers. These come only from fresh runs, never from older documents. The last verified run was on 2026-11-21, at the end of Phase 2C (the replay screen; the exact commit is in `FEATURE_MATRIX.md`), with Godot 4.7.2 headless, one process at a time.
 
 | Kind | What it is | Last result | How to run |
 |---|---|---|---|
-| Unit | `tests/unit/test_*.gd`, headless, fixed seeds | **1,324 passed, 0 failed** | `./tools/run_tests.ps1` |
-| Live | `tests/live/test_live_*.gd`, real scene tree, awaits frames | **125 passed, 0 failed** | `./tools/run_live_tests.ps1` |
+| Unit | `tests/unit/test_*.gd`, headless, fixed seeds | **1,338 passed, 0 failed** | `./tools/run_tests.ps1` |
+| Live | `tests/live/test_live_*.gd`, real scene tree, awaits frames | **136 passed, 0 failed** | `./tools/run_live_tests.ps1` |
 | Creator Studio smoke | separate project, `creator_studio/tools/studio_smoke.gd` | **PASS** (13 checks) | `godot_console --headless --path creator_studio --script res://tools/studio_smoke.gd` |
 | Simulation and stress | `simulate_games`, `economy_check`, `owner_stress`, `ui_playthrough`, `career_balance` and similar tools in `tools/` | **Not re-run in Phase 1** (nothing in the simulation changed). Results are in `STABILITY_REPORT.md` and `RELEASE_READINESS.md` as historical records with their own dates. | `tools/*.ps1` |
 | Manual validation | founder playtests, Android device checklist, screenshot review | **Not automated.** Outstanding items are in `DEVICE_VALIDATION.md` and `RELEASE_READINESS.md` section 3 to 4. | by hand |
@@ -254,3 +254,9 @@ Unit suite: 1,113 tests; live UI suite: 68 tests; both exit 0. See docs/RELEASE_
 ## Game history (Phase 2B, 2026-11-21)
 - `tests/unit/test_game_history.gd` (10 tests): a watched game keeps its play-by-play and the events add up to the stored final; unwatched games are not recorded; the log survives a JSON round trip as whole numbers and a full save and load; unfinished seasons are never archived and a finished archived season drops boxes and replays; one replay stays under 70,000 characters (measured: 6,500 to 12,200 for 363 to 659 events, about 173 KB for the 20 kept games); the version 2 to 3 migration adds empty logs and touches nothing else (and a version 1 save walks both steps); Career games and Dynasty results carry the play-by-play, and a Dynasty profile save never holds it.
 - Existing tests that asserted the old data version now assert 3 (`test_career_foundation`, `test_injury_history`).
+
+## Replay (Phase 2C, 2026-11-21)
+- `tests/unit/test_replay_model.gd` (14 tests): shots are placed by kind (threes beyond the line, rim finishes at the basket, all on the court, repeatable but varied), the ends switch at halftime, formations have defenders goal-side, slots follow positions; the model's final state has every player's points and fouls equal to the box, points and scores only grow and add up at every event, possession and ends follow the events, five on court after the tip-off and team fouls reset each period, the three filters nest and stepping visits exactly the filtered events, pacing is positive and shots linger longer than substitutions, empty or missing logs are handled; the adapters give no replay without events (older saves) and open one for Owner, Career and Dynasty games.
+- `tests/live/test_live_replay.gd` (11 tests): the screen opens on the tip-off and draws; play, pause, speed and play-to-the-end then start-over; stepping, filters, period buttons and the scrubber; clicking the feed; five players listed per side; reduced motion shows events at once; a phone-width layout fits; an empty replay explains itself; space and arrow keys; and the real path: an Owner post-game dialog offers "Watch replay" and opens this game's replay (and offers none when no events were kept).
+- Looked at, not only tested: `./tools/screenshot.ps1 screen=owner_replay` renders it; pictures in `docs/validation/ui/replay/` (desktop 1280x800 and phone 412x915). The court is an illustration (see ARCHITECTURE).
+- Kit fix found while building it: `FcChoiceGroup.select()` left the previously chosen button looking pressed.

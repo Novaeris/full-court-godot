@@ -3,6 +3,9 @@
 Newest first. Written so someone returning after a break can see where things stand. This is a dated history: an entry describes the state on its date. **For what is built now, see [FEATURE_MATRIX.md](FEATURE_MATRIX.md); for current test totals, see [TESTING.md](TESTING.md).**
 The repository was published to GitHub on 2026-11-17 at the founder's request (public: https://github.com/Novaeris/full-court-godot, remote `origin`, branch `main`). Later commits stay local until the founder asks for a push.
 
+## 2026-11-21: Phase 2C: the game replay screen
+A "Watch replay" button on the post-game screen of Owner, Career and Dynasty games opens the replay: a drawn full court with both teams, the ball and a gold flash on made baskets, a scoreboard, a clickable play-by-play feed, play and pause, step, 1x/2x/4x, All plays / Key plays / Scoring, jump to a quarter and a scrubber; phone layout stacks it. Pure model and geometry are unit tested (14), the screen has 11 live tests, and it was rendered and looked at on desktop and phone. Found and fixed a kit bug on the way (a choice group kept two buttons looking selected).
+
 ## 2026-11-21: Phase 2A and 2B: play-by-play recorded and kept
 The founder asked for the full plan to continue with a push after every milestone. Phase 2 (game presentation) starts with the data: the simulator can now write down every event of a game without changing it (`FcGameEventLog`, `FcPlayByPlay`; proven bit-for-bit neutral), and the events of every watched game are stored with its box score in Owner and Career saves (`DATA_VERSION` 3 with a real migration) and passed through Career and Dynasty results. About 8 KB per game, 20 kept. Next: the replay screen, then game-day lineups and history.
 

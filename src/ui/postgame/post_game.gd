@@ -32,8 +32,9 @@ static func world_subjects(world: FcWorld, box: Dictionary, prefix: String) -> D
 	return out
 
 
-## {"vm", "colors"} for an Owner Mode game kept in the season. The implications describe the standings as they are NOW.
-static func for_owner(controller: FcGameController, box: Dictionary) -> Dictionary:
+## {"vm", "colors", "replay"} for an Owner Mode game kept in the season (`events` is its stored play-by-play, if any). The implications
+## describe the standings as they are NOW.
+static func for_owner(controller: FcGameController, box: Dictionary, events: Dictionary = {}) -> Dictionary:
 	var world := controller.state.world
 	var side := user_side(box, controller.state.user_team_id)
 	var implications: Array = []
@@ -41,7 +42,8 @@ static func for_owner(controller: FcGameController, box: Dictionary) -> Dictiona
 		var rec := controller.user_record()
 		implications.append("Season record now: %d-%d (rank %d in the league, %s)." % [rec["wins"], rec["losses"], rec["rank"], rec["streak"]])
 	var vm := FcPostGameModel.build(box, {"user_side": side, "subjects": world_subjects(world, box, "owner_player"), "implications": implications})
-	return {"vm": vm, "colors": team_colors(world, box)}
+	var colors := team_colors(world, box)
+	return {"vm": vm, "colors": colors, "replay": FcReplay.build(box, events, colors)}
 
 
 ## {"vm", "colors"} for a Career game entry (as FcCareerController.advance_days returns it, with its "box"). The player's night is set
@@ -65,13 +67,17 @@ static func for_career(career: FcCareerController, game: Dictionary) -> Dictiona
 	for m in game.get("milestones", []):
 		rewards.append(str(m).replace("_", " "))
 	var vm := FcPostGameModel.build(box, {"user_side": side, "subjects": world_subjects(world, box, "career_player"), "implications": implications, "rewards": rewards})
-	return {"vm": vm, "colors": team_colors(world, box)}
+	var colors := team_colors(world, box)
+	return {"vm": vm, "colors": colors, "replay": FcReplay.build(box, game.get("events", {}), colors)}
 
 
 ## Opens a post-game dialog on the app's dialog layer.
 static func open(app: FcApp, built: Dictionary) -> FcModal:
 	var modal := FcModal.new("Game summary", "", FcModal.Kind.INFO, "Close")
 	modal.panel.custom_minimum_size.x = 0 if app.layout.is_mobile() else 820
+	var replay_button := FcReplay.button_for(app, built.get("replay", {}))
+	if replay_button != null:
+		modal.content.add_child(replay_button)   # only when the play-by-play of this game was kept
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(0, 520)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED

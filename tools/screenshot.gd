@@ -146,7 +146,21 @@ func _build_screen() -> void:
 	if _screen == "owner_postgame":
 		var boxes: Array = _app.controller.season().recent_boxes
 		if not boxes.is_empty():
-			FcPostGame.open(_app, FcPostGame.for_owner(_app.controller, boxes[boxes.size() - 1]["box"]))
+			FcPostGame.open(_app, FcPostGame.for_owner(_app.controller, boxes[boxes.size() - 1]["box"], boxes[boxes.size() - 1].get("events", {})))
+		return
+	if _screen == "owner_replay":
+		# the replay of the owner's latest game, paused on the first made three-pointer after the first quarter
+		var kept: Array = _app.controller.season().recent_boxes
+		if not kept.is_empty():
+			var built := FcReplay.for_owner(_app.controller, kept[kept.size() - 1])
+			if not built.is_empty():
+				FcReplay.open(_app, built)
+				var shown := _app.find_child("ReplayScreen", true, false) as FcReplayScreen
+				var model: FcReplayModel = built["model"]
+				for e in model.entries:
+					if e["type"] == FcGameEventLog.EV_SHOT_MADE and e["x"] == FcGameEventLog.SHOT_THREE and e["period"] >= 2:
+						shown.seek(e["index"], false)
+						break
 		return
 	var index := FcApp.TAB_NAMES.find(_screen)
 	if index >= 0:

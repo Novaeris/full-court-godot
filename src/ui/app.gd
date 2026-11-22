@@ -1448,7 +1448,7 @@ func _team_name(team_id: int) -> String:
 func _owner_ctx() -> FcOwnerContext:
 	if _owner_context == null or _owner_context.controller != controller:
 		_owner_context = FcOwnerContext.new(controller, _say, show_dashboard,
-			func(entry: Dictionary) -> void: FcPostGame.open(self, FcPostGame.for_owner(controller, entry["box"])),
+			func(entry: Dictionary) -> void: FcPostGame.open(self, FcPostGame.for_owner(controller, entry["box"], entry.get("events", {}))),
 			func(player_id: int) -> void: FcPlayerProfile.open_modal(self, FcPlayerPresentation.from_player(controller.state.world, player_id, controller.state.current_season, controller.league_id)))
 	return _owner_context
 

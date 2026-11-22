@@ -89,7 +89,14 @@ static func post_game(ui: FcDynastyUi, game: Dictionary) -> Control:
 	var vm := FcPostGameModel.build(game["box"], {"user_side": int(game["user_side"]), "subjects": subjects, "implications": implications, "rewards": rewards})
 	var screen := FcPostGameScreen.new().setup(vm)
 	screen.name = "PostGame"
-	return screen
+	var replay_button := FcReplay.button_for(ui.app, FcReplay.for_dynasty(game))
+	if replay_button == null:
+		return screen
+	var wrapper := VBoxContainer.new()   # the replay button above the unchanged post-game screen
+	wrapper.add_theme_constant_override("separation", FcUiTokens.SPACE_3)
+	wrapper.add_child(replay_button)
+	wrapper.add_child(screen)
+	return wrapper
 
 
 static func _summary_panel(ui: FcDynastyUi, game: Dictionary) -> Control:

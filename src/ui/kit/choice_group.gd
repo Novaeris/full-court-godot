@@ -38,7 +38,8 @@ func set_options(options: Array, current: String = "") -> void:
 func select(id: String) -> void:
 	current_id = id
 	if _buttons.has(id):
-		(_buttons[id] as Button).set_pressed_no_signal(true)
+		for key in _buttons:   # set_pressed_no_signal does not release the others in the group, so do it here
+			(_buttons[key] as Button).set_pressed_no_signal(str(key) == id)
 
 
 func button_for(id: String) -> Button:
