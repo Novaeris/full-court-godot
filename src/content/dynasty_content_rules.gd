@@ -19,7 +19,7 @@ const COLLECTION_METRICS := ["unique_cards", "rarity_cards", "duplicates"]
 const TOURNAMENT_TEAMS := 7
 ## A Dynasty team needs 13 different real players (5 starters, 7 bench, 1 reserve) and the five starters must cover PG, SG, SF, PF and C.
 const MIN_PLAYABLE_PLAYERS := 13
-const STARTER_POSITIONS := ["PG", "SG", "SF", "PF", "C"]
+const STARTER_POSITIONS := FcPosition.PLAYABLE
 const PLACEMENTS := ["champion", "finalist", "semifinal", "quarterfinal"]
 
 
@@ -118,7 +118,7 @@ static func _int(value: Variant, fallback: int = -1) -> int:
 static func check_player(path: String, data: Dictionary, definitions: FcDefinitionSet, errors: Array[String]) -> void:
 	if data.has("secondary_position"):
 		var sec := str(data["secondary_position"])
-		if not ["PG", "SG", "SF", "PF", "C"].has(sec) or sec == str(data.get("position", "")):
+		if not FcPosition.PLAYABLE.has(sec) or sec == str(data.get("position", "")):
 			errors.append("%s: secondary_position must be a position different from the primary one" % path)
 	if data.has("badges"):
 		var badges = data["badges"]

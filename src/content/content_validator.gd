@@ -8,7 +8,7 @@ extends RefCounted
 ## All problems are collected (the owner sees the whole list, not only the first).
 
 const RARITIES := ["common", "uncommon", "rare", "epic", "legendary"]
-const POSITIONS := ["PG", "SG", "SF", "PF", "C"]
+const POSITIONS := FcPosition.PLAYABLE
 const ID_PATTERN := "^[a-z0-9_]{1,48}$"
 const MAX_TEXT := 200
 

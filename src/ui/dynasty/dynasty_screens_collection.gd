@@ -2,7 +2,7 @@ class_name FcDynastyScreensCollection
 extends RefCounted
 ## Collection browser, card detail window, and the lineup / team builder.
 
-const POSITIONS := ["", "PG", "SG", "SF", "PF", "C"]
+const POSITIONS := [""] + FcPosition.PLAYABLE
 const RARITIES := ["", "common", "uncommon", "rare", "epic", "legendary"]
 const OWNERSHIP := [["all", "All cards"], ["owned", "Owned"], ["unowned", "Not owned yet"]]
 const COMPARE_COMPOSITES := [["three", "3PT"], ["finishing", "FIN"], ["playmaking", "PLAY"], ["perimeter_d", "PER D"], ["interior_d", "INT D"], ["rebound", "REB"]]
