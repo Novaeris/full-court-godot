@@ -39,6 +39,8 @@ func tab_ids() -> Array:
 		out.append("stats")
 	if not (vm["history"]["rows"] as Array).is_empty():
 		out.append("history")
+	if not (vm.get("achievements", []) as Array).is_empty():
+		out.append("achievements")
 	if not (vm["awards"] as Array).is_empty():
 		out.append("awards")
 	return out
@@ -59,6 +61,8 @@ func show_tab(id: String) -> void:
 			_body.add_child(FcDataTable.build(vm["stats"]["columns"], vm["stats"]["rows"]))
 		"history":
 			_body.add_child(FcDataTable.build(vm["history"]["columns"], vm["history"]["rows"]))
+		"achievements":
+			_achievements_tab()
 		"awards":
 			for a in vm["awards"]:
 				_body.add_child(FcStatusChip.make(str(a), FcStatusChip.Tone.INFO))
@@ -167,6 +171,8 @@ func _overview() -> void:
 	flow.add_child(_development_panel())
 	if not (vm.get("personality", []) as Array).is_empty():
 		flow.add_child(_personality_panel())
+	if not (vm.get("achievements", []) as Array).is_empty():
+		flow.add_child(_achievements_panel())
 	if not (vm.get("similar", []) as Array).is_empty():
 		flow.add_child(_similar_panel())
 	if not (vm.get("relationships", {}) as Dictionary).is_empty():
@@ -248,6 +254,74 @@ func _personality_panel() -> FcPanel:
 		row.tooltip_text = str(t["description"])
 		panel.add(row)
 	return panel
+
+
+static func _tier_tone(tier: int) -> FcStatusChip.Tone:
+	return FcStatusChip.Tone.WARNING if tier >= 3 else (FcStatusChip.Tone.INFO if tier == 2 else FcStatusChip.Tone.NEUTRAL)
+
+
+## Achievements (Owner and Career only): the ones earned, best tier first, and the three closest to their next tier.
+func _achievements_panel() -> FcPanel:
+	var panel := _panel("Achievements")
+	var results: Array = vm["achievements"]
+	var earned := FcAchievements.earned(results)
+	if earned.is_empty():
+		var none := FcUiTables.label("None earned yet.", FcUiTokens.TYPE_SMALL)
+		none.theme_type_variation = "MutedLabel"
+		panel.add(none)
+	else:
+		var chips := HFlowContainer.new()
+		chips.add_theme_constant_override("h_separation", FcUiTokens.SPACE_2)
+		chips.add_theme_constant_override("v_separation", FcUiTokens.SPACE_2)
+		for a in earned.slice(0, 8):
+			var chip := FcStatusChip.make("%s · %s" % [a["name"], a["tier_name"]], _tier_tone(int(a["tier"])))
+			chip.tooltip_text = "%s: %d %s" % [a["description"], a["value"], a["unit"]]
+			chips.add_child(chip)
+		panel.add(chips)
+		if earned.size() > 8:
+			var more := FcUiTables.label("+ %d more on the Achievements tab" % (earned.size() - 8), FcUiTokens.TYPE_SMALL)
+			more.theme_type_variation = "MutedLabel"
+			panel.add(more)
+	var next_up := FcAchievements.next_up(results, 3)
+	if not next_up.is_empty():
+		panel.add(FcUiTables.label("Next up", FcUiTokens.TYPE_SMALL, true))
+		for a in next_up:
+			panel.add(_achievement_row(a))
+	return panel
+
+
+## One achievement: its name and tier, a bar toward the next tier and the numbers in words.
+func _achievement_row(a: Dictionary) -> Control:
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 2)
+	var head := HBoxContainer.new()
+	var name := FcUiTables.label(str(a["name"]), FcUiTokens.TYPE_BODY)
+	name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(name)
+	if int(a["tier"]) > 0:
+		head.add_child(FcStatusChip.make(str(a["tier_name"]), _tier_tone(int(a["tier"]))))
+	box.add_child(head)
+	var bar := FcProgress.new()
+	bar.set_progress(float(a["progress"]), 1.0)
+	box.add_child(bar)
+	var words := "%d %s" % [a["value"], a["unit"]]
+	if int(a["next"]) > 0:
+		words += "  (next: %d)" % int(a["next"])
+	else:
+		words += "  (gold)"
+	var detail := FcUiTables.label(words, FcUiTokens.TYPE_SMALL)
+	detail.theme_type_variation = "MutedLabel"
+	box.add_child(detail)
+	box.tooltip_text = str(a["description"])
+	return box
+
+
+func _achievements_tab() -> void:
+	var results: Array = vm["achievements"]
+	var earned := FcAchievements.earned(results)
+	_body.add_child(FcStatLine.make("Earned", "%d of %d" % [earned.size(), results.size()]))
+	for a in results:
+		_body.add_child(_achievement_row(a))
 
 
 ## Players like him: the five players (the league's, or the release's cards) with the most similar attributes, each with how alike they are.

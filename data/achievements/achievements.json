@@ -1,0 +1,24 @@
+{
+	"_about": "Player achievements for Owner and Career Mode (a separate Dynasty card has none). Every achievement is DERIVED from numbers the game already keeps (career statistics, honours, the injury history, years with a club); nothing here is stored in a save, so adding or retuning one never touches saved data. Each has three tiers (1 bronze, 2 silver, 3 gold) that are reached when the named metric reaches the tier's threshold. Names are generic basketball words, not league trademarks. metric is one of the names FcAchievements.metrics_for computes.",
+	"tier_names": ["", "Bronze", "Silver", "Gold"],
+	"achievements": [
+		{"id": "scorer", "name": "Career scorer", "metric": "career_points", "unit": "career points", "thresholds": [1000, 5000, 15000], "description": "Points scored in the regular season over a career."},
+		{"id": "glass", "name": "On the glass", "metric": "career_rebounds", "unit": "career rebounds", "thresholds": [500, 2500, 8000], "description": "Rebounds over a career."},
+		{"id": "playmaker", "name": "Playmaker", "metric": "career_assists", "unit": "career assists", "thresholds": [400, 2000, 6000], "description": "Assists over a career."},
+		{"id": "ball_hawk", "name": "Ball hawk", "metric": "career_steals", "unit": "career steals", "thresholds": [100, 600, 1800], "description": "Steals over a career."},
+		{"id": "rim_protector", "name": "Rim protector", "metric": "career_blocks", "unit": "career blocks", "thresholds": [80, 500, 1500], "description": "Blocks over a career."},
+		{"id": "deep_range", "name": "Deep range", "metric": "career_threes", "unit": "career three-pointers", "thresholds": [100, 600, 1800], "description": "Three-pointers made over a career."},
+		{"id": "veteran", "name": "Veteran", "metric": "seasons_played", "unit": "seasons", "thresholds": [3, 8, 15], "description": "Seasons played."},
+		{"id": "always_available", "name": "Always available", "metric": "career_games", "unit": "games", "thresholds": [100, 500, 1000], "description": "Regular-season games played."},
+		{"id": "big_season", "name": "Big scoring season", "metric": "best_season_ppg", "unit": "points per game in a season", "thresholds": [15, 22, 28], "description": "The best points-per-game average in one season."},
+		{"id": "boards_season", "name": "Big rebounding season", "metric": "best_season_rpg", "unit": "rebounds per game in a season", "thresholds": [7, 10, 13], "description": "The best rebounds-per-game average in one season."},
+		{"id": "dime_season", "name": "Big passing season", "metric": "best_season_apg", "unit": "assists per game in a season", "thresholds": [5, 8, 11], "description": "The best assists-per-game average in one season."},
+		{"id": "one_club", "name": "One-club player", "metric": "one_club_seasons", "unit": "seasons in a row with one club", "thresholds": [4, 8, 12], "description": "Seasons in a row with the current club."},
+		{"id": "champion", "name": "Champion", "metric": "titles", "unit": "championships", "thresholds": [1, 2, 4], "description": "Championships won with a team."},
+		{"id": "most_valuable", "name": "Most valuable", "metric": "mvp", "unit": "most valuable player awards", "thresholds": [1, 2, 3], "description": "Most valuable player awards."},
+		{"id": "finals_star", "name": "Finals star", "metric": "finals_mvp", "unit": "finals most valuable awards", "thresholds": [1, 2, 3], "description": "Finals most valuable player awards."},
+		{"id": "scoring_crown", "name": "Scoring crown", "metric": "scoring_titles", "unit": "scoring titles", "thresholds": [1, 2, 4], "description": "Seasons as the league's top scorer."},
+		{"id": "all_league", "name": "All-League", "metric": "all_league_first", "unit": "first-team selections", "thresholds": [1, 3, 6], "description": "Selections to the first all-league team."},
+		{"id": "comeback", "name": "Comeback", "metric": "comebacks", "unit": "returns from a serious injury", "thresholds": [1, 2, 3], "description": "A serious injury (60 or more games) followed by a season of at least 40 games."}
+	]
+}

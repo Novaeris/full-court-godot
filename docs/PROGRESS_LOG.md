@@ -3,6 +3,9 @@
 Newest first. Written so someone returning after a break can see where things stand.
 The repository was published to GitHub on 2026-11-17 at the founder's request (public: https://github.com/Novaeris/full-court-godot, remote `origin`, branch `main`). Later commits stay local until the founder asks for a push.
 
+## 2026-11-21: Dossier additions: health, relationships, plays like, achievements
+At the founder's request (in that order): a Health panel with a new additive injury history (Owner and Career only), Relationships (club tenure, best teammates; Career: coach trust, chemistry, rival, tags), Plays like (pure `FcPlayerSimilarity`, all three modes) and Achievements (18 derived achievements in data, Owner and Career). All read-only or additive; no data version change. See `docs/PLAYER_VISUAL_PROPOSAL.md`.
+
 ## 2026-11-21: Player profile dossier, first version (D-059 follow-up)
 The profile is now a dossier: hero with the baked full-body portrait, OVR and POT, team crest and a vitals strip; Overview panels for ratings (radar), development (career-arc timeline), personality, contract and team, latest season and honours; existing tabs unchanged. Read-only view-model additions; 8 new tests; unit 1,264 and live 124 passed. Pictures in `docs/validation/profile/`. Needs a human look at layout and phone.
 

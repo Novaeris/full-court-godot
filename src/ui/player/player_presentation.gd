@@ -4,7 +4,7 @@ extends RefCounted
 ## same dictionary, so the profile (and every list, comparison and result line) is built once. Nothing here writes to game data.
 ## Fields: mode, subject (for FcPlayerVisual), name, jersey, position, secondary, archetype, playstyle {label, text}, team {name, abbreviation,
 ## primary, secondary}, physical {height_cm, weight_kg, wingspan_cm, hand}, overall, potential, age, attributes [{key, name, category, value}],
-## badges [{key, name, description}], personality [{key, name, description, value}] and contract {salary, through, years_left, total, cornerstone, no_trade} similar [{name, position, age, overall, team, similarity, subject}] (the five most alike players of the league or the release) and relationships {kind, tenure_seasons, teams_played, team_name, teammates; Career adds coach_trust, chemistry, rival, tags} and health {games_out, injury, durability, history [{year, injury, games, severe}] newest first, games_missed, severe_count, medical_level (-1 when the player has no team)} (Owner and Career only; Dynasty cards have none), stats {columns, rows}, history {columns, rows}, awards [text], progression {kind, ...}.
+## badges [{key, name, description}], personality [{key, name, description, value}] and contract {salary, through, years_left, total, cornerstone, no_trade} achievements [{id, name, description, unit, value, tier, tier_name, thresholds, next, progress}] (FcAchievements, derived from statistics, honours and injuries; Owner and Career only), similar [{name, position, age, overall, team, similarity, subject}] (the five most alike players of the league or the release) and relationships {kind, tenure_seasons, teams_played, team_name, teammates; Career adds coach_trust, chemistry, rival, tags} and health {games_out, injury, durability, history [{year, injury, games, severe}] newest first, games_missed, severe_count, medical_level (-1 when the player has no team)} (Owner and Career only; Dynasty cards have none), stats {columns, rows}, history {columns, rows}, awards [text], progression {kind, ...}.
 ## Sections a mode has no data for are left empty and the profile hides them; nothing is invented.
 ##
 ## Keys (the visual identity): Owner "owner_player:<id>", Career "career_player:<id>", Dynasty "dynasty_player:<player_id>" (so every edition
@@ -139,6 +139,11 @@ static func from_player(world: FcWorld, player_id: int, current_year: int, leagu
 		"severe_count": severe_count, "medical_level": clinic.medical_level if clinic != null else -1}
 	var relationships := _team_ties(world, p, team, player_id)
 	var similar := _similar_in_world(world, p, player_id)
+	var honours_league := league_id
+	if honours_league <= 0 and not world.leagues.all().is_empty():
+		honours_league = world.leagues.all()[0].id
+	var honours: Dictionary = FcRecords.new(world, honours_league).honours_of(player_id) if honours_league > 0 else {}
+	var achievements := FcAchievements.evaluate(FcAchievements.metrics_for(world.careers.get(player_id, []), honours, world.injuries_of(player_id), int(relationships["tenure_seasons"])))
 	var personality: Array = []
 	for key in world.definitions.personality.keys():
 		var def := world.definitions.personality.get_def(key)
@@ -154,7 +159,7 @@ static func from_player(world: FcWorld, player_id: int, current_year: int, leagu
 		"archetype": "", "playstyle": FcPlaystyle.summary(composites), "team": branding_team if not branding_team.is_empty() else {"name": "Free agent"},
 		"physical": {"height_cm": p.physical.height_cm, "weight_kg": p.physical.weight_kg, "wingspan_cm": p.physical.wingspan_cm, "hand": HAND_NAMES[clampi(p.physical.handedness, 0, 2)]},
 		"overall": roundi(composites["overall"]), "potential": p.development.potential, "age": p.age_on(FcDate.new(current_year, 7, 1)),
-		"attributes": _attributes(world.definitions, _values(world.definitions, p)), "badges": [], "personality": personality, "contract": contract, "health": health, "relationships": relationships, "similar": similar,
+		"attributes": _attributes(world.definitions, _values(world.definitions, p)), "badges": [], "personality": personality, "contract": contract, "health": health, "relationships": relationships, "similar": similar, "achievements": achievements,
 		"stats": {"columns": ["Season", "Team", "GP", "MPG", "PPG", "RPG", "APG"], "rows": rows},
 		"history": {"columns": ["Season", "Team", "GP", "Points", "Rebounds", "Assists"], "rows": history}, "awards": awards,
 		"progression": {"kind": "outlook", "overall": roundi(composites["overall"]), "potential": p.development.potential, "peak_age": p.development.peak_age, "age": p.age_on(FcDate.new(current_year, 7, 1))},

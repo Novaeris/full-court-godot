@@ -192,6 +192,8 @@ Unit: `test_player_traits.gd` (6: deterministic, in range, integers, age changes
 
 `tests/unit/test_player_relationships.gd` (6): the words for a relationship value, Owner tenure and best teammates (best first, never himself), a traded player starts a new run, the Owner and Career dossiers show the Relationships panel (Career: trust, chemistry, rival and tags), a Dynasty card has none. `tests/unit/test_player_similarity.gd` (5): identical players score 100 and the score falls with the gap, the nearest list is sorted, stable and bounded, an Owner player plays like five other active players and computing it changes nothing, a Dynasty card plays like other players' cards.
 
+`tests/unit/test_achievements.gd` (10): the data file is well formed (unique ids, known metrics, three ascending tiers), tiers are reached at their thresholds, season averages need a real season, honours and club years feed their achievements, a comeback needs a serious injury and a real season after it, earned and next-up lists are sorted and stable, an Owner player's achievements match his statistics and the career totals, the dossier shows the panel and a tab with a bar for every achievement, building them changes nothing, a Dynasty card has none.
+
 ## UI tests, the live runner and the screenshot matrix (UI polish milestone, D-047)
 The design system and component kit have their own tests, in three groups:
 - **Unit tests** (`tests/unit/test_ui_design_system.gd`, `test_ui_kit.gd`, `test_ui_motion.gd`): contrast of every text colour on every surface (WCAG 4.5:1), the three mode skins and their whitelist, the theme's variations, fonts and text scale, icons and licences, rating tiers, the reduce-motion preference, and every kit component's states and signals.

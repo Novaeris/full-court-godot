@@ -215,6 +215,8 @@ func _process(_delta: float) -> bool:
 		demo_world.record_injury(demo_id, 2024, "bruised knee", 5, false)
 		demo_world.record_injury(demo_id, 2025, "torn ACL", 82, true)
 		demo_world.record_injury(demo_id, 2026, "sprained ankle", 12, false)
+		var demo_team: int = demo_world.team_of_player(demo_id).id if demo_world.team_of_player(demo_id) != null else 1
+		demo_world.careers[demo_id] = [[2023, demo_team, 70, 126000, 1500, 0, 0, 90, 0, 0, 0, 140, 380, 310, 80, 40, 0, 0], [2024, demo_team, 72, 130000, 1750, 0, 0, 110, 0, 0, 0, 150, 400, 330, 90, 45, 0, 0], [2025, demo_team, 30, 60000, 600, 0, 0, 40, 0, 0, 0, 60, 150, 120, 30, 20, 0, 0], [2026, demo_team, 55, 100000, 1200, 0, 0, 70, 0, 0, 0, 110, 300, 260, 60, 30, 0, 0]]   # for the picture only
 		if _screen == "career_hub":
 			FcPlayerProfile.open_modal(_app, FcPlayerPresentation.from_career(_app.career))
 		elif _app.controller != null:
