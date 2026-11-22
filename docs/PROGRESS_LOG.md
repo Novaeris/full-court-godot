@@ -3,6 +3,9 @@
 Newest first. Written so someone returning after a break can see where things stand. This is a dated history: an entry describes the state on its date. **For what is built now, see [FEATURE_MATRIX.md](FEATURE_MATRIX.md); for current test totals, see [TESTING.md](TESTING.md).**
 The repository was published to GitHub on 2026-11-17 at the founder's request (public: https://github.com/Novaeris/full-court-godot, remote `origin`, branch `main`). Later commits stay local until the founder asks for a push.
 
+## 2026-11-22: Phase 2E: Dynasty keeps its last five replays
+A Dynasty profile now keeps the replay of its last five games (Dynasty data version 2 with a migration), so a game can be watched again after the session; the Play screen has a picker. This reverses part of D-053 ("the box is never saved") on purpose, see D-061, and two older tests that encoded the old rule were updated. Phase 2 (game presentation) is complete.
+
 ## 2026-11-21: Phase 2D: game day
 Owner dashboard and Career hub get a "Game day" button: a preview of the next game (both teams with crests, records, ranks, projected starting fives with ratings, who is out) and "Play this game", which plays up to it and opens its summary with the replay. The Career hub also lists recent games with a picker, Game summary and Watch replay. The preview was tested against reality: the five it names are the five who start. Owner lineups stay with the coaches by design.
 
@@ -215,3 +218,8 @@ See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
 - **Why not re-simulate from a seed:** a replay would need the exact lineups, fatigue, injuries and tactics of that day; the events are about 8 KB per game and always right.
 - **Save change:** `FcVersion.DATA_VERSION` 2 to 3 with a migration (older stored games get an empty log); chosen over treating it as an "additive section" so the rule "a changed saved shape needs a version" holds without exceptions.
 - **Limit by design:** the simulation has no spatial model. The court picture is drawn from the event kinds (shot type, rebound, foul) and is illustrative, not a track of real positions.
+
+## D-061 Dynasty keeps its last five replays (2026-11-22, Phase 2E)
+- **Decision:** a Dynasty profile keeps `{n, label, box, events}` for its last `replay_limit` games (default 5, a published config number), so the founder's "game history in all modes" works across sessions. Supersedes the part of D-053 that said a Dynasty profile never keeps a box score; nothing else in the profile holds one, and no rule reads them.
+- **Cost:** about 15 KB per game, 75 KB for five; written in the same commit as the game, so a failed save loses the replay with the game.
+- **Save change:** `FcVersion.DYNASTY_DATA_VERSION` 1 to 2 with a migration that adds the empty list.

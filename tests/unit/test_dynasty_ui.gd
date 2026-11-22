@@ -109,6 +109,10 @@ func test_the_full_loop_through_the_screens_api() -> void:
 	assert_true(game.ok, "game played")
 	app.dynasty_ui.show_tab("play")
 	assert_true("FINAL" in _text(app).to_upper() and "Player of the game" in _text(app), "result screen")
+	assert_true("[Watch replay]" in _text(app), "the result and the recent-games list offer the replay")
+	assert_true(app.find_child("ReplayPicker", true, false) != null, "the last few games can be picked")
+	(app.find_child("WatchReplayButton", true, false) as Button).pressed.emit()
+	assert_true(app.find_child("ReplayScreen", true, false) != null, "Watch replay opens the replay of the picked game")
 	for i in 4:
 		ctl.play_quick_game("easy")
 	var claimable := ctl.challenge_listing().filter(func(c): return c["completed"] and not c["claimed"])

@@ -37,6 +37,9 @@ var record: Dictionary = {"games": 0, "wins": 0, "losses": 0, "points_for": 0, "
 var card_stats: Dictionary = {}
 var game_counter: int = 0
 var game_history: Array = []
+## The last few games' replays, oldest first: {n, label, box, events}. Kept so a game can be watched again after the session (the
+## number kept is the config's replay_limit). Display only: no rule reads them.
+var replays: Array = []
 ## challenge_id -> {progress, completed, claimed, claim_txn}
 var challenges: Dictionary = {}
 ## season_id -> {points, claimed_milestones: [], objectives: {id: {progress, done}}}
@@ -116,7 +119,7 @@ func to_dict() -> Dictionary:
 		"pity": pity.duplicate(),
 		"roster": roster.to_dict(),
 		"record": record.duplicate(), "card_stats": card_stats.duplicate(true),
-		"game_counter": game_counter, "game_history": game_history.duplicate(true),
+		"game_counter": game_counter, "game_history": game_history.duplicate(true), "replays": replays.duplicate(true),
 		"challenges": challenges.duplicate(true), "seasons": seasons.duplicate(true),
 		"tournament": tournament.duplicate(true), "starter_granted": starter_granted,
 	}
@@ -148,6 +151,7 @@ static func from_dict(d: Dictionary) -> FcDynastyProfile:
 	p.card_stats = _dict(d.get("card_stats"))
 	p.game_counter = int(d.get("game_counter", 0))
 	p.game_history = _arr(d.get("game_history"))
+	p.replays = _arr(d.get("replays"))
 	p.challenges = _dict(d.get("challenges"))
 	p.seasons = _dict(d.get("seasons"))
 	var t := _dict(d.get("tournament"))

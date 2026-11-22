@@ -70,10 +70,15 @@ func test_dynasty_passes_the_box_score_through_without_changing_the_summary() ->
 
 func test_the_pass_through_changes_no_saved_data() -> void:
 	_dynasty()
-	# the profile's serialised form has no box, no cards map and nothing from the post-game view
+	# The profile keeps a box score only inside its capped list of replays (D-061, Phase 2E): outside that list its serialised form has
+	# no box, no cards map and nothing from the post-game view.
 	assert_true(app.dynasty.play_quick_game("easy").ok)
-	var text := JSON.stringify(app.dynasty.profile().to_dict())
-	assert_true(not text.contains("period_scores") and not text.contains("\"box\""), "the profile does not keep the box score")
+	var saved := app.dynasty.profile().to_dict()
+	var replays: Array = saved["replays"]
+	saved.erase("replays")
+	var text := JSON.stringify(saved)
+	assert_true(not text.contains("period_scores") and not text.contains("\"box\"") and not text.contains("\"cards\":{\"1\""), "outside the replays the profile keeps no box score")
+	assert_true(replays.size() >= 1 and replays.size() <= app.dynasty.catalog.config.get_int(["replay_limit"], 5), "the replay list is capped")
 
 
 func test_the_model_describes_the_game() -> void:

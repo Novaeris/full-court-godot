@@ -12,5 +12,6 @@
 	],
 	"team_overall_weights": [14, 14, 14, 14, 14, 7, 6, 5, 4, 3, 2, 1, 1],
 	"history_limit": 25,
+	"replay_limit": 5,
 	"ledger_limit": 400
 }

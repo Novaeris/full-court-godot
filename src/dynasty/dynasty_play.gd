@@ -41,6 +41,7 @@ static func play_against(profile: FcDynastyProfile, catalog: FcDynastyCatalog, o
 	var recorded := FcDynastyProgress.record_game(profile, catalog, summary, kind, reward_percent)
 	if not recorded.ok:
 		return recorded
+	FcDynastyProgress.keep_replay(profile, catalog, int(recorded.data["game_number"]), summary, (played["box"] as FcBoxScore).to_dict(), played.get("events", {}))
 	var challenges := FcDynastyChallenges.on_game(profile, catalog, summary)
 	var objectives := FcDynastySeason.on_game(profile, catalog, summary)
 	return FcDynastyResult.success({

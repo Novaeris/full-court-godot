@@ -6,11 +6,11 @@
 3. **Manual playtesting** by the founder for feel, usability and fun. Claude provides step-by-step instructions with each UI feature.
 
 ## Current totals (the one authoritative place)
-Every other document points here instead of repeating numbers. These come only from fresh runs, never from older documents. The last verified run was on 2026-11-21, at the end of Phase 2D (game day; the exact commit is in `FEATURE_MATRIX.md`), with Godot 4.7.2 headless, one process at a time.
+Every other document points here instead of repeating numbers. These come only from fresh runs, never from older documents. The last verified run was on 2026-11-21, at the end of Phase 2E (Dynasty replays; the exact commit is in `FEATURE_MATRIX.md`), with Godot 4.7.2 headless, one process at a time.
 
 | Kind | What it is | Last result | How to run |
 |---|---|---|---|
-| Unit | `tests/unit/test_*.gd`, headless, fixed seeds | **1,344 passed, 0 failed** | `./tools/run_tests.ps1` |
+| Unit | `tests/unit/test_*.gd`, headless, fixed seeds | **1,351 passed, 0 failed** | `./tools/run_tests.ps1` |
 | Live | `tests/live/test_live_*.gd`, real scene tree, awaits frames | **139 passed, 0 failed** | `./tools/run_live_tests.ps1` |
 | Creator Studio smoke | separate project, `creator_studio/tools/studio_smoke.gd` | **PASS** (13 checks) | `godot_console --headless --path creator_studio --script res://tools/studio_smoke.gd` |
 | Simulation and stress | `simulate_games`, `economy_check`, `owner_stress`, `ui_playthrough`, `career_balance` and similar tools in `tools/` | **Not re-run in Phase 1** (nothing in the simulation changed). Results are in `STABILITY_REPORT.md` and `RELEASE_READINESS.md` as historical records with their own dates. | `tools/*.ps1` |
@@ -265,3 +265,7 @@ Unit suite: 1,113 tests; live UI suite: 68 tests; both exit 0. See docs/RELEASE_
 - `tests/unit/test_game_day.gd` (6 tests): the preview describes the next game (home and away, the user's side, date, record and rank equal the standings, five different starters each); **the five it projects are the five who start the game** (6 games checked against the stored box scores, preview made on the morning of the game); days-to-next-game plays exactly up to it and is 0 when none is left; an injured star is listed as out and not projected; a Career team gets a preview; the simulator exposes its starters.
 - `tests/live/test_live_game_day.gd` (3 tests): from the Owner dashboard, Game day opens the preview without playing anything, Play this game plays that game and opens its summary with Watch replay, and the replay is that game; the same through the Career hub, whose recent games can be picked and replayed; the preview fits a phone width.
 - Picture: `docs/validation/ui/replay/gameday_desktop_1280x800.png` (`./tools/screenshot.ps1 screen=owner_gameday`).
+
+## Dynasty replays (Phase 2E, 2026-11-22)
+- `tests/unit/test_dynasty_replays.gd` (7 tests): a played game keeps its replay and the events add up to the kept box; only the last `replay_limit` (5) are kept, newest last, while the game-history list is untouched; replays survive saving and loading as whole numbers and still open; five replays stay under 160,000 characters; a version 1 profile migrates to an empty list (the step adds it and changes nothing else, an existing list is not wiped); a commit that fails rolls the replay back; games with no events keep nothing. `test_dynasty_ui` now also clicks the recent-games picker through to the replay.
+- Two older tests asserted the previous rule that a Dynasty profile never holds a box (`test_post_game`, `test_game_history`); they now assert the narrower rule: boxes and events appear only inside the capped replays list (D-061).

@@ -354,6 +354,8 @@ FcPlayerGameStats  one player's box score line
 ## Game day (Phase 2D, `src/ui/gameday/`)
 `FcGameDay.build` (pure, read-only) describes the user's next regular-season game: both teams, records and ranks from the standings, the five each coach would start (`FcGameSimulator.projected_starters`, the very rule the game uses; tested against the real starters) and who is out hurt. `FcGameDayScreen` shows it; `FcGameDay.open` adds "Play this game", which calls the controller's `days_to_next_user_game()` and then opens the summary (with the replay). Owner and Career only: Dynasty has no schedule.
 
+**Dynasty replays (Phase 2E).** `FcDynastyProfile.replays` keeps `{n, label, box, events}` for the last `replay_limit` games (config, default 5; about 15 KB each), appended by `FcDynastyProgress.keep_replay` inside the same `FcDynastySession.commit` as the game, so a failed save rolls it back. `FcVersion.DYNASTY_DATA_VERSION` is 2 and `FcDynastyMigrator` has a 1 to 2 step that adds the empty list. The Play screen lists them in a picker with Watch replay.
+
 ## Game mode architecture
 A mode defines a permission set (which actions the player does directly vs. delegates to AI staff) and which UI screens are available. All three modes (Owner, Career, Dynasty) call the same core services where they share the league (Owner and Career) or the same simulation (Dynasty builds `FcPlayer` instances from published cards for it; see [INTEGRATION_AUDIT.md](INTEGRATION_AUDIT.md)).
 

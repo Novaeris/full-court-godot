@@ -40,3 +40,15 @@ static func record_game(profile: FcDynastyProfile, catalog: FcDynastyCatalog, su
 	if bool(paid.data.get("replayed", false)):
 		return FcDynastyResult.failure("duplicate_request", "This game was already recorded.")
 	return FcDynastyResult.success({"reward": reward, "txn": paid.data["txn"], "game_number": n})
+
+
+## Keeps the replay of game `n` with the profile (oldest dropped beyond the config's `replay_limit`). Display only: nothing reads it for a rule.
+## `summary` is the user's-side summary, used for the label ("#12  W 101-98  vs Easy Squad").
+static func keep_replay(profile: FcDynastyProfile, catalog: FcDynastyCatalog, n: int, summary: Dictionary, box: Dictionary, events: Dictionary) -> void:
+	var limit := catalog.config.get_int(["replay_limit"], 5)
+	if limit <= 0 or FcGameEventLog.from_dict(events).size() == 0:
+		return
+	var label := "#%d  %s %d-%d  vs %s" % [n, "W" if bool(summary["won"]) else "L", int(summary["score_for"]), int(summary["score_against"]), str(summary["opponent"])]
+	profile.replays.append({"n": n, "label": label, "box": box, "events": events})
+	while profile.replays.size() > limit:
+		profile.replays.pop_front()

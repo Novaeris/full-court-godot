@@ -36,7 +36,35 @@ static func build_play(ui: FcDynastyUi) -> Control:
 			var g: Dictionary = history[i]
 			rows.append([g["n"], "W" if g["won"] else "L", "%d-%d" % [g["score_for"], g["score_against"]], g["opponent"], g["kind"].capitalize()])
 		root.add_child(FcDataTable.build(["#", "Result", "Score", "Opponent", "Type"], rows, [50, 70, 100, 0, 110], {"min_height": 220}))
+		var replays := _replay_picker(ui)
+		if replays != null:
+			root.add_child(replays)
 	return root
+
+
+## Pick one of the last few games and watch it again (their replays are kept in the profile).
+static func _replay_picker(ui: FcDynastyUi) -> Control:
+	var kept: Array = ui.ctl.profile().replays
+	if kept.is_empty():
+		return null
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 8)
+	var items: Array = []
+	for i in range(kept.size() - 1, -1, -1):
+		items.append([str(kept[i]["label"]), i])
+	var picker := FcDropdown.make(items, kept.size() - 1)
+	picker.name = "ReplayPicker"
+	row.add_child(picker)
+	var watch := FcDynastyUi.btn("Watch replay", func() -> void:
+		var entry: Dictionary = kept[int(picker.value())]
+		var built := FcReplay.build(entry["box"], entry["events"])
+		if built.is_empty():
+			ui.say("No replay was kept for that game.")
+		else:
+			FcReplay.open(ui.app, built))
+	watch.name = "WatchReplayButton"
+	row.add_child(watch)
+	return row
 
 
 static func _play(ui: FcDynastyUi, level_id: String) -> void:
