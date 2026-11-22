@@ -338,3 +338,8 @@ Full write-up, measurements, pictures and recordings: `docs/PLAYER_VISUAL_PROPOS
 - **Why local rank:** there is no server yet (D-065); the field makes the rank real and reproducible offline.
 - **Save change:** `DYNASTY_DATA_VERSION` 2 to 3 (ladder) and 3 to 4 (claimed goals), each with a migration. Ladder money moves only through the ledger with request ids.
 - **Not done:** new tournament formats and new published collection kinds (they need content and validator work the founder should shape).
+
+## D-065 Online foundations are local; backend choice is the founder's (2026-11-22, Phase 6)
+- **Decision:** built only the transport-agnostic server rules (`src/online/`) running in-process: signed requests, nonces, rate limits, idempotency keys, a command whitelist, rollback, signed receipts, rating matchmaking with server-issued seeds and server-decided matches checked by re-simulation. They reuse the offline Dynasty services, so the rules cannot drift.
+- **Not decided (needs the founder, CLAUDE.md rule 7):** backend technology and hosting, sign-in provider, transport, and the first online feature set. A recommendation is in `docs/ONLINE_ARCHITECTURE.md` (a headless Godot server, Godot built-in networking, collection plus ranked head-to-head first, payments last and lawyer-reviewed).
+- **No save change:** the server stores the existing Dynasty profile document.

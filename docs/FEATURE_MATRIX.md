@@ -2,7 +2,7 @@
 
 This is the one place that says what is built. `ROADMAP.md`, `RELEASE_READINESS.md` and the mode plans describe history and intent; if they disagree with this file, this file wins. Update it in the same change as the feature.
 
-- **Last verified:** 2026-11-21, tree of commit `1e80edf` (code unchanged since `5700ac9`). Every test named below passed in that run (unit 1,303, live 125, Studio smoke PASS: totals live in [TESTING.md](TESTING.md)).
+- **Last verified:** 2026-11-22, tree of commit `3296473` plus the uncommitted online foundations of the next commit. Every test named below passed in the runs recorded in [TESTING.md](TESTING.md) (unit, live and Studio smoke PASS).
 - **Status words:** **Built** = implemented and covered by the named automated test(s). **Partial** = some of it is built or it is only checked by tools or by eye; the note says what is missing. **Planned** = not implemented (a design direction only). **n/a** = does not apply to that area, by design.
 - A cell with no evidence is never "Built". Tools marked *(not re-run)* are historical results kept in their own reports, not Phase 1 evidence.
 - Layout: one table per area instead of one wide grid. **Shared systems** are the simulation, league and UI core the modes reuse (a feature there is available to every mode unless its row says otherwise); then **Owner**, **Career**, **Dynasty** and **Creator Studio** each have their own table, so a feature appears in the area that owns it.
@@ -11,6 +11,7 @@ This is the one place that says what is built. `ROADMAP.md`, `RELEASE_READINESS.
 
 | Feature | Status | Evidence (test files in `tests/unit` unless noted) |
 |---|---|---|
+| Online foundations, local only (`src/online/`): HMAC signing, accounts, loopback server (signature, freshness, replay, rate limit, idempotency, whitelist, rollback, signed receipts), rating matchmaking with server seeds, server-decided matches checked by re-simulation | Built (local) | `test_online`. No network, backend, sign-in or hosting: see [ONLINE_ARCHITECTURE.md](ONLINE_ARCHITECTURE.md) |
 | Seeded RNG, stable ID generation | Built | `test_rng`, `test_id_generator` |
 | Data model: attributes, player, team, contract, league, world integrity, dates | Built | `test_attributes`, `test_player`, `test_team`, `test_contract`, `test_league`, `test_world`, `test_repository`, `test_date` |
 | Save system: slots, checksums, backups, corruption recovery, migrations | Built | `test_save`, `test_game_state` (Owner and Career share it; Dynasty has its own store, see Dynasty) |
@@ -110,4 +111,4 @@ This is the one place that says what is built. `ROADMAP.md`, `RELEASE_READINESS.
 | 3 Franchise immersion | Retired jerseys, historical franchise records, league storylines, rivalry development, richer histories | Built for Owner (and a storylines panel in the Career hub); see the Owner table |
 | 4 Career expansion | Timeline, media and reputation, life decisions, legacy | Built (Career table) |
 | 5 Dynasty expansion | Collections, mastery, seasons, rankings, tournament depth | Built in a first form (Dynasty table): goals (collections, mastery), ranked ladder with seasonal reset (rankings, seasons), tournament placement feeds the ladder. Not built: new tournament formats, new published collection kinds |
-| 6 Online foundations | Accounts, server-authoritative profiles, persistent collections, matchmaking, security and transactions | Planned |
+| 6 Online foundations | Accounts, server-authoritative profiles, persistent collections, matchmaking, security and transactions | Built locally only (Shared systems table); no network, backend or hosting: awaiting founder decision (ONLINE_ARCHITECTURE.md) |

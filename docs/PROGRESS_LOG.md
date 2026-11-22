@@ -246,3 +246,6 @@ See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
 
 ## 2026-11-22 Phase 5: Dynasty expansion
 - Added `FcDynastyLadder` (Dynasty data version 3) and `FcDynastyGoals` (version 4), the Ladder panel on the Play screen, Goals on the Season screen, and tournament placement bonuses (D-064). Verified locally: unit 1,422/0, live 146/0, Studio PASS. Lesson: `FcUiTables.label` takes bold, not wrap; use `FcDynastyUi.wl` for wrapping text (it caused the phone-width failures).
+
+## 2026-11-22 Phase 6: online foundations (local)
+- Added `src/online/` (`FcOnlineCrypto`, `FcOnlineAccount`, `FcOnlineServer` loopback, `FcOnlineMatchmaker`, `FcOnlineMatch`) and `docs/ONLINE_ARCHITECTURE.md` (D-065). No network code. Note: a static function named `sign` clashes with GDScript's built-in `sign()`; named `sign_dict`.
