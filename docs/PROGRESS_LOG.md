@@ -3,6 +3,9 @@
 Newest first. Written so someone returning after a break can see where things stand. This is a dated history: an entry describes the state on its date. **For what is built now, see [FEATURE_MATRIX.md](FEATURE_MATRIX.md); for current test totals, see [TESTING.md](TESTING.md).**
 The repository was published to GitHub on 2026-11-17 at the founder's request (public: https://github.com/Novaeris/full-court-godot, remote `origin`, branch `main`). Later commits stay local until the founder asks for a push.
 
+## 2026-11-22: Phase 3: franchise and league history
+The Owner History tab is now five pages: Franchise (summary tiles, season by season, all-time leaders, any club via a picker), Retired numbers (cards for the legends a club honours), Rivalries (how each rivalry grew, from budding to bitter), Storylines (league-wide or your club's: dynasties, a title after a long wait, upsets, record seasons, retirements) and the old Hall of Fame and records. All of it is worked out from history the league already keeps, so no save changed. The Career hub shows the league's latest storylines. Built with hand-made histories that have exact answers (26 unit tests) and a live test of the tab; looked at in screenshots.
+
 ## 2026-11-22: Phase 2E: Dynasty keeps its last five replays
 A Dynasty profile now keeps the replay of its last five games (Dynasty data version 2 with a migration), so a game can be watched again after the session; the Play screen has a picker. This reverses part of D-053 ("the box is never saved") on purpose, see D-061, and two older tests that encoded the old rule were updated. Phase 2 (game presentation) is complete.
 
@@ -223,3 +226,9 @@ See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
 - **Decision:** a Dynasty profile keeps `{n, label, box, events}` for its last `replay_limit` games (default 5, a published config number), so the founder's "game history in all modes" works across sessions. Supersedes the part of D-053 that said a Dynasty profile never keeps a box score; nothing else in the profile holds one, and no rule reads them.
 - **Cost:** about 15 KB per game, 75 KB for five; written in the same commit as the game, so a failed save loses the replay with the game.
 - **Save change:** `FcVersion.DYNASTY_DATA_VERSION` 1 to 2 with a migration that adds the empty list.
+
+## D-062 Franchise and league history is derived, not stored (2026-11-22, Phase 3)
+- **Decision:** franchise records, retired numbers, rivalries and storylines are computed from the finished seasons and career rows the world keeps forever, never saved.
+- **Why:** it needs no migration, can never disagree with the data it reads, and changing a rule (for example the retirement threshold) re-reads every old league. Same approach as the Hall of Fame (`FcRecords`).
+- **Retired numbers:** league players have no shirt number in the data model, so the number is a stable display choice (a hash of the player id, moved to the next free number for that club). A retired Career player's own number is not used yet.
+- **Limits by design:** rivalries come from playoff series only (regular-season games are dropped when a season is archived); history before the first finished season is empty.

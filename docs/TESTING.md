@@ -6,12 +6,12 @@
 3. **Manual playtesting** by the founder for feel, usability and fun. Claude provides step-by-step instructions with each UI feature.
 
 ## Current totals (the one authoritative place)
-Every other document points here instead of repeating numbers. These come only from fresh runs, never from older documents. The last verified run was on 2026-11-21, at the end of Phase 2E (Dynasty replays; the exact commit is in `FEATURE_MATRIX.md`), with Godot 4.7.2 headless, one process at a time.
+Every other document points here instead of repeating numbers. These come only from fresh runs, never from older documents. The last verified run was on 2026-11-21, at the end of Phase 3 (franchise and league history; the exact commit is in `FEATURE_MATRIX.md`), with Godot 4.7.2 headless, one process at a time.
 
 | Kind | What it is | Last result | How to run |
 |---|---|---|---|
-| Unit | `tests/unit/test_*.gd`, headless, fixed seeds | **1,351 passed, 0 failed** | `./tools/run_tests.ps1` |
-| Live | `tests/live/test_live_*.gd`, real scene tree, awaits frames | **139 passed, 0 failed** | `./tools/run_live_tests.ps1` |
+| Unit | `tests/unit/test_*.gd`, headless, fixed seeds | **1,377 passed, 0 failed** | `./tools/run_tests.ps1` |
+| Live | `tests/live/test_live_*.gd`, real scene tree, awaits frames | **144 passed, 0 failed** | `./tools/run_live_tests.ps1` |
 | Creator Studio smoke | separate project, `creator_studio/tools/studio_smoke.gd` | **PASS** (13 checks) | `godot_console --headless --path creator_studio --script res://tools/studio_smoke.gd` |
 | Simulation and stress | `simulate_games`, `economy_check`, `owner_stress`, `ui_playthrough`, `career_balance` and similar tools in `tools/` | **Not re-run in Phase 1** (nothing in the simulation changed). Results are in `STABILITY_REPORT.md` and `RELEASE_READINESS.md` as historical records with their own dates. | `tools/*.ps1` |
 | Manual validation | founder playtests, Android device checklist, screenshot review | **Not automated.** Outstanding items are in `DEVICE_VALIDATION.md` and `RELEASE_READINESS.md` section 3 to 4. | by hand |
@@ -269,3 +269,12 @@ Unit suite: 1,113 tests; live UI suite: 68 tests; both exit 0. See docs/RELEASE_
 ## Dynasty replays (Phase 2E, 2026-11-22)
 - `tests/unit/test_dynasty_replays.gd` (7 tests): a played game keeps its replay and the events add up to the kept box; only the last `replay_limit` (5) are kept, newest last, while the game-history list is untouched; replays survive saving and loading as whole numbers and still open; five replays stay under 160,000 characters; a version 1 profile migrates to an empty list (the step adds it and changes nothing else, an existing list is not wiped); a commit that fails rolls the replay back; games with no events keep nothing. `test_dynasty_ui` now also clicks the recent-games picker through to the replay.
 - Two older tests asserted the previous rule that a Dynasty profile never holds a box (`test_post_game`, `test_game_history`); they now assert the narrower rule: boxes and events appear only inside the capped replays list (D-061).
+
+## Franchise and league history (Phase 3, 2026-11-22)
+- `tests/support/history_fixture.gd`: finished seasons built by hand (standings, a bracket, champion, MVP) and career rows, so the history rules have exact answers.
+- `tests/unit/test_franchise_history.gd` (9): the season log and summary of hand-built seasons (titles, finals, playoffs, best and worst year, droughts, playoff streak; results as words), one champion and one runner-up per season, unfinished and other-league seasons ignored, a real played league obeys the invariants, franchise leaders count only seasons with the team, retired numbers (the season after the last, minimum seasons, a strong enough career, still-playing players excluded, split careers honoured by the main team only, two legends never share a number), jersey numbers steady and in 1 to 99.
+- `tests/unit/test_rivalries.gd` (8): score from meetings, deciding-game series, finals and a shared division (58 points for the hand-built rivalry), the year-by-year development (22, 42, 58: Budding, Heated, Bitter), a pair in different divisions and a pair that never met, headlines, strongest-first lists per team and for the league, level thresholds, byes and unfinished series are not meetings, a real league's meetings equal its finished series.
+- `tests/unit/test_storylines.gd` (9): back-to-back and three-peat, a title after a long wait, worst to first and Cinderella, the champion that misses the playoffs, repeat MVPs and a record season, a retiring legend and the retired number, ordering, filters, repeatability and a year cut-off, an empty history, well-formed stories from a real league.
+- `tests/live/test_live_history.gd` (5): the History tab has its five pages and builds in a sensible time, the club picker rebuilds the page for another team, the heavier pages (retired numbers, rivalries, storylines) fill only when opened and show a legend's number card, the storyline scope switch, the dashboard still builds every tab, and the Career hub's league storylines panel.
+- Pictures: `docs/validation/ui/history/` (`./tools/screenshot.ps1 screen=owner_history section=Franchise`, or "Retired numbers", Rivalries, Storylines).
+- Existing tests updated: `test_ui.test_history_tab_builds` (the tab is now a page set), and new code was brought under the style-lint baseline with tokens instead of raising it.

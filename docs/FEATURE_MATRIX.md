@@ -51,7 +51,8 @@ This is the one place that says what is built. `ROADMAP.md`, `RELEASE_READINESS.
 | Owner career: reputation, job offers, transfer once a season, up to 50 years | Built | `test_owner_career`; stability results in `STABILITY_REPORT.md` *(not re-run)* |
 | Distress events and AI reactions | Built | `test_distress`, `test_ai_reactions` |
 | Real-click and long-run playthrough tools | Partial | `tools/owner_stress`, `tools/ui_playthrough`, `tools/click_test` *(not re-run)* |
-| Historical franchise records, retired jerseys, team rivalries, league storylines | Planned | Only league records and the Hall of Fame exist (`test_records`) |
+| Franchise history (season log, titles, finals, droughts, all-time leaders), retired numbers, team rivalries that develop year by year, league storylines; History tab pages with a club picker | Built | `test_franchise_history`, `test_rivalries`, `test_storylines`, `live/test_live_history`; pictures in `docs/validation/ui/history/`. Derived from kept history, nothing stored. Shirt numbers are a stable display choice (league players have none). |
+| Hall of Fame and league record book | Built | `test_records` |
 
 ## Career Mode (PC only)
 
@@ -102,7 +103,7 @@ This is the one place that says what is built. `ROADMAP.md`, `RELEASE_READINESS.
 | Phase | Items | Status |
 |---|---|---|
 | 2 Game presentation | Play-by-play, visual replay, lineup selection before games, full box scores and game history in all modes | Planned |
-| 3 Franchise immersion | Retired jerseys, historical franchise records, league storylines, rivalry development, richer histories | Planned |
+| 3 Franchise immersion | Retired jerseys, historical franchise records, league storylines, rivalry development, richer histories | Built for Owner (and a storylines panel in the Career hub); see the Owner table |
 | 4 Career expansion | Timeline, media and reputation, life decisions, legacy | Planned |
 | 5 Dynasty expansion | Collections, mastery, seasons, rankings, tournament depth | Planned |
 | 6 Online foundations | Accounts, server-authoritative profiles, persistent collections, matchmaking, security and transactions | Planned |

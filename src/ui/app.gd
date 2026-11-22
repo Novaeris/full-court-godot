@@ -813,6 +813,25 @@ func _career_season_tab() -> Control:
 	box.add_child(FcTable.from_strings(["Opponent", "", "Score", "Min", "Pts", "Reb", "Ast", "XP", "Milestones"], rows, [0, 30, 70, 40, 40, 40, 40, 50, 0]))
 	box.add_child(FcUiTables.label("Career history", 16, true))
 	box.add_child(_career_history_table())
+	box.add_child(_career_storylines())
+	return box
+
+
+## The league's latest storylines (dynasties, upsets, records, retirements, rivalries), worked out from the history the league keeps.
+func _career_storylines() -> Control:
+	var box := VBoxContainer.new()
+	box.name = "LeagueStorylines"
+	box.add_child(FcUiTables.label("League storylines", FcUiTokens.TYPE_H3, true))
+	var game := career.game()
+	if game == null:
+		return box
+	var items := FcStorylines.new(career.state.world, game.league_id, career.state.current_season).recent(5)
+	if items.is_empty():
+		box.add_child(FcUiTables.label("Nothing yet: storylines appear as seasons are completed.", FcUiTokens.TYPE_BODY))
+	for item in items:
+		var line := FcUiTables.label("%d-%02d  %s" % [item["year"], (int(item["year"]) + 1) % 100, item["headline"]], FcUiTokens.TYPE_BODY)
+		line.tooltip_text = str(item["text"])
+		box.add_child(line)
 	return box
 
 
@@ -1541,7 +1560,13 @@ func build_tab(tab_name: String) -> Control:
 # --- tabs ----------------------------------------------------------------------------------
 
 ## The Hall of Fame and single-season records.
+## The History tab: the franchise's story, retired numbers, rivalries, storylines and the Hall of Fame (see FcOwnerHistory).
 func _tab_history() -> Control:
+	return FcOwnerHistory.build(_owner_ctx(), _history_records_page)
+
+
+## The league's Hall of Fame and record book (and the owner's own career), the History tab's last page.
+func _history_records_page() -> Control:
 	var w := controller.state.world
 	var records := FcRecords.new(w, controller.league_id)
 	var box := HBoxContainer.new()

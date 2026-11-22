@@ -254,8 +254,8 @@ func test_history_tab_builds() -> void:
 	_start_small_game()
 	app.on_advance(10)
 	var tab := app.build_tab("History")
-	assert_true(tab is HBoxContainer and tab.get_child_count() == 2)
-	assert_true(not _tables(tab).is_empty())
+	assert_true(tab is FcTabPages and (tab as FcTabPages).get_tab_count() == FcOwnerHistory.PAGE_NAMES.size(), "the History tab has its sub-pages (Phase 3)")
+	assert_true(not _tables(tab).is_empty(), "with the franchise and Hall of Fame tables")
 	tab.free()
 
 

@@ -38,6 +38,8 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 
 - Dynasty Mode, offline (D-043 to D-046, D-055): profile and economy, packs, collection, lineup and games, challenges, season and tournaments, the bundled Founding Series release, screens and mobile layouts checked in a phone-sized window (`docs/DYNASTY_MODE_PLAN.md`, `docs/DYNASTY_FOUNDING_REPORT.md`).
 - Release validation (2026-11-21): screen matrix, release fixes, Windows export and packaged self-test (`docs/RELEASE_READINESS.md`).
+- Phase 2, game replays and presentation (2026-11-21 and 22): play-by-play recorded for every game, replay screen with court picture in all modes, game-day preview, stored replays (Owner/Career data version 3, Dynasty version 2).
+- Phase 3, franchise and league immersion (2026-11-22): franchise history, retired numbers, rivalries, storylines (`docs/FEATURE_MATRIX.md`).
 - Phase 1, ecosystem integration and documentation reconciliation (2026-11-21): `docs/INTEGRATION_AUDIT.md`, `docs/FEATURE_MATRIX.md`, cross-mode tests.
 - Visual Identity and UI Transformation (D-057, D-058): brand, main menu, team identity, shared player presentation, Owner and Career redesign, Dynasty bracket, Creator Studio restyle, celebration and sound (`docs/VISUAL_IDENTITY_PLAN.md`, checkpoint notes in `docs/validation/ui/visual_identity/`).
 
@@ -59,7 +61,7 @@ Dependency-driven, continuous development (not an MVP schedule). Always keep the
 ## Next phases (the founder's order, 2026-11-21; design directions only, none started)
 1. **Phase 1, ecosystem integration and documentation reconciliation:** done (see Completed).
 2. **Phase 2, game replays and basketball presentation:** lineup selection, match simulation, full box scores and game history, better game-day presentation, play-by-play with a visual and replay ability, in all game modes.
-3. **Phase 3, franchise and league immersion:** historical franchise records, retired jerseys, league-wide storylines, rivalry development, richer player and team histories.
+3. **Phase 3, franchise and league immersion:** done (2026-11-22): franchise records, retired numbers, rivalries that develop, league storylines (see Completed).
 4. **Phase 4, Career RPG expansion:** career timeline, media and public reputation, more meaningful life decisions, legacy presentation.
 5. **Phase 5, Dynasty expansion:** more collections, card mastery, seasonal content, competitive rankings, tournament depth.
 6. **Phase 6, online foundations:** accounts, server-authoritative profiles, persistent collections, matchmaking architecture, security and transaction infrastructure (any new dependency or hosting needs founder approval).

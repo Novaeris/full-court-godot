@@ -148,6 +148,22 @@ func _build_screen() -> void:
 		if not boxes.is_empty():
 			FcPostGame.open(_app, FcPostGame.for_owner(_app.controller, boxes[boxes.size() - 1]["box"], boxes[boxes.size() - 1].get("events", {})))
 		return
+	if _screen == "owner_history":
+		# eight finished seasons and a franchise legend, then the History tab on the page named by section= (Franchise, Retired numbers,
+		# Rivalries, Storylines)
+		for i in 8:
+			_app.controller.sim_playoffs()
+			_app.controller.start_next_season()
+		var world: FcWorld = _app.controller.state.world
+		FcHistoryFixture.retired_player(world, _app.controller.state.user_team_id, _app.controller.state.current_season - 12, 9, 2200, 910001)
+		_app.show_dashboard()
+		var index := FcApp.TAB_NAMES.find("History")
+		_app._tabs.current_tab = index
+		var pages := _app._tabs.get_current_tab_control().find_child("HistoryPages", true, false) as FcTabPages
+		var wanted := FcOwnerHistory.PAGE_NAMES.find(_section) if _section != "" else 0
+		if pages != null and wanted >= 0:
+			pages.open(wanted, true)
+		return
 	if _screen == "owner_gameday":
 		var preview := FcGameDay.for_owner(_app.controller)
 		if not preview.is_empty():
