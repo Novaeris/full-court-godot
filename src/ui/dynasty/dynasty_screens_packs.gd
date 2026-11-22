@@ -41,6 +41,8 @@ static func _pack_panel(ui: FcDynastyUi, pk: Dictionary) -> Control:
 		chip.add_theme_color_override("font_color", FcRarityStyle.color(tier))
 		v.add_child(chip)
 	v.add_child(FcDynastyUi.wl("%d card%s    Price: %s %s" % [pk["cards_per_pack"], "" if pk["cards_per_pack"] == 1 else "s", FcDynastyStyle._n(pk["amount"]), pk["currency"]], FcUiTokens.TYPE_BODY))
+	if str(pk["set_name"]) != "":
+		v.add_child(FcDynastyUi.wl("Set: %s%s" % [pk["set_name"], ("  (%s)" % str(pk["window"])) if str(pk["window"]) != "" else ""], FcUiTokens.TYPE_SMALL))
 	if pk["fixed"]:
 		v.add_child(ui.note("Always contains exactly these cards (no randomness).", 280))
 	else:

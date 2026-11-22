@@ -17,10 +17,14 @@ const OBJECTIVE_TYPES := ["stat", "wins", "win_margin", "collection"]
 const REWARD_KEYS := ["credits", "tokens", "shards", "card_ids", "pack_ids"]
 const COLLECTION_METRICS := ["unique_cards", "rarity_cards", "duplicates"]
 const TOURNAMENT_TEAMS := 7
+## Bracket sizes a tournament may use (feature tournament_v2); a bracket without a size is the original eight.
+const TOURNAMENT_SIZES := [4, 8, 16, 32]
 ## A Dynasty team needs 13 different real players (5 starters, 7 bench, 1 reserve) and the five starters must cover PG, SG, SF, PF and C.
 const MIN_PLAYABLE_PLAYERS := 13
 const STARTER_POSITIONS := FcPosition.PLAYABLE
-const PLACEMENTS := ["champion", "finalist", "semifinal", "quarterfinal"]
+## "early" is any exit before the quarterfinals (round of 16, round of 32).
+const PLACEMENTS := ["champion", "finalist", "semifinal", "quarterfinal", "early"]
+const SET_KINDS := ["permanent", "timed"]
 
 
 # --- can a release field a legal starting lineup? ----------------------------------------------------------------------
@@ -356,10 +360,10 @@ static func check_season(path: String, data: Dictionary, cards: Dictionary, pack
 		errors.append_array(objective_problems("%s objective %s" % [path, str(o["id"])], o.get("objective")))
 	var tseen := {}
 	for t in data.get("tournaments", []):
-		_check_tournament(path, t, cards, packs, tseen, errors)
+		_check_tournament(path, t, cards, packs, tseen, errors, _has_feature(data, "tournament_v2"))
 
 
-static func _check_tournament(path: String, t: Variant, cards: Dictionary, packs: Dictionary, seen: Dictionary, errors: Array[String]) -> void:
+static func _check_tournament(path: String, t: Variant, cards: Dictionary, packs: Dictionary, seen: Dictionary, errors: Array[String], v2: bool = false) -> void:
 	if not (t is Dictionary) or str(t.get("tournament_id", "")).is_empty() or str(t.get("name", "")).is_empty():
 		errors.append("%s: each tournament needs a tournament_id and a name" % path)
 		return
@@ -370,9 +374,19 @@ static func _check_tournament(path: String, t: Variant, cards: Dictionary, packs
 	var label := "%s tournament %s" % [path, tid]
 	if t.has("entry_fee"):
 		errors.append_array(_price_problems(label, t["entry_fee"]))
+	var size := 8
+	if t.has("size") or t.has("starts_at") or t.has("ends_at"):
+		if not v2:
+			errors.append("%s: size, starts_at and ends_at need the season's requires_features to include tournament_v2" % label)
+		if t.has("size"):
+			size = _int(t["size"])
+			if not TOURNAMENT_SIZES.has(size):
+				errors.append("%s: size must be one of %s" % [label, ", ".join(TOURNAMENT_SIZES.map(func(n: int) -> String: return str(n)))])
+				size = 8
+		errors.append_array(FcContentWindow.problems(label, t))
 	var teams = t.get("teams", [])
-	if not (teams is Array) or teams.size() != TOURNAMENT_TEAMS:
-		errors.append("%s: a tournament needs exactly %d opposing teams (you are the eighth)" % [label, TOURNAMENT_TEAMS])
+	if not (teams is Array) or teams.size() != size - 1:
+		errors.append("%s: a bracket of %d needs exactly %d opposing teams (you are one of the %d)" % [label, size, size - 1, size])
 	else:
 		for team in teams:
 			if not (team is Dictionary) or str(team.get("name", "")).strip_edges().is_empty():
@@ -399,6 +413,74 @@ static func _check_tournament(path: String, t: Variant, cards: Dictionary, packs
 				errors.append("%s: unknown placement '%s' (use %s)" % [label, str(place), ", ".join(PLACEMENTS)])
 			else:
 				errors.append_array(reward_problems("%s %s" % [label, str(place)], rewards[place], cards, packs))
+
+
+# --- sets (D-067) -------------------------------------------------------------------------------------------------
+
+## One set: a named group of cards and the packs that sell them. `kind` is permanent (default) or timed; a timed set needs a start and
+## an end (unix seconds, UTC) and a permanent set must not have them. Exactly one permanent set may be marked `"base": true`.
+static func check_set(path: String, data: Dictionary, cards: Dictionary, packs: Dictionary, errors: Array[String]) -> void:
+	if not _has_feature(data, "set_v1"):
+		errors.append("%s: sets need requires_features to include set_v1" % path)
+	if str(data.get("name", "")).strip_edges().is_empty():
+		errors.append("%s: name is required" % path)
+	var kind := str(data.get("kind", "permanent"))
+	if not SET_KINDS.has(kind):
+		errors.append("%s: kind must be one of %s" % [path, ", ".join(SET_KINDS)])
+	elif kind == "timed":
+		if not data.has("starts_at") or not data.has("ends_at"):
+			errors.append("%s: a timed set needs starts_at and ends_at (unix seconds, UTC)" % path)
+	elif data.has("starts_at") or data.has("ends_at"):
+		errors.append("%s: a permanent set cannot have starts_at or ends_at (make it timed)" % path)
+	errors.append_array(FcContentWindow.problems(path, data))
+	if data.has("base") and not (data["base"] is bool):
+		errors.append("%s: base must be true or false" % path)
+	if bool(data.get("base", false)) and kind != "permanent":
+		errors.append("%s: the base set must be permanent" % path)
+	var ids = data.get("card_ids", null)
+	if not (ids is Array) or ids.is_empty():
+		errors.append("%s: card_ids must be a non-empty list" % path)
+	else:
+		for cid in ids:
+			if not cards.has(str(cid)):
+				errors.append("%s: card '%s' is not a card in this release" % [path, str(cid)])
+	var pack_ids = data.get("pack_ids", [])
+	if not (pack_ids is Array):
+		errors.append("%s: pack_ids must be a list" % path)
+		return
+	for pid in pack_ids:
+		if not packs.has(str(pid)):
+			errors.append("%s: pack '%s' is not a pack in this release" % [path, str(pid)])
+		elif ids is Array:
+			for cid in packs[str(pid)].get("card_ids", []):
+				if not ids.has(str(cid)):
+					errors.append("%s: pack '%s' holds card '%s' which is not in this set" % [path, str(pid), str(cid)])
+
+
+## The rules across all sets: a card is in exactly one set (a variation is a new card in another set), a pack is sold by at most one set,
+## and only one set is the base set. Cards and packs in no set are always available.
+static func check_set_membership(sets: Dictionary, _packs: Dictionary, errors: Array[String]) -> void:
+	var card_owner := {}
+	var pack_owner := {}
+	var bases: Array[String] = []
+	var ids: Array = sets.keys()
+	ids.sort()
+	for sid in ids:
+		var s: Dictionary = sets[sid]
+		if bool(s.get("base", false)):
+			bases.append(str(sid))
+		for cid in s.get("card_ids", []) if s.get("card_ids") is Array else []:
+			if card_owner.has(str(cid)):
+				errors.append("sets/%s.json: card '%s' is already in set '%s'; a card belongs to one set only" % [sid, str(cid), card_owner[str(cid)]])
+			else:
+				card_owner[str(cid)] = str(sid)
+		for pid in s.get("pack_ids", []) if s.get("pack_ids") is Array else []:
+			if pack_owner.has(str(pid)):
+				errors.append("sets/%s.json: pack '%s' is already sold by set '%s'" % [sid, str(pid), pack_owner[str(pid)]])
+			else:
+				pack_owner[str(pid)] = str(sid)
+	if bases.size() > 1:
+		errors.append("release: only one set can be the base set (found %s)" % ", ".join(bases))
 
 
 # --- support -------------------------------------------------------------------------------------------------------

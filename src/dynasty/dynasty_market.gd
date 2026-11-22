@@ -16,13 +16,15 @@ static func listing(profile: FcDynastyProfile, catalog: FcDynastyCatalog) -> Arr
 	return out
 
 
-static func acquire(profile: FcDynastyProfile, catalog: FcDynastyCatalog, card_id: String, request_id: String) -> FcDynastyResult:
+static func acquire(profile: FcDynastyProfile, catalog: FcDynastyCatalog, card_id: String, request_id: String, at: int = -1) -> FcDynastyResult:
 	var prior := FcDynastyEconomy.previous(profile, request_id)
 	if not prior.is_empty():
 		return FcDynastyResult.success({"txn": prior, "repeated": true})
 	var v := catalog.view(card_id)
 	if v.is_empty() or not bool(v["acquirable"]):
 		return FcDynastyResult.failure("not_for_sale", "This card cannot be bought directly.")
+	if not catalog.card_available(card_id, at):
+		return FcDynastyResult.failure("set_not_open", "This card is not on sale right now (its set is not open).")
 	var cost := {str(v["price"]["currency"]): int(v["price"]["amount"])}
 	var paid := FcDynastyEconomy.spend(profile, "acquire_card", card_id, cost, [card_id], request_id)
 	if not paid.ok:

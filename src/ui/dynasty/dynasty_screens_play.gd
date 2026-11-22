@@ -216,14 +216,14 @@ static func build_tournament(ui: FcDynastyUi) -> Control:
 	root.add_child(ui.heading("Tournament"))
 	var run := ctl.active_tournament()
 	if run.is_empty():
-		root.add_child(ui.note("Eight teams, single elimination: quarterfinals, semifinals, final. Every match is simulated with the same engine. Rewards depend on how far you go.", 640))
+		root.add_child(ui.note("Single elimination, every round to the final. Every match is simulated with the same engine. Rewards depend on how far you go.", 640))
 		var list := ctl.tournament_listing()
 		if list.is_empty():
 			root.add_child(ui.note("The loaded release's season has no tournament yet."))
 		for t in list:
 			var v := VBoxContainer.new()
 			v.add_child(FcDynastyUi.wl(t["name"], 18, true))
-			v.add_child(FcDynastyUi.wl("Entry: %s %s" % [FcDynastyStyle._n(t["fee_amount"]), t["fee_currency"]]))
+			v.add_child(FcDynastyUi.wl("%d teams. Entry: %s %s%s" % [int(t["size"]), FcDynastyStyle._n(t["fee_amount"]), t["fee_currency"], ("  (%s)" % str(t["window"])) if str(t["window"]) != "" else ""]))
 			for place in FcDynastyContentRules.PLACEMENTS:
 				if t["rewards"].has(place):
 					v.add_child(FcDynastyUi.wl("%s: %s" % [place.capitalize(), FcDynastyChallenges.rewards_text(t["rewards"][place])], 13))
@@ -235,9 +235,9 @@ static func build_tournament(ui: FcDynastyUi) -> Control:
 			v.add_child(enter)
 			root.add_child(ui.panel([v]))
 	else:
-		root.add_child(FcDynastyUi.wl("%s: round %d of 3" % [run["name"], int(run["round"]) + 1], 18))
+		root.add_child(FcDynastyUi.wl("%s: round %d of %d" % [run["name"], int(run["round"]) + 1, FcDynastyTournament.round_count(run)], 18))
 		root.add_child(_bracket(run))
-		var play := FcDynastyUi.btn("Play next match (%s)" % FcDynastyTournament.ROUND_NAMES[int(run["round"])], func() -> void:
+		var play := FcDynastyUi.btn("Play next match (%s)" % FcDynastyTournament.round_name(run, int(run["round"])), func() -> void:
 			var r := ctl.play_tournament_match()
 			if not r.ok:
 				ui.say(r.message)

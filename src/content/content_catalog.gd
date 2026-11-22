@@ -14,6 +14,7 @@ var cards: Dictionary = {}
 var packs: Dictionary = {}
 var challenges: Dictionary = {}
 var seasonal: Dictionary = {}
+var sets: Dictionary = {}
 var support: Dictionary = {}
 
 
@@ -27,6 +28,7 @@ static func build(manifest: FcContentManifest, directory: String, defs: Dictiona
 	c.packs = defs["pack"]
 	c.challenges = defs["challenge"]
 	c.seasonal = defs["seasonal"]
+	c.sets = defs.get("set", {})
 	c.support = defs["support"]
 	return c
 

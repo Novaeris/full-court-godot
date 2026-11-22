@@ -229,6 +229,10 @@ static func write_all(save: Callable, keys: Array) -> void:
 		"card_ids": all_cards, "requires_features": ["pack_odds_v1"]})
 	save.call("packs/reward_pack.json", {"pack_id": "reward_pack", "name": "Reward Pack", "price": {"currency": "credits", "amount": 0},
 		"cards_per_pack": 2, "odds": {"common": 7000, "uncommon": 3000}, "card_ids": commons_uncommons, "requires_features": ["pack_odds_v1"]})
+	# the permanent base set (D-067): every Founding card and pack, always available
+	save.call("sets/founding_series.json", {"set_id": "founding_series", "name": "Founding Series", "kind": "permanent", "base": true,
+		"description": "The permanent base set of Full Court Dynasty.", "card_ids": all_cards,
+		"pack_ids": ["starter_pack", "rookie_pack", "pro_pack", "elite_pack", "reward_pack"], "requires_features": ["set_v1"]})
 	var challenges := [
 		["century_mark", "Century Mark", "scoring", "Score 100 points or more in one game.", {"type": "stat", "stat": "points", "scope": "team", "mode": "single_game", "target": 100}, {"credits": 300}, {}],
 		["downtown", "Downtown", "shooting", "Make 10 three-pointers in one game.", {"type": "stat", "stat": "threes", "scope": "team", "mode": "single_game", "target": 10}, {"credits": 350}, {}],

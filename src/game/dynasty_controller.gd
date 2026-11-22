@@ -200,7 +200,9 @@ func pack_listing() -> Array[Dictionary]:
 			"cards_per_pack": int(def.get("cards_per_pack", def.get("card_ids", []).size())), "odds": def.get("odds", {}),
 			"guarantees": def.get("guarantees", []), "pity": def.get("pity", {}), "fixed": not def.has("odds"),
 			"affordable": profile().balance(str(price["currency"])) >= int(price["amount"]),
-			"pity_progress": int(profile().pity.get(id, 0))})
+			"pity_progress": int(profile().pity.get(id, 0)), "set_id": catalog.set_of_pack(id),
+			"set_name": str(catalog.sets().get(catalog.set_of_pack(id), {}).get("name", "")),
+			"window": FcContentWindow.describe(catalog.sets().get(catalog.set_of_pack(id), {}), catalog.now())})
 	return out
 
 
@@ -283,8 +285,13 @@ func tournament_listing() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for t in catalog.season(catalog.active_season_id()).get("tournaments", []):
 		var fee: Dictionary = t.get("entry_fee", {})
+		var at := catalog.now()
+		var status := FcContentWindow.status(t, at)
+		if status == FcContentWindow.UPCOMING or status == FcContentWindow.ENDED:
+			continue   # not listed outside its window
 		out.append({"tournament_id": str(t["tournament_id"]), "name": str(t["name"]), "fee_currency": str(fee.get("currency", "credits")),
-			"fee_amount": int(fee.get("amount", 0)), "rewards": t.get("rewards", {})})
+			"fee_amount": int(fee.get("amount", 0)), "rewards": t.get("rewards", {}), "size": int(t.get("size", 8)),
+			"window": FcContentWindow.describe(t, at)})
 	return out
 
 

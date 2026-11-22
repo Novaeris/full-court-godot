@@ -13,6 +13,11 @@ var defs: FcDefinitionSet
 var ratings: FcPlayerRatings
 var config: FcDynastyConfig
 var _views: Dictionary = {}
+## The time source for timed sets (whole unix seconds). Offline play uses the device clock; the online server passes its own time to the
+## services instead (D-067). Tests replace it.
+var clock: Callable = func() -> int: return int(Time.get_unix_time_from_system())
+var _card_set: Dictionary = {}   # card_id -> set_id
+var _pack_set: Dictionary = {}   # pack_id -> set_id
 
 
 static func build(content_catalog: FcContentCatalog, definitions: FcDefinitionSet, rating_calculator: FcPlayerRatings = null) -> FcDynastyCatalog:
@@ -24,6 +29,11 @@ static func build(content_catalog: FcContentCatalog, definitions: FcDefinitionSe
 	if content_catalog != null:
 		for id in content_catalog.cards:
 			c._views[id] = c._make_view(str(id))
+		for sid in content_catalog.sets:
+			for cid in content_catalog.sets[sid].get("card_ids", []):
+				c._card_set[str(cid)] = str(sid)
+			for pid in content_catalog.sets[sid].get("pack_ids", []):
+				c._pack_set[str(pid)] = str(sid)
 	return c
 
 
@@ -81,21 +91,58 @@ func packs() -> Dictionary:
 	return content.packs if content != null else {}
 
 
-## Packs a player can buy: those with a published price.
-func buyable_packs() -> Array[String]:
+## The current time in whole seconds (the injectable clock).
+func now() -> int:
+	return int(clock.call())
+
+
+## Every published set, {set_id: definition}.
+func sets() -> Dictionary:
+	return content.sets if content != null else {}
+
+
+## The set a card belongs to ("" when it is in none, which means always available).
+func set_of_card(card_id: String) -> String:
+	return str(_card_set.get(card_id, ""))
+
+
+## The set that sells a pack ("" when none).
+func set_of_pack(pack_id: String) -> String:
+	return str(_pack_set.get(pack_id, ""))
+
+
+## The status (always | upcoming | active | ended) of a set at `at` (default: now).
+func set_status(set_id: String, at: int = -1) -> String:
+	return FcContentWindow.status(sets().get(set_id, {}), now() if at < 0 else at)
+
+
+## Whether a pack may be bought at `at` (default: now): its set, if any, must be open. Owned cards never depend on this.
+func pack_available(pack_id: String, at: int = -1) -> bool:
+	var sid := set_of_pack(pack_id)
+	return sid == "" or FcContentWindow.is_open(sets().get(sid, {}), now() if at < 0 else at)
+
+
+## Whether a card may be bought directly at `at` (default: now): its set, if any, must be open.
+func card_available(card_id: String, at: int = -1) -> bool:
+	var sid := set_of_card(card_id)
+	return sid == "" or FcContentWindow.is_open(sets().get(sid, {}), now() if at < 0 else at)
+
+
+## Packs a player can buy: those with a published price whose set is open.
+func buyable_packs(at: int = -1) -> Array[String]:
 	var out: Array[String] = []
 	for id in packs():
-		if packs()[id].has("price"):
+		if packs()[id].has("price") and pack_available(str(id), at):
 			out.append(str(id))
 	out.sort()
 	return out
 
 
-## Cards with a published price that may be bought directly.
-func market_card_ids() -> Array[String]:
+## Cards with a published price that may be bought directly (their set is open).
+func market_card_ids(at: int = -1) -> Array[String]:
 	var out: Array[String] = []
 	for id in _views:
-		if bool(_views[id]["acquirable"]):
+		if bool(_views[id]["acquirable"]) and card_available(str(id), at):
 			out.append(str(id))
 	out.sort()
 	return out

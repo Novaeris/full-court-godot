@@ -343,3 +343,16 @@ Full write-up, measurements, pictures and recordings: `docs/PLAYER_VISUAL_PROPOS
 - **Decision:** built only the transport-agnostic server rules (`src/online/`) running in-process: signed requests, nonces, rate limits, idempotency keys, a command whitelist, rollback, signed receipts, rating matchmaking with server-issued seeds and server-decided matches checked by re-simulation. They reuse the offline Dynasty services, so the rules cannot drift.
 - **Not decided (needs the founder, CLAUDE.md rule 7):** backend technology and hosting, sign-in provider, transport, and the first online feature set. A recommendation is in `docs/ONLINE_ARCHITECTURE.md` (a headless Godot server, Godot built-in networking, collection plus ranked head-to-head first, payments last and lawyer-reviewed).
 - **No save change:** the server stores the existing Dynasty profile document.
+
+## D-066 Online scope (founder, 2026-11-22; supersedes the "no online for Owner/Career" lines of D-029/D-030)
+- **Decision:** Owner and Career stay fully playable offline and gain an optional online layer; Dynasty is online-first (the built offline Dynasty stays until online ships). PC hosts all online play; mobile is still Dynasty only.
+- **Owner multiplayer:** one shared league, each person owns one team, invites, one host who simulates the whole league (host-authoritative, so a host can cheat in a friends' league; the server-authoritative rules of D-065 apply to Dynasty and ranked play).
+- **Career online:** a person brings their created player into others' 5v5 and 3v3 games, still the text and box-score simulation; a visual presentation for players to watch is wanted later.
+- **Backend (founder's choice of services):** Supabase (accounts, storage, realtime) and Resend (e-mail), plus a small Godot headless server for live matches (recommended, not yet approved). Transport WebSocket with TLS. No trading and no real-money purchases yet.
+- **Build order:** accounts, then Owner multiplayer, then Career team play.
+- **Nothing is built yet** beyond D-065; no network code until the accounts milestone starts.
+
+## D-067 Published sets and Studio tournaments (founder, 2026-11-22)
+- **Sets:** a set is a named group of cards with its own packs. The Founding Series is the permanent base set. A set is permanent or timed (start and end). When a timed set ends its packs leave the store, cards already owned stay forever, and the founder may re-release it. A card belongs to exactly one set (a variation is a new card in a new set). Offline timing uses the device clock; online uses the server clock. Goals for an ended set keep what was earned but gain no new progress.
+- **Tournaments:** made in Creator Studio, single-elimination brackets (4, 8, 16 or 32 entries).
+- **Built (2026-11-22):** `set` content kind and `set_v1`, `tournament_v2` (size, window), `FcContentWindow`, catalog/pack/market checks, "early" placement, the bundled Founding Series base set (release id changed to `fcr_35b60b935eccd69e`, so the bundled release differs from older checkouts; saves only keep ids and are unaffected). No save-format change. Offline timing trusts the device clock; clock cheating offline is accepted by design. Goals do not yet filter by set. Guide: `docs/SETS_AND_TOURNAMENTS.md`.

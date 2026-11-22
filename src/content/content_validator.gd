@@ -87,7 +87,7 @@ static func validate_release_dir(release_dir: String, game_version: String,
 ## {"problems": Array[String], "defs": {kind: {id: Dictionary}}}.
 static func check_definitions(dir: String, paths: Array[String], definitions: FcDefinitionSet = null) -> Dictionary:
 	var errors: Array[String] = []
-	var defs := {"player": {}, "card": {}, "pack": {}, "challenge": {}, "seasonal": {}, "support": {}}
+	var defs := {"player": {}, "card": {}, "pack": {}, "challenge": {}, "seasonal": {}, "set": {}, "support": {}}
 	var path_set := {}
 	for p in paths:
 		path_set[p] = true
@@ -126,6 +126,9 @@ static func check_definitions(dir: String, paths: Array[String], definitions: Fc
 		FcDynastyContentRules.check_challenge("challenges/%s.json" % id, defs["challenge"][id], defs["card"], defs["pack"], errors)
 	for id in defs["seasonal"]:
 		FcDynastyContentRules.check_season("seasonal/%s.json" % id, defs["seasonal"][id], defs["card"], defs["pack"], defs["challenge"], errors)
+	for id in defs["set"]:
+		FcDynastyContentRules.check_set("sets/%s.json" % id, defs["set"][id], defs["card"], defs["pack"], errors)
+	FcDynastyContentRules.check_set_membership(defs["set"], defs["pack"], errors)
 	for id in defs["support"]:
 		FcDynastyContentRules.check_support("support/%s.json" % id, defs["support"][id], defs["card"], defs["pack"], errors)
 	_check_lineup_coverage(defs, errors)

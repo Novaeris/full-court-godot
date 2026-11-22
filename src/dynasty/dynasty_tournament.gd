@@ -1,15 +1,48 @@
 class_name FcDynastyTournament
 extends RefCounted
-## The eight-team single-elimination tournament: quarterfinals, semifinals, final. Every match, yours and the computer's, is
+## The single-elimination tournament (4, 8, 16 or 32 teams; the original is eight): every round to the final. Every match, yours and the computer's, is
 ## played by the existing simulator. The run is stored in the profile (`profile.tournament["active"]`), so it survives saving
 ## and reloading; all seeds derive from the profile seed and run number, so a run is reproducible.
 ##
 ## Run record: {run_id, tournament_id, name, seed, status ("active"|"champion"|"eliminated"), round (0-2),
-## teams: [{name, abbreviation, user, slots}] (8, in bracket order), rounds: [[match...]] where
+## teams: [{name, abbreviation, user, slots}] (the bracket size, in bracket order), rounds: [[match...]] where
 ## match = {a, b, winner (-1 until played), score_a, score_b}, placement, reward_txn}.
 
-const ROUND_NAMES := ["Quarterfinals", "Semifinals", "Final"]
-const PLACEMENT_BY_ROUND := ["quarterfinal", "semifinal", "finalist"]
+const FINAL_ROUND_NAMES := ["Final", "Semifinals", "Quarterfinals"]   # counted back from the last round
+
+
+## How many rounds a bracket of `size` teams has (4 -> 2, 8 -> 3, 16 -> 4, 32 -> 5).
+static func rounds_for(size: int) -> int:
+	var n := 0
+	var s := maxi(2, size)
+	while s > 1:
+		s = s >> 1
+		n += 1
+	return n
+
+
+static func round_count(run: Dictionary) -> int:
+	return rounds_for((run["teams"] as Array).size())
+
+
+## The name of round `r` (0-based) of a run: ...Round of 32, Round of 16, Quarterfinals, Semifinals, Final.
+static func round_name(run: Dictionary, r: int) -> String:
+	var back := round_count(run) - 1 - r
+	if back < FINAL_ROUND_NAMES.size():
+		return str(FINAL_ROUND_NAMES[back])
+	return "Round of %d" % (1 << (back + 1))
+
+
+## The placement a team that loses in round `r` finishes with: the final loser is a finalist, then semifinal, quarterfinal, and
+## anything earlier is "early".
+static func placement_for_exit(run: Dictionary, r: int) -> String:
+	var back := round_count(run) - 1 - r
+	return ["finalist", "semifinal", "quarterfinal"][back] if back < 3 else "early"
+
+
+## Whether a tournament definition can be entered at `at` (default: the catalog clock). A run already started can always be finished.
+static func is_open(catalog: FcDynastyCatalog, def: Dictionary, at: int = -1) -> bool:
+	return FcContentWindow.is_open(def, catalog.now() if at < 0 else at)
 
 
 static func find_definition(catalog: FcDynastyCatalog, tournament_id: String) -> Dictionary:
@@ -29,12 +62,14 @@ static func active(profile: FcDynastyProfile) -> Dictionary:
 
 
 ## Pays the entry fee, seeds the bracket and starts a run. The user's team sits at a seeded position.
-static func enter(profile: FcDynastyProfile, catalog: FcDynastyCatalog, tournament_id: String) -> FcDynastyResult:
+static func enter(profile: FcDynastyProfile, catalog: FcDynastyCatalog, tournament_id: String, at: int = -1) -> FcDynastyResult:
 	if has_active(profile):
 		return FcDynastyResult.failure("already_entered", "You are already in a tournament.")
 	var def := find_definition(catalog, tournament_id)
 	if def.is_empty():
 		return FcDynastyResult.failure("unknown_tournament", "That tournament is not in the current content release.")
+	if not is_open(catalog, def, at):
+		return FcDynastyResult.failure("tournament_closed", "That tournament is not open right now.")
 	var problems := FcDynastyLineup.problems(profile, catalog)
 	if not problems.is_empty():
 		return FcDynastyResult.failure("invalid_roster", "Your lineup is not ready: %s" % problems[0])
@@ -62,7 +97,7 @@ static func enter(profile: FcDynastyProfile, catalog: FcDynastyCatalog, tourname
 		teams[i] = teams[j]
 		teams[j] = tmp
 	var first: Array = []
-	for m in 4:
+	for m in teams.size() >> 1:
 		first.append({"a": 2 * m, "b": 2 * m + 1, "winner": -1, "score_a": 0, "score_b": 0})
 	profile.tournament["run_counter"] = run_number
 	profile.tournament["active"] = {"run_id": run_id, "tournament_id": tournament_id, "name": str(def["name"]), "seed": str(seed_value),
@@ -111,9 +146,9 @@ static func play_next(profile: FcDynastyProfile, catalog: FcDynastyCatalog) -> F
 	var user_won := _winner_of_user(run, rd) == me
 	if not user_won:
 		run["status"] = "eliminated"
-		run["placement"] = PLACEMENT_BY_ROUND[rd]
+		run["placement"] = placement_for_exit(run, rd)
 		_finish_cpu_rounds(catalog, run, seed_value)
-	elif rd == 2:
+	elif rd == round_count(run) - 1:
 		run["status"] = "champion"
 		run["placement"] = "champion"
 	else:
@@ -155,7 +190,7 @@ static func _advance(run: Dictionary) -> void:
 
 
 static func _finish_cpu_rounds(catalog: FcDynastyCatalog, run: Dictionary, seed_value: int) -> void:
-	while run["round"] < 2:
+	while run["round"] < round_count(run) - 1:
 		_advance(run)
 		for m_index in run["rounds"][run["round"]].size():
 			_simulate_cpu_match(catalog, run, run["rounds"][run["round"]][m_index], hash("%d:r%d:m%d" % [seed_value, run["round"], m_index]))
@@ -186,5 +221,5 @@ static func bracket_view(run: Dictionary) -> Array[Dictionary]:
 				"score": "%d - %d" % [int(m["score_a"]), int(m["score_b"])] if played else "vs",
 				"winner": str(run["teams"][int(m["winner"])]["name"]) if played else "",
 				"you": int(m["a"]) == me or int(m["b"]) == me})
-		out.append({"round_name": ROUND_NAMES[r], "matches": rows})
+		out.append({"round_name": round_name(run, r), "matches": rows})
 	return out

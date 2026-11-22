@@ -640,6 +640,12 @@
 			"sha256": "5bff382d2844ad84fa92a5f1eb1adce6f1a5edd61c255b69eacb45d4af5b0263"
 		},
 		{
+			"bytes": 1496,
+			"kind": "set",
+			"path": "sets/founding_series.json",
+			"sha256": "44addb69e233325c445e330302e1026afae1c70e31e05f74220c555488a3e61f"
+		},
+		{
 			"bytes": 169,
 			"kind": "support",
 			"path": "support/dynasty_config.json",
@@ -647,12 +653,12 @@
 		}
 	],
 	"format": "fc_content_release",
-	"manifest_checksum": "792855668e8a93acfa8ae6a1080c0c76f2411137610eec1abe4db1a0321322ab",
+	"manifest_checksum": "82017e8efb9a37b3b1983c5f600ad92d32d34d15f344d567150c9a3bf6417e5b",
 	"min_game_version": "0.1.0",
 	"previous_release_id": "",
 	"published_at": 1700000000,
 	"published_by": "Full Court build tool",
-	"release_id": "fcr_2036b76f032b29c4",
+	"release_id": "fcr_35b60b935eccd69e",
 	"requires_features": [
 		"card_market_v1",
 		"card_overrides_v1",
@@ -661,7 +667,8 @@
 		"dynasty_config_v1",
 		"pack_fixed_v1",
 		"pack_odds_v1",
-		"season_v1"
+		"season_v1",
+		"set_v1"
 	],
 	"schema_version": 1
 }

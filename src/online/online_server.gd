@@ -173,7 +173,7 @@ func _cmd_get_profile(profile: FcDynastyProfile, _params: Dictionary, _request_i
 
 
 func _cmd_buy_pack(profile: FcDynastyProfile, params: Dictionary, request_id: String) -> FcDynastyResult:
-	var r := FcDynastyPacks.buy_and_open(profile, catalog, str(params.get("pack_id", "")), request_id if request_id != "" else "buy:%d" % (profile.opening_counter + 1))
+	var r := FcDynastyPacks.buy_and_open(profile, catalog, str(params.get("pack_id", "")), request_id if request_id != "" else "buy:%d" % (profile.opening_counter + 1), int(now.call()))
 	if r.ok:
 		FcDynastyMarket.collection_changed(profile, catalog)
 	return r

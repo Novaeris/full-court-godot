@@ -20,6 +20,7 @@ const KIND_FOLDERS := {
 	"packs": "pack",
 	"challenges": "challenge",
 	"seasonal": "seasonal",
+	"sets": "set",
 	"support": "support",
 }
 
@@ -30,6 +31,7 @@ const ID_FIELDS := {
 	"pack": "pack_id",
 	"challenge": "challenge_id",
 	"seasonal": "season_id",
+	"set": "set_id",
 	"support": "support_id",
 }
 
@@ -43,6 +45,8 @@ const SUPPORTED := [
 	"season_v1",
 	"dynasty_config_v1",
 	"card_overrides_v1",
+	"set_v1",
+	"tournament_v2",
 ]
 
 

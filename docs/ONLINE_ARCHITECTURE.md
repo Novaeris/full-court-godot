@@ -1,7 +1,8 @@
 # Online architecture (foundations, phase 6)
 
-**Status: foundations built and tested locally. No network code, no backend and no new dependency exists.** The real backend technology
-and hosting are an open decision for the founder (see "Decisions needed" at the end and D-065 in DECISIONS.md). CLAUDE.md rule 7
+**Status: foundations built and tested locally. No network code, no backend and no new dependency exists.** The founder answered the open
+questions on 2026-11-22 (D-066): Supabase and Resend, WebSocket with TLS, Owner multiplayer (shared league, one host) and Career 5v5/3v3
+team play, Dynasty online-first, no trading or real-money purchases yet. Section "Founder answers" at the end lists what is still open. CLAUDE.md rule 7
 (no dependencies without approval) is why nothing past the local layer was built.
 
 Online play is a **Dynasty-side track only** (D-030, D-029): Owner and Career stay single-player.
@@ -59,3 +60,16 @@ The play-by-play recorder never touches the random generator (tested), so record
    only after a lawyer reviews payments and the card-collecting rules (see CLAUDE.md rule 9).
 
 Until these are answered, the right next step is only more local hardening, not network code.
+
+## Founder answers (2026-11-22, D-066) and what is still open
+- **Services chosen:** Supabase (accounts, storage, realtime) and Resend (e-mail, usable as Supabase's sign-in SMTP). Godot talks to them with
+  its built-in `HTTPRequest`/WebSocket, so no plugin is needed. Transport: WebSocket with TLS.
+- **Modes:** Owner and Career stay fully playable offline with an optional online layer; Dynasty is online-first.
+  - **Owner multiplayer:** one shared league, each person owns one team, invites, one host who simulates the whole league. This is
+    host-authoritative: the host's game decides, so it is for friends' leagues. The server-authoritative design above is for Dynasty and ranked play.
+  - **Career online:** a person brings their created player into others' 5v5 and 3v3 games; still the text and box-score simulation, with a
+    visual presentation wanted later.
+- **Build order:** accounts first, then Owner multiplayer, then Career team play.
+- **Still open:** whether the live-match server is a small Godot headless server on a VPS (recommended, about $5 to 15 a month) or something else;
+  how a person's offline Owner/Career save becomes a shared league (host uploads or hosts live); what Career 5v5/3v3 lets a person control; the
+  privacy and age rules for accounts. Nothing past the local layer is built.

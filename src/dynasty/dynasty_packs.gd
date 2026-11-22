@@ -77,7 +77,8 @@ static func roll(catalog: FcDynastyCatalog, pack_id: String, rng: FcRng, pity_co
 
 ## Buys and opens a pack. On success data["opening"] is the persisted record:
 ## {opening_id, pack_id, request_id, txn_id, revealed, cards: [{card_id, new, quantity}]}.
-static func buy_and_open(profile: FcDynastyProfile, catalog: FcDynastyCatalog, pack_id: String, request_id: String) -> FcDynastyResult:
+## `at` is the time to check a timed set against (the online server passes its own clock); -1 uses the catalog clock.
+static func buy_and_open(profile: FcDynastyProfile, catalog: FcDynastyCatalog, pack_id: String, request_id: String, at: int = -1) -> FcDynastyResult:
 	var prior := opening_for_request(profile, request_id)
 	if not prior.is_empty():
 		return FcDynastyResult.success({"opening": prior, "repeated": true})
@@ -86,6 +87,8 @@ static func buy_and_open(profile: FcDynastyProfile, catalog: FcDynastyCatalog, p
 		return FcDynastyResult.failure("unknown_pack", "That pack is not in the current content release.")
 	if not def.has("price"):
 		return FcDynastyResult.failure("not_for_sale", "This pack cannot be bought.")
+	if not catalog.pack_available(pack_id, at):
+		return FcDynastyResult.failure("set_not_open", "This pack is not on sale right now (its set is not open).")
 	var cost := {str(def["price"]["currency"]): int(def["price"]["amount"])}
 	if not FcDynastyEconomy.can_afford(profile, cost):
 		return FcDynastyResult.failure("insufficient_funds", "Not enough %s for this pack." % str(def["price"]["currency"]))

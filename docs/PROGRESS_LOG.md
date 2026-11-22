@@ -247,5 +247,9 @@ See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
 ## 2026-11-22 Phase 5: Dynasty expansion
 - Added `FcDynastyLadder` (Dynasty data version 3) and `FcDynastyGoals` (version 4), the Ladder panel on the Play screen, Goals on the Season screen, and tournament placement bonuses (D-064). Verified locally: unit 1,422/0, live 146/0, Studio PASS. Lesson: `FcUiTables.label` takes bold, not wrap; use `FcDynastyUi.wl` for wrapping text (it caused the phone-width failures).
 
+## 2026-11-22 Phase 5 follow-up: sets and Studio tournaments (D-067), and the founder's online scope (D-066)
+- Added the `set` content kind (`set_v1`), `FcContentWindow` (shared start/end rule), pack and market checks, store listing text, tournaments of 4/8/16/32 with entry windows (`tournament_v2`), the "early" placement, and the permanent Founding Series set in the bundled release. Guide: `docs/SETS_AND_TOURNAMENTS.md`. No save change.
+- Recorded the founder's online answers (D-066) in DECISIONS and ONLINE_ARCHITECTURE. No network code yet.
+
 ## 2026-11-22 Phase 6: online foundations (local)
 - Added `src/online/` (`FcOnlineCrypto`, `FcOnlineAccount`, `FcOnlineServer` loopback, `FcOnlineMatchmaker`, `FcOnlineMatch`) and `docs/ONLINE_ARCHITECTURE.md` (D-065). No network code. Note: a static function named `sign` clashes with GDScript's built-in `sign()`; named `sign_dict`.
