@@ -271,3 +271,6 @@ See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
 
 ## 2026-11-22 2D broadcast camera and replay presentation (B2b options B and C, D-069)
 - Added the projected broadcast court with a camera director and rig (automatic, hybrid and manual), slow motion, a ball trail and instant replay with an exact return to the live position. The flat view remains. Totals: `TESTING.md`.
+
+## 2026-11-22 Reconstruction feasibility spike (B1, D-069)
+- Added `FcReconstructor` and `FcReconstructionValidator` (headless) and `tools/reconstruct_spike.ps1`. Verdict PASS with a measured timing caveat; report in `docs/validation/B1_RECONSTRUCTION_SPIKE.md`. The independent validator found a real bug in its first run (substituted players stayed placed). Totals: `TESTING.md`.

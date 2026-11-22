@@ -60,4 +60,13 @@ Failures along the way (all explained in the audit): the baseline live run faile
 **Tests:** `test_camera_director` (13), `test_live_camera` (7), `test_live_instant_replay` (7), replay window tests in `test_broadcast_timeline`. Two test flaws found and fixed while writing them (a vacuous assertion removed, an assertion relying on window length).
 **Screenshot checked by eye:** the broadcast view shows the projected court with a home-coloured paint, the camera framing a made shot, the scoring strip, and the camera controls.
 **Local results (base `ec439b4` plus these changes):** import exit 0; unit exit 0, **1,520 passed**; live exit 0, **178 passed**; Studio smoke PASS.
-**Remaining:** none for B2b. Next: B1 reconstruction feasibility spike.
+**Commit / push / Actions:** `9ab8d52`, pushed; CI run 45068460597 (result recorded in the B1 entry below).
+**Remaining:** none for B2b.
+
+## B1: reconstruction feasibility spike (headless)
+**Delivered:** `src/ui/replay/reconstructor.gd`, `reconstruction_validator.gd`, `tools/reconstruct_spike.ps1/.gd`, `tests/unit/test_reconstruction.gd` (6), `docs/validation/B1_RECONSTRUCTION_SPIKE.md`.
+**Verdict: PASS.** 40 games, 17,102 events, 28,374 keyframes, 0 validator problems, 40 of 40 repeat builds byte-identical; 19.5% of steps are clock-compressed (rebound 87.9%, dead 37.4%, loose 32.5%, shots/passes/free throws 0%).
+**Decisions:** limits chosen before the verdict (22 ft/s players, 45 ft/s ball, 1.5 ft spacing, 0.4 s minimum step); no saved data (the presentation seed comes from the scores, teams and event count); the reconstruction's own time axis, with the planned B4/B6 handling of compressed steps documented.
+**Bug found by the validator and fixed:** substituted-out players stayed placed (11 on court).
+**Local results (base `9ab8d52` plus these changes):** import exit 0; unit exit 0, **1,526 passed**; live exit 0, **178 passed**; Studio smoke PASS.
+**Remaining:** B1b 3D performance prototype, B1c player-model prototype, then the 3D decision.
