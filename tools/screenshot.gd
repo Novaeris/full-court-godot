@@ -36,6 +36,7 @@ var _reduce := false
 var _demo := ""
 var _layout := "auto"
 var _view := "grid"
+var _scroll := 0
 
 
 func _initialize() -> void:
@@ -58,6 +59,7 @@ func _initialize() -> void:
 			"demo": _demo = kv[1]
 			"layout": _layout = kv[1]
 			"view": _view = kv[1]
+			"scroll": _scroll = int(kv[1])   # scrolls an open profile dialog down by this many pixels
 			"hd": FcPlayerFigure.hd_enabled = kv[1] == "1"   # the high-fidelity portrait prototype (docs/PLAYER_VISUAL_PROPOSAL.md)
 	if not _stretch:
 		root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
@@ -203,8 +205,19 @@ func _process(_delta: float) -> bool:
 			FcCardInspector.open_for(_app.dynasty_ui, first, [FcDynastyFixture.card_id(0), FcDynastyFixture.card_id(1), FcDynastyFixture.card_id(2)])
 		else:
 			FcCardCompare.open_for(_app.dynasty_ui, first, FcDynastyFixture.card_id(1))
+	if _frames == 5 and _demo == "profile" and not _screen.begins_with("dynasty"):   # the dossier for the Career player or the best Owner player
+		if _screen == "career_hub":
+			FcPlayerProfile.open_modal(_app, FcPlayerPresentation.from_career(_app.career))
+		elif _app.controller != null:
+			var world: FcWorld = _app.controller.state.world
+			var roster: Array = world.teams.get_by_id(_app.controller.state.user_team_id).roster.player_ids
+			FcPlayerProfile.open_modal(_app, FcPlayerPresentation.from_player(world, int(roster[0]), _app.controller.state.current_season, _app.controller.league_id))
 	if _frames == 5 and _screen == "gallery" and _demo != "":
 		_app._form["gallery"].call("show_demo", _demo)
+	if _frames == 30 and _scroll > 0:
+		var found := _app.find_children("*", "ScrollContainer", true, false).filter(func(n: Node) -> bool: return n.get_child_count() > 0 and n.get_child(0) is FcPlayerProfile)
+		if not found.is_empty():
+			(found[0] as ScrollContainer).scroll_vertical = _scroll
 	if _frames == (40 if _demo != "" else 10):   # overlays get time to finish their animation
 		var image := root.get_texture().get_image()
 		image.save_png(_out)

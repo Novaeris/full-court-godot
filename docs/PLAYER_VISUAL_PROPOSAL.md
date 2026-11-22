@@ -58,8 +58,15 @@ Creator Studio: its smoke test passes (`studio_smoke.gd`: PASS). Note for develo
 ### Provenance
 The provenance file is `assets/ART_PROVENANCE.md` (there is no `docs/ART_PROVENANCE.md`; documents that said so now point to the real file). No new art file was added: every portrait here is drawn by code. Approved Dynasty artwork still needs a line there before it is committed.
 
-### Player profile (next milestone, not started)
-The portrait system was built to support it: `FcPlayerProfile` already reads a view-model (`FcPlayerPresentation`) that carries the subject (with age, physical data and position), so a large portrait (bust or full body, baked), the team kit, age, height, weight and position are available to the dossier without further plumbing. The dossier itself (personality, development, history, achievements, contract) is the next milestone and needs approval first.
+### Player profile dossier (built after the portraits; first version)
+`FcPlayerProfile` is now a dossier, the same framework for Owner, Career and Dynasty, built only from the read-only view-model (`FcPlayerPresentation`):
+- **Hero:** the full-body player on the stage in his kit (the baked procedural figure, or the curated art in Dynasty), name, big OVR and POT badges, position, archetype, play style, team crest and name, and a vitals strip (age, height with feet and inches, weight, wingspan, shooting hand, jersey number). Only vitals that are known are shown.
+- **Overview panels:** Ratings (a radar of the attribute groups and the six strongest attributes), Development (a career-arc timeline `FcDevelopmentTrack`: ages 18 to 38 in growing, prime and declining zones, the expected peak, the age now; Career adds level and points; a Dynasty card shows its mastery note), Personality (Owner and Career: the game's personality traits), Contract and team (Owner: salary this season, signed through, seasons left, total value, cornerstone and no-trade flags), Latest season (PPG, RPG, APG, MPG, GP) and Honours and milestones.
+- **Deep views:** the existing Attributes, Badges, Stats, History and Awards tabs are unchanged (same tab ids and API, so every existing test still passes).
+- **Honest by construction:** a panel appears only when the mode has the data (a Dynasty card has no contract, personality or age; nothing is invented). New read-only view-model fields: `personality`, `contract`, and `peak_age` for Career. Building the dossier changes nothing in the game (tested by comparing the player and contract before and after).
+- **Not in this first version (needs your input):** achievements beyond the existing awards and milestones list, injury and health history, relationships, and a "similar players" comparison. The game has no data for some of these today; adding them would mean new systems, so I did not.
+- Pictures: `docs/validation/profile/` (`dossier_owner_scrolled.png`, `dossier_owner_desktop.png`, `dossier_career_tall.png`, `dossier_career_mobile.png`, the Dynasty and mobile versions). Dialog width is 960 px on desktop and the dialog is as tall as the window allows; on a phone it stacks (stage, names, vitals, then the panels).
+- Human review needed: whether the layout feels like "a professional player's dossier", panel order and density, and the phone layout on a real device.
 
 ## 1. Current portrait quality assessment
 

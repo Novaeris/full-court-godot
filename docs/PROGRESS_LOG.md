@@ -3,6 +3,9 @@
 Newest first. Written so someone returning after a break can see where things stand.
 The repository was published to GitHub on 2026-11-17 at the founder's request (public: https://github.com/Novaeris/full-court-godot, remote `origin`, branch `main`). Later commits stay local until the founder asks for a push.
 
+## 2026-11-21: Player profile dossier, first version (D-059 follow-up)
+The profile is now a dossier: hero with the baked full-body portrait, OVR and POT, team crest and a vitals strip; Overview panels for ratings (radar), development (career-arc timeline), personality, contract and team, latest season and honours; existing tabs unchanged. Read-only view-model additions; 8 new tests; unit 1,264 and live 124 passed. Pictures in `docs/validation/profile/`. Needs a human look at layout and phone.
+
 ## 2026-11-21: High-fidelity player visuals and cinematic pack opening implemented (D-059)
 Promoted the approved prototypes to production in four checkpoints. A: the production figure (`hd_enabled = true`), age, height, weight and position flow from Owner and Career data into the visual without touching identity or saves; body proportions and footwear; Dynasty keeps curated art with the stable procedural fallback. B: `FcPortraitBake` with a hard 20 MB budget, measured in a window (roster of 400: 386 ms to 19 ms per forced redraw; 89 to 99% hit rates; ceiling held under pressure). C: the five-stage reveal is the default with a Cinematic or Quick setting, rarity-scaled (common and uncommon quick), legendary with the player name as the banner, integrity and reduced-motion tests. D: tests, evidence (400-player variety, bodies, ages, in-game before and after, storyboards, video) and documentation. Open: human review of timing, speakers and phones (see `docs/PLAYER_VISUAL_PROPOSAL.md`, section 0).
 

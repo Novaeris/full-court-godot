@@ -4,7 +4,7 @@ extends RefCounted
 ## same dictionary, so the profile (and every list, comparison and result line) is built once. Nothing here writes to game data.
 ## Fields: mode, subject (for FcPlayerVisual), name, jersey, position, secondary, archetype, playstyle {label, text}, team {name, abbreviation,
 ## primary, secondary}, physical {height_cm, weight_kg, wingspan_cm, hand}, overall, potential, age, attributes [{key, name, category, value}],
-## badges [{key, name, description}], stats {columns, rows}, history {columns, rows}, awards [text], progression {kind, ...}.
+## badges [{key, name, description}], personality [{key, name, description, value}] and contract {salary, through, years_left, total, cornerstone, no_trade} (Owner and Career only; empty otherwise), stats {columns, rows}, history {columns, rows}, awards [text], progression {kind, ...}.
 ## Sections a mode has no data for are left empty and the profile hides them; nothing is invented.
 ##
 ## Keys (the visual identity): Owner "owner_player:<id>", Career "career_player:<id>", Dynasty "dynasty_player:<player_id>" (so every edition
@@ -102,13 +102,22 @@ static func from_player(world: FcWorld, player_id: int, current_year: int, leagu
 			if int(h[pair[0]]) > 0:
 				awards.append("%dx %s" % [h[pair[0]], pair[1]] if int(h[pair[0]]) > 1 else str(pair[1]))
 	var branding_team := _team_dict(world, team)
+	var personality: Array = []
+	for key in world.definitions.personality.keys():
+		var def := world.definitions.personality.get_def(key)
+		personality.append({"key": key, "name": def.display_name, "description": def.description, "value": p.personality.get_value(key)})
+	var contract := {}
+	var active := world.active_contract_of(player_id)
+	if active != null and active.end_season() > 0:
+		contract = {"salary": active.salary_for(current_year), "through": active.end_season(), "years_left": maxi(0, active.end_season() - current_year + 1),
+			"total": active.total_value(), "cornerstone": active.is_cornerstone, "no_trade": active.no_trade}
 	return {
 		"mode": mode, "subject": subject_for_player(world, player_id, "career_player" if mode == "career" else "owner_player"), "name": p.identity.full_name(), "jersey": 0,
 		"position": FcPosition.abbreviation(p.primary_position), "secondary": FcPosition.abbreviation(p.secondary_position) if p.secondary_position != 0 else "",
 		"archetype": "", "playstyle": FcPlaystyle.summary(composites), "team": branding_team if not branding_team.is_empty() else {"name": "Free agent"},
 		"physical": {"height_cm": p.physical.height_cm, "weight_kg": p.physical.weight_kg, "wingspan_cm": p.physical.wingspan_cm, "hand": HAND_NAMES[clampi(p.physical.handedness, 0, 2)]},
 		"overall": roundi(composites["overall"]), "potential": p.development.potential, "age": p.age_on(FcDate.new(current_year, 7, 1)),
-		"attributes": _attributes(world.definitions, _values(world.definitions, p)), "badges": [],
+		"attributes": _attributes(world.definitions, _values(world.definitions, p)), "badges": [], "personality": personality, "contract": contract,
 		"stats": {"columns": ["Season", "Team", "GP", "MPG", "PPG", "RPG", "APG"], "rows": rows},
 		"history": {"columns": ["Season", "Team", "GP", "Points", "Rebounds", "Assists"], "rows": history}, "awards": awards,
 		"progression": {"kind": "outlook", "overall": roundi(composites["overall"]), "potential": p.development.potential, "peak_age": p.development.peak_age, "age": p.age_on(FcDate.new(current_year, 7, 1))},
@@ -128,7 +137,8 @@ static func from_career(career: FcCareerController) -> Dictionary:
 		career_extra["age"] = int(vm["age"])
 	vm["subject"] = subject("career_player:%d" % career.player().id, str(card["name"]), vm["team"], profile.jersey_number, profile.appearance, "", career_extra)
 	var progress := career.progress()
-	vm["progression"] = {"kind": "career", "level": progress["level"], "xp": progress["xp"], "into_level": progress["into_level"], "needed": progress["needed"],
+	var peak_age := int(vm["progression"].get("peak_age", 27))
+	vm["progression"] = {"kind": "career", "peak_age": peak_age, "level": progress["level"], "xp": progress["xp"], "into_level": progress["into_level"], "needed": progress["needed"],
 		"development_points": progress["development_points"], "skill_points": progress["skill_points"], "overall": card["overall"], "potential": card["potential"]}
 	var badges: Array = []
 	for key in progress["badges_owned"]:
