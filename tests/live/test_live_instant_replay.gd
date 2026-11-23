@@ -193,3 +193,23 @@ func test_runs_and_milestones_get_the_gold_edge() -> void:
 		gold_seen = gold_seen or emphasised
 		normal_seen = normal_seen or not emphasised
 	assert_true(gold_seen and normal_seen)
+
+
+func test_highlight_buttons_jump_pause_and_stop_at_the_ends() -> void:
+	var screen := await _screen()
+	await frames(2)
+	assert_true(screen.highlights.size() >= 1, "the game has highlights")
+	screen.seek(screen.model.start_index(), false)
+	screen.toggle_play()
+	assert_true(screen.is_playing())
+	screen.highlight_next.pressed.emit()
+	assert_eq(screen.current_index(), int(screen.highlights[0]["index"]), "jumped to the first highlight")
+	assert_true(not screen.is_playing(), "paused there")
+	var seen: Array = [screen.current_index()]
+	for k in screen.highlights.size() + 2:
+		screen.highlight_next.pressed.emit()
+		if screen.current_index() != seen[seen.size() - 1]:
+			seen.append(screen.current_index())
+	assert_eq(seen.size(), screen.highlights.size(), "every highlight visited once, then it stops at the end")
+	screen.highlight_prev.pressed.emit()
+	assert_eq(screen.current_index(), int(screen.highlights[screen.highlights.size() - 2]["index"]) if screen.highlights.size() > 1 else seen[0], "and back")

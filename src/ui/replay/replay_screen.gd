@@ -44,6 +44,9 @@ var period_group: FcChoiceGroup
 var view_group: FcChoiceGroup
 var camera_group: FcChoiceGroup
 var replay_button: Button
+var highlights: Array[Dictionary] = []   # FcHighlights.select: the events worth jumping to, in game order
+var highlight_prev: Button
+var highlight_next: Button
 var replay_badge: Label
 var trail_toggle: Button
 var camera_buttons: Array[Button] = []   # Wide, Zoom in, Zoom out: they move the camera by hand, so they are off in the automatic mode
@@ -233,7 +236,22 @@ func _camera_controls() -> Control:
 	box.add_child(trail_toggle)
 	replay_button = FcButton.make("Instant replay", FcButton.Variant.PRIMARY, toggle_instant_replay)
 	box.add_child(replay_button)
+	highlights = FcHighlights.select(timeline)
+	highlight_prev = FcButton.make("Previous highlight", FcButton.Variant.SECONDARY, func() -> void: jump_highlight(-1))
+	highlight_next = FcButton.make("Next highlight", FcButton.Variant.SECONDARY, func() -> void: jump_highlight(1))
+	box.add_child(highlight_prev)
+	box.add_child(highlight_next)
 	return box
+
+
+## Jumps to the highlight after (1) or before (-1) the current event and pauses there; nothing happens when there is none that way.
+func jump_highlight(direction: int) -> void:
+	var h := FcHighlights.neighbor(highlights, _index, direction)
+	if h.is_empty():
+		return
+	if _playing:
+		toggle_play()
+	seek(int(h["index"]))
 
 
 func toggle_trail() -> void:

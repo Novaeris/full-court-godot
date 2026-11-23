@@ -104,3 +104,10 @@ Failures along the way (all explained in the audit): the baseline live run faile
 **Delivered:** `FcBroadcastGraphics.lineup_card`, a Starting lineups panel in the replay screen (numbers from `FcJerseyNumbers`, nothing stored), 2 unit and 1 live test. Halftime/final panels and the game-day preview already existed from B2b and earlier.
 **Local results:** unit **1,545 passed**, live **185 passed**, 0 failed.
 **Not done:** pregame storylines package, introduction sequence (judged low value without a concrete scope).
+
+**B4 CI:** run 45082562185 **success**. **B5 CI:** run 45084976245 **success** (`7098bb6`).
+
+## B6: highlights (2D and 3D views share them)
+**Delivered:** `src/ui/replay/highlights.gd` (`FcHighlights.select`, `neighbor`), Previous/Next highlight buttons in the replay screen, `tests/unit/test_highlights.gd` (4), 1 live test. Replays of a window already exist (B2b); 3D replays use the same screen, so no separate 3D variant was needed.
+**Local results:** unit **1,549 passed**, live **186 passed**, 0 failed.
+**Deferred (3D-only, listed for the final report):** replays from different 3D camera angles.
