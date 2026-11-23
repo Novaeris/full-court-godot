@@ -24,6 +24,8 @@ const CLUTCH_MARGIN := 5
 const MILESTONE_POINTS := [10, 20, 30, 40, 50]
 
 var model: FcReplayModel
+## A memo bag for results that are pure functions of this timeline and costly to compute (the importance scores): computed once, reused by every reader. Read-only data.
+var cache: Dictionary = {}
 var bonus_fouls: int = DEFAULT_BONUS_FOULS
 
 var _snapshots: Array[Dictionary] = []
@@ -132,8 +134,8 @@ static func _ends_possession(e: Dictionary) -> bool:
 ## blk, tov, pf, team_reb}. Counted from the same rows as the box score (the test compares every player at the final event).
 func player_line(upto: int, player_id: int) -> Dictionary:
 	var line := _blank_line()
-	for e in _entries_through(upto):
-		_add_to_line(line, e, player_id, -1)
+	for i in _through_count(upto):
+		_add_to_line(line, model.entries[i], player_id, -1)
 	line["reb"] = int(line["oreb"]) + int(line["dreb"])
 	return line
 
@@ -141,17 +143,18 @@ func player_line(upto: int, player_id: int) -> Dictionary:
 ## One team's line through event `upto` (the same fields, counted for every player of that side).
 func team_line(upto: int, side: int) -> Dictionary:
 	var line := _blank_line()
-	for e in _entries_through(upto):
-		_add_to_line(line, e, 0, side)
+	for i in _through_count(upto):
+		_add_to_line(line, model.entries[i], 0, side)
 	line["reb"] = int(line["oreb"]) + int(line["dreb"])
 	return line
 
 
 # --- derivation ------------------------------------------------------------------------------------------------------------
 
-func _entries_through(upto: int) -> Array:
-	var entries := model.entries
-	return entries.slice(0, clampi(upto, -1, entries.size() - 1) + 1)
+## How many events there are from the first through `upto` (counted without copying the array: a line is asked for at every event).
+func _through_count(upto: int) -> int:
+	return clampi(upto, -1, model.entries.size() - 1) + 1
+
 
 
 static func _blank_line() -> Dictionary:

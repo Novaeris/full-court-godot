@@ -7,6 +7,7 @@ extends VBoxContainer
 signal bookmark_pressed
 signal mark_jump(direction: int)
 signal reel_pressed
+signal intro_pressed
 signal angle_chosen(id: String)
 
 const ANGLES := [["auto", "Auto"], ["0", "Main"], ["1", "Baseline"], ["2", "Overhead"]]
@@ -16,6 +17,7 @@ var bookmark_button: Button
 var prev_mark: Button
 var next_mark: Button
 var reel_button: Button
+var intro_button: Button
 var reel_note: Label
 var angle_group: FcChoiceGroup
 var wording: Label
@@ -36,7 +38,9 @@ func _init() -> void:
 	next_mark = FcButton.make("Next mark", FcButton.Variant.GHOST, func() -> void: mark_jump.emit(1))
 	reel_button = FcButton.make("Highlight reel", FcButton.Variant.PRIMARY, func() -> void: reel_pressed.emit())
 	reel_button.name = "ReelButton"
-	for b in [bookmark_button, prev_mark, next_mark, reel_button]:
+	intro_button = FcButton.make("Player introductions", FcButton.Variant.SECONDARY, func() -> void: intro_pressed.emit())
+	intro_button.name = "IntroButton"
+	for b in [bookmark_button, prev_mark, next_mark, reel_button, intro_button]:
 		row.add_child(b)
 	add_child(row)
 	reel_note = FcUiTables.label("", FcUiTokens.TYPE_SMALL)

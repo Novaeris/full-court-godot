@@ -230,6 +230,7 @@ func _build() -> void:
 	tools.bookmark_pressed.connect(toggle_bookmark)
 	tools.mark_jump.connect(jump_mark)
 	tools.reel_pressed.connect(toggle_reel)
+	tools.intro_pressed.connect(toggle_introductions)
 	tools.angle_chosen.connect(set_replay_angle)
 	right.add_child(tools)
 	_register(FcPresentationMode.P_HIGHLIGHTS, tools)
@@ -720,6 +721,9 @@ func step(direction: int) -> void:
 func toggle_play() -> void:
 	if model == null or model.is_empty():
 		return
+	if is_intro():
+		end_introductions()   # Play (or Space) skips the introductions and goes back to the replay
+		return
 	if not _playing and _index >= model.final_index():
 		seek(model.start_index(), false)   # play again from the tip-off
 	_playing = not _playing
@@ -763,6 +767,9 @@ func set_filter(id: String) -> void:
 ## One frame of playback: after the current event has been up for its dwell time (shorter at higher speeds) the next one is shown.
 ## At the end the replay pauses. Called every frame while playing, and directly by tests.
 func advance(delta: float) -> void:
+	if is_intro():
+		_advance_intro(delta)   # the introductions run on real time, whether or not the replay is playing
+		return
 	if not _playing or model == null:
 		return
 	_timer += delta * speed
@@ -970,6 +977,80 @@ func is_reel() -> bool:
 	return not state.reel.is_empty()
 
 
+func is_intro() -> bool:
+	return not state.intro.is_empty()
+
+
+## The player introductions (M5): the tip-off positions, then each starter in turn with a spotlight card and a close camera, visitors first.
+## It uses the recorded starters and the reconstruction's tip-off only, then puts the replay back exactly as it was.
+func toggle_introductions() -> void:
+	if is_intro():
+		end_introductions()
+	else:
+		start_introductions()
+
+
+func start_introductions() -> void:
+	if model == null or model.is_empty() or is_intro():
+		return
+	var steps := FcPlayerIntroductions.plan(timeline)
+	if steps.is_empty():
+		return
+	if is_reel():
+		end_reel()
+	if is_instant_replay():
+		end_instant_replay()
+	state.intro = {"steps": steps, "at": 0, "timer": 0.0, "return_index": _index, "speed": speed, "was_playing": _playing}
+	_playing = false
+	set_process(true)
+	play_button.text = "Play"
+	tools.intro_button.text = "Skip introductions"
+	seek(model.start_index(), false)
+	_show_intro_step()
+
+
+func end_introductions() -> void:
+	if not is_intro():
+		return
+	var back := int(state.intro["return_index"])
+	speed = float(state.intro["speed"])
+	_playing = bool(state.intro["was_playing"])
+	state.intro = {}
+	tools.intro_button.text = "Player introductions"
+	spotlight.show_model({})
+	set_process(_playing)
+	play_button.text = "Pause" if _playing else "Play"
+	seek(back, false)
+
+
+func _show_intro_step() -> void:
+	var step: Dictionary = (state.intro["steps"] as Array)[int(state.intro["at"])]
+	spotlight.show_model(step["spotlight"])
+	court.rig.request(step["shot"], true)
+	_make_intro_sound()
+
+
+func _advance_intro(delta: float) -> void:
+	state.intro["timer"] = float(state.intro["timer"]) + delta
+	var steps: Array = state.intro["steps"]
+	var at: int = state.intro["at"]
+	if float(state.intro["timer"]) < float(steps[at]["seconds"]):
+		return
+	if at + 1 >= steps.size():
+		end_introductions()
+		return
+	state.intro["at"] = at + 1
+	state.intro["timer"] = 0.0
+	_show_intro_step()
+
+
+## A short crowd cheer as each player is announced.
+func _make_intro_sound() -> void:
+	FcAudio.cue("crowd_cheer_small")
+	if court3d != null and court3d.visible:
+		court3d.react(["crowd_cheer_small"])
+
+
 ## The replay angle: "auto" cycles main, baseline, overhead from one instant replay or reel highlight to the next; "0", "1", "2" fix it.
 func set_replay_angle(id: String) -> void:
 	state.replay_angle = -1 if id == "auto" else clampi(int(id), 0, 2)
@@ -1003,6 +1084,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			toggle_bookmark()
 		KEY_R:
 			toggle_instant_replay()
+		KEY_I:
+			toggle_introductions()
 		KEY_COMMA:
 			jump_highlight(-1)
 		KEY_PERIOD:

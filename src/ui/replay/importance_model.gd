@@ -28,6 +28,8 @@ static func scored(timeline: FcBroadcastTimeline) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	if timeline == null or timeline.is_empty():
 		return out
+	if timeline.cache.has("importance_scored"):
+		return timeline.cache["importance_scored"]   # computed once per timeline (highlights, key plays, the reel and the marks all ask)
 	var clutch := timeline.clutch_start_index()
 	var last_basket := -1
 	for e in timeline.model.entries:
@@ -62,6 +64,7 @@ static func scored(timeline: FcBroadcastTimeline) -> Array[Dictionary]:
 			reasons.append("last basket")
 		out.append({"index": i, "score": total, "importance": importance_of(total), "kind": str(top["kind"]), "title": str(top["title"]),
 			"detail": str(top["detail"]), "reasons": reasons})
+	timeline.cache["importance_scored"] = out
 	return out
 
 

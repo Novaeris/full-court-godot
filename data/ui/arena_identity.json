@@ -1,0 +1,58 @@
+{
+	"version": 1,
+	"note": "Arena identity defaults (Broadcast pass 2, M5, D-071): how one FcCourtScene is dressed for a home team without a scene per arena. Team colours and names come from the game; this file holds the rest.",
+	"led_templates": [
+		"{abbr}",
+		"FULL COURT BASKETBALL",
+		"{nickname}",
+		"{abbr}  vs  {away_abbr}",
+		"FULL COURT"
+	],
+	"led_seconds_per_message": 4.0,
+	"crowd": {
+		"side_home_share": [
+			0.72,
+			0.7,
+			0.45,
+			0.3
+		],
+		"away_block_share": 0.12,
+		"away_block_from": 0.55,
+		"away_neutral_share": 0.18,
+		"neutral_palette": [
+			"#C94B4B",
+			"#E8B04B",
+			"#4B8BC9",
+			"#F0F0F0",
+			"#5BB07A",
+			"#8B5BC9",
+			"#2B2B2B"
+		],
+		"scale_min": 0.9,
+		"scale_max": 1.15
+	},
+	"lights": {
+		"spot_count": 4,
+		"spot_energy": 0.55,
+		"tint": "#FFE9C7"
+	},
+	"bench": {
+		"seats": 6,
+		"skins": [
+			"#8D5A3B",
+			"#C68E63",
+			"#5B3A29",
+			"#E0B48A"
+		],
+		"furniture": "#1D2638"
+	},
+	"floor": {
+		"roughness": 0.4,
+		"accent_mix": 0.55
+	},
+	"fallbacks": {
+		"home": "#2F6FED",
+		"away": "#F28A2E",
+		"tint": "#FFE9C7"
+	}
+}

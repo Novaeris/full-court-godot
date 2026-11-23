@@ -41,7 +41,7 @@ var _teleport: bool = true
 
 
 ## Builds the view for a replay. `colors` are the home and away colours. Returns false when the 3D view cannot be built (the caller then keeps 2D).
-func setup(replay_model: FcReplayModel, broadcast_timeline: FcBroadcastTimeline, colors: Array) -> bool:
+func setup(replay_model: FcReplayModel, broadcast_timeline: FcBroadcastTimeline, colors: Array, arena_identity: Dictionary = {}) -> bool:
 	if force_failure or replay_model == null or replay_model.is_empty() or broadcast_timeline == null:
 		return false
 	_model = replay_model
@@ -56,7 +56,7 @@ func setup(replay_model: FcReplayModel, broadcast_timeline: FcBroadcastTimeline,
 	_viewport.add_child(scene)
 	var home: Color = colors[0] if colors.size() == 2 else Color("2F6FED")
 	var away: Color = colors[1] if colors.size() == 2 else Color("F28A2E")
-	scene.build(home, away, str(_model.box.abbreviations[0]))
+	scene.build(home, away, str(_model.box.abbreviations[0]), arena_identity if not arena_identity.is_empty() else FcArenaIdentity.for_box(_model.box, home, away))   # the arena is dressed for the home team
 	_build_characters([home, away])
 	var ball_mesh := SphereMesh.new()
 	ball_mesh.radius = 0.45
@@ -142,14 +142,24 @@ func show_event(index: int, animate: bool = true) -> void:
 	set_process(is_visible_in_tree())
 
 
-## The crowd reacts to the sounds of an event (the same cues the audio uses): a cheer stands the next section up.
+## The crowd reacts to the sounds of an event (the same cues the audio uses): cheers stand the next section up and make the crowd jump (a big one
+## starts a stadium wave), a groan slumps it, an "oh" is a short gasp.
 func react(cues: Array) -> void:
 	if not built:
 		return
 	for id in cues:
-		if str(id).begins_with("crowd_cheer") and scene.section_count() > 0:
-			scene.stand_section(_wave % scene.section_count())
-			_wave += 1
+		var cue := str(id)
+		if cue.begins_with("crowd_cheer"):
+			scene.react_crowd("cheer_big" if cue == "crowd_cheer_big" else "cheer")
+			if scene.section_count() > 0:
+				scene.stand_section(_wave % scene.section_count())
+				_wave += 1
+			return
+		elif cue == "crowd_groan":
+			scene.react_crowd("groan")
+			return
+		elif cue == "crowd_oh":
+			scene.react_crowd("oh")
 			return
 
 
