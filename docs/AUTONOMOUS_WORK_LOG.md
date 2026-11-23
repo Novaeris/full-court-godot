@@ -119,3 +119,7 @@ Failures along the way (all explained in the audit): the baseline live run faile
 ## B8: advanced analytics: deferred, with the reason
 The only scope the project direction implies without new data (scoring runs, lead changes, leaders, milestones, team comparison) was delivered in B2. Shot charts need shot locations, which the event log does not hold (positions are illustrative, 4.1), so a chart would present invented data as analysis; adding locations is an event-log change that needs a save migration (12.4) for no milestone that requires it. Deferred and listed in the final report.
 
+## Final CI record and finish line
+CI runs all **success**: B6 (`70e4a23`), B7 (`49adb87`), B8 note (`20bd3fc`); earlier B4 and B5 also success. The watchdog cron job was deleted. The final docs commit that adds this paragraph is docs-only.
+**Finish line (12.7):** Stage 1, Stage 2, B0, B2, B2b, B3, B1/B1b/B1c, the 3D decision (3D-REDUCED, D-070), B4, B5, B6, B7 are delivered with tests and green CI; B8 is deferred with its reason; the 2D fallback is tested; no known P0.
+**Limitations and deferrals:** performance measured on the development machine only (soak 300 s, not 600 s); 3D has no close-ups, no mobile, no multi-angle replays; jersey numbers are per-game display numbers (no J1 migration); no voice commentary, ambience loops, pregame storylines or introduction sequence; no B8 analytics.
