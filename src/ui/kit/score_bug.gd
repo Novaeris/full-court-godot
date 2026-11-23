@@ -16,6 +16,7 @@ var _status := Label.new()
 var _stripe_a := ColorRect.new()
 var _stripe_b := ColorRect.new()
 var _detail := Label.new()
+var _clock := Label.new()   # the estimated shot clock (FcShotClockModel), shown only when it is worth showing
 
 
 func _init() -> void:
@@ -36,6 +37,11 @@ func _init() -> void:
 	_detail.custom_minimum_size.x = 120
 	_detail.visible = false
 	root.add_child(_detail)
+	_clock.name = "ShotClock"
+	_clock.theme_type_variation = "CaptionLabel"
+	_clock.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_clock.visible = false
+	root.add_child(_clock)
 	_stripe_a.custom_minimum_size = Vector2(6, 0)
 	_stripe_b.custom_minimum_size = Vector2(6, 0)
 	for l in [_abbr_a, _abbr_b]:
@@ -81,6 +87,23 @@ func show_broadcast(snapshot: Dictionary, abbr_a: String, abbr_b: String) -> voi
 		parts.append(text)
 	_detail.text = "   ·   ".join(parts)
 	_detail.visible = true
+
+
+## The estimated shot clock line from an FcShotClockModel result: "SHOT CLOCK ≈ 14", hidden when the model says it would mislead. The tooltip
+## says it is an estimate, because the game does not enforce a shot clock.
+func show_shot_clock(info: Dictionary) -> void:
+	if info.is_empty() or not bool(info.get("visible", false)):
+		_clock.visible = false
+		_clock.text = ""
+		return
+	_clock.text = "%s %d" % [str(info["label"]), int(info["seconds"])]
+	_clock.tooltip_text = FcBroadcastStyle.scoreboard_text("shot_clock_tooltip")
+	_clock.visible = true
+
+
+## The shot clock line as text ("" when hidden), for tests and screen readers.
+func shot_clock_text() -> String:
+	return _clock.text if _clock.visible else ""
 
 
 ## The text the bug currently shows (used by tests and screen readers later): "AAA 101 FINAL 99 BBB".

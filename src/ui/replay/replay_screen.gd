@@ -44,6 +44,10 @@ var _jump_buttons: Array[Control] = []
 
 var bug: FcScoreBug
 var overlay: FcBroadcastOverlay
+var spotlight: FcPlayerSpotlight   # the player card over the stage (FcSpotlightModel)
+var stats_overlay: FcStatsOverlay   # the team comparison drawn over the stage on request (key S)
+var stats_button: Button
+var stats_on: bool = false
 var lineup_card: GridContainer   # the starting lineups (FcBroadcastGraphics.lineup_card): number, name, position for each side
 var team_card: GridContainer   # the team comparison card: label, home, away (FcBroadcastGraphics.team_card_at)
 var court: FcCourtView
@@ -178,6 +182,13 @@ func _build() -> void:
 	stage.add_child(overlay)
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE, Control.PRESET_MODE_MINSIZE, FcUiTokens.SPACE_2)
 	overlay.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	spotlight = FcPlayerSpotlight.new(colors)
+	stage.add_child(spotlight)
+	spotlight.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT, Control.PRESET_MODE_MINSIZE, FcUiTokens.SPACE_2)
+	spotlight.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	stats_overlay = FcStatsOverlay.new()
+	stage.add_child(stats_overlay)
+	stats_overlay.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT, Control.PRESET_MODE_MINSIZE, FcUiTokens.SPACE_2)
 	caption = FcUiTables.label("", FcUiTokens.TYPE_H3, true)
 	caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	caption.custom_minimum_size.x = 120
@@ -343,6 +354,9 @@ func _mode_bar() -> Control:
 	hud_button = FcButton.make("HUD: full", FcButton.Variant.GHOST, cycle_hud)
 	hud_button.name = "HudButton"
 	row.add_child(hud_button)
+	stats_button = FcButton.make("Stats overlay: off", FcButton.Variant.GHOST, toggle_stats)
+	stats_button.name = "StatsButton"
+	row.add_child(stats_button)
 	return row
 
 
@@ -377,6 +391,18 @@ func cycle_hud() -> void:
 	set_hud(FcPresentationMode.next_hud(hud))
 
 
+## Shows or hides the statistics overlay over the stage (the team comparison at the current event).
+func toggle_stats() -> void:
+	stats_on = not stats_on
+	stats_button.text = "Stats overlay: on" if stats_on else "Stats overlay: off"
+	_refresh_stats()
+
+
+func _refresh_stats() -> void:
+	var on := stats_on and FcPresentationMode.hud_shows(hud, FcPresentationMode.E_OVERLAY)
+	stats_overlay.show_card(FcBroadcastGraphics.team_card_at(timeline, _index), on)
+
+
 ## Folds a panel (the feed or the camera controls) away or brings it back. Stays within the mode's layout: a panel the mode hides stays hidden.
 func toggle_collapsed(panel: String) -> void:
 	collapsed[panel] = not bool(collapsed.get(panel, false))
@@ -403,6 +429,14 @@ func apply_layout() -> void:
 	var E := FcPresentationMode
 	bug.visible = E.hud_shows(hud, E.E_SCOREBUG)
 	overlay.hud_hidden = not E.hud_shows(hud, E.E_OVERLAY)
+	overlay.auto_hide = mode == E.BROADCAST   # a television lower third leaves by itself; the review modes keep it until the next play
+	spotlight.hud_hidden = overlay.hud_hidden
+	spotlight.auto_hide = overlay.auto_hide
+	if overlay.hud_hidden:
+		spotlight.visible = false
+	else:
+		spotlight.show_model(spotlight.current_model())
+	_refresh_stats()
 	overlay.visible = not overlay.hud_hidden and not overlay.current_item().is_empty()
 	var captions := E.hud_shows(hud, E.E_CAPTIONS)
 	caption.visible = captions
@@ -603,6 +637,9 @@ func seek(i: int, animate: bool = true) -> void:
 	bug.setup(model.box.abbreviations[0], st["home"], model.box.abbreviations[1], st["away"], model.status_at(_index), colors[0], colors[1])
 	bug.show_broadcast(timeline.snapshot(_index), model.box.abbreviations[0], model.box.abbreviations[1])
 	overlay.show_item(FcBroadcastGraphics.top_item_at(timeline, _index))
+	spotlight.show_model(FcSpotlightModel.at(timeline, _index))
+	bug.show_shot_clock(FcShotClockModel.at(timeline, _index))
+	_refresh_stats()
 	_update_team_card(_index)
 	court.rig.request(FcCameraDirector.shot_for(timeline, _index))
 	if court3d != null and court3d.visible:
@@ -746,6 +783,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			step(-1)
 		KEY_H:
 			cycle_hud()
+		KEY_S:
+			toggle_stats()
 		_:
 			return
 	get_viewport().set_input_as_handled()

@@ -1,0 +1,35 @@
+{
+	"version": 1,
+	"note": "The broadcast identity kit (Broadcast pass 2, M2, D-071): the timings, transitions and templates every broadcast graphic reads, so lower thirds, spotlights, camera transitions and production segments share one rhythm. Colours and type sizes come from FcUiTokens, never from here.",
+	"timings_ms": {
+		"lower_third": {"in": 180, "hold": 3200, "out": 240},
+		"spotlight": {"in": 220, "hold": 3600, "out": 260},
+		"stats_overlay": {"in": 160, "hold": 0, "out": 160},
+		"camera_ease": {"in": 450, "hold": 0, "out": 0},
+		"camera_whip": {"in": 160, "hold": 0, "out": 0}
+	},
+	"reduced_timings_ms": {
+		"lower_third": {"in": 0, "hold": 2400, "out": 80},
+		"spotlight": {"in": 0, "hold": 2400, "out": 80},
+		"stats_overlay": {"in": 0, "hold": 0, "out": 0},
+		"camera_ease": {"in": 0, "hold": 0, "out": 0},
+		"camera_whip": {"in": 0, "hold": 0, "out": 0}
+	},
+	"transitions": ["cut", "fade", "wipe", "whip"],
+	"lower_third": {
+		"gold_kinds": ["milestone", "run", "final", "clutch"],
+		"edge_width": 6
+	},
+	"spotlight": {
+		"kinds": ["score", "milestone", "block"],
+		"stat_fields": [["points", "PTS"], ["reb", "REB"], ["ast", "AST"]]
+	},
+	"scoreboard": {
+		"shot_clock_max": 24,
+		"shot_clock_label": "SHOT CLOCK ≈",
+		"shot_clock_tooltip": "An estimate from the recorded game clock: the game does not enforce a shot clock."
+	},
+	"stats_overlay": {
+		"row_labels": ["FG", "3PT", "FT", "Rebounds", "Assists", "Turnovers", "Fouls"]
+	}
+}

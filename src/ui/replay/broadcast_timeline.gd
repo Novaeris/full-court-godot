@@ -112,6 +112,11 @@ func replay_window(index: int, max_events: int = 10) -> Dictionary:
 	return {"start": mini(start, index), "end": index}
 
 
+## Whether event `e` (a model entry) ends a possession; public so other pure presentation code uses the same rule as the instant replay window.
+static func ends_possession(e: Dictionary) -> bool:
+	return _ends_possession(e)
+
+
 static func _ends_possession(e: Dictionary) -> bool:
 	match int(e["type"]):
 		FcGameEventLog.EV_SHOT_MADE, FcGameEventLog.EV_TURNOVER, FcGameEventLog.EV_PERIOD_START, FcGameEventLog.EV_PERIOD_END:
