@@ -111,3 +111,7 @@ Failures along the way (all explained in the audit): the baseline live run faile
 **Delivered:** `src/ui/replay/highlights.gd` (`FcHighlights.select`, `neighbor`), Previous/Next highlight buttons in the replay screen, `tests/unit/test_highlights.gd` (4), 1 live test. Replays of a window already exist (B2b); 3D replays use the same screen, so no separate 3D variant was needed.
 **Local results:** unit **1,549 passed**, live **186 passed**, 0 failed.
 **Deferred (3D-only, listed for the final report):** replays from different 3D camera angles.
+
+## B7: commentary captions (crowd sounds and captions came with B3)
+**Delivered:** `src/ui/replay/commentary.gd`, a Commentary line in the replay screen, `tests/unit/test_commentary.gd` (3), live assertions added to the captions test. Voice commentary is not built (decision 6: off unless acceptable; not evaluated, so captions only). Ambience loops not built (the synth has no looping cue; judged not worth a new mechanism without a concrete need).
+**Local results:** unit **1,552 passed**, live **186 passed**, 0 failed.

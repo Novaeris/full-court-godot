@@ -34,6 +34,7 @@ var court3d: FcBroadcast3DView   # null when the 3D view could not be built: the
 var stage: Control               # holds the 2D court, the 3D view, the graphic strip and the REPLAY badge, so the graphics sit over either
 var view_note: Label
 var caption: Label
+var commentary_label: Label   # announcer-style text from recorded facts (B7); follows the captions preference
 var sound_caption: Label   # what the crowd and court sounds are, in words (B3); empty when there is nothing to describe
 var feed: ItemList
 var scrubber: HSlider
@@ -147,6 +148,11 @@ func _build() -> void:
 	sound_caption.theme_type_variation = "MutedLabel"
 	sound_caption.name = "SoundCaption"
 	left.add_child(sound_caption)
+	commentary_label = FcUiTables.label("", FcUiTokens.TYPE_SMALL)
+	commentary_label.theme_type_variation = "MutedLabel"
+	commentary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	commentary_label.name = "Commentary"
+	left.add_child(commentary_label)
 	left.add_child(_roster_strip())
 	left.add_child(_lineup_panel())
 	left.add_child(_team_card())
@@ -484,6 +490,7 @@ func _make_sounds(i: int) -> void:
 		court3d.react(cues)   # the 3D crowd stands up for a cheer
 	var captions_on := FcAudio.current.prefs.sound_captions if FcAudio.current != null and is_instance_valid(FcAudio.current) else true
 	sound_caption.text = FcBroadcastAudio.caption_for(cues) if captions_on else ""
+	commentary_label.text = FcCommentary.line_at(timeline, i) if captions_on else ""
 
 
 ## Starts or stops an instant replay of the possession that led to the current event (master plan B2b option C): the same events, at half

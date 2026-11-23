@@ -102,14 +102,18 @@ func test_captions_can_be_turned_off_and_the_game_data_never_changes() -> void:
 	for i in 80:
 		screen.advance(10.0)
 		assert_eq(screen.sound_caption.text, "", "captions are off")
+		assert_eq(screen.commentary_label.text, "", "and so is the commentary text")
 	prefs.sound_captions = true
 	screen.toggle_play()
 	screen.toggle_play()
 	var captioned := false
+	var commented := false
 	for i in 120:
 		screen.advance(10.0)
 		captioned = captioned or screen.sound_caption.text != ""
+		commented = commented or screen.commentary_label.text != ""
 	assert_true(captioned, "with captions on, some sound is described")
+	assert_true(commented, "with captions on, the commentary says something")
 	assert_eq(FcOnlineCrypto.canonical((game["log"] as FcGameEventLog).rows), rows_before)
 	assert_eq(FcOnlineCrypto.canonical((game["box"] as FcBoxScore).to_dict()), box_before)
 
