@@ -32,6 +32,7 @@ var mode: String = FcPresentationMode.DEFAULT_MODE
 var hud: String = FcPresentationMode.DEFAULT_HUD
 var collapsed: Dictionary = {}   # panel id -> true when the player folded it away (UI state of the modes, not playback state)
 var compact: bool = false
+var subjects: Array = []   # FcTeamLook subjects for [home, away]: the crests on the scoreboard ([] = none)
 var prefs: FcPreferences   # where the chosen mode and HUD level are remembered (null: not remembered)
 var mode_group: FcChoiceGroup
 var hud_button: Button
@@ -101,7 +102,8 @@ var _instant: Dictionary:   # {start, end, return_index, speed}: an instant repl
 
 
 ## Builds the screen for `replay_model`. `team_colors` are the home and away colours; `phone` picks the stacked layout.
-func setup(replay_model: FcReplayModel, team_colors: Array = [], phone: bool = false, preferences: FcPreferences = null) -> FcReplayScreen:
+func setup(replay_model: FcReplayModel, team_colors: Array = [], phone: bool = false, preferences: FcPreferences = null, team_subjects: Array = []) -> FcReplayScreen:
+	subjects = team_subjects
 	model = replay_model
 	compact = phone
 	prefs = preferences   # null in tests and previews: the mode and HUD then start at their defaults and nothing is written
@@ -136,6 +138,7 @@ func is_playing() -> bool:
 func _build() -> void:
 	add_child(_mode_bar())
 	bug = FcScoreBug.new()
+	bug.set_crests(subjects)
 	add_child(bug)
 	var body: BoxContainer = VBoxContainer.new() if compact else HBoxContainer.new()
 	body.add_theme_constant_override("separation", FcUiTokens.SPACE_3)
@@ -455,7 +458,7 @@ func _size_stage() -> void:
 		if not tree_entered.is_connected(_size_stage):
 			tree_entered.connect(_size_stage, CONNECT_ONE_SHOT)
 		return
-	var share: float = {FcPresentationMode.BROADCAST: 0.6, FcPresentationMode.REPLAY: 0.4}.get(mode, 0.3)
+	var share: float = {FcPresentationMode.BROADCAST: 0.5, FcPresentationMode.REPLAY: 0.36}.get(mode, 0.3)
 	stage.custom_minimum_size.y = clampf(get_viewport_rect().size.y * share, 280.0, 1100.0)
 
 
@@ -639,6 +642,7 @@ func seek(i: int, animate: bool = true) -> void:
 	overlay.show_item(FcBroadcastGraphics.top_item_at(timeline, _index))
 	spotlight.show_model(FcSpotlightModel.at(timeline, _index))
 	bug.show_shot_clock(FcShotClockModel.at(timeline, _index))
+	bug.show_stoppage(FcStoppageModel.at(timeline, _index))
 	_refresh_stats()
 	_update_team_card(_index)
 	court.rig.request(FcCameraDirector.shot_for(timeline, _index))

@@ -55,7 +55,27 @@ func test_shot_clock_shows_on_the_scoreboard_and_hides_when_misleading() -> void
 	assert_true(screen.bug.shot_clock_text().begins_with("SHOT CLOCK"), "shown: %s" % screen.bug.shot_clock_text())
 	assert_eq(screen.bug.shot_clock_text(), "%s %d" % [FcShotClockModel.at(screen.timeline, shown)["label"], FcShotClockModel.at(screen.timeline, shown)["seconds"]])
 	screen.seek(hidden, false)
-	assert_eq(screen.bug.shot_clock_text(), "", "hidden when it would mislead")
+	assert_true(not screen.bug.shot_clock_text().begins_with("SHOT CLOCK"), "hidden when it would mislead")
+	var stop := -1
+	for i in range(screen.model.start_index(), screen.model.size()):
+		if bool(FcStoppageModel.at(screen.timeline, i)["active"]):
+			stop = i
+			break
+	screen.seek(stop, false)
+	assert_true(screen.bug.shot_clock_text().begins_with("PLAY STOPPED"), "a stoppage says why: %s" % screen.bug.shot_clock_text())
+
+
+func test_the_scoreboard_shows_crests_when_it_is_given_teams() -> void:
+	var screen := await _screen()
+	assert_true(not screen.bug.has_crests(), "no teams given, no crests (Dynasty and tests)")
+	var subjects: Array = [FcTeamLook.subject("team:1", "Houston Sentinels", "HOU", "#3B2F8F", "#FFB547"), FcTeamLook.subject("team:2", "Mexico City Bonfires", "MEX", "#8B1E2D", "#FFB547")]
+	screen.bug.set_crests(subjects)
+	await frames(2)
+	assert_true(screen.bug.has_crests())
+	assert_true(screen.bug.find_child("CrestHome", true, false) != null and screen.bug.find_child("CrestAway", true, false) != null)
+	screen.bug.set_crests([])
+	await frames(2)
+	assert_true(not screen.bug.has_crests(), "empty subjects remove them")
 
 
 func test_the_spotlight_follows_the_event() -> void:

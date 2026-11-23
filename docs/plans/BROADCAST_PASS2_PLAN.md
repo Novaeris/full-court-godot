@@ -71,5 +71,5 @@ Per milestone: `godot_console --headless --path . --import --quit` (when adding 
 - Rule: a mode switch never changes `FcPlaybackState` (live-tested, including during an instant replay).
 
 ## Status
-- M2: built (provenance, identity kit, shot clock estimate, spotlight, lower third, stats overlay, timing report).
-- M1: built (see D-071 and `docs/validation/ui/replay/m1/`). Open item: the replay dialog stays 1040 px wide on wide windows (the stage grows in height; width sizing needs a window handle that is not available when the dialog opens).
+- M2: built and complete (provenance, identity kit, shot clock estimate, spotlight, lower third, stats overlay, crests, stoppage line, wide scrolling dialog, timing report).
+- M1: built (see D-071 and `docs/validation/ui/replay/m1/`). The 1040 px dialog width was fixed in M2.

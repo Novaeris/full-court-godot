@@ -98,6 +98,8 @@ func test_shot_clock_is_deterministic_bounded_and_hidden_when_misleading() -> vo
 			var type := int(t.model.entries[i]["type"])
 			if type in [FcGameEventLog.EV_FREE_THROW, FcGameEventLog.EV_PERIOD_START, FcGameEventLog.EV_PERIOD_END, FcGameEventLog.EV_GAME_END]:
 				assert_true(not bool(a["visible"]), "hidden during free throws and at period boundaries")
+			if bool(FcStoppageModel.at(t, i)["active"]):
+				assert_true(not bool(a["visible"]), "hidden at every recorded stoppage")
 			if FcBroadcastTimeline.ends_possession(t.model.entries[i]):
 				assert_true(not bool(a["visible"]), "hidden on the event that ends a possession")
 		assert_true(shown > 20, "it is shown for a fair part of the game (seed %d: %d)" % [s, shown])
@@ -124,6 +126,25 @@ func test_shot_clock_handles_empty_and_never_changes_the_game() -> void:
 		FcSpotlightModel.at(t, i)
 		FcPresentationEvent.for_event(t, i)
 	assert_eq(t.model.entries, before, "reading the presentation data changes no recorded event")
+
+
+# --- stoppage -----------------------------------------------------------------------------------------------------------------
+
+func test_stoppage_comes_from_recorded_event_types_only() -> void:
+	var t := _timeline(12)
+	var counts := {}
+	for i in t.size():
+		var s := FcStoppageModel.at(t, i)
+		var type := int(t.model.entries[i]["type"])
+		assert_eq(bool(s["active"]), FcStoppageModel.REASONS.has(type), "active exactly for the recorded stoppage types")
+		if bool(s["active"]):
+			counts[s["reason"]] = true
+			assert_true(str(s["text"]) != "")
+		else:
+			assert_eq(s["reason"], "")
+	assert_true(counts.has("foul") and counts.has("substitution"), "fouls and substitutions occur")
+	assert_true(not counts.has("timeout"), "the game has no timeouts, so none is ever reported")
+	assert_true(not bool(FcStoppageModel.at(null, 0)["active"]))
 
 
 # --- spotlight ----------------------------------------------------------------------------------------------------------------

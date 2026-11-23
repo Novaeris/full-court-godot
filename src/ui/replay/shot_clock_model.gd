@@ -24,9 +24,8 @@ static func at(timeline: FcBroadcastTimeline, index: int) -> Dictionary:
 	var e: Dictionary = model.entries[index]
 	if index < model.start_index():
 		return hidden
-	match int(e["type"]):
-		FcGameEventLog.EV_FREE_THROW, FcGameEventLog.EV_PERIOD_START, FcGameEventLog.EV_PERIOD_END, FcGameEventLog.EV_GAME_END, FcGameEventLog.EV_INJURY:
-			return hidden
+	if int(e["type"]) == FcGameEventLog.EV_PERIOD_START or bool(FcStoppageModel.at(timeline, index)["active"]):
+		return hidden   # a recorded stoppage (foul, free throws, substitution, injury, period end, final) or a period start: the clock is not running
 	if FcBroadcastTimeline.ends_possession(e):
 		return hidden   # a dead ball: the next possession has not started
 	var start_clock := -1.0

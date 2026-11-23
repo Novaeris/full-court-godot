@@ -16,6 +16,9 @@ var _status := Label.new()
 var _stripe_a := ColorRect.new()
 var _stripe_b := ColorRect.new()
 var _detail := Label.new()
+var _crest_a: FcTeamCrest
+var _crest_b: FcTeamCrest
+var _row: HBoxContainer
 var _clock := Label.new()   # the estimated shot clock (FcShotClockModel), shown only when it is worth showing
 
 
@@ -30,6 +33,7 @@ func _init() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", FcUiTokens.SPACE_1 if compact else FcUiTokens.SPACE_3)
 	root.add_child(row)
+	_row = row
 	_detail.name = "BroadcastDetail"
 	_detail.theme_type_variation = "CaptionLabel"
 	_detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -89,6 +93,30 @@ func show_broadcast(snapshot: Dictionary, abbr_a: String, abbr_b: String) -> voi
 	_detail.visible = true
 
 
+## Puts each team's crest beside its abbreviation (the broadcast scoreboard). `subjects` are FcTeamLook subjects for [home, away]; an empty array
+## or a phone layout leaves the bug as it was. Calling it again replaces the crests.
+func set_crests(subjects: Array, pixels: int = 28) -> void:
+	for c in [_crest_a, _crest_b]:
+		if c != null:
+			c.queue_free()
+	_crest_a = null
+	_crest_b = null
+	if subjects.size() != 2 or FcUiTokens.touch_mode:
+		return
+	_crest_a = FcTeamCrest.new().setup(subjects[0], pixels, false)
+	_crest_b = FcTeamCrest.new().setup(subjects[1], pixels, false)
+	_crest_a.name = "CrestHome"
+	_crest_b.name = "CrestAway"
+	_row.add_child(_crest_a)
+	_row.move_child(_crest_a, _abbr_a.get_index())
+	_row.add_child(_crest_b)
+	_row.move_child(_crest_b, _abbr_b.get_index() + 1)
+
+
+func has_crests() -> bool:
+	return _crest_a != null and _crest_b != null
+
+
 ## The estimated shot clock line from an FcShotClockModel result: "SHOT CLOCK ≈ 14", hidden when the model says it would mislead. The tooltip
 ## says it is an estimate, because the game does not enforce a shot clock.
 func show_shot_clock(info: Dictionary) -> void:
@@ -98,6 +126,16 @@ func show_shot_clock(info: Dictionary) -> void:
 		return
 	_clock.text = "%s %d" % [str(info["label"]), int(info["seconds"])]
 	_clock.tooltip_text = FcBroadcastStyle.scoreboard_text("shot_clock_tooltip")
+	_clock.visible = true
+
+
+## The clock line when play is stopped (FcStoppageModel): "PLAY STOPPED · Foul". It takes the shot clock's place, so a hidden estimate
+## always has a reason on screen. `info` is an FcStoppageModel result.
+func show_stoppage(info: Dictionary) -> void:
+	if _clock.visible or info.is_empty() or not bool(info.get("active", false)):
+		return
+	_clock.text = "PLAY STOPPED · %s" % str(info["text"])
+	_clock.tooltip_text = ""
 	_clock.visible = true
 
 
