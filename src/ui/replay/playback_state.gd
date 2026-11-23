@@ -1,0 +1,31 @@
+class_name FcPlaybackState
+extends RefCounted
+## The ONE owner of "where are we in the game and how is it playing" for the replay screen (Broadcast pass 2, M1).
+##
+## Why it exists: the screen has three presentation modes (FcPresentationMode: Broadcast, Replay, Analysis). Each mode shows a different
+## set of panels, but all of them watch the same game, so the position, play/pause, speed, instant replay and camera/view choice live here
+## and are only ever READ by a mode's layout. Switching mode never touches this object, which is how "a mode switch never changes the
+## replay position" is guaranteed (and tested). Mode-specific UI state (collapsed panels, HUD level) lives in the screen, not here.
+## Pure data: no nodes, no randomness, nothing saved.
+
+## The event being shown (an index into FcReplayModel.entries).
+var index: int = 0
+var playing: bool = false
+## Seconds the current event has been up; the screen compares it with FcReplayModel.dwell.
+var timer: float = 0.0
+var speed: float = 1.0
+## An instant replay in progress: {start, end, return_index, speed, was_playing}; {} when live.
+var instant: Dictionary = {}
+## "auto", "hybrid" or "manual" (the camera rig's mode, kept here so a mode switch can restore it).
+var camera_mode: String = "hybrid"
+## "broadcast3d", "broadcast" or "flat".
+var view_id: String = "broadcast"
+
+
+func is_instant() -> bool:
+	return not instant.is_empty()
+
+
+## A plain copy of everything, for tests that compare state before and after a mode switch.
+func snapshot() -> Array:
+	return [index, playing, speed, instant.duplicate(), camera_mode, view_id]

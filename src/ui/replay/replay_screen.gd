@@ -22,8 +22,25 @@ var model: FcReplayModel
 var timeline: FcBroadcastTimeline   # the running state for the broadcast graphics (derived from the model, read-only)
 var colors: Array = [FcUiTokens.INFO, FcUiTokens.PRIMARY]
 var filter: String = FcReplayModel.FILTER_ALL
-var speed: float = 1.0
+var state := FcPlaybackState.new()   # the one owner of position, play state, speed, instant replay, camera mode and view (never changed by a mode switch)
+var speed: float:
+	get:
+		return state.speed
+	set(v):
+		state.speed = v
+var mode: String = FcPresentationMode.DEFAULT_MODE
+var hud: String = FcPresentationMode.DEFAULT_HUD
+var collapsed: Dictionary = {}   # panel id -> true when the player folded it away (UI state of the modes, not playback state)
 var compact: bool = false
+var prefs: FcPreferences   # where the chosen mode and HUD level are remembered (null: not remembered)
+var mode_group: FcChoiceGroup
+var hud_button: Button
+var camera_toggle: Button
+var feed_toggle: Button
+var camera_inner: Control   # the camera controls proper, folded away by camera_toggle
+var transport: Control
+var _panels: Dictionary = {}   # presentation panel id -> Array of Controls that belong to it
+var _jump_buttons: Array[Control] = []
 
 var bug: FcScoreBug
 var overlay: FcBroadcastOverlay
@@ -52,21 +69,41 @@ var replay_badge: Label
 var trail_toggle: Button
 var camera_buttons: Array[Button] = []   # Wide, Zoom in, Zoom out: they move the camera by hand, so they are off in the automatic mode
 
-var _index: int = 0
-var _playing: bool = false
-var _timer: float = 0.0
+var _index: int:
+	get:
+		return state.index
+	set(v):
+		state.index = v
+var _playing: bool:
+	get:
+		return state.playing
+	set(v):
+		state.playing = v
+var _timer: float:
+	get:
+		return state.timer
+	set(v):
+		state.timer = v
 var _names: Dictionary = {}
 var _feed_indices: Array[int] = []
 var _roster_labels: Array = [[], []]   # per side: the five labels listing who is on court
 var _roster_heads: Array = [null, null]
 var _silent: bool = false
-var _instant: Dictionary = {}   # {start, end, return_index, speed}: an instant replay in progress ({} when live)
+var _instant: Dictionary:   # {start, end, return_index, speed}: an instant replay in progress ({} when live); lives in `state`
+	get:
+		return state.instant
+	set(v):
+		state.instant = v
 
 
 ## Builds the screen for `replay_model`. `team_colors` are the home and away colours; `phone` picks the stacked layout.
-func setup(replay_model: FcReplayModel, team_colors: Array = [], phone: bool = false) -> FcReplayScreen:
+func setup(replay_model: FcReplayModel, team_colors: Array = [], phone: bool = false, preferences: FcPreferences = null) -> FcReplayScreen:
 	model = replay_model
 	compact = phone
+	prefs = preferences   # null in tests and previews: the mode and HUD then start at their defaults and nothing is written
+	if prefs != null:
+		mode = prefs.presentation_mode
+		hud = prefs.hud_level
 	if team_colors.size() == 2:
 		colors = team_colors
 	add_theme_constant_override("separation", FcUiTokens.SPACE_3)
@@ -78,7 +115,7 @@ func setup(replay_model: FcReplayModel, team_colors: Array = [], phone: bool = f
 	timeline = FcBroadcastTimeline.build(model)
 	_build()
 	seek(model.start_index(), false)
-	set_view("broadcast3d" if court3d != null and not compact else "broadcast")   # 3D by default on a desktop when it could be built; a phone keeps 2D (D-030)
+	set_mode(mode)   # the mode picks the view and camera: 3D by default on a desktop when it could be built; a phone keeps 2D (D-030)
 	return self
 
 
@@ -93,6 +130,7 @@ func is_playing() -> bool:
 # --- building -----------------------------------------------------------------------------------------------------------------
 
 func _build() -> void:
+	add_child(_mode_bar())
 	bug = FcScoreBug.new()
 	add_child(bug)
 	var body: BoxContainer = VBoxContainer.new() if compact else HBoxContainer.new()
@@ -134,7 +172,7 @@ func _build() -> void:
 	stage.add_child(replay_badge)
 	replay_badge.position = Vector2(FcUiTokens.SPACE_3, FcUiTokens.SPACE_2)
 	left.add_child(stage)
-	left.add_child(_camera_controls())
+	left.add_child(_camera_panel())
 	overlay = FcBroadcastOverlay.new(colors)   # the broadcast graphic sits over the court's lower edge and never takes the mouse
 	overlay.size_flags_horizontal = Control.SIZE_FILL
 	stage.add_child(overlay)
@@ -153,9 +191,15 @@ func _build() -> void:
 	commentary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	commentary_label.name = "Commentary"
 	left.add_child(commentary_label)
-	left.add_child(_roster_strip())
-	left.add_child(_lineup_panel())
-	left.add_child(_team_card())
+	var rosters := _roster_strip()
+	var lineups := _lineup_panel()
+	var teams := _team_card()
+	left.add_child(rosters)
+	left.add_child(lineups)
+	left.add_child(teams)
+	_register(FcPresentationMode.P_ROSTERS, rosters)
+	_register(FcPresentationMode.P_LINEUPS, lineups)
+	_register(FcPresentationMode.P_TEAMS, teams)
 	body.add_child(left)
 	var right := VBoxContainer.new()
 	right.add_theme_constant_override("separation", FcUiTokens.SPACE_2)
@@ -172,7 +216,9 @@ func _build() -> void:
 	feed.resized.connect(func() -> void: feed.ensure_current_is_visible())   # a dialog is laid out over several frames: keep the current play in view
 	right.add_child(feed)
 	body.add_child(right)
-	add_child(_controls())
+	_register(FcPresentationMode.P_FEED, right)
+	transport = _controls()
+	add_child(transport)
 	_fill_feed()
 
 
@@ -181,16 +227,21 @@ func _controls() -> Control:
 	box.add_theme_constant_override("separation", FcUiTokens.SPACE_2)
 	var row := HFlowContainer.new()
 	row.add_theme_constant_override("h_separation", FcUiTokens.SPACE_2)
-	row.add_child(FcButton.make("Start", FcButton.Variant.GHOST, func() -> void: seek(model.start_index(), true)))
+	var start_button := FcButton.make("Start", FcButton.Variant.GHOST, func() -> void: seek(model.start_index(), true))
+	row.add_child(start_button)
 	row.add_child(FcButton.make("Back", FcButton.Variant.SECONDARY, func() -> void: step(-1)))
 	play_button = FcButton.make("Play", FcButton.Variant.PRIMARY, toggle_play)
 	row.add_child(play_button)
 	row.add_child(FcButton.make("Next", FcButton.Variant.SECONDARY, func() -> void: step(1)))
-	row.add_child(FcButton.make("End", FcButton.Variant.GHOST, func() -> void: seek(model.final_index(), true)))
+	var end_button := FcButton.make("End", FcButton.Variant.GHOST, func() -> void: seek(model.final_index(), true))
+	row.add_child(end_button)
+	_register(FcPresentationMode.P_JUMPS, start_button)
+	_register(FcPresentationMode.P_JUMPS, end_button)
 	speed_group = FcChoiceGroup.new()
 	speed_group.set_options(SPEEDS, "1")
 	speed_group.selected.connect(func(id: String) -> void: set_speed(float(id)))
 	row.add_child(speed_group)
+	_register(FcPresentationMode.P_SPEED, speed_group)
 	box.add_child(row)
 	var periods: Array = []
 	for p in model.periods():
@@ -199,6 +250,7 @@ func _controls() -> Control:
 	period_group.set_options(periods, "1")
 	period_group.selected.connect(func(id: String) -> void: seek(model.period_start_index(int(id)), true))
 	box.add_child(period_group)
+	_register(FcPresentationMode.P_PERIODS, period_group)
 	scrubber = HSlider.new()
 	scrubber.min_value = 0
 	scrubber.max_value = maxi(1, model.size() - 1)
@@ -208,7 +260,26 @@ func _controls() -> Control:
 		if not _silent:
 			seek(int(v), false))
 	box.add_child(scrubber)
+	_register(FcPresentationMode.P_SCRUBBER, scrubber)
 	return box
+
+
+## The contextual camera panel: a header with fold buttons, and the camera controls proper (view, camera mode, and the manual controls, which
+## only show while the camera is not fully automatic).
+func _camera_panel() -> Control:
+	var outer := VBoxContainer.new()
+	outer.name = "CameraPanel"
+	var head := HFlowContainer.new()
+	head.add_theme_constant_override("h_separation", FcUiTokens.SPACE_2)
+	camera_toggle = FcButton.make("Camera controls: hide", FcButton.Variant.GHOST, func() -> void: toggle_collapsed(FcPresentationMode.P_CAMERA))
+	feed_toggle = FcButton.make("Play-by-play: hide", FcButton.Variant.GHOST, func() -> void: toggle_collapsed(FcPresentationMode.P_FEED))
+	head.add_child(camera_toggle)
+	head.add_child(feed_toggle)
+	outer.add_child(head)
+	camera_inner = _camera_controls()
+	outer.add_child(camera_inner)
+	_register(FcPresentationMode.P_CAMERA, outer)
+	return outer
 
 
 func _camera_controls() -> Control:
@@ -247,7 +318,123 @@ func _camera_controls() -> Control:
 	highlight_next = FcButton.make("Next highlight", FcButton.Variant.SECONDARY, func() -> void: jump_highlight(1))
 	box.add_child(highlight_prev)
 	box.add_child(highlight_next)
+	_register(FcPresentationMode.P_HIGHLIGHTS, highlight_prev)
+	_register(FcPresentationMode.P_HIGHLIGHTS, highlight_next)
 	return box
+
+
+# --- presentation modes and the HUD (Broadcast pass 2, M1) -------------------------------------------------------------------------
+
+func _register(panel: String, control: Control) -> void:
+	if not _panels.has(panel):
+		_panels[panel] = []
+	_panels[panel].append(control)
+
+
+## The mode choice (Broadcast, Replay, Analysis) and the HUD button. It stays on screen whatever the HUD level, so there is always a way back.
+func _mode_bar() -> Control:
+	var row := HFlowContainer.new()
+	row.name = "ModeBar"
+	row.add_theme_constant_override("h_separation", FcUiTokens.SPACE_2)
+	mode_group = FcChoiceGroup.new()
+	mode_group.set_options(FcPresentationMode.MODES, mode)
+	mode_group.selected.connect(set_mode)
+	row.add_child(mode_group)
+	hud_button = FcButton.make("HUD: full", FcButton.Variant.GHOST, cycle_hud)
+	hud_button.name = "HudButton"
+	row.add_child(hud_button)
+	return row
+
+
+## Switches the presentation. Only the layout, the default view and the camera mode change; the replay position, play state, speed and any
+## instant replay are in `state` and are not touched (tested).
+func set_mode(id: String) -> void:
+	if model == null or model.is_empty() or not FcPresentationMode.is_mode(id):
+		return
+	mode = id
+	mode_group.select(id)
+	var lay := FcPresentationMode.layout(id)
+	set_camera_mode(str(lay["camera"]))
+	var want_3d := str(lay["view"]) == "3d" and court3d != null and not compact
+	set_view("broadcast3d" if want_3d else ("flat" if str(lay["view"]) == "flat" and not compact else "broadcast"))
+	if prefs != null:
+		prefs.presentation_mode = id
+		prefs.save_file()
+	apply_layout()
+
+
+func set_hud(level: String) -> void:
+	if not FcPresentationMode.is_hud(level):
+		return
+	hud = level
+	if prefs != null:
+		prefs.hud_level = level
+		prefs.save_file()
+	apply_layout()
+
+
+func cycle_hud() -> void:
+	set_hud(FcPresentationMode.next_hud(hud))
+
+
+## Folds a panel (the feed or the camera controls) away or brings it back. Stays within the mode's layout: a panel the mode hides stays hidden.
+func toggle_collapsed(panel: String) -> void:
+	collapsed[panel] = not bool(collapsed.get(panel, false))
+	apply_layout()
+
+
+## Applies the mode, the HUD level and the folded panels to the nodes. Called after any of them changes.
+func apply_layout() -> void:
+	if model == null or model.is_empty():
+		return
+	for panel in _panels:
+		var shown := FcPresentationMode.panel_visible(mode, hud, panel)
+		if panel == FcPresentationMode.P_FEED:
+			shown = shown and not bool(collapsed.get(panel, false))
+		for c in _panels[panel]:
+			(c as Control).visible = shown
+	var camera_open := not bool(collapsed.get(FcPresentationMode.P_CAMERA, false))
+	camera_inner.visible = camera_open
+	camera_toggle.text = "Camera controls: hide" if camera_open else "Camera controls: show"
+	feed_toggle.text = "Play-by-play: show" if bool(collapsed.get(FcPresentationMode.P_FEED, false)) else "Play-by-play: hide"
+	feed_toggle.visible = FcPresentationMode.panel_visible(mode, hud, FcPresentationMode.P_FEED)
+	hud_button.text = "HUD: %s" % hud
+	_size_stage()
+	var E := FcPresentationMode
+	bug.visible = E.hud_shows(hud, E.E_SCOREBUG)
+	overlay.hud_hidden = not E.hud_shows(hud, E.E_OVERLAY)
+	overlay.visible = not overlay.hud_hidden and not overlay.current_item().is_empty()
+	var captions := E.hud_shows(hud, E.E_CAPTIONS)
+	caption.visible = captions
+	sound_caption.visible = captions
+	commentary_label.visible = captions
+	transport.visible = E.hud_shows(hud, E.E_TRANSPORT)
+	_refresh_badge()
+	_refresh_camera_context()
+
+
+## The court is the focus of Broadcast, so its stage grows with the window there; Replay and Analysis share the space with their panels.
+func _size_stage() -> void:
+	if compact:
+		return
+	if not is_inside_tree():
+		if not tree_entered.is_connected(_size_stage):
+			tree_entered.connect(_size_stage, CONNECT_ONE_SHOT)
+		return
+	var share: float = {FcPresentationMode.BROADCAST: 0.6, FcPresentationMode.REPLAY: 0.4}.get(mode, 0.3)
+	stage.custom_minimum_size.y = clampf(get_viewport_rect().size.y * share, 280.0, 1100.0)
+
+
+func _refresh_badge() -> void:
+	replay_badge.visible = is_instant_replay() and FcPresentationMode.hud_shows(hud, FcPresentationMode.E_BADGE)
+
+
+## The manual camera controls only make sense when the camera is not fully automatic, so they appear only then.
+func _refresh_camera_context() -> void:
+	var manual_ok := state.camera_mode != "auto"
+	for b in camera_buttons:
+		b.visible = manual_ok
+		b.disabled = not manual_ok
 
 
 ## Jumps to the highlight after (1) or before (-1) the current event and pauses there; nothing happens when there is none that way.
@@ -278,6 +465,7 @@ func set_view(id: String) -> void:
 		court3d.visible = want_3d
 	court.visible = not want_3d
 	court.set_flat(id == "flat")
+	state.view_id = id
 	view_group.select(id)
 	if want_3d:
 		court3d.show_event(_index, false)   # the replay position is the screen's: the 3D view just shows it
@@ -287,8 +475,10 @@ func set_view(id: String) -> void:
 func set_camera_mode(id: String) -> void:
 	court.rig.mode = {"auto": FcCameraRig.Mode.AUTO, "hybrid": FcCameraRig.Mode.HYBRID, "manual": FcCameraRig.Mode.MANUAL}.get(id, FcCameraRig.Mode.HYBRID)
 	camera_group.select(id)
+	state.camera_mode = id
 	for b in camera_buttons:
 		b.disabled = id == "auto"
+	_refresh_camera_context()
 	court.rig.request(FcCameraDirector.shot_for(timeline, _index))
 
 
@@ -296,8 +486,10 @@ func set_camera_mode(id: String) -> void:
 func reset_camera() -> void:
 	court.rig.reset()
 	camera_group.select("hybrid")
+	state.camera_mode = "hybrid"
 	for b in camera_buttons:
 		b.disabled = false
+	_refresh_camera_context()
 	court.rig.request(FcCameraDirector.shot_for(timeline, _index))
 
 
@@ -508,7 +700,7 @@ func start_instant_replay() -> void:
 		return
 	var window := timeline.replay_window(_index)
 	_instant = {"start": int(window["start"]), "end": int(window["end"]), "return_index": _index, "speed": speed, "was_playing": _playing}
-	replay_badge.visible = true
+	_refresh_badge()
 	replay_button.text = "Back to the game"
 	court.clear_trail()
 	speed = INSTANT_REPLAY_SPEED
@@ -526,7 +718,7 @@ func end_instant_replay() -> void:
 	speed = float(_instant["speed"])
 	_playing = bool(_instant["was_playing"])
 	_instant = {}
-	replay_badge.visible = false
+	_refresh_badge()
 	replay_button.text = "Instant replay"
 	set_process(_playing)
 	play_button.text = "Pause" if _playing else "Play"
@@ -552,6 +744,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			step(1)
 		KEY_LEFT:
 			step(-1)
+		KEY_H:
+			cycle_hud()
 		_:
 			return
 	get_viewport().set_input_as_handled()

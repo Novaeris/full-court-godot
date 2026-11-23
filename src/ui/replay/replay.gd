@@ -41,12 +41,18 @@ static func open(app: FcApp, built: Dictionary) -> FcModal:
 	var model: FcReplayModel = built["model"]
 	var title := "Replay: %s at %s" % [model.box.abbreviations[1], model.box.abbreviations[0]]
 	var modal := FcModal.new(title, "", FcModal.Kind.INFO, "Close")
-	modal.panel.custom_minimum_size.x = 0 if app.layout.is_mobile() else 1040
-	var screen := FcReplayScreen.new().setup(model, built["colors"], app.layout.is_mobile())
+	modal.panel.custom_minimum_size.x = 0 if app.layout.is_mobile() else _dialog_width(app)
+	var screen := FcReplayScreen.new().setup(model, built["colors"], app.layout.is_mobile(), app.preferences)
 	screen.name = "ReplayScreen"
 	modal.content.add_child(screen)
 	app.host.modals.open(modal)
 	return modal
+
+
+## Wide windows get a wider replay dialog so the court has room; 1040 is the floor (and the width when the window is not known yet).
+static func _dialog_width(app: FcApp) -> float:
+	var window := app.get_window() if app.is_inside_tree() else null
+	return clampf(float(window.size.x) * 0.85, 1040.0, 2200.0) if window != null else 1040.0
 
 
 ## A "Watch replay" button for a post-game screen, or null when no replay was kept (the box is still there, just not the events).

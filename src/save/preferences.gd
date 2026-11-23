@@ -32,6 +32,9 @@ var haptics: bool = true
 var hints_enabled: bool = true
 ## The shared content folder chosen by the player ("" = the default, Documents/FullCourtContent).
 var content_root: String = ""
+## The replay screen's presentation (Broadcast pass 2): "broadcast", "replay" or "analysis", and the HUD level "full", "minimal" or "hidden". Additive, with defaults.
+var presentation_mode: String = "replay"
+var hud_level: String = "full"
 
 
 ## Where content releases are looked for when no folder has been chosen.
@@ -77,6 +80,12 @@ func load_file() -> void:
 		haptics = bool(cfg.get_value("audio", "haptics", true))
 		hints_enabled = bool(cfg.get_value("ui", "hints", true))
 		content_root = str(cfg.get_value("content", "root", ""))
+		presentation_mode = str(cfg.get_value("broadcast", "mode", "replay"))
+		if not FcPresentationMode.is_mode(presentation_mode):
+			presentation_mode = "replay"
+		hud_level = str(cfg.get_value("broadcast", "hud", "full"))
+		if not FcPresentationMode.is_hud(hud_level):
+			hud_level = "full"
 
 
 ## Writes the settings. Returns false if the file could not be written (the game goes on regardless).
@@ -98,6 +107,8 @@ func save_file() -> bool:
 	cfg.set_value("audio", "haptics", haptics)
 	cfg.set_value("ui", "hints", hints_enabled)
 	cfg.set_value("content", "root", content_root)
+	cfg.set_value("broadcast", "mode", presentation_mode)
+	cfg.set_value("broadcast", "hud", hud_level)
 	return cfg.save(path) == OK
 
 

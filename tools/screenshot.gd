@@ -37,6 +37,8 @@ var _demo := ""
 var _layout := "auto"
 var _view := "grid"
 var _scroll := 0
+var _mode := ""   # owner_replay: "broadcast", "replay" or "analysis"
+var _hud := ""    # owner_replay: "full", "minimal" or "hidden"
 
 
 func _initialize() -> void:
@@ -58,6 +60,8 @@ func _initialize() -> void:
 			"reduce": _reduce = kv[1] == "1"
 			"demo": _demo = kv[1]
 			"layout": _layout = kv[1]
+			"mode": _mode = kv[1]
+			"hud": _hud = kv[1]
 			"view": _view = kv[1]
 			"scroll": _scroll = int(kv[1])   # scrolls an open profile dialog down by this many pixels
 			"hd": FcPlayerFigure.hd_enabled = kv[1] == "1"   # the high-fidelity portrait prototype (docs/PLAYER_VISUAL_PROPOSAL.md)
@@ -70,6 +74,8 @@ func _initialize() -> void:
 	_app.preferences.content_root = "C:/Example/FullCourtContent"   # a neutral path: pictures are committed and must not show the real one
 	_app.preferences.layout_override = _layout   # a Phase 3 setting; ignored by older code
 	_app.preferences.text_size = _text   # before setup(), so the first screen (the menu) is built at this size
+	_app.preferences.presentation_mode = "replay"   # never inherit a mode or HUD level saved by an earlier picture
+	_app.preferences.hud_level = "full"
 	_app.preferences.tutorial_done = true   # the tutorial has its own tests
 	FcSafeFile.remove_tree("user://screenshot_saves")   # start from no saved games, so every picture is reproducible
 	_app.saves = FcSaveManager.new("user://screenshot_saves")
@@ -194,6 +200,10 @@ func _build_screen() -> void:
 				FcReplay.open(_app, built)
 				var shown := _app.find_child("ReplayScreen", true, false) as FcReplayScreen
 				var model: FcReplayModel = built["model"]
+				if _mode != "":
+					shown.set_mode(_mode)
+				if _hud != "":
+					shown.set_hud(_hud)
 				for e in model.entries:
 					if e["type"] == FcGameEventLog.EV_SHOT_MADE and e["x"] == FcGameEventLog.SHOT_THREE and e["period"] >= 2:
 						shown.seek(e["index"], false)

@@ -42,10 +42,14 @@ func _init(team_colors: Array = []) -> void:
 	row.add_child(words)
 
 
+## Set by the screen's HUD level: when true the strip stays hidden whatever item arrives.
+var hud_hidden: bool = false
+
+
 ## Shows `item` (an FcBroadcastGraphics item), or hides the strip when it is empty.
 func show_item(item: Dictionary) -> void:
 	_current = item
-	if item.is_empty():
+	if item.is_empty() or hud_hidden:
 		visible = false
 		return
 	_title.text = str(item["title"])
