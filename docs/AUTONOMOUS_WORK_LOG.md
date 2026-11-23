@@ -115,3 +115,7 @@ Failures along the way (all explained in the audit): the baseline live run faile
 ## B7: commentary captions (crowd sounds and captions came with B3)
 **Delivered:** `src/ui/replay/commentary.gd`, a Commentary line in the replay screen, `tests/unit/test_commentary.gd` (3), live assertions added to the captions test. Voice commentary is not built (decision 6: off unless acceptable; not evaluated, so captions only). Ambience loops not built (the synth has no looping cue; judged not worth a new mechanism without a concrete need).
 **Local results:** unit **1,552 passed**, live **186 passed**, 0 failed.
+
+## B8: advanced analytics: deferred, with the reason
+The only scope the project direction implies without new data (scoring runs, lead changes, leaders, milestones, team comparison) was delivered in B2. Shot charts need shot locations, which the event log does not hold (positions are illustrative, 4.1), so a chart would present invented data as analysis; adding locations is an event-log change that needs a save migration (12.4) for no milestone that requires it. Deferred and listed in the final report.
+
