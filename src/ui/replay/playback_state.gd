@@ -16,6 +16,8 @@ var timer: float = 0.0
 var speed: float = 1.0
 ## An instant replay in progress: {start, end, return_index, speed, was_playing}; {} when live.
 var instant: Dictionary = {}
+## Which replay angle the next instant replay starts from (0 main, 1 baseline, 2 overhead, then around); it advances each time one starts.
+var replay_variant: int = 0
 ## "auto", "hybrid" or "manual" (the camera rig's mode, kept here so a mode switch can restore it).
 var camera_mode: String = "hybrid"
 ## "broadcast3d", "broadcast" or "flat".
@@ -28,4 +30,4 @@ func is_instant() -> bool:
 
 ## A plain copy of everything, for tests that compare state before and after a mode switch.
 func snapshot() -> Array:
-	return [index, playing, speed, instant.duplicate(), camera_mode, view_id]
+	return [index, playing, speed, instant.duplicate(), camera_mode, view_id, replay_variant]

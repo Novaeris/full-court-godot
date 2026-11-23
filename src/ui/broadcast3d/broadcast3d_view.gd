@@ -30,6 +30,9 @@ var _entry_type: int = 0
 var _shot_kind: int = 0
 var _attacks_right: bool = true
 var _holder: int = 0
+var _angle: Dictionary = {"angle": "main", "side": 1}   # the angle the camera is gliding to
+var _angle_from: Dictionary = {"angle": "main", "side": 1}
+var _angle_blend: float = 1.0
 var _ball: MeshInstance3D
 var _ball_goal: Vector3 = Vector3(47, 3, 25)
 var _wave: int = 0
@@ -150,13 +153,29 @@ func react(cues: Array) -> void:
 			return
 
 
+## The camera pose for the rig's camera, gliding between director angles so a change of angle is a move, not a jump (instant with reduced motion).
+func _blended_pose(cam: Dictionary, delta: float) -> Dictionary:
+	var want := rig.pose_angle()
+	if str(want["angle"]) != str(_angle["angle"]) or (str(want["angle"]) == "baseline" and int(want["side"]) != int(_angle["side"])):
+		_angle_from = _angle
+		_angle = want
+		_angle_blend = 0.0
+	_angle_blend = 1.0 if FcMotion.reduced else minf(1.0, _angle_blend + delta / FcBroadcast3DRules.ANGLE_BLEND_SECONDS)
+	var to_pose := FcBroadcast3DRules.camera_pose(cam["focus"], float(cam["zoom"]), str(_angle["angle"]), int(_angle["side"]))
+	if _angle_blend >= 1.0:
+		return to_pose
+	var from_pose := FcBroadcast3DRules.camera_pose(cam["focus"], float(cam["zoom"]), str(_angle_from["angle"]), int(_angle_from["side"]))
+	var w := smoothstep(0.0, 1.0, _angle_blend)
+	return {"position": (from_pose["position"] as Vector3).lerp(to_pose["position"], w), "target": (from_pose["target"] as Vector3).lerp(to_pose["target"], w)}
+
+
 func _process(delta: float) -> void:
 	if not built or not is_visible_in_tree():
 		return
 	rig.reduced = FcMotion.reduced
 	rig.advance(delta)
 	var cam := rig.camera()
-	scene.set_camera(FcBroadcast3DRules.camera_pose(cam["focus"], float(cam["zoom"])))
+	scene.set_camera(_blended_pose(cam, delta))
 	var hoop := FcCourtLayout.basket(_attacks_right)
 	for pid in _targets:
 		var c: FcBroadcastCharacter = characters[pid]

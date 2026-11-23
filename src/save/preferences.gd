@@ -35,6 +35,8 @@ var content_root: String = ""
 ## The replay screen's presentation (Broadcast pass 2): "broadcast", "replay" or "analysis", and the HUD level "full", "minimal" or "hidden". Additive, with defaults.
 var presentation_mode: String = "replay"
 var hud_level: String = "full"
+## The camera director's style: "calm", "standard" or "energetic" (scales shot holds, cooldowns and move speed).
+var camera_style: String = "standard"
 
 
 ## Where content releases are looked for when no folder has been chosen.
@@ -83,6 +85,9 @@ func load_file() -> void:
 		presentation_mode = str(cfg.get_value("broadcast", "mode", "replay"))
 		if not FcPresentationMode.is_mode(presentation_mode):
 			presentation_mode = "replay"
+		camera_style = str(cfg.get_value("broadcast", "camera_style", "standard"))
+		if not FcBroadcastStyle.camera_styles().has(camera_style):
+			camera_style = "standard"
 		hud_level = str(cfg.get_value("broadcast", "hud", "full"))
 		if not FcPresentationMode.is_hud(hud_level):
 			hud_level = "full"
@@ -109,6 +114,7 @@ func save_file() -> bool:
 	cfg.set_value("content", "root", content_root)
 	cfg.set_value("broadcast", "mode", presentation_mode)
 	cfg.set_value("broadcast", "hud", hud_level)
+	cfg.set_value("broadcast", "camera_style", camera_style)
 	return cfg.save(path) == OK
 
 

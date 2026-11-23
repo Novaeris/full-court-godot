@@ -66,6 +66,7 @@ var speed_group: FcChoiceGroup
 var period_group: FcChoiceGroup
 var view_group: FcChoiceGroup
 var camera_group: FcChoiceGroup
+var style_group: FcChoiceGroup   # the director's style: calm, standard, energetic
 var replay_button: Button
 var highlights: Array[Dictionary] = []   # FcHighlights.select: the events worth jumping to, in game order
 var highlight_prev: Button
@@ -317,6 +318,14 @@ func _camera_controls() -> Control:
 	camera_group.set_options(CAMERA_MODES, "hybrid")
 	camera_group.selected.connect(set_camera_mode)
 	box.add_child(camera_group)
+	style_group = FcChoiceGroup.new()
+	style_group.set_options([["calm", "Calm"], ["standard", "Normal"], ["energetic", "Lively"]], court.rig.style)
+	style_group.tooltip_text = "Director style: how long shots stay up and how fast the camera moves"
+	style_group.selected.connect(set_camera_style)
+	var director_label := FcUiTables.label("Director:", FcUiTokens.TYPE_SMALL)
+	director_label.theme_type_variation = "MutedLabel"
+	box.add_child(director_label)
+	box.add_child(style_group)
 	for entry in [["Whole court", func() -> void: court.rig.manual_set(Vector2(FcCourtLayout.COURT_LENGTH / 2.0, FcCourtLayout.COURT_WIDTH / 2.0), 1.0)],
 			["Zoom in", func() -> void: court.rig.manual_move(Vector2.ZERO, ZOOM_STEP)], ["Zoom out", func() -> void: court.rig.manual_move(Vector2.ZERO, 1.0 / ZOOM_STEP)]]:
 		var button := FcButton.make(entry[0], FcButton.Variant.SECONDARY, entry[1])
@@ -516,7 +525,23 @@ func set_camera_mode(id: String) -> void:
 	for b in camera_buttons:
 		b.disabled = id == "auto"
 	_refresh_camera_context()
-	court.rig.request(FcCameraDirector.shot_for(timeline, _index))
+	_request_shot(true)
+
+
+## The director's style (calm, standard, energetic): how long shots stay up, how soon one can come back and how fast the camera moves.
+func set_camera_style(id: String) -> void:
+	if not FcBroadcastStyle.camera_styles().has(id):
+		return
+	court.rig.style = id
+	style_group.select(id)
+	if prefs != null:
+		prefs.camera_style = id
+		prefs.save_file()
+
+
+## Asks the camera for the shot of the current event: the director's shot, or a replay angle while an instant replay runs.
+func _request_shot(jump: bool = false) -> void:
+	court.rig.request(FcCameraDirector.replay_shot_for(timeline, _index, state.replay_variant) if is_instant_replay() else FcCameraDirector.shot_for(timeline, _index), jump)
 
 
 ## Gives the camera back to the director (and leaves manual mode).
@@ -527,7 +552,7 @@ func reset_camera() -> void:
 	for b in camera_buttons:
 		b.disabled = false
 	_refresh_camera_context()
-	court.rig.request(FcCameraDirector.shot_for(timeline, _index))
+	_request_shot(true)
 
 
 func _lineup_panel() -> Control:
@@ -645,7 +670,7 @@ func seek(i: int, animate: bool = true) -> void:
 	bug.show_stoppage(FcStoppageModel.at(timeline, _index))
 	_refresh_stats()
 	_update_team_card(_index)
-	court.rig.request(FcCameraDirector.shot_for(timeline, _index))
+	_request_shot(not animate)
 	if court3d != null and court3d.visible:
 		court3d.show_event(_index, animate)
 	sound_caption.text = ""   # a jump or a scrub makes no sound; stepping and playing set it again
@@ -740,6 +765,7 @@ func start_instant_replay() -> void:
 	if model == null or model.is_empty() or not _instant.is_empty():
 		return
 	var window := timeline.replay_window(_index)
+	state.replay_variant += 1   # each instant replay looks from the next angle: main, baseline, overhead
 	_instant = {"start": int(window["start"]), "end": int(window["end"]), "return_index": _index, "speed": speed, "was_playing": _playing}
 	_refresh_badge()
 	replay_button.text = "Back to the game"

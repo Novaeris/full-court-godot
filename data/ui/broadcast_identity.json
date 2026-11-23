@@ -2,27 +2,94 @@
 	"version": 1,
 	"note": "The broadcast identity kit (Broadcast pass 2, M2, D-071): the timings, transitions and templates every broadcast graphic reads, so lower thirds, spotlights, camera transitions and production segments share one rhythm. Colours and type sizes come from FcUiTokens, never from here.",
 	"timings_ms": {
-		"lower_third": {"in": 180, "hold": 3200, "out": 240},
-		"spotlight": {"in": 220, "hold": 3600, "out": 260},
-		"stats_overlay": {"in": 160, "hold": 0, "out": 160},
-		"camera_ease": {"in": 450, "hold": 0, "out": 0},
-		"camera_whip": {"in": 160, "hold": 0, "out": 0}
+		"lower_third": {
+			"in": 180,
+			"hold": 3200,
+			"out": 240
+		},
+		"spotlight": {
+			"in": 220,
+			"hold": 3600,
+			"out": 260
+		},
+		"stats_overlay": {
+			"in": 160,
+			"hold": 0,
+			"out": 160
+		},
+		"camera_ease": {
+			"in": 450,
+			"hold": 0,
+			"out": 0
+		},
+		"camera_whip": {
+			"in": 160,
+			"hold": 0,
+			"out": 0
+		}
 	},
 	"reduced_timings_ms": {
-		"lower_third": {"in": 0, "hold": 2400, "out": 80},
-		"spotlight": {"in": 0, "hold": 2400, "out": 80},
-		"stats_overlay": {"in": 0, "hold": 0, "out": 0},
-		"camera_ease": {"in": 0, "hold": 0, "out": 0},
-		"camera_whip": {"in": 0, "hold": 0, "out": 0}
+		"lower_third": {
+			"in": 0,
+			"hold": 2400,
+			"out": 80
+		},
+		"spotlight": {
+			"in": 0,
+			"hold": 2400,
+			"out": 80
+		},
+		"stats_overlay": {
+			"in": 0,
+			"hold": 0,
+			"out": 0
+		},
+		"camera_ease": {
+			"in": 0,
+			"hold": 0,
+			"out": 0
+		},
+		"camera_whip": {
+			"in": 0,
+			"hold": 0,
+			"out": 0
+		}
 	},
-	"transitions": ["cut", "fade", "wipe", "whip"],
+	"transitions": [
+		"cut",
+		"fade",
+		"wipe",
+		"whip"
+	],
 	"lower_third": {
-		"gold_kinds": ["milestone", "run", "final", "clutch"],
+		"gold_kinds": [
+			"milestone",
+			"run",
+			"final",
+			"clutch"
+		],
 		"edge_width": 6
 	},
 	"spotlight": {
-		"kinds": ["score", "milestone", "block"],
-		"stat_fields": [["points", "PTS"], ["reb", "REB"], ["ast", "AST"]]
+		"kinds": [
+			"score",
+			"milestone",
+			"block"
+		],
+		"stat_fields": [
+			[
+				"points",
+				"PTS"
+			],
+			[
+				"reb",
+				"REB"
+			],
+			[
+				"ast",
+				"AST"
+			]
+		]
 	},
 	"scoreboard": {
 		"shot_clock_max": 24,
@@ -30,6 +97,46 @@
 		"shot_clock_tooltip": "An estimate from the recorded game clock: the game does not enforce a shot clock."
 	},
 	"stats_overlay": {
-		"row_labels": ["FG", "3PT", "FT", "Rebounds", "Assists", "Turnovers", "Fouls"]
+		"row_labels": [
+			"FG",
+			"3PT",
+			"FT",
+			"Rebounds",
+			"Assists",
+			"Turnovers",
+			"Fouls"
+		]
+	},
+	"camera": {
+		"note": "Camera direction rules (Broadcast pass 2, M3): shots below hold for at least min_shot_seconds unless they are critical; a preset cannot be retaken inside its cooldown; at most max_switches_per_10s non-critical switches in any 10 seconds. Styles scale holds, cooldowns and the ease speed.",
+		"min_shot_seconds": 0.8,
+		"max_switches_per_10s": 5,
+		"cooldowns_s": {
+			"celebration": 6.0,
+			"baseline": 2.5,
+			"overhead": 8.0,
+			"closeup": 3.0,
+			"stoppage": 2.0,
+			"replay": 0.0
+		},
+		"whip_rate_factor": 3.0,
+		"styles": {
+			"calm": {
+				"hold": 1.5,
+				"cooldown": 1.5,
+				"ease": 0.6
+			},
+			"standard": {
+				"hold": 1.0,
+				"cooldown": 1.0,
+				"ease": 1.0
+			},
+			"energetic": {
+				"hold": 0.75,
+				"cooldown": 0.7,
+				"ease": 1.4
+			}
+		},
+		"default_style": "standard"
 	}
 }

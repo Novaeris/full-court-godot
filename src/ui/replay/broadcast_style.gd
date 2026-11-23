@@ -55,6 +55,45 @@ static func stats_rows() -> Array:
 	return ((data().get("stats_overlay", {}) as Dictionary).get("row_labels", []) as Array).duplicate()
 
 
+# --- camera direction (M3) ----------------------------------------------------------------------------------------------------
+
+static func camera_rules() -> Dictionary:
+	return (data().get("camera", {}) as Dictionary)
+
+
+## Seconds a non-critical shot must stay up before another can take the camera.
+static func min_shot_seconds() -> float:
+	return float(camera_rules().get("min_shot_seconds", 0.8))
+
+
+static func max_switches_per_10s() -> int:
+	return int(camera_rules().get("max_switches_per_10s", 5))
+
+
+## Seconds before a preset may be taken again (0 for a preset with no cooldown).
+static func cooldown(preset: String) -> float:
+	return float((camera_rules().get("cooldowns_s", {}) as Dictionary).get(preset, 0.0))
+
+
+static func whip_rate_factor() -> float:
+	return float(camera_rules().get("whip_rate_factor", 3.0))
+
+
+static func camera_styles() -> Array:
+	return (camera_rules().get("styles", {"standard": {}}) as Dictionary).keys()
+
+
+static func default_camera_style() -> String:
+	return str(camera_rules().get("default_style", "standard"))
+
+
+## {hold, cooldown, ease} multipliers of a director style ("standard" when the name is unknown).
+static func camera_style(name: String) -> Dictionary:
+	var styles: Dictionary = camera_rules().get("styles", {})
+	var found: Dictionary = styles.get(name, styles.get("standard", {}))
+	return {"hold": float(found.get("hold", 1.0)), "cooldown": float(found.get("cooldown", 1.0)), "ease": float(found.get("ease", 1.0))}
+
+
 ## Everything wrong with the file, as readable sentences (empty = valid). Tests call this so a bad edit fails loudly.
 static func problems() -> Array[String]:
 	var out: Array[String] = []
@@ -73,6 +112,10 @@ static func problems() -> Array[String]:
 					out.append("%s.%s.%s must be a number of at least 0" % [set_name, name, part])
 	if transitions().is_empty() or not transitions().has("cut"):
 		out.append("transitions must include \"cut\"")
+	if min_shot_seconds() <= 0.0 or max_switches_per_10s() <= 0:
+		out.append("camera.min_shot_seconds and camera.max_switches_per_10s must be positive")
+	if not camera_styles().has(default_camera_style()):
+		out.append("camera.default_style must name one of the styles")
 	if shot_clock_max() <= 0:
 		out.append("scoreboard.shot_clock_max must be positive")
 	return out

@@ -10,6 +10,12 @@ extends RefCounted
 const BASE_OFFSET := Vector3(0.0, 40.0, 57.0)       # from the point looked at to the camera at zoom 1 (about 70 ft away)
 const MAX_ZOOM_3D := 1.8
 const MIN_DISTANCE := 28.0
+## Where the camera stands, from the point looked at, for each director angle (FcCameraDirector.ANGLES). "baseline" is behind the basket being
+## attacked (x is multiplied by the side, +1 for the right-hand basket); "overhead" is the tactical view from high above (a little off vertical so
+## the camera's up direction stays defined); "closeup" is the tight medium shot, held at MIN_DISTANCE because there is no 3D close-up (D-070).
+const ANGLE_OFFSETS := {"main": Vector3(0.0, 40.0, 57.0), "baseline": Vector3(32.0, 15.0, 0.0), "overhead": Vector3(0.0, 72.0, 7.0), "closeup": Vector3(0.0, 14.0, 24.0)}
+## Seconds an angle change takes to glide.
+const ANGLE_BLEND_SECONDS := 0.6
 const LOOK_HEIGHT := 3.0
 const FOV := 42.0
 
@@ -21,11 +27,12 @@ const BODY_BY_POSITION := {1: [187, 81], 2: [195, 90], 3: [202, 99], 4: [207, 10
 ## The 3D camera for a 2D camera {focus (court feet), zoom}: {"position", "target"}. The target is the focus on the floor (a little above it),
 ## the position is back along BASE_OFFSET divided by the zoom (clamped to MAX_ZOOM_3D), so the distance to the target is always at least
 ## MIN_DISTANCE. A focus off the court is pulled onto it.
-static func camera_pose(focus: Vector2, zoom: float) -> Dictionary:
+static func camera_pose(focus: Vector2, zoom: float, angle: String = "main", side: int = 1) -> Dictionary:
 	var f := Vector2(clampf(focus.x, 0.0, FcCourtLayout.COURT_LENGTH), clampf(focus.y, 0.0, FcCourtLayout.COURT_WIDTH))
 	var z := clampf(zoom, 1.0, MAX_ZOOM_3D)
 	var target := Vector3(f.x, LOOK_HEIGHT, f.y)
-	var offset := BASE_OFFSET / z
+	var offset: Vector3 = ANGLE_OFFSETS.get(angle, BASE_OFFSET) / z
+	offset.x *= float(side) if angle == "baseline" else 1.0
 	if offset.length() < MIN_DISTANCE:
 		offset = offset.normalized() * MIN_DISTANCE
 	return {"position": target + offset, "target": target}

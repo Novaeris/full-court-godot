@@ -38,6 +38,7 @@ var _layout := "auto"
 var _view := "grid"
 var _scroll := 0
 var _mode := ""   # owner_replay: "broadcast", "replay" or "analysis"
+var _shot := ""   # owner_replay: stop on the first event the director gives this preset (celebration, baseline, overhead, closeup, free_throw)
 var _clock := false   # owner_replay: stop on an event where the estimated shot clock shows
 var _stats := false   # owner_replay: show the statistics overlay
 var _hud := ""    # owner_replay: "full", "minimal" or "hidden"
@@ -66,6 +67,7 @@ func _initialize() -> void:
 			"hud": _hud = kv[1]
 			"stats": _stats = kv[1] == "1"
 			"clock": _clock = kv[1] == "1"
+			"shot": _shot = kv[1]
 			"view": _view = kv[1]
 			"scroll": _scroll = int(kv[1])   # scrolls an open profile dialog down by this many pixels
 			"hd": FcPlayerFigure.hd_enabled = kv[1] == "1"   # the high-fidelity portrait prototype (docs/PLAYER_VISUAL_PROPOSAL.md)
@@ -210,13 +212,18 @@ func _build_screen() -> void:
 					shown.set_hud(_hud)
 				if _stats:
 					shown.toggle_stats()
+				if _shot != "":
+					for i in range(model.start_index() + 40, model.size()):
+						if FcCameraDirector.shot_for(shown.timeline, i)["preset"] == _shot:
+							shown.seek(i, false)
+							break
 				if _clock:
 					for i in range(model.start_index() + 40, model.size()):
 						if bool(FcShotClockModel.at(shown.timeline, i)["visible"]) and int(model.entries[i]["period"]) >= 2:
 							shown.seek(i, false)
 							break
 				for e in model.entries:
-					if not _clock and e["type"] == FcGameEventLog.EV_SHOT_MADE and e["x"] == FcGameEventLog.SHOT_THREE and e["period"] >= 2:
+					if not _clock and _shot == "" and e["type"] == FcGameEventLog.EV_SHOT_MADE and e["x"] == FcGameEventLog.SHOT_THREE and e["period"] >= 2:
 						shown.seek(e["index"], false)
 						break
 		return
