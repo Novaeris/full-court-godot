@@ -1,6 +1,6 @@
 {
 	"_about": "The sound map. Identity: arena and hardwood. Every sound is an id on a bus (UI, SFX, Music). A sound plays the optional audio file when it exists, otherwise a short sound the game builds itself from the recipe in 'synth' (original, no third-party audio). A missing file or an unknown id is silent. Rarity stings climb in one key (C major): tap, bounce, chime, horn, arena horn.",
-	"buses": ["UI", "SFX", "Music", "Crowd"],
+	"buses": ["UI", "SFX", "Music", "Crowd", "Ambience", "Commentary", "Announcer"],
 	"sounds": {
 		"ui_click": {"bus": "UI", "gain_db": -8.0, "file": "res://assets/audio/ui_click.ogg", "synth": {"layers": [
 			{"wave": "sine", "freq": 190, "freq_to": 110, "ms": 70, "gain": 0.7, "decay": 38},
@@ -90,6 +90,26 @@
 		"court_buzzer": {"bus": "SFX", "gain_db": -8.0, "synth": {"layers": [
 			{"wave": "square", "freq": 220, "ms": 900, "gain": 0.3, "decay": 2, "lowpass": 0.3},
 			{"wave": "saw", "freq": 223, "ms": 900, "gain": 0.25, "decay": 2, "lowpass": 0.3}]}},
+		"ambience_low": {"bus": "Ambience", "gain_db": -14.0, "loop": true, "synth": {"layers": [
+			{"wave": "noise", "ms": 2500, "gain": 0.5, "decay": 0, "lowpass": 0.05},
+			{"wave": "noise", "ms": 2500, "gain": 0.1, "decay": 0, "lowpass": 0.18}]}},
+		"ambience_mid": {"bus": "Ambience", "gain_db": -12.0, "loop": true, "synth": {"layers": [
+			{"wave": "noise", "ms": 2500, "gain": 0.55, "decay": 0, "lowpass": 0.08},
+			{"wave": "noise", "ms": 2500, "gain": 0.22, "decay": 0, "lowpass": 0.25}]}},
+		"ambience_high": {"bus": "Ambience", "gain_db": -10.0, "loop": true, "synth": {"layers": [
+			{"wave": "noise", "ms": 2500, "gain": 0.6, "decay": 0, "lowpass": 0.12},
+			{"wave": "noise", "ms": 2500, "gain": 0.35, "decay": 0, "lowpass": 0.4}]}},
+		"music_menu": {"bus": "Music", "gain_db": -16.0, "loop": true, "synth": {"layers": [
+			{"wave": "triangle", "freq": 131, "ms": 6000, "gain": 0.3, "decay": 0, "lowpass": 0.25},
+			{"wave": "triangle", "freq": 196, "ms": 6000, "gain": 0.22, "decay": 0, "lowpass": 0.25},
+			{"wave": "triangle", "freq": 247, "ms": 6000, "gain": 0.18, "decay": 0, "lowpass": 0.25}]}},
+		"music_broadcast": {"bus": "Music", "gain_db": -16.0, "loop": true, "synth": {"layers": [
+			{"wave": "triangle", "freq": 110, "ms": 4000, "gain": 0.32, "decay": 0, "lowpass": 0.3},
+			{"wave": "triangle", "freq": 165, "ms": 4000, "gain": 0.22, "decay": 0, "lowpass": 0.3},
+			{"wave": "triangle", "freq": 220, "ms": 4000, "gain": 0.18, "decay": 0, "lowpass": 0.3}]}},
+		"pa_chime": {"bus": "Announcer", "gain_db": -10.0, "synth": {"layers": [
+			{"wave": "sine", "freq": 659, "ms": 260, "gain": 0.45, "decay": 9},
+			{"wave": "sine", "freq": 523, "start_ms": 170, "ms": 420, "gain": 0.45, "decay": 7}]}},
 		"crowd_cheer_small": {"bus": "Crowd", "gain_db": -8.0, "synth": {"layers": [
 			{"wave": "noise", "ms": 900, "gain": 0.55, "decay": 3.5, "attack_ms": 120, "lowpass": 0.18}]}},
 		"crowd_cheer_big": {"bus": "Crowd", "gain_db": -6.0, "synth": {"layers": [

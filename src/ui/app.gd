@@ -470,7 +470,7 @@ func _sound_panel() -> Control:
 	panel.add(FcToggle.make("Mute everything", preferences.audio_muted, func(on: bool) -> void:
 		preferences.audio_muted = on
 		_save_audio_settings()))
-	for entry in [["Master volume", "audio_master"], ["Interface sounds", "audio_ui"], ["Effects (cards, packs, games)", "audio_sfx"], ["Crowd and arena (game replays)", "audio_crowd"], ["Music", "audio_music"]]:
+	for entry in [["Master volume", "audio_master"], ["Interface sounds", "audio_ui"], ["Effects (cards, packs, games)", "audio_sfx"], ["Crowd and arena (game replays)", "audio_crowd"], ["Arena ambience (game replays)", "audio_ambience"], ["Commentary (voice, when one is installed)", "audio_commentary"], ["Stadium announcer", "audio_announcer"], ["Music", "audio_music"]]:
 		panel.add(FcUiTables.label(entry[0], FcUiTokens.TYPE_SMALL))
 		var slider := FcSlider.new(0, 100, 5, "%")
 		slider.set_value_silent(float(preferences.get(entry[1])))
@@ -481,13 +481,16 @@ func _sound_panel() -> Control:
 	panel.add(FcToggle.make("Sound captions in game replays", preferences.sound_captions, func(on: bool) -> void:
 		preferences.sound_captions = on
 		_save_audio_settings()))
+	panel.add(FcToggle.make("Broadcast music in game replays", preferences.broadcast_music, func(on: bool) -> void:
+		preferences.broadcast_music = on
+		_save_audio_settings()))
 	panel.add(FcToggle.make("Vibration on phones", preferences.haptics, func(on: bool) -> void:
 		preferences.haptics = on
 		_save_audio_settings()))
 	var test := FcButton.make("Play a test sound", FcButton.Variant.SECONDARY, func() -> void: FcAudio.cue("reward"))
 	test.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	panel.add(test)
-	var note := FcUiTables.label("Music is not included yet. Sounds are made by the game itself.", FcUiTokens.TYPE_SMALL)
+	var note := FcUiTables.label("Sounds and the optional broadcast music are made by the game itself. Commentary is shown as captions; a voice can be added later.", FcUiTokens.TYPE_SMALL)
 	note.theme_type_variation = "MutedLabel"
 	panel.add(note)
 	return panel

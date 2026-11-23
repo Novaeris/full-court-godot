@@ -60,7 +60,7 @@ func test_playing_makes_each_events_sounds_and_the_caption_follows() -> void:
 			continue
 		var expected := FcBroadcastAudio.cues_at(screen.timeline, screen.current_index())
 		var heard: Array[String] = []
-		heard.assign(audio.requested)
+		heard.assign(audio.requested.filter(func(id: String) -> bool: return id != "pa_chime"))   # the stadium announcer's chime (M6) is not one of the crowd and court cues
 		assert_eq(heard, expected, "event %d asked for exactly the sounds the mapping gives, in order" % screen.current_index())
 		assert_eq(screen.sound_caption.text, FcBroadcastAudio.caption_for(expected), "and its caption")
 		sounded += expected.size()

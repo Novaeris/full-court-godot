@@ -70,7 +70,7 @@ func test_a_stream_is_a_16_bit_mono_wave() -> void:
 func test_the_map_is_well_formed() -> void:
 	var map := _map()
 	var buses: Array = map["buses"]
-	assert_eq(buses, ["UI", "SFX", "Music", "Crowd"])
+	assert_eq(buses, ["UI", "SFX", "Music", "Crowd", "Ambience", "Commentary", "Announcer"])
 	for id in map["sounds"]:
 		var def: Dictionary = map["sounds"][id]
 		assert_true(def["bus"] in buses, "%s is on a real bus" % id)
@@ -200,7 +200,7 @@ func test_the_settings_screen_has_a_sound_panel_that_saves() -> void:
 		if n is FcSlider:
 			sliders.append(n)
 		stack.append_array(n.get_children())
-	assert_eq(sliders.size(), 5, "master, interface, effects, crowd and music")
+	assert_eq(sliders.size(), 8, "master, interface, effects, crowd, ambience, commentary, announcer and music")
 	for slider in sliders:
 		(slider as FcSlider).value_changed.emit(40.0)
 	var saved := FcPreferences.new(PREFS)

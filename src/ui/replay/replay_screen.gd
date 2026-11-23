@@ -56,6 +56,10 @@ var court3d: FcBroadcast3DView   # null when the 3D view could not be built: the
 var stage: Control               # holds the 2D court, the 3D view, the graphic strip and the REPLAY badge, so the graphics sit over either
 var view_note: Label
 var caption: Label
+var analyst_label: Label   # the analyst and narrative lines from the commentary booth (M6)
+var announcer_label: Label   # the stadium announcer line
+var booth := FcCommentaryBooth.new()
+var caption_sink := FcCaptionSink.new()
 var commentary_label: Label   # announcer-style text from recorded facts (B7); follows the captions preference
 var sound_caption: Label   # what the crowd and court sounds are, in words (B3); empty when there is nothing to describe
 var feed: ItemList
@@ -211,6 +215,18 @@ func _build() -> void:
 	commentary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	commentary_label.name = "Commentary"
 	left.add_child(commentary_label)
+	analyst_label = FcUiTables.label("", FcUiTokens.TYPE_SMALL)
+	analyst_label.theme_type_variation = "MutedLabel"
+	analyst_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	analyst_label.name = "Analyst"
+	left.add_child(analyst_label)
+	announcer_label = FcUiTables.label("", FcUiTokens.TYPE_SMALL)
+	announcer_label.theme_type_variation = "MutedLabel"
+	announcer_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	announcer_label.name = "Announcer"
+	left.add_child(announcer_label)
+	booth.add_sink(caption_sink)
+	booth.on_speaking = _on_voice
 	var rosters := _roster_strip()
 	var lineups := _lineup_panel()
 	var teams := _team_card()
@@ -476,11 +492,14 @@ func apply_layout() -> void:
 	overlay.visible = not overlay.hud_hidden and not overlay.current_item().is_empty()
 	var captions := E.hud_shows(hud, E.E_CAPTIONS)
 	caption.visible = captions
+	analyst_label.visible = captions
+	announcer_label.visible = captions
 	sound_caption.visible = captions
 	commentary_label.visible = captions
 	transport.visible = E.hud_shows(hud, E.E_TRANSPORT)
 	_refresh_badge()
 	_refresh_camera_context()
+	_update_music()
 
 
 ## The court is the focus of Broadcast, so its stage grows with the window there; Replay and Analysis share the space with their panels.
@@ -491,7 +510,7 @@ func _size_stage() -> void:
 		if not tree_entered.is_connected(_size_stage):
 			tree_entered.connect(_size_stage, CONNECT_ONE_SHOT)
 		return
-	var share: float = {FcPresentationMode.BROADCAST: 0.5, FcPresentationMode.REPLAY: 0.36}.get(mode, 0.3)
+	var share: float = {FcPresentationMode.BROADCAST: 0.44, FcPresentationMode.REPLAY: 0.36}.get(mode, 0.3)
 	stage.custom_minimum_size.y = clampf(get_viewport_rect().size.y * share, 280.0, 1100.0)
 
 
@@ -699,6 +718,9 @@ func seek(i: int, animate: bool = true) -> void:
 	if court3d != null and court3d.visible:
 		court3d.show_event(_index, animate)
 	sound_caption.text = ""   # a jump or a scrub makes no sound; stepping and playing set it again
+	if not animate:
+		_reset_booth()   # a jump: what was said before is no longer "just now"
+	_update_ambience(_index)
 	caption.text = "%s  %s" % [st["clock_text"], st["text"]] if st["text"] != "" else st["clock_text"]
 	_update_rosters(st)
 	_silent = true
@@ -713,6 +735,8 @@ func seek(i: int, animate: bool = true) -> void:
 
 func step(direction: int) -> void:
 	var before := _index
+	if direction < 0:
+		_reset_booth()   # stepping back: the replay clock goes backwards, so the commentary starts afresh
 	seek(model.step(_index, direction, filter), true)
 	if direction > 0 and _index != before:
 		_make_sounds(_index)   # stepping forward plays the next event's sounds; stepping back is silent
@@ -806,6 +830,37 @@ func advance(delta: float) -> void:
 	_make_sounds(_index)
 
 
+## The arena ambience follows the game: louder when it is tight and late, quieter in a blowout or at a whistle (FcAmbienceModel).
+func _update_ambience(index: int) -> void:
+	FcAudio.ambience(FcAmbienceModel.level_at(timeline, index))
+
+
+## A voice started or stopped speaking: the crowd and ambience duck while it does.
+func _on_voice(role: String, on: bool) -> void:
+	FcAudio.speaking(role, on)
+
+
+func _reset_booth() -> void:
+	booth.reset()
+	analyst_label.text = ""
+	announcer_label.text = ""
+
+
+## Broadcast music (original, synthesised, off by default): plays only in the Broadcast mode and only when the player turned it on.
+func _update_music() -> void:
+	if prefs != null and prefs.broadcast_music and mode == FcPresentationMode.BROADCAST:
+		FcAudio.music("music_broadcast")
+	else:
+		FcAudio.music_off()
+
+
+func _exit_tree() -> void:
+	if booth != null:
+		booth.reset()
+	FcAudio.ambience_off()
+	FcAudio.music_off()
+
+
 ## The crowd and court sounds of event `i` and their caption. Called when playback advances or the user steps forward (never when scrubbing or
 ## jumping, so dragging the scrubber is silent). Sounds go through FcAudio.cue (silent when muted or no audio is running); the caption is
 ## shown unless the player turned captions off.
@@ -816,6 +871,12 @@ func _make_sounds(i: int) -> void:
 	if court3d != null and court3d.visible:
 		court3d.react(cues)   # the 3D crowd stands up for a cheer
 	var captions_on := FcAudio.current.prefs.sound_captions if FcAudio.current != null and is_instance_valid(FcAudio.current) else true
+	var said := booth.on_event(timeline, i, timeline.seconds_at(i))   # the analyst, the narrator and the stadium announcer (M6)
+	var line: Dictionary = said["line"]
+	if not line.is_empty() and str(line["cue"]) != "":
+		FcAudio.cue(str(line["cue"]))
+	analyst_label.text = (caption_sink.latest(FcCommentaryEvents.ROLE_NARRATIVE) if caption_sink.latest(FcCommentaryEvents.ROLE_NARRATIVE) != "" else caption_sink.latest(FcCommentaryEvents.ROLE_COLOR)) if captions_on else ""
+	announcer_label.text = caption_sink.latest(FcCommentaryEvents.ROLE_ANNOUNCER) if captions_on else ""
 	sound_caption.text = FcBroadcastAudio.caption_for(cues) if captions_on else ""
 	commentary_label.text = FcCommentary.line_at(timeline, i) if captions_on else ""
 
