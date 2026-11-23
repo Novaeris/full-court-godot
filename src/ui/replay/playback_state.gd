@@ -18,6 +18,10 @@ var speed: float = 1.0
 var instant: Dictionary = {}
 ## Which replay angle the next instant replay starts from (0 main, 1 baseline, 2 overhead, then around); it advances each time one starts.
 var replay_variant: int = 0
+## The highlight reel in progress: {windows [{start, end}], at, return_index, speed, was_playing}; {} when none.
+var reel: Dictionary = {}
+## The replay angle the person chose: -1 automatic (cycles), or 0 main, 1 baseline, 2 overhead.
+var replay_angle: int = -1
 ## "auto", "hybrid" or "manual" (the camera rig's mode, kept here so a mode switch can restore it).
 var camera_mode: String = "hybrid"
 ## "broadcast3d", "broadcast" or "flat".
@@ -28,6 +32,10 @@ func is_instant() -> bool:
 	return not instant.is_empty()
 
 
+func is_reel() -> bool:
+	return not reel.is_empty()
+
+
 ## A plain copy of everything, for tests that compare state before and after a mode switch.
 func snapshot() -> Array:
-	return [index, playing, speed, instant.duplicate(), camera_mode, view_id, replay_variant]
+	return [index, playing, speed, instant.duplicate(), camera_mode, view_id, replay_variant, reel.duplicate(true), replay_angle]

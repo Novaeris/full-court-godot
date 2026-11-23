@@ -55,6 +55,7 @@ static func open(app: FcApp, built: Dictionary) -> FcModal:
 	modal.panel.custom_minimum_size.x = 0 if app.layout.is_mobile() else _dialog_width(app)
 	var screen := FcReplayScreen.new().setup(model, built["colors"], app.layout.is_mobile(), app.preferences, built.get("subjects", []))
 	screen.name = "ReplayScreen"
+	screen.set_bookmark_store(FcBookmarkStore.new())   # the person's own bookmark file, apart from saved games
 	if app.layout.is_mobile():
 		modal.content.add_child(screen)
 	else:

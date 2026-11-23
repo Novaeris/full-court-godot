@@ -68,6 +68,11 @@ var view_group: FcChoiceGroup
 var camera_group: FcChoiceGroup
 var style_group: FcChoiceGroup   # the director's style: calm, standard, energetic
 var replay_button: Button
+var tools: FcReplayTools   # the replay-review tools (bookmark, marks, reel, angle, replay time)
+var marks: FcTimelineMarks   # ticks under the scrubber: highlights, key plays, bookmarks
+var bookmarks: FcBookmarkStore = FcBookmarkStore.new("")   # in memory unless the app gives it a file (FcReplay.open): tests never touch the player's own file
+var right_column: Control   # the tools and the feed side by side with the court; it shows while either of them does
+var package: Dictionary = {}   # FcReplayCollections.package: the reel's references and length
 var highlights: Array[Dictionary] = []   # FcHighlights.select: the events worth jumping to, in game order
 var highlight_prev: Button
 var highlight_next: Button
@@ -220,18 +225,30 @@ func _build() -> void:
 	right.add_theme_constant_override("separation", FcUiTokens.SPACE_2)
 	right.custom_minimum_size = Vector2(0 if compact else 330, 180 if compact else 0)
 	right.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	right_column = right
+	tools = FcReplayTools.new()
+	tools.bookmark_pressed.connect(toggle_bookmark)
+	tools.mark_jump.connect(jump_mark)
+	tools.reel_pressed.connect(toggle_reel)
+	tools.angle_chosen.connect(set_replay_angle)
+	right.add_child(tools)
+	_register(FcPresentationMode.P_HIGHLIGHTS, tools)
+	var feed_box := VBoxContainer.new()   # the play-by-play folds away on its own; the replay tools above it stay
+	feed_box.add_theme_constant_override("separation", FcUiTokens.SPACE_2)
+	feed_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	filter_group = FcChoiceGroup.new()
 	filter_group.set_options(FILTERS, filter)
 	filter_group.selected.connect(set_filter)
-	right.add_child(filter_group)
+	feed_box.add_child(filter_group)
 	feed = ItemList.new()
 	feed.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	feed.custom_minimum_size.y = 180
 	feed.item_selected.connect(_on_feed_selected)
 	feed.resized.connect(func() -> void: feed.ensure_current_is_visible())   # a dialog is laid out over several frames: keep the current play in view
-	right.add_child(feed)
+	feed_box.add_child(feed)
+	right.add_child(feed_box)
 	body.add_child(right)
-	_register(FcPresentationMode.P_FEED, right)
+	_register(FcPresentationMode.P_FEED, feed_box)
 	transport = _controls()
 	add_child(transport)
 	_fill_feed()
@@ -276,6 +293,11 @@ func _controls() -> Control:
 			seek(int(v), false))
 	box.add_child(scrubber)
 	_register(FcPresentationMode.P_SCRUBBER, scrubber)
+	marks = FcTimelineMarks.new()
+	box.add_child(marks)
+	_register(FcPresentationMode.P_SCRUBBER, marks)
+	package = FcReplayCollections.package(timeline)
+	_refresh_marks()
 	return box
 
 
@@ -436,6 +458,7 @@ func apply_layout() -> void:
 	camera_toggle.text = "Camera controls: hide" if camera_open else "Camera controls: show"
 	feed_toggle.text = "Play-by-play: show" if bool(collapsed.get(FcPresentationMode.P_FEED, false)) else "Play-by-play: hide"
 	feed_toggle.visible = FcPresentationMode.panel_visible(mode, hud, FcPresentationMode.P_FEED)
+	right_column.visible = tools.visible or feed.get_parent().visible   # an empty column would still take its width
 	hud_button.text = "HUD: %s" % hud
 	_size_stage()
 	var E := FcPresentationMode
@@ -472,7 +495,8 @@ func _size_stage() -> void:
 
 
 func _refresh_badge() -> void:
-	replay_badge.visible = is_instant_replay() and FcPresentationMode.hud_shows(hud, FcPresentationMode.E_BADGE)
+	replay_badge.text = FcReplayReference.REEL_BADGE_TEXT if is_reel() else FcReplayReference.BADGE_TEXT
+	replay_badge.visible = (is_instant_replay() or is_reel()) and FcPresentationMode.hud_shows(hud, FcPresentationMode.E_BADGE)
 
 
 ## The manual camera controls only make sense when the camera is not fully automatic, so they appear only then.
@@ -541,7 +565,7 @@ func set_camera_style(id: String) -> void:
 
 ## Asks the camera for the shot of the current event: the director's shot, or a replay angle while an instant replay runs.
 func _request_shot(jump: bool = false) -> void:
-	court.rig.request(FcCameraDirector.replay_shot_for(timeline, _index, state.replay_variant) if is_instant_replay() else FcCameraDirector.shot_for(timeline, _index), jump)
+	court.rig.request(FcCameraDirector.replay_shot_for(timeline, _index, _replay_variant()) if (is_instant_replay() or is_reel()) else FcCameraDirector.shot_for(timeline, _index), jump)
 
 
 ## Gives the camera back to the director (and leaves manual mode).
@@ -678,6 +702,8 @@ func seek(i: int, animate: bool = true) -> void:
 	_update_rosters(st)
 	_silent = true
 	scrubber.value = _index
+	tools.show_time(timeline.seconds_at(_index), timeline.total_seconds())
+	tools.bookmark_button.text = "Remove bookmark" if bookmarks.has_bookmark(model.game_key(), _index) else "Bookmark this play"
 	period_group.select(str(st["period"]))
 	_silent = false
 	_select_in_feed()
@@ -703,6 +729,28 @@ func toggle_play() -> void:
 
 func set_speed(value: float) -> void:
 	speed = clampf(value, 0.25, 8.0)
+	_sync_speed_group()
+
+
+## The speed buttons show the nearest speed to the real one.
+func _sync_speed_group() -> void:
+	var best := "1"
+	var gap := 1e9
+	for s in SPEEDS:
+		if absf(float(s[0]) - speed) < gap:
+			gap = absf(float(s[0]) - speed)
+			best = str(s[0])
+	if speed_group != null:
+		speed_group.select(best)
+
+
+## `[` and `]` step through the speed buttons.
+func _nudge_speed(direction: int) -> void:
+	var at := 0
+	for k in SPEEDS.size():
+		if absf(float(SPEEDS[k][0]) - speed) < absf(float(SPEEDS[at][0]) - speed):
+			at = k
+	set_speed(float(SPEEDS[clampi(at + direction, 0, SPEEDS.size() - 1)][0]))
 
 
 func set_filter(id: String) -> void:
@@ -719,6 +767,20 @@ func advance(delta: float) -> void:
 		return
 	_timer += delta * speed
 	if _timer < model.dwell(_index):
+		return
+	if is_reel():
+		var windows: Array = state.reel["windows"]
+		var at: int = state.reel["at"]
+		if _index >= int(windows[at]["end"]):
+			if at + 1 >= windows.size():
+				end_reel()
+				return
+			state.reel["at"] = at + 1
+			seek(int(windows[at + 1]["start"]), false)   # the next highlight: a clean cut to its first event, from the next angle
+			tools.reel_note.text = _reel_note()
+			return
+		seek(_index + 1, true)
+		_make_sounds(_index)
 		return
 	if not _instant.is_empty():
 		if _index >= int(_instant["end"]):
@@ -801,6 +863,128 @@ func _process(delta: float) -> void:
 	advance(delta)
 
 
+## Bookmarks or un-bookmarks the current play (saved when the app gave the screen a bookmark file).
+func toggle_bookmark() -> void:
+	if model == null or model.is_empty():
+		return
+	bookmarks.toggle(model.game_key(), _index)
+	_refresh_marks()
+	tools.bookmark_button.text = "Remove bookmark" if bookmarks.has_bookmark(model.game_key(), _index) else "Bookmark this play"
+
+
+## Gives the screen a bookmark store (the app's own file) and redraws the marks.
+func set_bookmark_store(store: FcBookmarkStore) -> void:
+	bookmarks = store
+	if timeline != null and marks != null:
+		_refresh_marks()
+
+
+## Jumps to the next (1) or previous (-1) bookmark and pauses there; nothing happens when there is none that way.
+func jump_mark(direction: int) -> void:
+	var refs := FcReplayCollections.bookmarks(timeline, bookmarks.indices(model.game_key()))
+	var target := -1
+	for ref in refs:
+		var at := int(ref["end"])
+		if direction > 0 and at > _index:
+			target = at
+			break
+		if direction < 0 and at < _index:
+			target = at
+	if target < 0:
+		return
+	if _playing:
+		toggle_play()
+	seek(target)
+
+
+func _refresh_marks() -> void:
+	var keys: Array = []
+	for ref in FcReplayCollections.key_plays(timeline):
+		keys.append(int(ref["end"]))
+	var lights: Array = []
+	for ref in package.get("refs", []):
+		lights.append(int(ref["end"]))
+	marks.set_marks(model.size(), keys, lights, bookmarks.indices(model.game_key()))
+	tools.prev_mark.disabled = bookmarks.indices(model.game_key()).is_empty()
+	tools.next_mark.disabled = tools.prev_mark.disabled
+	tools.reel_note.text = _reel_note()
+
+
+func _reel_note() -> String:
+	var refs: Array = package.get("refs", [])
+	if refs.is_empty():
+		return "No highlight reel for this game."
+	if is_reel():
+		return "Highlight %d of %d" % [int(state.reel["at"]) + 1, (state.reel["windows"] as Array).size()]
+	return "Reel: %d plays, %s" % [refs.size(), FcReplayTools.clock(float(package.get("seconds", 0.0)))]
+
+
+## Plays the automatic highlight package one play after another (each as a reconstructed replay window), then returns to where the replay was.
+func toggle_reel() -> void:
+	if is_reel():
+		end_reel()
+	else:
+		start_reel()
+
+
+func start_reel() -> void:
+	var refs: Array = package.get("refs", [])
+	if model == null or model.is_empty() or refs.is_empty() or is_reel():
+		return
+	if is_instant_replay():
+		end_instant_replay()
+	var windows: Array = []
+	for ref in refs:
+		windows.append({"start": int(ref["start"]), "end": int(ref["end"])})
+	state.reel = {"windows": windows, "at": 0, "return_index": _index, "speed": speed, "was_playing": _playing}
+	tools.reel_button.text = "Stop reel"
+	speed = 1.0
+	_sync_speed_group()
+	_playing = true
+	set_process(true)
+	play_button.text = "Pause"
+	court.clear_trail()
+	_refresh_badge()
+	tools.reel_note.text = _reel_note()
+	seek(int(windows[0]["start"]), false)
+
+
+func end_reel() -> void:
+	if not is_reel():
+		return
+	var back := int(state.reel["return_index"])
+	speed = float(state.reel["speed"])
+	_sync_speed_group()
+	_playing = bool(state.reel["was_playing"])
+	state.reel = {}
+	tools.reel_button.text = "Highlight reel"
+	set_process(_playing)
+	play_button.text = "Pause" if _playing else "Play"
+	court.clear_trail()
+	_refresh_badge()
+	tools.reel_note.text = _reel_note()
+	seek(back, false)
+
+
+func is_reel() -> bool:
+	return not state.reel.is_empty()
+
+
+## The replay angle: "auto" cycles main, baseline, overhead from one instant replay or reel highlight to the next; "0", "1", "2" fix it.
+func set_replay_angle(id: String) -> void:
+	state.replay_angle = -1 if id == "auto" else clampi(int(id), 0, 2)
+	tools.angle_group.select(id)
+	if is_instant_replay() or is_reel():
+		_request_shot(true)
+
+
+## The variant of the replay shot to ask for now.
+func _replay_variant() -> int:
+	if state.replay_angle >= 0:
+		return state.replay_angle
+	return int(state.reel["at"]) if is_reel() else state.replay_variant
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if model == null or model.is_empty() or not is_visible_in_tree() or not (event is InputEventKey) or not event.pressed or event.echo:
 		return
@@ -815,6 +999,18 @@ func _unhandled_input(event: InputEvent) -> void:
 			cycle_hud()
 		KEY_S:
 			toggle_stats()
+		KEY_B:
+			toggle_bookmark()
+		KEY_R:
+			toggle_instant_replay()
+		KEY_COMMA:
+			jump_highlight(-1)
+		KEY_PERIOD:
+			jump_highlight(1)
+		KEY_BRACKETLEFT:
+			_nudge_speed(-1)
+		KEY_BRACKETRIGHT:
+			_nudge_speed(1)
 		_:
 			return
 	get_viewport().set_input_as_handled()

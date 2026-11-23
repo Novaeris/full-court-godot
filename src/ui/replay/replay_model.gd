@@ -40,6 +40,14 @@ static func build(log: FcGameEventLog, game_box: FcBoxScore, quarter_count: int 
 	return m
 
 
+## A stable key for this game (the two team ids, the final score and the number of events), so a bookmark finds its game again. It is derived from the
+## recorded game, never stored in it; two different games share a key only if the same teams ended with the same score and the same number of events.
+func game_key() -> String:
+	if box == null:
+		return ""
+	return "%d-%d-%d-%d-%d" % [box.team_ids[0], box.team_ids[1], box.scores[0], box.scores[1], entries.size()]
+
+
 func is_empty() -> bool:
 	return entries.is_empty()
 

@@ -8,57 +8,12 @@ extends RefCounted
 const MIN_GAP := 8
 const DEFAULT_COUNT := 8
 
-const WEIGHT := {FcBroadcastGraphics.MILESTONE: 60, FcBroadcastGraphics.RUN: 50, FcBroadcastGraphics.LEAD_CHANGE: 40, FcBroadcastGraphics.TIED: 30,
-	FcBroadcastGraphics.BLOCK: 15, FcBroadcastGraphics.SCORE: 10}
-const THREE_BONUS := 5
-const CLUTCH_BONUS := 20
-const LAST_BASKET_BONUS := 50
-
-
-## Up to `count` highlights as [{"index", "score", "kind", "title", "detail"}], in game order.
+## Up to `count` highlights as [{"index", "score", "importance", "kind", "title", "detail", "reasons"}], in game order. The scoring lives in
+## FcImportanceModel (one source of truth for highlights, key-play marks, the reel and bookmarks).
 static func select(timeline: FcBroadcastTimeline, count: int = DEFAULT_COUNT) -> Array[Dictionary]:
-	var out: Array[Dictionary] = []
 	if timeline == null or timeline.is_empty() or count <= 0:
-		return out
-	var clutch := timeline.clutch_start_index()
-	var last_basket := -1
-	for e in timeline.model.entries:
-		if int(e["type"]) == FcGameEventLog.EV_SHOT_MADE:
-			last_basket = int(e["index"])
-	var scored: Array[Dictionary] = []
-	for i in timeline.size():
-		var items := FcBroadcastGraphics.items_at(timeline, i)
-		var best := 0
-		var top: Dictionary = {}
-		for item in items:
-			var w: int = int(WEIGHT.get(item["kind"], 0))
-			if w > best:
-				best = w
-				top = item
-		if best == 0:
-			continue
-		var total := best
-		if int(timeline.model.entries[i]["points"]) == 3:
-			total += THREE_BONUS
-		if clutch >= 0 and i >= clutch:
-			total += CLUTCH_BONUS
-		if i == last_basket:
-			total += LAST_BASKET_BONUS
-		scored.append({"index": i, "score": total, "kind": str(top["kind"]), "title": str(top["title"]), "detail": str(top["detail"])})
-	scored.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		return int(a["score"]) > int(b["score"]) if int(a["score"]) != int(b["score"]) else int(a["index"]) < int(b["index"]))
-	for candidate in scored:
-		if out.size() >= count:
-			break
-		var apart := true
-		for chosen in out:
-			if absi(int(chosen["index"]) - int(candidate["index"])) < MIN_GAP:
-				apart = false
-				break
-		if apart:
-			out.append(candidate)
-	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a["index"]) < int(b["index"]))
-	return out
+		return []
+	return FcImportanceModel.top(FcImportanceModel.scored(timeline), count, MIN_GAP)
 
 
 ## The highlight after (`direction` 1) or before (-1) event `index`; {} when there is none that way.
