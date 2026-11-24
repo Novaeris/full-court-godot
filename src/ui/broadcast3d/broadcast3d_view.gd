@@ -55,6 +55,8 @@ var _dragging: bool = false
 var _teleport: bool = true
 
 const BENCH_SEATS := 8
+const SCENERY_STEP := 0.05
+var _scenery_clock: float = 0.0
 
 
 ## Builds the view for a replay. `colors` are the home and away colours. Returns false when the 3D view cannot be built (the caller then keeps 2D).
@@ -391,13 +393,20 @@ func _process(delta: float) -> void:
 ## Bench players sit, coaches stand with their arms folded, and the referees follow the ball: lead at the baseline of the attacked basket on the far side
 ## of the lane, trail behind the play on the sideline, centre on the opposite sideline.
 func _advance_scenery(delta: float) -> void:
-	for pid in _seated:
-		var c: FcBroadcastCharacter = characters[pid]
-		c.set_state("sit")
-		c.playback = 1.0
-		c.advance(delta)
-	for c in coaches:
-		c.advance(delta)
+	# the bench and the coaches barely move, so they are updated 20 times a second (with the time they missed) and the hidden ones not at all: this is
+	# where the cost of the 3D view grew most with the number of people (about 0.15 ms per animated character per frame on the development machine)
+	_scenery_clock += delta
+	if _scenery_clock >= SCENERY_STEP:
+		for pid in _seated:
+			var c: FcBroadcastCharacter = characters[pid]
+			if not c.visible:
+				continue
+			c.set_state("sit")
+			c.playback = 1.0
+			c.advance(_scenery_clock)
+		for c in coaches:
+			c.advance(_scenery_clock)
+		_scenery_clock = 0.0
 	var dir := 1.0 if _attacks_right else -1.0
 	var ball := Vector2(_ball.position.x, _ball.position.z)
 	var end_x := FcCourtLayout.COURT_LENGTH if _attacks_right else 0.0

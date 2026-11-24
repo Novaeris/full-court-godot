@@ -174,7 +174,10 @@ func _build() -> void:
 	court.set_anchors_preset(Control.PRESET_FULL_RECT)
 	court.custom_minimum_size = Vector2.ZERO
 	court3d = FcBroadcast3DView.new()
-	if court3d.setup(model, timeline, colors):
+	if compact:   # a phone never shows 3D (D-030), so it does not even build it: no memory or start-up time spent on a view that cannot be used
+		court3d.free()
+		court3d = null
+	elif court3d.setup(model, timeline, colors):
 		court3d.rig = court.rig   # one camera rig for both views: manual control and the director carry over when switching
 		court3d.name = "Court3D"
 		stage.add_child(court3d)
@@ -359,7 +362,7 @@ func _camera_controls() -> Control:
 	view_note = FcUiTables.label("" if court3d != null else "The 3D view is not available here, so the 2D view is shown.", FcUiTokens.TYPE_SMALL)
 	view_note.theme_type_variation = "MutedLabel"
 	view_note.name = "ViewNote"
-	view_note.visible = court3d == null
+	view_note.visible = court3d == null and not compact
 	box.add_child(view_note)
 	camera_group = FcChoiceGroup.new()
 	camera_group.set_options(CAMERA_MODES, "hybrid")

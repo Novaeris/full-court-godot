@@ -158,3 +158,25 @@ func test_an_introduction_spotlights_the_player_and_ends_cleanly() -> void:
 	screen.end_introductions()
 	await frames(4)
 	assert_true(not screen.court3d._spot_ring.visible, "the ring is gone when the introductions end")
+
+
+func test_a_phone_keeps_the_2d_replay_and_never_builds_3d() -> void:
+	host.size = Vector2(412, 900)
+	var screen := FcReplayScreen.new().setup(FcReplayModel.build(game["log"], game["box"]), [], true)
+	screen.size = Vector2(412, 880)
+	host.add_child(screen)
+	await frames(3)
+	assert_true(screen.court3d == null, "no 3D view is built on a phone (D-030): no memory or start-up time is spent on it")
+	assert_true(screen.court.visible, "the 2D court is shown")
+	for mode in ["broadcast", "replay", "analysis"]:
+		screen.set_mode(mode)
+		await frames(2)
+		assert_true(screen.court.visible, "%s mode on a phone shows the 2D court" % mode)
+	screen.seek(screen.model.start_index() + 20, false)
+	await frames(2)
+	assert_eq(screen.current_index(), screen.model.start_index() + 20, "the replay position still works")
+	screen.start_introductions()
+	await frames(2)
+	screen.end_introductions()
+	await frames(2)
+	assert_true(screen.is_intro() == false, "the introductions run and end on a phone without a 3D view")
