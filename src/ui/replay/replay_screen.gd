@@ -1152,6 +1152,8 @@ func end_introductions() -> void:
 	state.intro = {}
 	tools.intro_button.text = "Player introductions"
 	spotlight.show_model({})
+	if court3d != null:
+		court3d.show_introduction(0)
 	set_process(_playing)
 	play_button.text = "Pause" if _playing else "Play"
 	seek(back, false)
@@ -1161,6 +1163,8 @@ func _show_intro_step() -> void:
 	var step: Dictionary = (state.intro["steps"] as Array)[int(state.intro["at"])]
 	spotlight.show_model(step["spotlight"])
 	court.rig.request(step["shot"], true)
+	if court3d != null:
+		court3d.show_introduction(int(step["player_id"]))
 	_make_intro_sound()
 
 

@@ -40,6 +40,7 @@ var _scroll := 0
 var _mode := ""   # owner_replay: "broadcast", "replay" or "analysis"
 var _show := ""   # owner_replay: open a production show (pregame, halftime, postgame, championship)
 var _segment := 0   # with show= or screen=tonight: how many segments to step forward
+var _intro := -1   # owner_replay: run the player introductions and stop on this step (0 is the first player)
 var _advance := 0   # owner_replay: play this many events forward after stopping (so the commentary captions show)
 var _shot := ""   # owner_replay: stop on the first event the director gives this preset (celebration, baseline, overhead, closeup, free_throw)
 var _clock := false   # owner_replay: stop on an event where the estimated shot clock shows
@@ -72,6 +73,7 @@ func _initialize() -> void:
 			"clock": _clock = kv[1] == "1"
 			"shot": _shot = kv[1]
 			"advance": _advance = int(kv[1])
+			"intro": _intro = int(kv[1])
 			"show": _show = kv[1]
 			"segment": _segment = int(kv[1])
 			"view": _view = kv[1]
@@ -230,6 +232,11 @@ func _build_screen() -> void:
 						if FcCameraDirector.shot_for(shown.timeline, i)["preset"] == _shot:
 							shown.seek(i, false)
 							break
+				if _intro >= 0:   # the player introductions, stopped on step `intro`
+					shown.start_introductions()
+					for k in _intro:
+						shown.advance(FcPlayerIntroductions.SECONDS_PER_PLAYER + 0.01)
+					shown.advance(1.2)
 				if _show != "":
 					shown.start_show(_show)
 					for k in _segment:
@@ -245,7 +252,7 @@ func _build_screen() -> void:
 							shown.seek(i, false)
 							break
 				for e in model.entries:
-					if not _clock and _shot == "" and _advance == 0 and _show == "" and e["type"] == FcGameEventLog.EV_SHOT_MADE and e["x"] == FcGameEventLog.SHOT_THREE and e["period"] >= 2:
+					if not _clock and _shot == "" and _advance == 0 and _intro < 0 and _show == "" and e["type"] == FcGameEventLog.EV_SHOT_MADE and e["x"] == FcGameEventLog.SHOT_THREE and e["period"] >= 2:
 						shown.seek(e["index"], false)
 						break
 		return
@@ -330,7 +337,7 @@ func _process(_delta: float) -> bool:
 		var found := _app.find_children("*", "ScrollContainer", true, false).filter(func(n: Node) -> bool: return n.get_child_count() > 0 and n.get_child(0) is FcPlayerProfile)
 		if not found.is_empty():
 			(found[0] as ScrollContainer).scroll_vertical = _scroll
-	if _frames == (40 if _demo != "" else 10):   # overlays get time to finish their animation
+	if _frames == (40 if _demo != "" or _intro >= 0 or _shot != "" else 10):   # overlays get time to finish their animation
 		var image := root.get_texture().get_image()
 		image.save_png(_out)
 		print("saved ", _out, " ", image.get_size())

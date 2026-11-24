@@ -31,6 +31,10 @@ var _shot_kind: int = 0
 var _attacks_right: bool = true
 var _holder: int = 0
 var _actor: int = 0
+var _spot_id: int = 0                  # the player being introduced (0 none)
+var _spot_ring: MeshInstance3D         # the glowing ring on the floor under the spotlit player
+var _spot_light: SpotLight3D           # the light from above on the spotlit player
+var _team_colors: Array = []
 var _side_of: Dictionary = {}     # player id -> 0 home, 1 away
 var _seated: Dictionary = {}      # player id -> true while sitting on the bench
 var officials: Array[FcBroadcastCharacter] = []   # three referees
@@ -70,6 +74,7 @@ func setup(replay_model: FcReplayModel, broadcast_timeline: FcBroadcastTimeline,
 	var home: Color = colors[0] if colors.size() == 2 else Color("2F6FED")
 	var away: Color = colors[1] if colors.size() == 2 else Color("F28A2E")
 	scene.build(home, away, str(_model.box.abbreviations[0]), arena_identity if not arena_identity.is_empty() else FcArenaIdentity.for_box(_model.box, home, away))   # the arena is dressed for the home team
+	_team_colors = [home, away]
 	_build_characters([home, away])
 	scene.set_bench_figures_visible(false)
 	_ball = FcBasketball.new()
@@ -246,12 +251,89 @@ func _blended_pose(cam: Dictionary, delta: float) -> Dictionary:
 		_angle = want
 		_angle_blend = 0.0
 	_angle_blend = 1.0 if FcMotion.reduced else minf(1.0, _angle_blend + delta / FcBroadcast3DRules.ANGLE_BLEND_SECONDS)
-	var to_pose := FcBroadcast3DRules.camera_pose(cam["focus"], float(cam["zoom"]), str(_angle["angle"]), int(_angle["side"]))
+	var to_pose := _pose_for(_angle, cam)
 	if _angle_blend >= 1.0:
 		return to_pose
-	var from_pose := FcBroadcast3DRules.camera_pose(cam["focus"], float(cam["zoom"]), str(_angle_from["angle"]), int(_angle_from["side"]))
+	var from_pose := _pose_for(_angle_from, cam)
 	var w := smoothstep(0.0, 1.0, _angle_blend)
 	return {"position": (from_pose["position"] as Vector3).lerp(to_pose["position"], w), "target": (from_pose["target"] as Vector3).lerp(to_pose["target"], w)}
+
+
+## The camera pose for one angle. A "closeup" frames the player nearest the shot's focus from the front (his face and number), the other angles use the
+## fixed broadcast offsets. Never nearer than the 28 ft minimum of D-070 either way.
+func _pose_for(angle: Dictionary, cam: Dictionary) -> Dictionary:
+	if str(angle["angle"]) == "closeup":
+		var subject := _nearest_character(cam["focus"], 7.0)
+		if subject != null:
+			return FcBroadcast3DRules.camera_pose_front(Vector2(subject.position.x, subject.position.z), float(cam["zoom"]), subject.rotation_degrees.y)
+	return FcBroadcast3DRules.camera_pose(cam["focus"], float(cam["zoom"]), str(angle["angle"]), int(angle["side"]))
+
+
+## The visible player standing nearest `point` (court feet) within `within` feet, or null.
+func _nearest_character(point: Vector2, within: float) -> FcBroadcastCharacter:
+	var best: FcBroadcastCharacter = null
+	var best_distance := within
+	for pid in characters:
+		var c: FcBroadcastCharacter = characters[pid]
+		if not c.visible or _seated.has(pid):
+			continue
+		var d := Vector2(c.position.x, c.position.z).distance_to(point)
+		if d < best_distance:
+			best_distance = d
+			best = c
+	return best
+
+
+## A player is being introduced (the replay screen calls this with his id, and with 0 when the introductions end): he turns to the camera, waves, and a
+## light and a ring on the floor pick him out.
+func show_introduction(player_id: int) -> void:
+	_spot_id = player_id
+
+
+## The ring and the light follow the introduced player, or the scorer during a celebration, and are hidden otherwise.
+func _update_spot(celebrating: bool) -> void:
+	var id := _spot_id if _spot_id != 0 else (_actor if celebrating else 0)
+	if _spot_ring == null:
+		var disc := CylinderMesh.new()
+		disc.top_radius = 1.7
+		disc.bottom_radius = 1.7
+		disc.height = 0.04
+		disc.radial_segments = 40
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.albedo_color = FcScenePalette.color("rim")
+		m.albedo_color.a = 0.55
+		_spot_ring = MeshInstance3D.new()
+		_spot_ring.mesh = disc
+		_spot_ring.material_override = m
+		_spot_ring.visible = false
+		_spot_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		scene.add_child(_spot_ring)
+		_spot_light = SpotLight3D.new()
+		_spot_light.spot_range = 40.0
+		_spot_light.spot_angle = 14.0
+		_spot_light.light_energy = 3.0
+		_spot_light.shadow_enabled = false
+		_spot_light.visible = false
+		scene.add_child(_spot_light)
+	var c: FcBroadcastCharacter = characters.get(id)
+	var on := c != null and c.visible and not _seated.has(id)
+	_spot_ring.visible = on
+	_spot_light.visible = on
+	if on:
+		_spot_ring.position = Vector3(c.position.x, 0.03, c.position.z)
+		var color := _team_colors[int(_side_of.get(id, 0))] as Color
+		var ring_colour := color
+		ring_colour.a = 0.55
+		(_spot_ring.material_override as StandardMaterial3D).albedo_color = ring_colour
+		_spot_light.light_color = color.lerp(FcScenePalette.color("line"), 0.6)
+		_spot_light.transform = Transform3D(Basis.looking_at(Vector3(0.0, -1.0, 0.0) + Vector3(0.001, 0.0, 0.001), Vector3.FORWARD), Vector3(c.position.x, 22.0, c.position.z))
+
+
+## Whether the director's current shot is a celebration of a made basket (the scorer's team reacts and a light picks out the scorer).
+func is_celebrating() -> bool:
+	return built and _entry_type == FcGameEventLog.EV_SHOT_MADE and str(rig.last_shot().get("reason", "")) == "celebration"
 
 
 func _process(delta: float) -> void:
@@ -263,6 +345,8 @@ func _process(delta: float) -> void:
 	scene.set_camera(_blended_pose(cam, delta))
 	_advance_scenery(delta)
 	var hoop := FcCourtLayout.basket(_attacks_right)
+	var celebrating := is_celebrating()
+	_update_spot(celebrating)
 	for pid in _targets:
 		var c: FcBroadcastCharacter = characters[pid]
 		if not c.visible:
@@ -272,6 +356,18 @@ func _process(delta: float) -> void:
 		var distance := here.distance_to(target)
 		var moving := distance > 0.6
 		var role := str(_roles.get(pid, "other"))
+		if celebrating and role in ["other", "ball", "partner"] and _side_of.get(pid, -1) == _side_of.get(_actor, -2):
+			role = "celebrant"   # the scorer's teammates celebrate the basket
+		if _spot_id != 0:
+			if pid == _spot_id:
+				c.set_state("intro")
+				c.playback = 1.0
+				c.advance(delta)
+				c.rotation_degrees.y = lerp_angle(deg_to_rad(c.rotation_degrees.y), 0.0, minf(1.0, delta * 8.0)) * 180.0 / PI   # towards the broadcast camera
+			else:
+				c.set_state("idle")
+				c.advance(delta)
+			continue
 		var action := FcBroadcast3DRules.action_for(_entry_type, _shot_kind, role, pid)
 		var speed := FcBroadcast3DRules.travel_speed_for(distance)
 		var state := action

@@ -7,17 +7,21 @@ extends RefCounted
 ## but **never closer than MIN_DISTANCE feet to what it looks at**: the code-built characters are only convincing at broadcast and medium
 ## distance (docs/validation/B1C_PLAYER_MODEL_PROTOTYPE.md), so there is deliberately no 3D close-up. Close-ups stay 2D portrait cards.
 
-const BASE_OFFSET := Vector3(0.0, 40.0, 57.0)       # from the point looked at to the camera at zoom 1 (about 70 ft away)
+const BASE_OFFSET := Vector3(0.0, 35.0, 58.0)       # from the point looked at to the camera at zoom 1 (about 70 ft away)
 const MAX_ZOOM_3D := 1.8
 const MIN_DISTANCE := 28.0
 ## Where the camera stands, from the point looked at, for each director angle (FcCameraDirector.ANGLES). "baseline" is behind the basket being
 ## attacked (x is multiplied by the side, +1 for the right-hand basket); "overhead" is the tactical view from high above (a little off vertical so
 ## the camera's up direction stays defined); "closeup" is the tight medium shot, held at MIN_DISTANCE because there is no 3D close-up (D-070).
-const ANGLE_OFFSETS := {"main": Vector3(0.0, 40.0, 57.0), "baseline": Vector3(32.0, 15.0, 0.0), "overhead": Vector3(0.0, 72.0, 7.0), "closeup": Vector3(0.0, 14.0, 24.0)}
+const ANGLE_OFFSETS := {"main": Vector3(0.0, 35.0, 58.0), "baseline": Vector3(32.0, 15.0, 0.0), "overhead": Vector3(0.0, 72.0, 7.0), "closeup": Vector3(0.0, 14.0, 24.0)}
 ## Seconds an angle change takes to glide.
 const ANGLE_BLEND_SECONDS := 0.6
-const LOOK_HEIGHT := 3.0
+const LOOK_HEIGHT := 3.4
 const FOV := 42.0
+## The close shot of a player (camera_pose_front): how far in front, how high, and how far round from straight in front, in degrees.
+const FRONT_DISTANCE := 27.0
+const FRONT_HEIGHT := 9.0
+const FRONT_SWING_DEGREES := 30.0
 
 ## Heights and weights by position when only the position is known (the box score carries no body measurements). Medians of the generated
 ## league (tools/audit_identity.ps1), then a small steady variation from the player's id.
@@ -95,6 +99,8 @@ static func action_for(entry_type: int, shot_kind: int, role: String, variant: i
 				return "block" if entry_type == FcGameEventLog.EV_SHOT_BLOCKED else "celebrate"
 			if role == "contester":
 				return "contest"
+			if role == "celebrant" and entry_type == FcGameEventLog.EV_SHOT_MADE:
+				return "celebrate"
 		FcGameEventLog.EV_FREE_THROW:
 			if role == "actor":
 				return "shoot"
@@ -132,3 +138,24 @@ static func playback_for(state: String, speed: float, height_feet: float) -> flo
 	if natural <= 0.0:
 		return 1.0
 	return clampf(speed / natural, 0.55, 1.6)
+
+
+## The 3D camera for a CLOSE shot of one player (3D overhaul M5): in front of the player, a third of a turn off the line he faces, a little above his head,
+## so his face and number can be seen instead of his side or back. Still never nearer than MIN_DISTANCE to what it looks at (D-070): the offset is
+## scaled up until it is. `subject_yaw` is the player's facing in degrees (FcBroadcast3DRules.facing_yaw's convention: 0 faces +z, 90 faces +x).
+## The target is the subject's chest.
+static func camera_pose_front(focus: Vector2, zoom: float, subject_yaw: float) -> Dictionary:
+	var f := Vector2(clampf(focus.x, 0.0, FcCourtLayout.COURT_LENGTH), clampf(focus.y, 0.0, FcCourtLayout.COURT_WIDTH))
+	var z := clampf(zoom, 1.0, MAX_ZOOM_3D)
+	var target := Vector3(f.x, 4.2, f.y)
+	var yaw := deg_to_rad(subject_yaw + FRONT_SWING_DEGREES)
+	var ground := FRONT_DISTANCE / z
+	var offset := Vector3(sin(yaw) * ground, FRONT_HEIGHT / z, cos(yaw) * ground)
+	if offset.length() < MIN_DISTANCE:
+		offset = offset.normalized() * MIN_DISTANCE
+	return {"position": target + offset, "target": target}
+
+
+## The yaw (degrees) a character must turn to face a point `from` looks at when it stands at `at` (for introductions: the player turns to the camera).
+static func yaw_towards(at: Vector3, point: Vector3) -> float:
+	return facing_yaw(Vector2(at.x, at.z), Vector2(point.x, point.z))

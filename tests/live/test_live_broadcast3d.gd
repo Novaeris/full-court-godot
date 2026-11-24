@@ -133,3 +133,28 @@ func test_the_3d_view_changes_no_game_data() -> void:
 		await frames(2)
 	assert_eq(JSON.stringify((game["log"] as FcGameEventLog).to_dict()), rows_before)
 	assert_eq(JSON.stringify((game["box"] as FcBoxScore).to_dict()), box_before)
+
+
+func test_an_introduction_spotlights_the_player_and_ends_cleanly() -> void:
+	var screen := await _screen()
+	await frames(3)
+	screen.set_view("broadcast3d")
+	await frames(2)
+	screen.start_introductions()
+	await frames(6)
+	var step: Dictionary = (screen.state.intro["steps"] as Array)[0]
+	var id := int(step["player_id"])
+	assert_eq(screen.court3d.character_state(id), "intro", "the introduced player waves")
+	assert_true(screen.court3d._spot_ring != null and screen.court3d._spot_ring.visible, "a ring on the floor picks him out")
+	var others := 0
+	for pid in screen.court3d.on_court_ids():
+		if pid != id and screen.court3d.character_state(pid) == "idle":
+			others += 1
+	assert_true(others >= 8, "the others stand still (%d)" % others)
+	var subject: FcBroadcastCharacter = screen.court3d.characters[id]
+	var chest := subject.global_position + Vector3(0.0, 4.2, 0.0)
+	var cam_distance: float = screen.court3d.scene.camera.global_position.distance_to(chest)
+	assert_true(cam_distance >= FcBroadcast3DRules.MIN_DISTANCE - 1.0, "the introduction camera keeps the 28 ft minimum (%.1f ft from his chest)" % cam_distance)
+	screen.end_introductions()
+	await frames(4)
+	assert_true(not screen.court3d._spot_ring.visible, "the ring is gone when the introductions end")

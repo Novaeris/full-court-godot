@@ -57,6 +57,11 @@ func pose_angle() -> Dictionary:
 
 
 ## Every switch the rig has taken so far, in order: {t (rig seconds), preset, critical}.
+## The shot the rig last took ({} before the first): the 3D view reads its reason (for example "celebration") to decide how the players react.
+func last_shot() -> Dictionary:
+	return _last_shot
+
+
 func switch_log() -> Array[Dictionary]:
 	return _log.duplicate()
 
