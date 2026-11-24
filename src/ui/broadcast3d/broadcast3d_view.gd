@@ -34,7 +34,13 @@ var _actor: int = 0
 var _angle: Dictionary = {"angle": "main", "side": 1}   # the angle the camera is gliding to
 var _angle_from: Dictionary = {"angle": "main", "side": 1}
 var _angle_blend: float = 1.0
-var _ball: MeshInstance3D
+var _ball: FcBasketball
+var _flight_start: Vector3 = Vector3.ZERO
+var _flight_goal: Vector3 = Vector3(47, 3, 25)
+var _flight_t: float = 1.0
+var _flight_seconds: float = 0.5
+var _rim_stage: int = 0     # 0 none yet, 1 dropped through or bounced off the rim for this event
+var _drop_speed: float = 0.0
 var _ball_goal: Vector3 = Vector3(47, 3, 25)
 var _wave: int = 0
 var _dragging: bool = false
@@ -59,14 +65,7 @@ func setup(replay_model: FcReplayModel, broadcast_timeline: FcBroadcastTimeline,
 	var away: Color = colors[1] if colors.size() == 2 else Color("F28A2E")
 	scene.build(home, away, str(_model.box.abbreviations[0]), arena_identity if not arena_identity.is_empty() else FcArenaIdentity.for_box(_model.box, home, away))   # the arena is dressed for the home team
 	_build_characters([home, away])
-	var ball_mesh := SphereMesh.new()
-	ball_mesh.radius = 0.45
-	ball_mesh.height = 0.9
-	_ball = MeshInstance3D.new()
-	_ball.mesh = ball_mesh
-	var m := StandardMaterial3D.new()
-	m.albedo_color = Color("F28A2E")
-	_ball.material_override = m
+	_ball = FcBasketball.new()
 	scene.add_child(_ball)
 	var result := FcReconstructor.build(_timeline)
 	for f in result["keyframes"]:
@@ -143,6 +142,10 @@ func show_event(index: int, animate: bool = true) -> void:
 	_ball_goal = Vector3(ball.x, ball.z, ball.y)
 	if not animate:
 		_ball.position = _ball_goal
+		_flight_goal = _ball_goal
+		_flight_start = _ball_goal
+		_flight_t = 1.0
+		_rim_stage = 0
 	scene.set_scoreboard("%s %d   %s   %s %d" % [_model.box.abbreviations[0], int(state["home"]), _model.status_at(index), _model.box.abbreviations[1], int(state["away"])])
 	set_process(is_visible_in_tree())
 
@@ -244,13 +247,70 @@ func _move_ball(delta: float) -> void:
 		var held := (characters[_actor] as FcBroadcastCharacter).ball_anchor()
 		if bool(held["active"]):
 			_ball.position = held["position"]
+			_ball.spin = Vector3.ZERO
+			_flight_start = _ball.position
+			_flight_t = 1.0
+			_flight_goal = _ball.position
+			_ball.advance(delta)
 			return
 	if _holder != 0 and characters.has(_holder) and (characters[_holder] as FcBroadcastCharacter).visible:
 		var holder := characters[_holder] as FcBroadcastCharacter
-		var anchor := holder.ball_anchor()
-		_ball.position = anchor["position"] if bool(anchor["active"]) else holder.hand_position()
+		var hand := holder.hand_position()
+		if holder.state in ["dribble", "dribble_run", "drive", "crossover", "hesitation"]:
+			# bounced: hand to floor and back, twice per loop, in time with the dribbling arm
+			var u := FcBallMotion.dribble_u(holder.cycle_phase())
+			_ball.position = Vector3(hand.x, FcBallMotion.dribble_height(u, hand.y), hand.z)
+			_ball.spin = FcBallMotion.spin_axis_rate("dribble", Vector3(0.0, 0.0, 1.0).rotated(Vector3.UP, holder.rotation.y))
+		else:
+			_ball.position = hand + Vector3(0.0, 0.1, 0.0)
+			_ball.spin = Vector3.ZERO
+		_flight_start = _ball.position
+		_flight_goal = _ball.position
+		_flight_t = 1.0
+		_ball.advance(delta)
 		return
-	_ball.position = _ball.position.move_toward(_ball_goal, FcReconstructor.BALL_SPEED_LIMIT * delta)
+	_fly(delta)
+	_ball.advance(delta)
+
+
+## The ball in the air: a new goal starts an arc from where the ball is; arriving at a basket on a made shot drops it through the net (and swings the
+## net), on a miss it bounces off the rim. The speed never exceeds the reconstruction's own limit.
+func _fly(delta: float) -> void:
+	if _ball_goal.distance_to(_flight_goal) > 0.5:
+		_flight_start = _ball.position
+		_flight_goal = _ball_goal
+		_flight_t = 0.0
+		_rim_stage = 0
+		_flight_seconds = maxf(FcBallMotion.flight_seconds(_flight_start, _flight_goal, FcReconstructor.BALL_SPEED_LIMIT * 0.8), 0.25)
+	var shot := _entry_type in [FcGameEventLog.EV_SHOT_MADE, FcGameEventLog.EV_SHOT_MISSED, FcGameEventLog.EV_SHOT_BLOCKED, FcGameEventLog.EV_FREE_THROW]
+	if _flight_t < 1.0:
+		_flight_t = minf(1.0, _flight_t + delta / _flight_seconds)
+		_ball.position = FcBallMotion.flight_position(_flight_start, _flight_goal, _flight_t, shot)
+		var direction := _flight_goal - _flight_start
+		_ball.spin = FcBallMotion.spin_axis_rate("shot" if shot else "pass", direction)
+		return
+	var rim := scene.rim_position(_attacks_right)
+	var near_rim := Vector2(_ball.position.x - rim.x, _ball.position.z - rim.z).length() < 2.2 and absf(_ball.position.y - rim.y) < 3.5
+	if shot and near_rim and _rim_stage == 0:
+		_rim_stage = 1
+		if _entry_type == FcGameEventLog.EV_SHOT_MADE or (_entry_type == FcGameEventLog.EV_FREE_THROW and false):
+			_ball.position = Vector3(rim.x, rim.y + 0.25, rim.z)
+			_drop_speed = 6.0
+			scene.swish(_attacks_right)
+			_rim_stage = 2
+		else:   # a miss rattles off the rim and out into the court
+			var inward := -1.0 if _attacks_right else 1.0
+			_flight_start = _ball.position
+			_flight_goal = Vector3(rim.x + inward * 3.0, 1.0, rim.z + (FcCourtLayout.unit(_actor, 5) - 0.5) * 5.0)
+			_flight_t = 0.0
+			_flight_seconds = 0.75
+			return
+	if _rim_stage == 2:   # through the net: falling under gravity, stopping on the floor
+		_drop_speed += FcBallMotion.GRAVITY * delta
+		_ball.position.y = maxf(FcBallMotion.RADIUS, _ball.position.y - _drop_speed * delta)
+		_ball.spin = Vector3.ZERO
+		return
+	_ball.spin = Vector3.ZERO
 
 
 # --- the camera by hand ------------------------------------------------------------------------------------------------------

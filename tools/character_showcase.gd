@@ -71,6 +71,16 @@ func _initialize() -> void:
 		["threequarter", mid + Vector3(15.0, 3.0, 15.0), mid],
 	]
 	_steps[1][1] = mid + Vector3(22.0, 0.8, 0.0)
+	var ball := FcBasketball.new()
+	ball.position = centre + Vector3(0.0, 1.0, 5.0)
+	ball.rotation_degrees = Vector3(25.0, 40.0, 10.0)
+	_scene.add_child(ball)
+	_steps.append(["ball_close", centre + Vector3(0.8, 1.6, 8.0), centre + Vector3(0.0, 1.0, 5.0), 30.0])
+	_steps.append(["hoop", Vector3(18.0, 11.5, 12.0), Vector3(5.5, 10.5, 25.0), 42.0])
+	_steps.append(["board_front", Vector3(13.0, 11.0, 25.0), Vector3(4.0, 11.0, 25.0), 50.0])
+	_steps.append(["hoop_side", Vector3(12.0, 10.5, 41.0), Vector3(5.0, 10.0, 25.0), 36.0])
+	_steps.append(["court_wide", Vector3(47.0, 34.0, 78.0 - 28.0), Vector3(47.0, 0.0, 22.0), 58.0])
+	_steps.append(["court_key", Vector3(28.0, 14.0, 8.0), Vector3(12.0, 0.0, 25.0), 55.0])
 	_steps.append(["detail_pg", centre + Vector3(-7.2, 5.6, 6.5), centre + Vector3(-7.2, 5.0, 0.0)])
 	_steps.append(["detail_center", centre + Vector3(7.2, 6.4, 7.0), centre + Vector3(7.2, 5.8, 0.0)])
 

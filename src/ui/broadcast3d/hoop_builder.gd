@@ -24,16 +24,21 @@ static func build(parent: Node3D, position: Vector3, facing: int) -> Dictionary:
 	root.position = position
 	root.rotation_degrees.y = 0.0 if facing > 0 else 180.0
 	parent.add_child(root)
+	# the structure is written with heights above the FLOOR, so it hangs from a node that sits at the floor (the root is at rim height)
+	var frame_root := Node3D.new()
+	frame_root.name = "Structure"
+	frame_root.position.y = -RIM_HEIGHT
+	root.add_child(frame_root)
 	var steel := _material(FcScenePalette.color("stanchion"), 0.5, 0.4)
 	var pad := _material(FcScenePalette.color("pad"), 0.9)
 	var frame := _material(FcScenePalette.color("board_frame"), 0.5)
 	# --- stanchion: a padded base behind the baseline, a pole, and an arm reaching the back of the board
 	var board_x := -BOARD_BEHIND_RIM
 	var base_x := board_x - 5.2
-	_box(root, Vector3(1.6, 0.5, 2.6), Vector3(base_x, 0.25, 0.0), steel)
-	_box(root, Vector3(0.9, 4.2, 2.2), Vector3(base_x, 2.6, 0.0), pad)        # the padding a player would hit
-	_box(root, Vector3(0.45, 9.0, 0.6), Vector3(base_x, 7.5, 0.0), steel)    # the pole
-	_box(root, Vector3(5.6, 0.45, 0.6), Vector3(board_x - 2.9, 12.0 - 0.9, 0.0), steel)   # the arm from the pole to the board
+	_box(frame_root, Vector3(1.6, 0.5, 2.6), Vector3(base_x, 0.25, 0.0), steel)
+	_box(frame_root, Vector3(0.9, 4.2, 2.2), Vector3(base_x, 2.6, 0.0), pad)        # the padding a player would hit
+	_box(frame_root, Vector3(0.45, 9.0, 0.6), Vector3(base_x, 7.5, 0.0), steel)    # the pole
+	_box(frame_root, Vector3(5.6, 0.45, 0.6), Vector3(board_x - 2.9, 12.0 - 0.9, 0.0), steel)   # the arm from the pole to the board
 	# --- backboard: glass, frame, and the shooter's square
 	var glass := StandardMaterial3D.new()
 	glass.albedo_color = FcScenePalette.color("glass")
@@ -42,21 +47,21 @@ static func build(parent: Node3D, position: Vector3, facing: int) -> Dictionary:
 	glass.roughness = 0.1
 	glass.metallic_specular = 0.8
 	var centre_y := RIM_HEIGHT + 0.75
-	_box(root, Vector3(0.1, BOARD_HEIGHT, BOARD_WIDTH), Vector3(board_x - 0.05, centre_y, 0.0), glass)
+	_box(frame_root, Vector3(0.1, BOARD_HEIGHT, BOARD_WIDTH), Vector3(board_x - 0.05, centre_y, 0.0), glass)
 	var t := 0.12
-	_box(root, Vector3(0.14, t, BOARD_WIDTH), Vector3(board_x + 0.02, centre_y + BOARD_HEIGHT * 0.5 - t * 0.5, 0.0), frame)
-	_box(root, Vector3(0.14, t, BOARD_WIDTH), Vector3(board_x + 0.02, centre_y - BOARD_HEIGHT * 0.5 + t * 0.5, 0.0), frame)
-	_box(root, Vector3(0.14, BOARD_HEIGHT, t), Vector3(board_x + 0.02, centre_y, BOARD_WIDTH * 0.5 - t * 0.5), frame)
-	_box(root, Vector3(0.14, BOARD_HEIGHT, t), Vector3(board_x + 0.02, centre_y, -BOARD_WIDTH * 0.5 + t * 0.5), frame)
+	_box(frame_root, Vector3(0.14, t, BOARD_WIDTH), Vector3(board_x + 0.02, centre_y + BOARD_HEIGHT * 0.5 - t * 0.5, 0.0), frame)
+	_box(frame_root, Vector3(0.14, t, BOARD_WIDTH), Vector3(board_x + 0.02, centre_y - BOARD_HEIGHT * 0.5 + t * 0.5, 0.0), frame)
+	_box(frame_root, Vector3(0.14, BOARD_HEIGHT, t), Vector3(board_x + 0.02, centre_y, BOARD_WIDTH * 0.5 - t * 0.5), frame)
+	_box(frame_root, Vector3(0.14, BOARD_HEIGHT, t), Vector3(board_x + 0.02, centre_y, -BOARD_WIDTH * 0.5 + t * 0.5), frame)
 	var square := _material(FcScenePalette.color("board_square"), 0.6)
 	var sq_w := 2.0
 	var sq_h := 1.5
 	var sq_y := RIM_HEIGHT + sq_h * 0.5
 	var st := 0.06
-	_box(root, Vector3(0.04, st, sq_w), Vector3(board_x + 0.03, sq_y + sq_h * 0.5, 0.0), square)
-	_box(root, Vector3(0.04, st, sq_w), Vector3(board_x + 0.03, sq_y - sq_h * 0.5, 0.0), square)
-	_box(root, Vector3(0.04, sq_h, st), Vector3(board_x + 0.03, sq_y, sq_w * 0.5), square)
-	_box(root, Vector3(0.04, sq_h, st), Vector3(board_x + 0.03, sq_y, -sq_w * 0.5), square)
+	_box(frame_root, Vector3(0.04, st, sq_w), Vector3(board_x + 0.03, sq_y + sq_h * 0.5, 0.0), square)
+	_box(frame_root, Vector3(0.04, st, sq_w), Vector3(board_x + 0.03, sq_y - sq_h * 0.5, 0.0), square)
+	_box(frame_root, Vector3(0.04, sq_h, st), Vector3(board_x + 0.03, sq_y, sq_w * 0.5), square)
+	_box(frame_root, Vector3(0.04, sq_h, st), Vector3(board_x + 0.03, sq_y, -sq_w * 0.5), square)
 	# --- rim and bracket
 	var rim_mesh := TorusMesh.new()
 	rim_mesh.inner_radius = RIM_RADIUS - RIM_TUBE

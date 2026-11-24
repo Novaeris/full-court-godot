@@ -211,6 +211,11 @@ func _process(delta: float) -> void:
 		advance(delta)
 
 
+## Where the current state is in its loop, 0 to 1 (the dribble bounce is timed from this).
+func cycle_phase() -> float:
+	return _phase()
+
+
 func current_pose() -> Dictionary:
 	return _current_pose()
 

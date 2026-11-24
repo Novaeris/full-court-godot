@@ -40,6 +40,8 @@ var _led_index: int = 0
 var _led_clock: float = 0.0
 var _bench_figures: int = 0
 var _light_count: int = 0
+var _nets: Array = []     # the nets' materials, left hoop first
+var _swish: Array[float] = []   # how hard each net is swinging (1 to 0)
 
 
 ## Builds the arena. `arena_identity` is an FcArenaIdentity.make result; when empty, a neutral one is made from the colours and the abbreviation.
@@ -124,6 +126,9 @@ func react_crowd(kind: String) -> void:
 
 ## Lets the reactions fade and the wave travel; also steps the LED messages. `delta` in seconds.
 func advance_crowd(delta: float) -> void:
+	for i in _swish.size():
+		_swish[i] = maxf(0.0, _swish[i] - delta * 0.9)
+		FcHoopBuilder.swish(_nets[i], _swish[i])
 	_cheer = maxf(0.0, _cheer - delta * 0.7)
 	_groan = maxf(0.0, _groan - delta * 0.8)
 	if _wave >= 0.0:
@@ -233,11 +238,18 @@ func _add_light() -> void:
 
 func _add_court() -> void:
 	var floor_mesh := PlaneMesh.new()
-	floor_mesh.size = Vector2(COURT_LENGTH, COURT_WIDTH)
-	var m := StandardMaterial3D.new()
-	m.albedo_texture = ImageTexture.create_from_image(_court_image())
-	m.roughness = float(identity.get("floor_roughness", 0.4))   # a varnished floor: a little gloss under the spotlights
-	m.metallic_specular = 0.6
+	floor_mesh.size = Vector2(COURT_LENGTH + 6.0, COURT_WIDTH + 6.0)   # the playing surface plus a 3 ft border out to the boards
+	var m := ShaderMaterial.new()
+	m.shader = load("res://src/ui/broadcast3d/court_floor.gdshader") as Shader
+	var paint := _home_color.lerp(FcScenePalette.color("floor_light"), 0.3)
+	m.set_shader_parameter("wood_light", FcScenePalette.color("floor_light"))
+	m.set_shader_parameter("wood_dark", FcScenePalette.color("floor_dark"))
+	m.set_shader_parameter("seam_colour", FcScenePalette.color("floor_seam"))
+	m.set_shader_parameter("line_colour", FcScenePalette.color("line"))
+	m.set_shader_parameter("paint_colour", paint)
+	m.set_shader_parameter("circle_colour", paint)
+	m.set_shader_parameter("border_colour", _home_color.darkened(0.25))
+	m.set_shader_parameter("gloss", float(identity.get("floor_roughness", 0.4)) * 0.75)   # a varnished floor: a little gloss under the spotlights
 	var floor_node := MeshInstance3D.new()
 	floor_node.mesh = floor_mesh
 	floor_node.material_override = m
@@ -284,68 +296,25 @@ func _add_court() -> void:
 			add_child(end_mark)
 
 
-## The court's markings drawn into a texture, the paints tinted with the home team's colour (10 pixels per foot).
-func _court_image() -> Image:
-	var w := int(COURT_LENGTH * 10.0)
-	var h := int(COURT_WIDTH * 10.0)
-	var img := Image.create(w, h, false, Image.FORMAT_RGB8)
-	img.fill(Color("B87A43"))
-	for i in range(0, 10, 2):
-		img.fill_rect(Rect2i(i * w / 10, 0, w / 10, h), Color("A5693A"))
-	var paint := _home_color.lerp(Color("B87A43"), 0.35)
-	img.fill_rect(Rect2i(0, h / 2 - 80, 190, 160), paint)
-	img.fill_rect(Rect2i(w - 190, h / 2 - 80, 190, 160), paint)
-	var line := Color("F4EBDD")
-	img.fill_rect(Rect2i(0, 0, w, 6), line)
-	img.fill_rect(Rect2i(0, h - 6, w, 6), line)
-	img.fill_rect(Rect2i(0, 0, 6, h), line)
-	img.fill_rect(Rect2i(w - 6, 0, 6, h), line)
-	var accent: Color = identity.get("accent", line)   # the home team's trim along both end lines
-	img.fill_rect(Rect2i(6, 6, 14, h - 12), accent)
-	img.fill_rect(Rect2i(w - 20, 6, 14, h - 12), accent)
-	img.fill_rect(Rect2i(w / 2 - 3, 0, 6, h), line)
-	for k in 360:
-		var a := TAU * k / 360.0
-		img.fill_rect(Rect2i(int(w / 2.0 + cos(a) * 60.0), int(h / 2.0 + sin(a) * 60.0), 6, 6), line)
-	for right in [false, true]:
-		var base_x := w if right else 0
-		var dir := -1 if right else 1
-		var paint_x := base_x if not right else base_x - 190
-		img.fill_rect(Rect2i(paint_x, h / 2 - 80, 190, 6), line)
-		img.fill_rect(Rect2i(paint_x, h / 2 + 74, 190, 6), line)
-		img.fill_rect(Rect2i(base_x + dir * 190 - (6 if right else 0), h / 2 - 80, 6, 160), line)
-		var hoop_x := (w - 52) if right else 52
-		for k in 180:
-			var a := (PI if right else 0.0) - 1.15 + 2.3 * k / 180.0
-			img.fill_rect(Rect2i(int(hoop_x + cos(a) * 237.0), int(h / 2.0 + sin(a) * 237.0), 5, 5), line)
-	return img
-
-
 func _add_hoops() -> void:
 	for right in [false, true]:
 		var x := COURT_LENGTH - FcCourtLayout.BASKET_FROM_BASELINE if right else FcCourtLayout.BASKET_FROM_BASELINE
-		var pole := MeshInstance3D.new()
-		var pole_mesh := BoxMesh.new()
-		pole_mesh.size = Vector3(0.6, 10.0, 0.6)
-		pole.mesh = pole_mesh
-		pole.material_override = _material(Color("C9D2E3"))
-		pole.position = Vector3(x + (4.0 if right else -4.0), 5.0, COURT_WIDTH / 2.0)
-		add_child(pole)
-		var board := MeshInstance3D.new()
-		var board_mesh := BoxMesh.new()
-		board_mesh.size = Vector3(0.2, 3.5, 6.0)
-		board.mesh = board_mesh
-		board.material_override = _material(Color("F2F5FA"))
-		board.position = Vector3(x + (1.2 if right else -1.2), 11.0, COURT_WIDTH / 2.0)
-		add_child(board)
-		var rim := MeshInstance3D.new()
-		var rim_mesh := TorusMesh.new()
-		rim_mesh.inner_radius = 0.7
-		rim_mesh.outer_radius = 0.78
-		rim.mesh = rim_mesh
-		rim.material_override = _material(Color("F28A2E"))
-		rim.position = Vector3(x, 10.0, COURT_WIDTH / 2.0)
-		add_child(rim)
+		var built := FcHoopBuilder.build(self, Vector3(x, FcHoopBuilder.RIM_HEIGHT, COURT_WIDTH / 2.0), -1 if right else 1)
+		_nets.append(built["net"])
+		_swish.append(0.0)
+
+
+## The net of the left (false) or right (true) hoop swings: a shot went through.
+func swish(right: bool) -> void:
+	var i := 1 if right else 0
+	if i < _swish.size():
+		_swish[i] = 1.0
+
+
+## The centre of a hoop's rim in the world (feet).
+func rim_position(right: bool) -> Vector3:
+	var x := COURT_LENGTH - FcCourtLayout.BASKET_FROM_BASELINE if right else FcCourtLayout.BASKET_FROM_BASELINE
+	return Vector3(x, FcHoopBuilder.RIM_HEIGHT, COURT_WIDTH / 2.0)
 
 
 func _add_arena() -> void:
