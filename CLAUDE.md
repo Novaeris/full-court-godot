@@ -34,6 +34,10 @@ The developer is a solo, beginner programmer. Explain decisions in plain languag
 - `src/...`     Further modules are added only when they hold real code (see docs/ARCHITECTURE.md).
 - `tests/`      Automated tests. `tests/unit/test_*.gd`; base class `FcTestCase`.
 - `tools/`      Dev scripts (test runner wrapper, later: season stress-test).
+- `src/ui/broadcast3d/`  The 3D replay (D-070, D-072): generated skinned players (`FcBodyBuilder`), the pose library and retarget layer, imported GLB players, clips, ball, court, hoop, arena. Presentation only: it reads the replay and never changes a game.
+- `tools/blender/` + `data/player_pipeline/` + `assets/players/` + `assets/animations/`  The Blender player and animation pipeline (docs/development/). GLB is the interchange format; `FcPlayerModelValidator` is the gate.
+- `.mcp.json` + `.claude/skills/`  Project MCP servers (Godot, Blender; pinned, no credentials) and project skills (`full-court-verify`, `blender-player-pipeline`). Check an MCP server with `python tools/mcp/probe_mcp.py <name>`.
+- `tools/validate_project.gd`  Whole-project validation (compile errors, broken resources, unimported assets, invalid JSON, audio data, player models, clips). Exit code 0 is required; CI runs it.
 - `docs/`       Living documentation. Update it in the same change as the code.
 
 ## Architectural rules
@@ -70,4 +74,5 @@ The developer is a solo, beginner programmer. Explain decisions in plain languag
 - Do not delete or overwrite important files without explaining why and getting approval.
 
 ## Docs to keep current
+docs/development/ holds the AI toolkit, MCP, asset production and animation pipeline documents: update them in the same change as the tools they describe.
 GAME_DESIGN.md, ARCHITECTURE.md, ROADMAP.md, DECISIONS.md, TESTING.md in `docs/`, plus FEATURE_MATRIX.md (the one place that says what is built, with test evidence: update it in the same change as the feature) and INTEGRATION_AUDIT.md (cross-mode findings). Current test totals live ONLY in TESTING.md; other docs link to it and never copy numbers.

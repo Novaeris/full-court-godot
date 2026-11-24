@@ -79,6 +79,9 @@
 		"court_rim": {"bus": "SFX", "gain_db": -9.0, "synth": {"layers": [
 			{"wave": "sine", "freq": 380, "freq_to": 300, "ms": 170, "gain": 0.55, "decay": 16},
 			{"wave": "noise", "ms": 22, "gain": 0.4, "decay": 120, "lowpass": 0.7}]}},
+		"court_bounce": {"bus": "SFX", "gain_db": -14.0, "synth": {"layers": [
+			{"wave": "sine", "freq": 130, "freq_to": 70, "ms": 110, "gain": 0.6, "decay": 22},
+			{"wave": "noise", "ms": 14, "gain": 0.35, "decay": 160, "lowpass": 0.55}]}},
 		"court_block": {"bus": "SFX", "gain_db": -7.0, "synth": {"layers": [
 			{"wave": "noise", "ms": 90, "gain": 0.8, "decay": 60, "lowpass": 0.9},
 			{"wave": "sine", "freq": 170, "freq_to": 100, "ms": 140, "gain": 0.5, "decay": 20}]}},

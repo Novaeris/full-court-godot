@@ -15,6 +15,7 @@ const CUE_BLOCK := "court_block"
 const CUE_SQUEAK := "court_squeak"
 const CUE_WHISTLE := "court_whistle"
 const CUE_BUZZER := "court_buzzer"
+const CUE_BOUNCE := "court_bounce"   # not an event cue: the 3D view raises it when a dribbled ball hits the floor, so it has no caption
 const CUE_CHEER_SMALL := "crowd_cheer_small"
 const CUE_CHEER_BIG := "crowd_cheer_big"
 const CUE_GROAN := "crowd_groan"
@@ -23,6 +24,17 @@ const CUE_OH := "crowd_oh"
 ## The caption of each cue, for people who play without sound ("" = a sound too small to describe).
 const CAPTIONS := {CUE_SWISH: "", CUE_RIM: "(ball hits the rim)", CUE_BLOCK: "(block)", CUE_SQUEAK: "(sneakers squeak)", CUE_WHISTLE: "(whistle)",
 	CUE_BUZZER: "(buzzer)", CUE_CHEER_SMALL: "(crowd cheers)", CUE_CHEER_BIG: "(crowd roars)", CUE_GROAN: "(crowd groans)", CUE_OH: "(crowd gasps)"}
+
+## A dribbled ball bounces about five times a second, which at normal speed is a rhythm and at fast forward a buzz. The bounce is heard only at normal speed
+## or slower, never closer together than MIN_BOUNCE_GAP seconds, and only while the replay plays.
+const MIN_BOUNCE_GAP := 0.33
+const MAX_BOUNCE_SPEED := 1.0
+
+
+## Whether a bounce at `now` (seconds, real time) is heard, given the time of the last one heard and the replay speed.
+static func bounce_heard(now: float, last: float, speed: float, playing: bool) -> bool:
+	return playing and speed <= MAX_BOUNCE_SPEED and now - last >= MIN_BOUNCE_GAP
+
 
 ## At most this many sounds per event, so a busy moment is never a wall of noise.
 const MAX_CUES := 3

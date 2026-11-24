@@ -280,3 +280,9 @@ See docs/ROADMAP.md "Completed" and the git history (`git log --oneline`).
 
 ## 2026-11-22 Player-model prototype and the 3D decision (B1c, D-070)
 - Ten code-built characters with six procedural animations from the existing identity data; PASS at broadcast and medium distance, not good enough for close-ups. Decision D-070: **3D-REDUCED** (broadcast, wide and medium cameras only, display jersey numbers per game, 2D fallback). The tests found two real animation defects and the leak check an orphan-node leak in the prototype; all fixed. Totals: `TESTING.md`.
+
+## 2026-11-23 3D visual fidelity overhaul (D-072)
+- M0 to M6: skinned generated players with archetypes, faces, hair and uniforms; 27 then 34 animation states with ground contact and two-hand ball IK; a real-size ball, a shader hardwood court and a hoop with a net; a drawn crowd, team-coloured seating, bench players, referees and coaches; front close shots, introductions and celebrations; validation (scaling and soak benchmarks, determinism, phone fallback). Reports and pictures: `docs/validation/3d_overhaul/`.
+
+## 2026-11-24 AI-assisted development ecosystem (D-073)
+- Godot MCP and Blender MCP installed and verified; portable Blender with a checksum-verified installer; a Blender player pipeline (rig standard from the game skeleton, headless build script, GLB import with a retarget layer, validators) with a working prototype player; an animation pipeline (34 states baked to Blender Actions and back, lossless); a whole-project validator and CI additions; an audio data validator, a ball-bounce sound and a loudness preparation script; documents in `docs/development/`.

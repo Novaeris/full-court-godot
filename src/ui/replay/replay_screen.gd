@@ -52,6 +52,7 @@ var stats_on: bool = false
 var lineup_card: GridContainer   # the starting lineups (FcBroadcastGraphics.lineup_card): number, name, position for each side
 var team_card: GridContainer   # the team comparison card: label, home, away (FcBroadcastGraphics.team_card_at)
 var court: FcCourtView
+var _last_bounce_sound: float = -10.0
 var court3d: FcBroadcast3DView   # null when the 3D view could not be built: the 2D court is then the only picture
 var stage: Control               # holds the 2D court, the 3D view, the graphic strip and the REPLAY badge, so the graphics sit over either
 var view_note: Label
@@ -183,6 +184,7 @@ func _build() -> void:
 		stage.add_child(court3d)
 		court3d.set_anchors_preset(Control.PRESET_FULL_RECT)
 		court3d.camera_moved_by_hand.connect(func() -> void: pass)
+		court3d.ball_bounced.connect(_on_ball_bounced)
 	else:
 		court3d.free()
 		court3d = null
@@ -1116,6 +1118,14 @@ func _on_show_reel(_refs: Array) -> void:
 
 func is_intro() -> bool:
 	return not state.intro.is_empty()
+
+
+## The dribbled ball hits the floor in the 3D view: a soft thump on the effects bus, at normal speed or slower, while playing, never in a rapid burst.
+func _on_ball_bounced() -> void:
+	var now := float(Time.get_ticks_msec()) / 1000.0
+	if FcBroadcastAudio.bounce_heard(now, _last_bounce_sound, speed, _playing):
+		_last_bounce_sound = now
+		FcAudio.cue(FcBroadcastAudio.CUE_BOUNCE)
 
 
 ## The player introductions (M5): the tip-off positions, then each starter in turn with a spotlight card and a close camera, visitors first.

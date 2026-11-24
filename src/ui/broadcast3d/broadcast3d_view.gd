@@ -11,6 +11,8 @@ extends SubViewportContainer
 ## failure) `setup` returns false and the screen keeps the 2D court.
 
 signal camera_moved_by_hand
+## The dribbled ball touched the floor (the replay screen decides whether it is heard).
+signal ball_bounced
 
 ## Tests set this to prove the 2D fallback: the next setup() fails.
 static var force_failure: bool = false
@@ -52,6 +54,7 @@ var _flight_t: float = 1.0
 var _flight_seconds: float = 0.5
 var _rim_stage: int = 0     # 0 none yet, 1 dropped through or bounced off the rim for this event
 var _drop_speed: float = 0.0
+var _last_dribble_u: float = 0.5
 var _ball_goal: Vector3 = Vector3(47, 3, 25)
 var _wave: int = 0
 var _dragging: bool = false
@@ -451,6 +454,9 @@ func _move_ball(delta: float) -> void:
 		if holder.state in ["dribble", "dribble_run", "drive", "crossover", "hesitation"]:
 			# bounced: hand to floor and back, twice per loop, in time with the dribbling arm
 			var u := FcBallMotion.dribble_u(holder.cycle_phase())
+			if _last_dribble_u > 0.75 and u < 0.25:   # the bounce parabola started again: the ball has just hit the floor
+				ball_bounced.emit()
+			_last_dribble_u = u
 			_ball.position = Vector3(hand.x, FcBallMotion.dribble_height(u, hand.y), hand.z)
 			_ball.spin = FcBallMotion.spin_axis_rate("dribble", Vector3(0.0, 0.0, 1.0).rotated(Vector3.UP, holder.rotation.y))
 		else:

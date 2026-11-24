@@ -153,3 +153,36 @@ func test_a_good_clip_is_compatible_and_each_kind_of_bad_clip_is_caught() -> voi
 
 func test_the_project_has_no_animation_clips_that_break_the_standard_yet() -> void:
 	assert_eq(FcProjectValidator.check_animation_clips("res://assets/animations"), [])
+
+
+func test_the_audio_data_is_valid_and_each_kind_of_mistake_is_caught() -> void:
+	assert_eq(FcProjectValidator.check_audio("res://data/ui/audio.json"), [], "the real audio data passes")
+	var good := {"buses": ["UI", "SFX"], "sounds": {"click": {"bus": "UI", "gain_db": -6.0, "synth": {"layers": [{"wave": "sine", "freq": 440, "ms": 50}]}}}}
+	assert_eq(FcProjectValidator.check_audio(_write("good_audio.json", JSON.stringify(good))), [])
+	var bad_bus := {"buses": ["UI"], "sounds": {"x": {"bus": "Nowhere", "gain_db": 0.0, "synth": {"layers": [{"wave": "sine", "ms": 10}]}}}}
+	assert_true(_contains(FcProjectValidator.check_audio(_write("a1.json", JSON.stringify(bad_bus))), "not in the bus list"), "a sound on an unknown bus")
+	var loud := {"buses": ["SFX"], "sounds": {"x": {"bus": "SFX", "gain_db": 20.0, "synth": {"layers": [{"wave": "sine", "ms": 10}]}}}}
+	assert_true(_contains(FcProjectValidator.check_audio(_write("a2.json", JSON.stringify(loud))), "allowed -40 to 6"), "a gain that would blow the speakers")
+	var empty_sound := {"buses": ["SFX"], "sounds": {"x": {"bus": "SFX", "gain_db": 0.0}}}
+	assert_true(_contains(FcProjectValidator.check_audio(_write("a3.json", JSON.stringify(empty_sound))), "neither a synth recipe nor a file"), "a sound with nothing to play")
+	var missing_file := {"buses": ["SFX"], "sounds": {"x": {"bus": "SFX", "gain_db": 0.0, "file": "res://assets/audio/not_there.ogg"}}}
+	assert_true(_contains(FcProjectValidator.check_audio(_write("a4.json", JSON.stringify(missing_file))), "does not exist"), "a missing file with no synth fallback")
+	var loop_on_sfx := {"buses": ["SFX"], "sounds": {"x": {"bus": "SFX", "gain_db": 0.0, "loop": true, "synth": {"layers": [{"wave": "sine", "ms": 10}]}}}}
+	assert_true(_contains(FcProjectValidator.check_audio(_write("a5.json", JSON.stringify(loop_on_sfx))), "only Ambience and Music loop"), "a looping effect")
+	var no_setting := {"buses": ["Foghorn"], "sounds": {}}
+	assert_true(_contains(FcProjectValidator.check_audio(_write("a6.json", JSON.stringify(no_setting))), "no volume setting"), "a bus that has no volume setting")
+	assert_true(_contains(FcProjectValidator.check_audio(_write("a7.json", "[1, 2]")), "must be a JSON object"), "not even an object")
+
+
+func test_every_bus_can_be_turned_down_and_the_bounce_sound_is_a_real_effect() -> void:
+	var audio := FcAudio.new()
+	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/ui/audio.json"))
+	assert_eq((data["buses"] as Array).size(), 7, "seven buses: UI, SFX, Music, Crowd, Ambience, Commentary, Announcer")
+	for bus in data["buses"]:
+		assert_true(audio.bus_percent(str(bus)) >= 0, "%s has a volume" % bus)
+	assert_true(data["sounds"].has("court_bounce") and data["sounds"]["court_bounce"]["bus"] == "SFX", "the bounce is an effect, so the Effects volume controls it")
+	assert_true(FcBroadcastAudio.bounce_heard(5.0, 4.0, 1.0, true), "a bounce a second after the last, at normal speed, while playing")
+	assert_true(not FcBroadcastAudio.bounce_heard(5.0, 4.9, 1.0, true), "not in a rapid burst")
+	assert_true(not FcBroadcastAudio.bounce_heard(5.0, 4.0, 2.0, true), "not at fast forward")
+	assert_true(not FcBroadcastAudio.bounce_heard(5.0, 4.0, 1.0, false), "not while paused")
+	audio.free()

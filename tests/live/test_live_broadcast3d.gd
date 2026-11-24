@@ -180,3 +180,25 @@ func test_a_phone_keeps_the_2d_replay_and_never_builds_3d() -> void:
 	screen.end_introductions()
 	await frames(2)
 	assert_true(screen.is_intro() == false, "the introductions run and end on a phone without a 3D view")
+
+
+func test_a_dribbled_ball_tells_the_screen_each_time_it_hits_the_floor() -> void:
+	var screen := await _screen()
+	await frames(3)
+	screen.set_view("broadcast3d")
+	await frames(2)
+	var view: FcBroadcast3DView = screen.court3d
+	var found := false
+	for offset in range(6, 60, 2):
+		screen.seek(screen.model.start_index() + offset, false)
+		await frames(2)
+		if view._holder != 0 and view.characters.has(view._holder) and view.character_state(view._holder) in ["dribble", "dribble_run", "drive"]:
+			found = true
+			break
+	assert_true(found, "some event has a ball handler who is dribbling")
+	var counter := {"bounces": 0}
+	view.ball_bounced.connect(func() -> void: counter["bounces"] += 1)
+	for i in 90:   # three seconds of 30 frames a second, driven by hand so the test does not depend on the speed of the machine
+		view._process(1.0 / 30.0)
+	assert_true(int(counter["bounces"]) >= 3, "three seconds of dribbling bounces the ball several times (%d)" % int(counter["bounces"]))
+	assert_true(int(counter["bounces"]) <= 14, "and not on every frame (%d)" % int(counter["bounces"]))

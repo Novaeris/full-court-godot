@@ -122,6 +122,50 @@ static func check_animation_clips(root: String) -> Array[String]:
 	return out
 
 
+## The audio data: every sound is on a real bus, has a gain in a sane range and either a synthesis recipe or a file that exists, only ambience and music loop,
+## and every bus has a volume setting in FcPreferences (so every bus can be turned down in Settings). `path` is data/ui/audio.json (or a fixture).
+static func check_audio(path: String) -> Array[String]:
+	var out: Array[String] = []
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if not (parsed is Dictionary) or not (parsed as Dictionary).has("buses") or not (parsed as Dictionary).has("sounds"):
+		out.append("%s must be a JSON object with buses and sounds" % path)
+		return out
+	var data: Dictionary = parsed
+	var buses: Array = data["buses"]
+	var prefs := FcPreferences.new("user://validator_prefs_unused.cfg")
+	for bus in buses:
+		if not _has_property(prefs, "audio_" + str(bus).to_lower()):
+			out.append("bus %s has no volume setting (FcPreferences.audio_%s), so it could not be turned down in Settings" % [bus, str(bus).to_lower()])
+	for id in data["sounds"]:
+		var sound: Dictionary = data["sounds"][id]
+		if not buses.has(str(sound.get("bus", ""))):
+			out.append("sound %s is on the bus '%s', which is not in the bus list" % [id, sound.get("bus", "")])
+		var gain := float(sound.get("gain_db", 0.0))
+		if gain < -40.0 or gain > 6.0:
+			out.append("sound %s has a gain of %.1f dB (allowed -40 to 6)" % [id, gain])
+		if not sound.has("synth") and not sound.has("file"):
+			out.append("sound %s has neither a synth recipe nor a file" % id)
+		if sound.has("file") and not FileAccess.file_exists(str(sound["file"])) and not sound.has("synth"):
+			out.append("sound %s needs the file %s, which does not exist, and has no synth fallback" % [id, sound["file"]])
+		if bool(sound.get("loop", false)) and not (str(sound.get("bus", "")) in ["Ambience", "Music"]):
+			out.append("sound %s loops but is on the bus %s (only Ambience and Music loop)" % [id, sound.get("bus", "")])
+		if sound.has("synth"):
+			var layers: Array = (sound["synth"] as Dictionary).get("layers", [])
+			if layers.is_empty():
+				out.append("sound %s has a synth recipe with no layers" % id)
+			for layer in layers:
+				if not (layer as Dictionary).has("wave") or float((layer as Dictionary).get("ms", 0)) <= 0.0:
+					out.append("sound %s has a layer with no wave or no length" % id)
+	return out
+
+
+static func _has_property(object: Object, name: String) -> bool:
+	for p in object.get_property_list():
+		if str(p["name"]) == name:
+			return true
+	return false
+
+
 ## The generic checks over ONE folder (scripts, resources, JSON, assets): what the unit tests aim at a fixture folder. Returns the problems.
 static func run_folder(root: String) -> Array[String]:
 	var problems: Array[String] = []
@@ -144,6 +188,7 @@ static func run_project() -> Dictionary:
 				"scripts": problems.append_array(check_scripts(root))
 				"resources": problems.append_array(check_resources(root))
 				"json": problems.append_array(check_json(root))
+	problems.append_array(check_audio("res://data/ui/audio.json"))
 	counts["assets"] = files("res://assets", ASSET_EXTENSIONS).size()
 	problems.append_array(check_assets("res://assets"))
 	counts["player_models"] = files("res://assets/players", ["glb", "gltf"]).size()
