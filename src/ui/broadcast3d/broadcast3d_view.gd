@@ -14,6 +14,9 @@ signal camera_moved_by_hand
 
 ## Tests set this to prove the 2D fallback: the next setup() fails.
 static var force_failure: bool = false
+## A GLB player model (res:// path, validated by FcPlayerModelValidator) the players of the replay wear instead of the generated body; empty = generated (the
+## default until a model is judged good enough to ship). A model that fails validation is ignored player by player and the generated body is used.
+static var player_model: String = ""
 
 var rig: FcCameraRig = FcCameraRig.new()
 var scene: FcCourtScene
@@ -123,7 +126,7 @@ func _build_characters(colors: Array) -> void:
 		var primary: Color = colors[side]
 		var body := FcBroadcast3DRules.body_for(p.player_id, p.position)
 		var subject := {"key": "player:%d" % p.player_id, "name": p.name, "jersey": int(numbers.get(p.player_id, 0)), "position": FcPosition.abbreviation(p.position),
-			"physical": {"height_cm": body[0], "weight_kg": body[1]},
+			"physical": {"height_cm": body[0], "weight_kg": body[1]}, "model": player_model,
 			"team": {"primary": "#" + primary.to_html(false), "secondary": "#F4F7FF" if primary.get_luminance() < 0.5 else "#1B1B1B", "abbreviation": _model.box.abbreviations[side], "name": _model.box.team_names[side]}}
 		var c := FcBroadcastCharacter.new().setup(subject, float(i) * 0.137)
 		c.visible = false

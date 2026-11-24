@@ -12,6 +12,7 @@ var _frame := 0
 var _step := 0
 var _models: Array = []
 var _wait := 0
+var _model := ""   # model=res://assets/players/x.glb wears an imported GLB player instead of the generated body
 var _pose_sheet := false
 var _ball: MeshInstance3D
 
@@ -33,6 +34,7 @@ func _initialize() -> void:
 		match kv[0]:
 			"out": _out = kv[1]
 			"poses": _pose_sheet = kv[1] == "1"
+			"model": _model = kv[1]
 			"size": _size = Vector2i(int(kv[1].get_slice("x", 0)), int(kv[1].get_slice("x", 1)))
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 	root.size = _size
@@ -48,7 +50,7 @@ func _initialize() -> void:
 	var i := 0
 	for a in ARCHETYPES:
 		var subject := {"key": a["key"], "name": a["name"], "jersey": 3 + i * 7, "position": a["pos"], "appearance": a["appearance"],
-			"physical": {"height_cm": a["h"], "weight_kg": a["w"]},
+			"physical": {"height_cm": a["h"], "weight_kg": a["w"]}, "model": _model,
 			"team": {"primary": "#2F6FED", "secondary": "#F4F7FF", "abbreviation": "HOU", "name": "Houston"}}
 		var c := FcBroadcastCharacter.new().setup(subject, 0.0)
 		c.auto_advance = false
@@ -121,7 +123,7 @@ func _setup_pose_sheet() -> void:
 	var phases := {"shoot": 0.52, "three": 0.54, "layup": 0.55, "dunk": 0.5, "jump": 0.45, "contest": 0.35, "block": 0.4, "rebound": 0.4, "celebrate": 0.25, "crossover": 0.25, "hesitation": 0.3, "stop": 0.1, "land": 0.08, "turn": 0.5, "fall": 0.4, "steal": 0.3}
 	var per_row := 6
 	var i := 0
-	var subject := {"key": "pose:sheet", "name": "pose", "jersey": 23, "position": "SF", "appearance": {"skin": "tone_3", "hair": "short", "facial_hair": "none"}, "physical": {"height_cm": 201, "weight_kg": 98}, "team": {"primary": "#2F6FED", "secondary": "#F4F7FF", "abbreviation": "HOU", "name": "Houston"}}
+	var subject := {"key": "pose:sheet", "name": "pose", "jersey": 23, "position": "SF", "appearance": {"skin": "tone_3", "hair": "short", "facial_hair": "none"}, "physical": {"height_cm": 201, "weight_kg": 98}, "model": _model, "team": {"primary": "#2F6FED", "secondary": "#F4F7FF", "abbreviation": "HOU", "name": "Houston"}}
 	_steps = []
 	for state in states:
 		var c := FcBroadcastCharacter.new().setup(subject, 0.0)

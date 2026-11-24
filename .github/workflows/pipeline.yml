@@ -1,0 +1,94 @@
+# Proves the Blender player production pipeline end to end on a clean machine: download Blender (checked against the checksum blender.org publishes), build the
+# prototype player from the rig standard with tools/blender/build_player.py, import the GLB into Godot, validate it, and run the pipeline tests on it.
+# Runs when the pipeline, the rig standard, the player assets or the 3D character code change, and by hand. It does not commit or publish anything.
+name: Player pipeline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tools/blender/**"
+      - "data/player_pipeline/**"
+      - "assets/players/**"
+      - "assets/animations/**"
+      - "src/ui/broadcast3d/**"
+      - "tests/unit/test_player_pipeline.gd"
+      - ".github/workflows/pipeline.yml"
+  pull_request:
+    paths:
+      - "tools/blender/**"
+      - "data/player_pipeline/**"
+      - "assets/players/**"
+      - "assets/animations/**"
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: "4.7.2-stable"
+  BLENDER_VERSION: "4.5.10"
+
+jobs:
+  blender-to-game:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux
+
+      - name: Download Godot (official release)
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot && cd ~/godot
+          curl -fsSL -o godot.zip "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}_linux.x86_64" godot
+          chmod +x godot
+
+      - name: Cache Blender
+        id: blender-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/blender
+          key: blender-${{ env.BLENDER_VERSION }}-linux
+
+      - name: Download Blender (official release, checksum verified)
+        if: steps.blender-cache.outputs.cache-hit != 'true'
+        run: |
+          set -e
+          mkdir -p ~/blender && cd ~/blender
+          base="https://download.blender.org/release/Blender4.5"
+          name="blender-${BLENDER_VERSION}-linux-x64"
+          curl -fsSL -O "$base/blender-${BLENDER_VERSION}.sha256"
+          curl -fsSL -O "$base/$name.tar.xz"
+          grep " $name.tar.xz\$" "blender-${BLENDER_VERSION}.sha256" | sha256sum -c -
+          tar -xf "$name.tar.xz" --strip-components=1
+          rm "$name.tar.xz"
+
+      - name: System libraries Blender needs to run without a display
+        run: sudo apt-get update && sudo apt-get install -y libxi6 libxrender1 libxkbcommon0 libxfixes3 libxxf86vm1 libsm6 libgl1 libegl1
+
+      - name: Build the prototype player in Blender from the rig standard
+        run: |
+          ~/blender/blender -b --python tools/blender/build_player.py -- --out "$PWD/assets/players/fc_player_proto.glb" | tee blender.log
+          grep -q "FC_BUILD_OK" blender.log
+
+      - name: Link Creator Studio (the junctions do not exist in a fresh checkout)
+        run: |
+          rm -rf creator_studio/game_src creator_studio/data creator_studio/assets
+          ln -s "$PWD/src" creator_studio/game_src
+          ln -s "$PWD/data" creator_studio/data
+          ln -s "$PWD/assets" creator_studio/assets
+
+      - name: Import the project and the freshly built GLB
+        run: ~/godot/godot --headless --path . --import --quit
+
+      - name: Validate the project (includes the rebuilt player model)
+        run: ~/godot/godot --headless --path . --script res://tools/validate_project.gd
+
+      - name: Pipeline tests (rig standard, validator, retarget, imported player equals the generated body)
+        run: ~/godot/godot --headless --path . --script res://tests/run_tests.gd -- --filter=player_pipeline

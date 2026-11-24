@@ -44,6 +44,9 @@ jobs:
       - name: Import the project (registers every class)
         run: ~/godot/godot --headless --path . --import --quit
 
+      - name: Validate the project (GDScript compile errors, broken scenes and resources, unimported assets, invalid JSON, invalid player models and animation clips; exit code 1 on any problem)
+        run: ~/godot/godot --headless --path . --script res://tools/validate_project.gd
+
       - name: Unit tests (exit code 1 on any failure)
         run: ~/godot/godot --headless --path . --script res://tests/run_tests.gd
 
@@ -55,3 +58,8 @@ jobs:
 
       - name: Economy check, 12 teams, 15 seasons (exit code 1 if profit, cash, debt or payroll runs away)
         run: ~/godot/godot --headless --path . --script res://tools/economy_check.gd -- seasons=15 teams=12 every=5
+
+      - name: Creator Studio smoke (the separate project that shares the game code and data; exit code 1 on failure)
+        run: |
+          ~/godot/godot --headless --path creator_studio --import --quit
+          ~/godot/godot --headless --path creator_studio --script res://tools/studio_smoke.gd

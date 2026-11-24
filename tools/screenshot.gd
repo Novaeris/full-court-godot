@@ -78,6 +78,7 @@ func _initialize() -> void:
 			"segment": _segment = int(kv[1])
 			"view": _view = kv[1]
 			"scroll": _scroll = int(kv[1])   # scrolls an open profile dialog down by this many pixels
+			"model": FcBroadcast3DView.player_model = kv[1]   # a GLB player (res://assets/players/x.glb) for the 3D replay instead of the generated body
 			"hd": FcPlayerFigure.hd_enabled = kv[1] == "1"   # the high-fidelity portrait prototype (docs/PLAYER_VISUAL_PROPOSAL.md)
 	if not _stretch:
 		root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED

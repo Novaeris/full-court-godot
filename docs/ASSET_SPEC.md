@@ -7,6 +7,7 @@ Three asset categories. Nothing external or AI-generated is shipped without the 
 | A. Generated league players | Every player in Owner and Career leagues | Procedural, deterministic (`FcPlayerVisual` + `FcPlayerFigure`). No raster art. |
 | B. Featured Dynasty players | Hand-made Dynasty cards | Approved custom art loaded through a card's `art_path` (tier T1). Falls back to the procedural figure if the file is missing. |
 | C. Menu and mode art | Backdrops, mode cards, splash | Procedural / vector first; raster only when approved. |
+| D. 3D players (GLB) | Models for the 3D replay | Built in Blender to the rig standard, validated by `FcPlayerModelValidator`; see `docs/development/ASSET_PRODUCTION_PIPELINE.md`. The generated body is the default; a GLB is optional. |
 
 ## Specifications
 | Item | Spec |

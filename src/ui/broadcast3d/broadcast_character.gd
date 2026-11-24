@@ -26,7 +26,18 @@ var skeleton: Skeleton3D
 var body_mesh: MeshInstance3D
 var builder: FcBodyBuilder
 
+## A GLB player model to wear instead of the generated body (res:// path of a file in assets/players, set from subject["model"]); empty = generated.
+var model_path: String = ""
+## True when the body is an imported model (Blender, GLB) driven through the retarget layer below.
+var imported: bool = false
+var model_problems: Array[String] = []   # why a requested model was refused (the generated body is then used)
+
 var _bone: Dictionary = {}       # joint name -> bone index
+var _hs: float = 6.5             # the body height in SKELETON units (feet for the generated body, metres for an imported one)
+var _k: float = 1.0              # skeleton units per foot, for the few lengths the code states in feet (the ball radius, the number sizes)
+var _rest_rot: Dictionary = {}   # bone index -> its local rest rotation (Quaternion) in an imported rig
+var _parent_rest: Dictionary = {}   # bone index -> the GLOBAL rest rotation of its parent in an imported rig
+var _rest_global: Dictionary = {}   # bone name -> global rest origin (skeleton units), imported rigs
 var _from_pose: Dictionary = FcBroadcastPose.pose_for("idle", 0.0)
 var _blend: float = 1.0
 var _blend_seconds: float = BLEND_SECONDS
@@ -53,11 +64,17 @@ func setup(subject: Dictionary, phase_offset: float = 0.0) -> FcBroadcastCharact
 	height_feet = float(archetype["height_feet"])
 	width_scale = float(archetype["width_scale"])
 	_phase_offset = phase_offset
+	model_path = str(subject.get("model", ""))
 	_build()
 	return self
 
 
 func _build() -> void:
+	if model_path != "":
+		if _build_imported():
+			return
+	_hs = height_feet
+	_k = 1.0
 	builder = FcBodyBuilder.new()
 	var built := builder.build(archetype, identity, uniform)
 	skeleton = built["skeleton"]
@@ -71,6 +88,93 @@ func _build() -> void:
 	_apply_pose(FcBroadcastPose.pose_for("idle", _phase_offset))
 
 
+## Wears the GLB at `model_path` instead of the generated body. The model must pass FcPlayerModelValidator; if it does not (or cannot be loaded) the
+## reasons are kept in `model_problems`, nothing is changed and the generated body is built, so a bad model can never break a game.
+## The rig is driven by the SAME FcBroadcastPose maths through a retarget layer: the pose rotations assume a rest pose with every bone axis aligned to the
+## world, and an imported bone has its own rest rotation R (Blender bones point along their own axis), so the local rotation given to a bone is
+## (G^-1 * q * G) * R where q is the pose rotation and G the global rest rotation of its parent: the world-aligned rotation, conjugated into the parent
+## frame and applied on top of the rest of the bone. For a rig whose rest rotations are all identity this is exactly the generated body behaviour.
+func _build_imported() -> bool:
+	model_problems = FcPlayerModelValidator.validate_path(model_path)
+	if not model_problems.is_empty():
+		return false
+	var root := (load(model_path) as PackedScene).instantiate() as Node3D
+	var found := root.find_children("*", "Skeleton3D", true, false)
+	skeleton = found[0] as Skeleton3D
+	var armature := root.find_child("Armature", true, false)
+	var extras: Dictionary = armature.get_meta("extras", {}) if armature != null and armature.has_meta("extras") else {}
+	var model_height := float(extras.get("fc_height_m", FcPlayerModelValidator.standard()["height_m"]))
+	var bulk := float(archetype["bulk"])
+	var across := 0.9 + 0.28 * bulk   # a heavier player is a little wider; the standard model is at bulk 0.36, so about 1.0 there
+	_hs = model_height
+	var scale := height_feet / model_height
+	_k = 1.0 / scale
+	root.scale = Vector3(scale * across, scale, scale * across)
+	add_child(root)
+	imported = true
+	for name in FcBroadcastPose.JOINTS:
+		_bone[name] = skeleton.find_bone(name)
+	_hand_bone = int(_bone["r_hand"])
+	_pelvis_bone = int(_bone["pelvis"])
+	var global_rot: Array = []
+	var global_pos: Array = []
+	for i in skeleton.get_bone_count():
+		var local := skeleton.get_bone_rest(i)
+		var parent := skeleton.get_bone_parent(i)
+		var local_rot := local.basis.get_rotation_quaternion()
+		global_rot.append(local_rot if parent < 0 else (global_rot[parent] as Quaternion) * local_rot)
+		global_pos.append(local.origin if parent < 0 else (global_pos[parent] as Vector3) + (global_rot[parent] as Quaternion) * local.origin)
+		_rest_rot[i] = local_rot
+		_parent_rest[i] = (global_rot[parent] as Quaternion) if parent >= 0 else Quaternion.IDENTITY
+		_rest_global[skeleton.get_bone_name(i)] = global_pos[i]
+	_dress_imported()
+	if str(uniform["attire"]) == "playing":
+		_attach_numbers()
+	_apply_pose(FcBroadcastPose.pose_for("idle", _phase_offset))
+	return true
+
+
+## Recolours the model by material name (the standard says which surface is which) and shows the hair mesh for the hair style of the player.
+func _dress_imported() -> void:
+	var colors := {"skin": identity["skin_color"], "jersey": uniform["primary"], "shorts": uniform["primary"], "socks": Color.WHITE, "sole": Color.WHITE, "hair": identity["hair_color"]}
+	match int(archetype["shoe"]):
+		0: colors["shoes"] = Color.WHITE
+		1: colors["shoes"] = Color.BLACK.lightened(0.1)
+		2: colors["shoes"] = uniform["secondary"]
+		_: colors["shoes"] = (uniform["primary"] as Color).lightened(0.25)
+	if str(uniform["attire"]) != "playing":
+		colors["shorts"] = (uniform["primary"] as Color).darkened(0.3)
+		colors["socks"] = colors["shorts"]
+	var style := str(identity["hair"])
+	var hair_mesh := "" if style == "bald" else ("hair_afro" if style == "afro" else "hair_short")
+	for node in skeleton.get_children():
+		if not (node is MeshInstance3D):
+			continue
+		var mesh := node as MeshInstance3D
+		var key := "hair" if str(mesh.name).begins_with("hair_") else str(mesh.name)
+		if str(mesh.name).begins_with("hair_"):
+			mesh.visible = str(mesh.name) == hair_mesh
+		if colors.has(key):
+			var material := StandardMaterial3D.new()
+			material.albedo_color = colors[key]
+			material.roughness = 0.8 if key in ["jersey", "shorts", "socks", "hair"] else 0.6
+			mesh.material_override = material
+		if body_mesh == null and str(mesh.name) == "skin":
+			body_mesh = mesh
+
+
+## The global rest position of a bone in skeleton units (feet for the generated body, metres for an imported one).
+func _rest_pos(name: String) -> Vector3:
+	return _rest_global[name] if imported else builder.rest_origin(name)
+
+
+## The local rotation to give a bone for the pose rotation `q` (the retarget layer; the generated body needs none).
+func _local_rotation(index: int, q: Quaternion) -> Quaternion:
+	if not imported:
+		return q
+	return FcRigRetarget.local_rotation(_parent_rest[index], _rest_rot[index], q)
+
+
 ## The number, big on the back and small on the front, riding on the torso bone (3D text: legible at broadcast distance is the question).
 func _attach_numbers() -> void:
 	var h := height_feet
@@ -78,12 +182,13 @@ func _attach_numbers() -> void:
 	torso.name = "TorsoMount"
 	torso.bone_name = "torso"
 	skeleton.add_child(torso)
-	var pelvis_y: float = (builder.rest_origin("pelvis") as Vector3).y
+	var pelvis_y: float = (_rest_pos("pelvis") as Vector3).y
 	var secondary: Color = uniform["secondary"]
-	var depth: float = float(archetype["chest_rz"]) * h
-	_back_number = _label(str(jersey_number), secondary, Vector3(0.0, 0.705 * h - pelvis_y, -(depth + 0.012 * h)), 180.0, 0.2 * h)
+	var hs := h * _k   # the same positions and sizes, in skeleton units
+	var depth: float = float(archetype["chest_rz"]) * hs
+	_back_number = _label(str(jersey_number), secondary, Vector3(0.0, 0.705 * hs - pelvis_y, -(depth + 0.012 * hs)), 180.0, 0.2 * hs)
 	torso.add_child(_back_number)
-	_front_number = _label(str(jersey_number), secondary, Vector3(0.0, 0.68 * h - pelvis_y, depth + 0.012 * h), 0.0, 0.1 * h)
+	_front_number = _label(str(jersey_number), secondary, Vector3(0.0, 0.68 * hs - pelvis_y, depth + 0.012 * hs), 0.0, 0.1 * hs)
 	torso.add_child(_front_number)
 
 
@@ -145,19 +250,19 @@ func _apply_pose(pose: Dictionary) -> void:
 		var idx: int = _bone.get(name, -1)
 		if idx < 0:
 			continue
-		skeleton.set_bone_pose_rotation(idx, Basis.from_euler(pose["joints"][name]).get_rotation_quaternion())
+		skeleton.set_bone_pose_rotation(idx, _local_rotation(idx, Basis.from_euler(pose["joints"][name]).get_rotation_quaternion()))
 	var root: Vector3 = pose["root"]
-	var rest: Vector3 = builder.rest_origin("pelvis")
-	var pelvis_y := rest.y + root.y * height_feet
-	skeleton.set_bone_pose_position(_pelvis_bone, Vector3(root.x * height_feet, pelvis_y, 0.0))
+	var rest: Vector3 = _rest_pos("pelvis")
+	var pelvis_y := rest.y + root.y * _hs
+	skeleton.set_bone_pose_position(_pelvis_bone, Vector3(root.x * _hs, pelvis_y, 0.0))
 	# ground contact: unless airborne, the lower foot's sole rests on the floor whatever the pose does to the legs (no floating, no sinking)
 	var air := float(pose["air"])
 	if air < 0.999:
 		var globals := _forward_kinematics()
 		var lowest := minf((globals[int(_bone["l_foot"])] as Transform3D).origin.y, (globals[int(_bone["r_foot"])] as Transform3D).origin.y)
-		var ankle: float = (builder.rest_origin("l_foot") as Vector3).y
+		var ankle: float = (_rest_pos("l_foot") as Vector3).y
 		pelvis_y += (ankle - lowest) * (1.0 - air)
-		skeleton.set_bone_pose_position(_pelvis_bone, Vector3(root.x * height_feet, pelvis_y, 0.0))
+		skeleton.set_bone_pose_position(_pelvis_bone, Vector3(root.x * _hs, pelvis_y, 0.0))
 	_grip = 0.0
 	var grip := float(pose["grip"])
 	if grip > 0.01:
@@ -166,25 +271,31 @@ func _apply_pose(pose: Dictionary) -> void:
 
 ## Both arms reach for the ball anchor of the pose (two-bone IK per arm) and blend from the canned arm pose by `grip`.
 func _apply_grip(pose: Dictionary, grip: float, shift: float) -> void:
-	var anchor: Vector3 = (pose["ball"] as Vector3) * height_feet + Vector3(0.0, shift, 0.0)
+	var anchor: Vector3 = (pose["ball"] as Vector3) * _hs + Vector3(0.0, shift, 0.0)
 	_grip = grip
 	_anchor_model = anchor
 	var torso_idx: int = _bone["torso"]
-	var to_local := (_forward_kinematics()[torso_idx] as Transform3D).affine_inverse()
+	var torso_global: Transform3D = _forward_kinematics()[torso_idx]
+	# the torso frame the pose maths use: its orientation without the rest rotation of an imported bone (the identity for the generated body)
+	var rest_torso := (_parent_rest[torso_idx] as Quaternion) * (_rest_rot[torso_idx] as Quaternion) if imported else Quaternion.IDENTITY
+	var ours := Transform3D(Basis(torso_global.basis.get_rotation_quaternion() * rest_torso.inverse()), torso_global.origin)
+	var to_local := ours.affine_inverse()
 	for side in ["l", "r"]:
 		var sign := 1.0 if side == "l" else -1.0
 		var sh: int = _bone[side + "_shoulder"]
 		var el: int = _bone[side + "_elbow"]
-		var hd: int = _bone[side + "_hand"]
-		var upper: float = skeleton.get_bone_rest(el).origin.length()
-		var lower: float = skeleton.get_bone_rest(hd).origin.length()
-		var start: Vector3 = skeleton.get_bone_rest(sh).origin
-		var wrist := to_local * (anchor + Vector3(sign * BALL_RADIUS * 1.05, -0.12, -0.02))
+		var shoulder_at: Vector3 = _rest_pos(side + "_shoulder")
+		var upper: float = shoulder_at.distance_to(_rest_pos(side + "_elbow"))
+		var lower: float = (_rest_pos(side + "_elbow") as Vector3).distance_to(_rest_pos(side + "_hand"))
+		var start: Vector3 = shoulder_at - (_rest_pos("torso") as Vector3)
+		var wrist := to_local * (anchor + Vector3(sign * BALL_RADIUS * 1.05, -0.12, -0.02) * _k)
 		var solved := FcLimbIK.solve(start, upper, lower, wrist, Vector3(sign * 0.5, -0.7, -0.35))
-		var posed_sh := Basis.from_euler(pose["joints"][side + "_shoulder"]).get_rotation_quaternion()
-		var posed_el := Basis.from_euler(pose["joints"][side + "_elbow"]).get_rotation_quaternion()
-		skeleton.set_bone_pose_rotation(sh, posed_sh.slerp((solved["basis"] as Basis).get_rotation_quaternion(), grip))
-		skeleton.set_bone_pose_rotation(el, posed_el.slerp(Quaternion(Vector3.RIGHT, -float(solved["bend"])), grip))
+		var posed_sh := _local_rotation(sh, Basis.from_euler(pose["joints"][side + "_shoulder"]).get_rotation_quaternion())
+		var posed_el := _local_rotation(el, Basis.from_euler(pose["joints"][side + "_elbow"]).get_rotation_quaternion())
+		var ik_sh := _local_rotation(sh, (solved["basis"] as Basis).get_rotation_quaternion())
+		var ik_el := _local_rotation(el, Quaternion(Vector3.RIGHT, -float(solved["bend"])))
+		skeleton.set_bone_pose_rotation(sh, posed_sh.slerp(ik_sh, grip))
+		skeleton.set_bone_pose_rotation(el, posed_el.slerp(ik_el, grip))
 
 
 ## The model-space transform of every bone from the current local poses. Skeleton3D only refreshes its own global poses on its own schedule, so
@@ -229,12 +340,16 @@ func hand_position() -> Vector3:
 	if skeleton == null or not skeleton.is_inside_tree():
 		return global_position
 	var bone: Transform3D = _forward_kinematics()[_hand_bone]
-	var palm := bone * Vector3(0.0, -0.03 * height_feet, 0.0)
+	# the palm lies a little way along the hand: straight down in the rest pose, whatever the axes of the bone are
+	var hand_rest := (_parent_rest[_hand_bone] as Quaternion) * (_rest_rot[_hand_bone] as Quaternion) if imported else Quaternion.IDENTITY
+	var palm := bone * (hand_rest.inverse() * Vector3(0.0, -0.03 * _hs, 0.0))
 	return skeleton.global_transform * palm
 
 
 ## How many generated pieces the body has (lofts, ellipsoids, tubes): hair and facial hair add some.
 func part_count() -> int:
+	if imported:
+		return skeleton.get_child_count()
 	return builder.part_count() if builder != null else 0
 
 
@@ -244,4 +359,11 @@ func joint_names() -> Array:
 
 ## The number of triangles and vertices of the whole body (for the performance budget).
 func triangle_count() -> int:
+	if imported:
+		var total := 0
+		for node in skeleton.get_children():
+			if node is MeshInstance3D and (node as MeshInstance3D).visible and (node as MeshInstance3D).mesh != null:
+				for s in (node as MeshInstance3D).mesh.get_surface_count():
+					total += ((node as MeshInstance3D).mesh.surface_get_arrays(s)[Mesh.ARRAY_INDEX] as PackedInt32Array).size() / 3
+		return total
 	return builder.triangle_total() if builder != null else 0

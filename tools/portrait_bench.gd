@@ -66,7 +66,7 @@ func _process(_delta: float) -> bool:
 			p.visual["age"] = 19 + i % 20
 			p.size = Vector2(job["px"], job["px"])
 			if job["mode"] == "hd_baked":
-				p.texture = _bake.texture_for(p.visual, Vector2i(job["px"], job["px"]))
+				p.texture = _bake.texture_for(p.visual, p.size, 1.0, "bust")
 			p.position = Vector2((i % 40) * 34, (i / 40) * 34) if job["px"] <= 32 else Vector2((i % 10) * 138, ((i / 10) % 6) * 138)
 			root.add_child(p)
 			_probes.append(p)

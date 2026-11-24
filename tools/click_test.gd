@@ -306,13 +306,13 @@ func _click_tree_row(tree: Control, index: int) -> void:
 		var y := float(index * table.row_height) - float(table._scroll.scroll_vertical) + table.row_height / 2.0
 		await _click_at(table._body.get_global_rect().position + Vector2(table._body.size.x * 0.3, y))
 		return
-	var item := tree.get_root().get_child(index)
+	var item: TreeItem = tree.get_root().get_child(index)
 	if item == null:
 		_fail("the table has no row %d" % index)
 		return
 	tree.scroll_to_item(item)   # like a player scrolling the table until the row is on screen
 	await _frames(2)
-	var rect := tree.get_item_area_rect(item, 0)
+	var rect: Rect2 = tree.get_item_area_rect(item, 0)
 	await _click_at(tree.get_global_rect().position + rect.position + Vector2(rect.size.x * 0.5, rect.size.y * 0.5))
 
 
