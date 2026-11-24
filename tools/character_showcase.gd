@@ -11,6 +11,7 @@ var _steps: Array = []
 var _frame := 0
 var _step := 0
 var _models: Array = []
+var _wait := 0
 
 ## The five archetypes: position, height cm, weight kg, a key (which fixes face, hair and skin), and the options forced on top.
 const ARCHETYPES := [
@@ -70,18 +71,21 @@ func _initialize() -> void:
 
 func _process(_delta: float) -> bool:
 	_frame += 1
-	if _frame < 10 or _frame % 6 != 0:
+	if _frame < 10:
 		return false
 	if _step >= _steps.size():
 		quit()
 		return true
 	var s: Array = _steps[_step]
-	_scene.camera.look_at_from_position(s[1], s[2], Vector3.UP)
-	_scene.camera.fov = 38.0
-	if _frame % 12 == 0:
+	if _wait == 0:
+		_scene.camera.look_at_from_position(s[1], s[2], Vector3.UP)
+		_scene.camera.fov = float(s[3]) if s.size() > 3 else 38.0
+	_wait += 1
+	if _wait >= 4:
 		var img := root.get_texture().get_image()
 		var path: String = "%s/%s.png" % [_out, s[0]]
 		var err := img.save_png(ProjectSettings.globalize_path(path) if path.begins_with("user://") else path)
 		print("saved ", path, " err=", err)
 		_step += 1
+		_wait = 0
 	return false
