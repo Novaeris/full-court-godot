@@ -8,7 +8,7 @@ extends RefCounted
 ##   assets:     every image, model, audio and font file is imported (it has a .import file and the engine can load it)
 ##   json:       every .json file parses
 ##   players:    every GLB player model in assets/players passes FcPlayerModelValidator
-##   clips:      every animation clip in a GLB under assets/animations only animates standard bones (FcAnimationClipValidator)
+##   clips:      every animation library (.res) under assets/animations only animates standard bones (FcAnimationClipValidator)
 
 const ASSET_EXTENSIONS := ["png", "jpg", "jpeg", "webp", "svg", "glb", "gltf", "ogg", "wav", "mp3", "ttf", "otf", "woff2"]
 const SKIP_DIRS := [".git", ".godot", ".import", "builds", "export", "node_modules", "game_src", "creator_studio", "prototypes", "site"]
@@ -115,9 +115,10 @@ static func check_player_models(root: String) -> Array[String]:
 
 static func check_animation_clips(root: String) -> Array[String]:
 	var out: Array[String] = []
-	for path in files(root, ["glb", "gltf"]):
-		for problem in FcAnimationClipValidator.validate_path(path):
-			out.append("%s: %s" % [path, problem])
+	for path in files(root, ["res", "tres"]):
+		if load(path) is AnimationLibrary:   # only animation libraries are clip files (other resources are checked elsewhere)
+			for problem in FcAnimationClipValidator.validate_path(path):
+				out.append("%s: %s" % [path, problem])
 	return out
 
 
@@ -147,6 +148,6 @@ static func run_project() -> Dictionary:
 	problems.append_array(check_assets("res://assets"))
 	counts["player_models"] = files("res://assets/players", ["glb", "gltf"]).size()
 	problems.append_array(check_player_models("res://assets/players"))
-	counts["animation_files"] = files("res://assets/animations", ["glb", "gltf"]).size()
+	counts["animation_files"] = files("res://assets/animations", ["res", "tres"]).size()
 	problems.append_array(check_animation_clips("res://assets/animations"))
 	return {"problems": problems, "counts": counts}

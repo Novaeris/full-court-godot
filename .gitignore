@@ -33,3 +33,6 @@ desktop.ini
 /creator_studio/game_src
 /creator_studio/data
 /creator_studio/assets
+
+# Baked animation data and other derived pipeline files
+/build_tmp/

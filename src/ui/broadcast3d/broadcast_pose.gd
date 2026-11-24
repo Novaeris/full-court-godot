@@ -15,7 +15,7 @@ extends RefCounted
 const STATES := [
 	"idle", "walk", "run", "sprint", "stop", "turn", "jump", "land", "fall", "celebrate",
 	"dribble", "dribble_run", "crossover", "hesitation", "drive", "post", "shoot", "three", "layup", "dunk",
-	"defend", "shuffle", "contest", "steal", "block", "rebound", "recover", "sit", "coach", "intro",
+	"defend", "shuffle", "contest", "steal", "block", "rebound", "recover", "sit", "coach", "intro", "dribble_l", "pass", "catch", "screen",
 ]
 const JOINTS := [
 	"pelvis", "torso", "neck", "head", "l_shoulder", "r_shoulder", "l_elbow", "r_elbow", "l_hand", "r_hand",
@@ -25,10 +25,10 @@ const JOINTS := [
 const CYCLE := {
 	"idle": 3.0, "walk": 1.1, "run": 0.7, "sprint": 0.52, "stop": 0.8, "turn": 0.9, "jump": 1.0, "land": 0.9, "fall": 1.6, "celebrate": 1.3,
 	"dribble": 0.8, "dribble_run": 0.7, "crossover": 0.9, "hesitation": 1.1, "drive": 0.6, "post": 1.4, "shoot": 1.3, "three": 1.4, "layup": 1.1, "dunk": 1.2,
-	"defend": 1.0, "shuffle": 0.6, "contest": 1.0, "steal": 0.9, "block": 1.0, "rebound": 1.2, "recover": 0.7, "sit": 4.0, "coach": 3.0, "intro": 2.4,
+	"defend": 1.0, "shuffle": 0.6, "contest": 1.0, "steal": 0.9, "block": 1.0, "rebound": 1.2, "recover": 0.7, "sit": 4.0, "coach": 3.0, "intro": 2.4, "dribble_l": 0.8, "pass": 1.0, "catch": 1.0, "screen": 2.0,
 }
 ## States where both hands are on the ball for part of the loop (the character solves arm IK to the ball anchor in these).
-const TWO_HAND := ["shoot", "three", "dunk", "rebound", "post"]
+const TWO_HAND := ["shoot", "three", "dunk", "rebound", "post", "pass", "catch"]
 ## States in which the feet leave the floor (the character does not lock the feet to the ground while "air" is above 0).
 const AIRBORNE := ["jump", "shoot", "three", "layup", "dunk", "contest", "block", "rebound"]
 
@@ -75,6 +75,8 @@ static func _sm(a: float, b: float, v: float) -> float:
 ## The pose of `state` at `phase` (0 to 1 around one loop): {"joints": {...}, "root": Vector3 (feet of the body's centre, height scaled by the caller),
 ## "air": float, "grip": float, "ball": Vector3 (the ball anchor in body-height units, x sideways, y up, z forward, from the feet)}.
 static func pose_for(state: String, phase: float) -> Dictionary:
+	if state == "dribble_l":   # the left-handed dribble is the right-handed one seen in a mirror
+		return mirrored(pose_for("dribble", phase))
 	var out := _new()
 	var j: Dictionary = out["joints"]
 	var root := Vector3.ZERO
@@ -409,6 +411,43 @@ static func pose_for(state: String, phase: float) -> Dictionary:
 			_leg(j, "r", 0.1, 0.18, 0.12)
 			root.y = -0.015
 			_flat_feet(j, 1.0)
+		"pass":   # a chest pass: the ball is held at the chest in both hands, the arms push it out with a small step, then come back
+			var load := _sm(0.0, 0.18, phase) * (1.0 - _sm(0.18, 0.3, phase))
+			var push := _sm(0.18, 0.42, phase) * (1.0 - _sm(0.55, 0.95, phase))
+			j["torso"] = Vector3(0.1 + 0.14 * push, 0.0, 0.0)
+			j["head"] = Vector3(-0.1, 0.0, 0.0)
+			_arm(j, "l", 0.7 + 0.8 * push, 0.14 + 0.1 * load, 1.65 - 1.4 * push)
+			_arm(j, "r", 0.7 + 0.8 * push, 0.14 + 0.1 * load, 1.65 - 1.4 * push)
+			_leg(j, "l", 0.2 + 0.35 * push, 0.4 + 0.25 * push, 0.08)
+			_leg(j, "r", 0.2 - 0.1 * push, 0.4 + 0.2 * push, 0.08)
+			root.y = -0.04 - 0.02 * push
+			out["grip"] = _sm(0.0, 0.08, phase) * (1.0 - _sm(0.4, 0.46, phase))
+			out["ball"] = Vector3(0.0, 0.64 + 0.04 * push, 0.12 + 0.2 * push)
+			_flat_feet(j, 1.0)
+		"catch":   # hands out for a pass, the ball arrives and is drawn in to the chest
+			var reach := _sm(0.0, 0.25, phase) * (1.0 - _sm(0.45, 0.8, phase))
+			var drawn := _sm(0.4, 0.75, phase) * (1.0 - _sm(0.9, 1.0, phase))
+			j["torso"] = Vector3(0.1 + 0.08 * reach, 0.0, 0.0)
+			j["head"] = Vector3(-0.1, 0.0, 0.0)
+			_arm(j, "l", 0.7 + 0.8 * reach, 0.2 * reach + 0.14, 1.0 - 0.7 * reach + 0.6 * drawn)
+			_arm(j, "r", 0.7 + 0.8 * reach, 0.2 * reach + 0.14, 1.0 - 0.7 * reach + 0.6 * drawn)
+			_leg(j, "l", 0.3, 0.45, 0.1)
+			_leg(j, "r", 0.2, 0.4, 0.1)
+			root.y = -0.05
+			out["grip"] = _sm(0.3, 0.42, phase) * (1.0 - _sm(0.9, 1.0, phase))
+			out["ball"] = Vector3(0.0, lerpf(0.72, 0.64, drawn), lerpf(0.4, 0.14, drawn))
+			_flat_feet(j, 1.0)
+		"screen":   # setting a screen: a wide, braced stance with the arms crossed in front, a little sway from the contact
+			var brace := sin(th)
+			j["torso"] = Vector3(0.12, 0.0, 0.0)
+			j["head"] = Vector3(-0.08, 0.1 * brace, 0.0)
+			_arm(j, "l", 0.7, -0.2, 2.2)
+			_arm(j, "r", 0.65, -0.2, 2.2)
+			_leg(j, "l", 0.3, 0.55, 0.38)
+			_leg(j, "r", 0.3, 0.55, 0.38)
+			j["pelvis"] = Vector3(0.0, 0.0, 0.025 * brace)
+			root.y = -0.08
+			_flat_feet(j, 1.0)
 		"intro":   # being introduced: standing tall, chin up, one arm raised to the crowd and waving, a little rise onto the toes
 			var wave := sin(th * 2.0)
 			j["torso"] = Vector3(-0.05, 0.0, 0.0)
@@ -424,6 +463,27 @@ static func pose_for(state: String, phase: float) -> Dictionary:
 	out["root"] = root
 	if not (state in AIRBORNE):
 		out["air"] = 0.0
+	return out
+
+
+## The same pose seen in a mirror (left and right swapped): a left-handed dribble from the right-handed one. A bone on the centre line turns the other way
+## about the vertical and the forward axes, an arm or a leg takes the rotation of its opposite with the same two signs flipped, and the ball anchor swaps sides.
+static func mirrored(pose: Dictionary) -> Dictionary:
+	var out := pose.duplicate(true)
+	var joints: Dictionary = pose["joints"]
+	var flip := func(v: Vector3) -> Vector3: return Vector3(v.x, -v.y, -v.z)
+	for name in joints:
+		var n := str(name)
+		if n.begins_with("l_"):
+			out["joints"]["r_" + n.substr(2)] = flip.call(joints[n])
+		elif n.begins_with("r_"):
+			out["joints"]["l_" + n.substr(2)] = flip.call(joints[n])
+		else:
+			out["joints"][n] = flip.call(joints[n])
+	var root: Vector3 = pose["root"]
+	out["root"] = Vector3(-root.x, root.y, root.z)
+	var ball: Vector3 = pose["ball"]
+	out["ball"] = Vector3(-ball.x, ball.y, ball.z)
 	return out
 
 

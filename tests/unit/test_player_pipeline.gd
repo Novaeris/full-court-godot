@@ -294,3 +294,53 @@ func test_the_imported_prototype_obeys_the_rule_with_arbitrary_rotations() -> vo
 		var wanted: Quaternion = chain * (rest_global[i] as Quaternion)
 		assert_true(absf((global[i] as Quaternion).dot(wanted)) > 0.9999, "%s ends with the world-aligned orientation on top of its rest" % joint)
 	c.free()
+
+
+const CLIPS := "res://assets/animations/fc_player_clips.res"
+
+
+func test_the_baked_clip_file_has_every_state_and_is_valid() -> void:
+	var problems: Array[String] = []
+	var clips := FcPoseClips.load_file(CLIPS, problems)
+	assert_true(clips != null, "the clip file loads: %s" % str(problems))
+	for state in FcBroadcastPose.STATES:
+		assert_true(clips.has_clip(state), "the file has a clip for %s" % state)
+		assert_true(absf(clips.length_of(state) - float(FcBroadcastPose.CYCLE[state])) < 0.05, "%s lasts about as long as the state (%.2f s against %.2f)" % [state, clips.length_of(state), float(FcBroadcastPose.CYCLE[state])])
+	assert_eq(FcProjectValidator.check_animation_clips("res://assets/animations"), [], "the project validator accepts the clip file")
+
+
+func test_a_clip_made_in_blender_plays_on_the_blender_rig_like_the_procedural_pose() -> void:
+	# the whole chain: procedural pose library, baked to keyframes, Actions in Blender, a GLB, imported by Godot, played on the Blender-built player
+	var clips := FcPoseClips.load_file(CLIPS)
+	var generated := FcBroadcastCharacter.new().setup(STANDARD_SUBJECT)
+	var subject := STANDARD_SUBJECT.duplicate(true)
+	subject["model"] = PROTO
+	var player := FcBroadcastCharacter.new().setup(subject)
+	var worst := 0.0
+	var worst_where := ""
+	for state in FcBroadcastPose.STATES:
+		var frames := roundi(clips.length_of(state) * 30.0)
+		for f in [0, frames / 4, frames / 2, (3 * frames) / 4]:
+			var phase := float(f) / float(frames)
+			generated.pose_at(state, phase)
+			clips.apply(player.skeleton, state, phase)
+			var fg := generated._forward_kinematics()
+			var fp := player._forward_kinematics()
+			for joint in FcBroadcastPose.JOINTS:
+				var a: Vector3 = (fg[int(generated._bone[joint])] as Transform3D).origin / generated._hs
+				var b: Vector3 = (fp[int(player._bone[joint])] as Transform3D).origin / player._hs
+				if a.distance_to(b) > worst:
+					worst = a.distance_to(b)
+					worst_where = "%s %s frame %d" % [state, joint, f]
+	assert_true(worst < 0.015, "every joint of every clip is within 1.5%% of the body height of the procedural pose (worst %.4f: %s)" % [worst, worst_where])
+	generated.free()
+	player.free()
+
+
+func test_a_broken_clip_file_is_refused_with_its_reasons() -> void:
+	var problems: Array[String] = []
+	assert_true(FcPoseClips.load_file("res://assets/animations/nope.glb", problems) == null)
+	assert_true(not problems.is_empty(), "a missing file is explained")
+	var model_as_clips: Array[String] = []
+	assert_true(FcPoseClips.load_file(PROTO, model_as_clips) == null, "a player model is not a clip file")
+	assert_true(not model_as_clips.is_empty())

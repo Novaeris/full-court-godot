@@ -1,6 +1,6 @@
 # Proves the Blender player production pipeline end to end on a clean machine: download Blender (checked against the checksum blender.org publishes), build the
 # prototype player from the rig standard with tools/blender/build_player.py, import the GLB into Godot, validate it, and run the pipeline tests on it.
-# Runs when the pipeline, the rig standard, the player assets or the 3D character code change, and by hand. It does not commit or publish anything.
+# Also rebuilds the animation clips (bake, Blender Actions, GLB, native library) and runs the round-trip test. Runs when the pipeline, the rig standard, the player assets or the 3D character code change, and by hand. It does not commit or publish anything.
 name: Player pipeline
 
 on:
@@ -11,6 +11,8 @@ on:
       - "data/player_pipeline/**"
       - "assets/players/**"
       - "assets/animations/**"
+      - "tools/export_pose_library.gd"
+      - "tools/bake_clip_library.gd"
       - "src/ui/broadcast3d/**"
       - "tests/unit/test_player_pipeline.gd"
       - ".github/workflows/pipeline.yml"
@@ -87,7 +89,18 @@ jobs:
       - name: Import the project and the freshly built GLB
         run: ~/godot/godot --headless --path . --import --quit
 
-      - name: Validate the project (includes the rebuilt player model)
+      - name: Bake the animation library (every state to keyframes, with ground contact and ball IK)
+        run: ~/godot/godot --headless --path . --script res://tools/export_pose_library.gd
+
+      - name: Turn the baked animations into Blender Actions and export the clip GLB
+        run: |
+          ~/blender/blender -b --python tools/blender/import_pose_library.py -- --library build_tmp/pose_library.json | tee clips.log
+          grep -q "FC_CLIPS_OK" clips.log
+
+      - name: Convert the clip GLB to the native animation library the game loads (validates every clip; fails if any is wrong)
+        run: ~/godot/godot --headless --path . --script res://tools/bake_clip_library.gd
+
+      - name: Validate the project (includes the rebuilt player model and clips)
         run: ~/godot/godot --headless --path . --script res://tools/validate_project.gd
 
       - name: Pipeline tests (rig standard, validator, retarget, imported player equals the generated body)

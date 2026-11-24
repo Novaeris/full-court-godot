@@ -146,3 +146,40 @@ func test_the_left_arm_is_at_plus_x_and_swings_outward_with_a_positive_roll() ->
 	assert_true(left.x > 0.5 and right.x < -0.5, "in the defensive stance the arms are out to the sides (%.2f, %.2f)" % [left.x, right.x])
 	assert_true(absf(left.x + right.x) < 0.01, "and the stance is symmetric")
 	c.free()
+
+
+func test_the_left_handed_dribble_is_the_right_handed_one_in_a_mirror() -> void:
+	var right := FcBroadcastPose.pose_for("dribble", 0.3)
+	var twice := FcBroadcastPose.mirrored(FcBroadcastPose.mirrored(right))
+	for joint in FcBroadcastPose.JOINTS:
+		assert_true((twice["joints"][joint] as Vector3).is_equal_approx(right["joints"][joint]), "mirroring twice returns %s" % joint)
+	var c := FcBroadcastCharacter.new().setup(_subject("lefty"))
+	c.pose_at("dribble", 0.3)
+	var fr := c._forward_kinematics()
+	var dribbling_hand: Vector3 = (fr[int(c._bone["r_hand"])] as Transform3D).origin
+	var off_hand: Vector3 = (fr[int(c._bone["l_hand"])] as Transform3D).origin
+	c.pose_at("dribble_l", 0.3)
+	var fl := c._forward_kinematics()
+	var mirrored_dribbling: Vector3 = (fl[int(c._bone["l_hand"])] as Transform3D).origin
+	var mirrored_off: Vector3 = (fl[int(c._bone["r_hand"])] as Transform3D).origin
+	assert_true(Vector3(-dribbling_hand.x, dribbling_hand.y, dribbling_hand.z).distance_to(mirrored_dribbling) < 0.02, "the left hand does what the right hand did, on the other side")
+	assert_true(Vector3(-off_hand.x, off_hand.y, off_hand.z).distance_to(mirrored_off) < 0.02, "and the off hand mirrors the off hand")
+	c.free()
+
+
+func test_passing_catching_and_screening_exist_and_are_valid() -> void:
+	for state in ["pass", "catch", "screen", "dribble_l"]:
+		assert_true(FcBroadcastPose.STATES.has(state) and FcBroadcastPose.CYCLE.has(state), "%s is a state" % state)
+	assert_true(FcBroadcastPose.TWO_HAND.has("pass") and FcBroadcastPose.TWO_HAND.has("catch"), "a pass and a catch have both hands on the ball")
+	var c := FcBroadcastCharacter.new().setup(_subject("passer"))
+	c.pose_at("pass", 0.4)
+	assert_true(c._grip > 0.5, "the ball is in both hands while it is being pushed out")
+	var push_reach: float = (c._forward_kinematics()[int(c._bone["r_hand"])] as Transform3D).origin.z
+	c.pose_at("pass", 0.0)
+	var ready_reach: float = (c._forward_kinematics()[int(c._bone["r_hand"])] as Transform3D).origin.z
+	assert_true(push_reach > ready_reach + 0.3, "the arms push forward during a pass (%.2f against %.2f ft)" % [push_reach, ready_reach])
+	c.pose_at("screen", 0.0)
+	var left: Vector3 = (c._forward_kinematics()[int(c._bone["l_foot"])] as Transform3D).origin
+	var right: Vector3 = (c._forward_kinematics()[int(c._bone["r_foot"])] as Transform3D).origin
+	assert_true(absf(left.x - right.x) > 1.2, "a screen is set with a wide stance (%.2f ft)" % absf(left.x - right.x))
+	c.free()

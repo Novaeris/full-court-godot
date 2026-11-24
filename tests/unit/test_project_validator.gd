@@ -132,12 +132,17 @@ func test_a_good_clip_is_compatible_and_each_kind_of_bad_clip_is_caught() -> voi
 	scaled.scale_track_insert_key(s, 0.0, Vector3.ONE)
 	scaled.scale_track_insert_key(s, 1.0, Vector3.ONE * 2.0)
 	assert_true(_contains(FcAnimationClipValidator.validate_animation("run", scaled), "scale tracks are not allowed"), "scaling a bone")
-	var one_key := Animation.new()
-	one_key.length = 1.0
-	var k := one_key.add_track(Animation.TYPE_ROTATION_3D)
-	one_key.track_set_path(k, NodePath("Armature/Skeleton3D:l_hip"))
-	one_key.rotation_track_insert_key(k, 0.0, Quaternion.IDENTITY)
-	assert_true(_contains(FcAnimationClipValidator.validate_animation("run", one_key), "fewer than two keys"), "a rotation track with one key")
+	var no_keys := Animation.new()
+	no_keys.length = 1.0
+	var k := no_keys.add_track(Animation.TYPE_ROTATION_3D)
+	no_keys.track_set_path(k, NodePath("Armature/Skeleton3D:l_hip"))
+	assert_true(_contains(FcAnimationClipValidator.validate_animation("run", no_keys), "has no keys"), "a rotation track with no keys")
+	var constant := Animation.new()
+	constant.length = 1.0
+	var c := constant.add_track(Animation.TYPE_ROTATION_3D)
+	constant.track_set_path(c, NodePath("Armature/Skeleton3D:l_hip"))
+	constant.rotation_track_insert_key(c, 0.0, Quaternion.IDENTITY)
+	assert_eq(FcAnimationClipValidator.validate_animation("run", constant), [], "a bone that does not move has one key, which is fine")
 	var value := Animation.new()
 	value.length = 1.0
 	var v := value.add_track(Animation.TYPE_VALUE)
