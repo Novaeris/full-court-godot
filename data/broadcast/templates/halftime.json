@@ -1,0 +1,27 @@
+{
+	"id": "halftime",
+	"title": "Halftime report",
+	"scope": "game",
+	"segments": [
+		{
+			"type": "halftime_score",
+			"seconds": 6
+		},
+		{
+			"type": "storyline",
+			"seconds": 8
+		},
+		{
+			"type": "team_comparison",
+			"seconds": 9
+		},
+		{
+			"type": "leaders",
+			"seconds": 8
+		},
+		{
+			"type": "highlights",
+			"seconds": 9
+		}
+	]
+}

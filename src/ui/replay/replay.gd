@@ -23,6 +23,31 @@ static func build(box: Dictionary, events: Dictionary, colors: Array = [], subje
 
 ## Owner: a stored season entry {day, series, box, events}.
 static func for_owner(controller: FcGameController, entry: Dictionary) -> Dictionary:
+	var built := _for_owner(controller, entry)
+	if not built.is_empty():
+		built["title"] = title_context(controller, entry)
+	return built
+
+
+## {series_label} when this stored game was the one that decided the league title (the last game of a completed final series), otherwise {}.
+static func title_context(controller: FcGameController, entry: Dictionary) -> Dictionary:
+	var season := controller.season()
+	if season == null or season.playoffs == null:
+		return {}
+	var final := season.playoffs.final_series()
+	if final == null or not final.is_complete() or int(entry.get("series", 0)) != final.number:
+		return {}
+	var last_day := -1
+	for g in season.games:
+		if g.series == final.number and g.played:
+			last_day = maxi(last_day, g.day)
+	if int(entry["day"]) != last_day:
+		return {}
+	var world := controller.state.world
+	return {"series_label": "Finals: %s %d, %s %d" % [world.team_display_name(final.team_a), final.wins_a, world.team_display_name(final.team_b), final.wins_b]}
+
+
+static func _for_owner(controller: FcGameController, entry: Dictionary) -> Dictionary:
 	return build(entry["box"], entry.get("events", {}), FcPostGame.team_colors(controller.state.world, entry["box"]), _subjects(controller.state.world, entry["box"]))
 
 
@@ -55,6 +80,7 @@ static func open(app: FcApp, built: Dictionary) -> FcModal:
 	modal.panel.custom_minimum_size.x = 0 if app.layout.is_mobile() else _dialog_width(app)
 	var screen := FcReplayScreen.new().setup(model, built["colors"], app.layout.is_mobile(), app.preferences, built.get("subjects", []))
 	screen.name = "ReplayScreen"
+	screen.set_title_context(built.get("title", {}))
 	screen.set_bookmark_store(FcBookmarkStore.new())   # the person's own bookmark file, apart from saved games
 	if app.layout.is_mobile():
 		modal.content.add_child(screen)

@@ -22,6 +22,8 @@ var replay_variant: int = 0
 var reel: Dictionary = {}
 ## The player introductions in progress: {steps, at, timer, return_index, speed, was_playing}; {} when none.
 var intro: Dictionary = {}
+## A production show in progress (pregame, halftime, postgame, championship): {id, return_index, speed, was_playing}; {} when none.
+var show: Dictionary = {}
 ## The replay angle the person chose: -1 automatic (cycles), or 0 main, 1 baseline, 2 overhead.
 var replay_angle: int = -1
 ## "auto", "hybrid" or "manual" (the camera rig's mode, kept here so a mode switch can restore it).
@@ -42,6 +44,10 @@ func is_intro() -> bool:
 	return not intro.is_empty()
 
 
+func is_show() -> bool:
+	return not show.is_empty()
+
+
 ## A plain copy of everything, for tests that compare state before and after a mode switch.
 func snapshot() -> Array:
-	return [index, playing, speed, instant.duplicate(), camera_mode, view_id, replay_variant, reel.duplicate(true), replay_angle, intro.duplicate(true)]
+	return [index, playing, speed, instant.duplicate(), camera_mode, view_id, replay_variant, reel.duplicate(true), replay_angle, intro.duplicate(true), show.duplicate(true)]

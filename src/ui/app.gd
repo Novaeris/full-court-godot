@@ -2615,7 +2615,16 @@ func _tab_news() -> Control:
 	for item in items.slice(0, 80):
 		var tag: String = {"injury": "Injury", "milestone": "Milestone", "champion": "Champions", "award": "Award", "signing": "Signing", "retirement": "Retirement", "draft": "Draft", "staff": "Staff"}.get(item["kind"], "News")
 		rows.append([item["date"], tag, ("* " if item["team"] == mine else "") + item["text"]])
-	return FcTable.from_strings(["Date", "Type", "Headline"], rows, [100, 90, 0])
+	var box := VBoxContainer.new()
+	var bar := HBoxContainer.new()
+	var show := FcButton.make("Full Court Tonight", FcButton.Variant.PRIMARY, func() -> void: FcTonight.open(self, controller))
+	show.name = "TonightButton"
+	bar.add_child(show)
+	box.add_child(bar)
+	var table := FcTable.from_strings(["Date", "Type", "Headline"], rows, [100, 90, 0])
+	table.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	box.add_child(table)
+	return box
 
 
 func _tab_league() -> Control:

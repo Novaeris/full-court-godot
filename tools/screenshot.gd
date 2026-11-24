@@ -38,6 +38,8 @@ var _layout := "auto"
 var _view := "grid"
 var _scroll := 0
 var _mode := ""   # owner_replay: "broadcast", "replay" or "analysis"
+var _show := ""   # owner_replay: open a production show (pregame, halftime, postgame, championship)
+var _segment := 0   # with show= or screen=tonight: how many segments to step forward
 var _advance := 0   # owner_replay: play this many events forward after stopping (so the commentary captions show)
 var _shot := ""   # owner_replay: stop on the first event the director gives this preset (celebration, baseline, overhead, closeup, free_throw)
 var _clock := false   # owner_replay: stop on an event where the estimated shot clock shows
@@ -70,6 +72,8 @@ func _initialize() -> void:
 			"clock": _clock = kv[1] == "1"
 			"shot": _shot = kv[1]
 			"advance": _advance = int(kv[1])
+			"show": _show = kv[1]
+			"segment": _segment = int(kv[1])
 			"view": _view = kv[1]
 			"scroll": _scroll = int(kv[1])   # scrolls an open profile dialog down by this many pixels
 			"hd": FcPlayerFigure.hd_enabled = kv[1] == "1"   # the high-fidelity portrait prototype (docs/PLAYER_VISUAL_PROPOSAL.md)
@@ -199,6 +203,13 @@ func _build_screen() -> void:
 		if not preview.is_empty():
 			FcGameDay.open(_app, preview, _app.controller.state.world, func() -> void: pass)
 		return
+	if _screen == "tonight":   # Full Court Tonight, after the days played (days=)
+		FcTonight.open(_app, _app.controller)
+		var panel := _app.find_child("TonightPanel", true, false) as FcProductionPanel
+		if panel != null:
+			for k in _segment:
+				panel.next()
+		return
 	if _screen == "owner_replay":
 		# the replay of the owner's latest game, paused on the first made three-pointer after the first quarter
 		var kept: Array = _app.controller.season().recent_boxes
@@ -219,6 +230,10 @@ func _build_screen() -> void:
 						if FcCameraDirector.shot_for(shown.timeline, i)["preset"] == _shot:
 							shown.seek(i, false)
 							break
+				if _show != "":
+					shown.start_show(_show)
+					for k in _segment:
+						shown.show_panel.next()
 				if _advance > 0:
 					shown.toggle_play()
 					for k in _advance:
@@ -230,7 +245,7 @@ func _build_screen() -> void:
 							shown.seek(i, false)
 							break
 				for e in model.entries:
-					if not _clock and _shot == "" and _advance == 0 and e["type"] == FcGameEventLog.EV_SHOT_MADE and e["x"] == FcGameEventLog.SHOT_THREE and e["period"] >= 2:
+					if not _clock and _shot == "" and _advance == 0 and _show == "" and e["type"] == FcGameEventLog.EV_SHOT_MADE and e["x"] == FcGameEventLog.SHOT_THREE and e["period"] >= 2:
 						shown.seek(e["index"], false)
 						break
 		return

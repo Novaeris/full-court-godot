@@ -1,0 +1,39 @@
+{
+	"id": "full_court_tonight",
+	"title": "Full Court Tonight",
+	"scope": "week",
+	"segments": [
+		{
+			"type": "headlines",
+			"seconds": 10
+		},
+		{
+			"type": "game_of_the_week",
+			"seconds": 9
+		},
+		{
+			"type": "player_of_the_week",
+			"seconds": 8
+		},
+		{
+			"type": "best_performances",
+			"seconds": 8
+		},
+		{
+			"type": "upsets",
+			"seconds": 8
+		},
+		{
+			"type": "streaks",
+			"seconds": 7
+		},
+		{
+			"type": "standings_race",
+			"seconds": 12
+		},
+		{
+			"type": "marquee_matchups",
+			"seconds": 9
+		}
+	]
+}

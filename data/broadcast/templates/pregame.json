@@ -1,0 +1,15 @@
+{
+	"id": "pregame",
+	"title": "Pregame show",
+	"scope": "game",
+	"segments": [
+		{
+			"type": "matchup",
+			"seconds": 6
+		},
+		{
+			"type": "lineups",
+			"seconds": 10
+		}
+	]
+}

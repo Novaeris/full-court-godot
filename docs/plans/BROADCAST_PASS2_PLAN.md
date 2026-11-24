@@ -71,6 +71,7 @@ Per milestone: `godot_console --headless --path . --import --quit` (when adding 
 - Rule: a mode switch never changes `FcPlaybackState` (live-tested, including during an instant replay).
 
 ## Status
+- M7: built (templates, game shows, Full Court Tonight, one panel). Career and Dynasty entry points for the weekly show are not built (Owner only).
 - M6: built (ambience, music, ducking, role-based commentary events, arbiter, sinks, booth, settings). No voice sink exists; the interface is tested with a test double.
 - M5: built (arena identity, loyalty crowd on a shader, LED boards, benches, lights, introductions). Open: leak check not a clean pass (see M5_ARENA_PERFORMANCE.md); re-measured in M8.
 - M4: built (importance model, replay references, bookmark file, marks, reel, angle picker, determinism proofs).

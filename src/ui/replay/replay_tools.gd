@@ -8,6 +8,7 @@ signal bookmark_pressed
 signal mark_jump(direction: int)
 signal reel_pressed
 signal intro_pressed
+signal show_pressed(id: String)
 signal angle_chosen(id: String)
 
 const ANGLES := [["auto", "Auto"], ["0", "Main"], ["1", "Baseline"], ["2", "Overhead"]]
@@ -18,6 +19,8 @@ var prev_mark: Button
 var next_mark: Button
 var reel_button: Button
 var intro_button: Button
+var championship_button: Button
+var show_buttons: Dictionary = {}
 var reel_note: Label
 var angle_group: FcChoiceGroup
 var wording: Label
@@ -43,6 +46,17 @@ func _init() -> void:
 	for b in [bookmark_button, prev_mark, next_mark, reel_button, intro_button]:
 		row.add_child(b)
 	add_child(row)
+	var shows := HFlowContainer.new()
+	shows.add_theme_constant_override("h_separation", FcUiTokens.SPACE_2)
+	for entry in [["pregame", "Pregame show"], ["halftime", "Halftime report"], ["postgame", "Postgame report"], ["championship", "Championship presentation"]]:
+		var id: String = entry[0]
+		var b := FcButton.make(entry[1], FcButton.Variant.SECONDARY, func() -> void: show_pressed.emit(id))
+		b.name = "Show_" + id
+		show_buttons[id] = b
+		shows.add_child(b)
+	championship_button = show_buttons["championship"]
+	championship_button.visible = false   # only for the game that decided a title (see FcReplayScreen.set_title_context)
+	add_child(shows)
 	reel_note = FcUiTables.label("", FcUiTokens.TYPE_SMALL)
 	reel_note.theme_type_variation = "MutedLabel"
 	reel_note.name = "ReelNote"

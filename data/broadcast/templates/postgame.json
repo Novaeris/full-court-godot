@@ -1,0 +1,35 @@
+{
+	"id": "postgame",
+	"title": "Postgame report",
+	"scope": "game",
+	"segments": [
+		{
+			"type": "final_score",
+			"seconds": 6
+		},
+		{
+			"type": "line_score",
+			"seconds": 6
+		},
+		{
+			"type": "player_of_game",
+			"seconds": 8
+		},
+		{
+			"type": "team_comparison",
+			"seconds": 9
+		},
+		{
+			"type": "leaders",
+			"seconds": 7
+		},
+		{
+			"type": "milestones",
+			"seconds": 6
+		},
+		{
+			"type": "highlights",
+			"seconds": 10
+		}
+	]
+}

@@ -75,6 +75,8 @@ var replay_button: Button
 var tools: FcReplayTools   # the replay-review tools (bookmark, marks, reel, angle, replay time)
 var marks: FcTimelineMarks   # ticks under the scrubber: highlights, key plays, bookmarks
 var bookmarks: FcBookmarkStore = FcBookmarkStore.new("")   # in memory unless the app gives it a file (FcReplay.open): tests never touch the player's own file
+var show_panel: FcProductionPanel   # the production shows (pregame, halftime, postgame, championship) drawn over the stage
+var title_context: Dictionary = {}   # {series_label} when this game decided a title; empty otherwise
 var right_column: Control   # the tools and the feed side by side with the court; it shows while either of them does
 var package: Dictionary = {}   # FcReplayCollections.package: the reel's references and length
 var highlights: Array[Dictionary] = []   # FcHighlights.select: the events worth jumping to, in game order
@@ -195,6 +197,11 @@ func _build() -> void:
 	stage.add_child(overlay)
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE, Control.PRESET_MODE_MINSIZE, FcUiTokens.SPACE_2)
 	overlay.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	show_panel = FcProductionPanel.new()
+	stage.add_child(show_panel)
+	show_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, FcUiTokens.SPACE_5)
+	show_panel.closed.connect(end_show)
+	show_panel.reel_requested.connect(_on_show_reel)
 	spotlight = FcPlayerSpotlight.new(colors)
 	stage.add_child(spotlight)
 	spotlight.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT, Control.PRESET_MODE_MINSIZE, FcUiTokens.SPACE_2)
@@ -247,6 +254,7 @@ func _build() -> void:
 	tools.mark_jump.connect(jump_mark)
 	tools.reel_pressed.connect(toggle_reel)
 	tools.intro_pressed.connect(toggle_introductions)
+	tools.show_pressed.connect(start_show)
 	tools.angle_chosen.connect(set_replay_angle)
 	right.add_child(tools)
 	_register(FcPresentationMode.P_HIGHLIGHTS, tools)
@@ -480,9 +488,10 @@ func apply_layout() -> void:
 	_size_stage()
 	var E := FcPresentationMode
 	bug.visible = E.hud_shows(hud, E.E_SCOREBUG)
-	overlay.hud_hidden = not E.hud_shows(hud, E.E_OVERLAY)
+	overlay.hud_hidden = not E.hud_shows(hud, E.E_OVERLAY) or is_show()   # a show covers the stage: no lower third under it
 	overlay.auto_hide = mode == E.BROADCAST   # a television lower third leaves by itself; the review modes keep it until the next play
 	spotlight.hud_hidden = overlay.hud_hidden
+	show_panel.visible = is_show() and hud != FcPresentationMode.HUD_HIDDEN
 	spotlight.auto_hide = overlay.auto_hide
 	if overlay.hud_hidden:
 		spotlight.visible = false
@@ -511,6 +520,8 @@ func _size_stage() -> void:
 			tree_entered.connect(_size_stage, CONNECT_ONE_SHOT)
 		return
 	var share: float = {FcPresentationMode.BROADCAST: 0.44, FcPresentationMode.REPLAY: 0.36}.get(mode, 0.3)
+	if is_show():
+		share = maxf(share, 0.5)   # the show's tables need room
 	stage.custom_minimum_size.y = clampf(get_viewport_rect().size.y * share, 280.0, 1100.0)
 
 
@@ -744,6 +755,9 @@ func step(direction: int) -> void:
 
 func toggle_play() -> void:
 	if model == null or model.is_empty():
+		return
+	if is_show():
+		end_show()   # Play (or Space) closes the show and goes back to the replay
 		return
 	if is_intro():
 		end_introductions()   # Play (or Space) skips the introductions and goes back to the replay
@@ -1036,6 +1050,65 @@ func end_reel() -> void:
 
 func is_reel() -> bool:
 	return not state.reel.is_empty()
+
+
+func is_show() -> bool:
+	return not state.show.is_empty()
+
+
+## Tells the screen this game decided a title (FcReplay finds out from the season's playoffs): the championship presentation becomes available.
+func set_title_context(context: Dictionary) -> void:
+	title_context = context
+	if tools != null:
+		tools.championship_button.visible = not context.is_empty()
+
+
+## A production show (FcProductionPlan: pregame, halftime, postgame or championship) over the stage, from the segments of its template. The replay
+## goes to the show's moment (the tip-off, the half or the end), is paused, and comes back exactly as it was when the show ends.
+func start_show(id: String) -> void:
+	if model == null or model.is_empty():
+		return
+	var plan := FcProductionPlan.build(id, timeline, title_context)
+	if plan.is_empty():
+		return
+	if is_show():
+		show_panel.show_plan(plan)
+		state.show["id"] = id
+		seek(int(plan["index"]), false)
+		return
+	if is_reel():
+		end_reel()
+	if is_instant_replay():
+		end_instant_replay()
+	if is_intro():
+		end_introductions()
+	state.show = {"id": id, "return_index": _index, "speed": speed, "was_playing": _playing}
+	_playing = false
+	set_process(false)
+	play_button.text = "Play"
+	seek(int(plan["index"]), false)
+	show_panel.show_plan(plan)
+	apply_layout()
+	show_panel.visible = hud != FcPresentationMode.HUD_HIDDEN
+
+
+func end_show() -> void:
+	if not is_show():
+		return
+	var back := int(state.show["return_index"])
+	speed = float(state.show["speed"])
+	_playing = bool(state.show["was_playing"])
+	state.show = {}
+	show_panel.visible = false
+	apply_layout()
+	set_process(_playing)
+	play_button.text = "Pause" if _playing else "Play"
+	seek(back, false)
+
+
+func _on_show_reel(_refs: Array) -> void:
+	end_show()
+	start_reel()
 
 
 func is_intro() -> bool:
