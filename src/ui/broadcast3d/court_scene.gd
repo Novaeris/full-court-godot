@@ -39,7 +39,10 @@ var _led_labels: Array[Label3D] = []
 var _led_index: int = 0
 var _led_clock: float = 0.0
 var _bench_figures: int = 0
+var _bench_nodes: Array[MultiMeshInstance3D] = []
 var _light_count: int = 0
+var _tier_materials: Dictionary = {}
+var dressing: Dictionary = {}   # what FcArenaDressing added (counts), for tests
 var _nets: Array = []     # the nets' materials, left hoop first
 var _swish: Array[float] = []   # how hard each net is swinging (1 to 0)
 
@@ -59,6 +62,7 @@ func build(home_color: Color, away_color: Color, home_abbreviation: String, aren
 	_add_benches()
 	_add_scoreboard()
 	_add_crowd()
+	dressing = FcArenaDressing.add_all(self, identity)
 	camera = Camera3D.new()
 	camera.fov = FcBroadcast3DRules.FOV
 	camera.current = true
@@ -176,6 +180,12 @@ func crowd_animated() -> bool:
 	return _crowd_material != null
 
 
+## Hides or shows the stand-in bench figures (the viewer seats the real players there and hides them).
+func set_bench_figures_visible(shown: bool) -> void:
+	for node in _bench_nodes:
+		node.visible = shown
+
+
 func bench_figure_count() -> int:
 	return _bench_figures
 
@@ -206,7 +216,10 @@ func _add_environment() -> void:
 	env.background_color = Color("0B1020")
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color("8090B0")
-	env.ambient_light_energy = 0.6
+	env.ambient_light_energy = 0.5
+	env.glow_enabled = true   # the LED boards, lamps and ribbon bloom a little
+	env.glow_intensity = 0.5
+	env.glow_hdr_threshold = 1.0
 	var holder := WorldEnvironment.new()
 	holder.environment = env
 	add_child(holder)
@@ -317,6 +330,15 @@ func rim_position(right: bool) -> Vector3:
 	return Vector3(x, FcHoopBuilder.RIM_HEIGHT, COURT_WIDTH / 2.0)
 
 
+## One material per seating colour (a tier colour comes from FcArenaDressing: team colours in the lower bowl), shared by all tiers that use it.
+func _tier_material(side: int, t: int) -> StandardMaterial3D:
+	var c := FcArenaDressing.seat_color(identity, side, t)
+	var key := c.to_html(false)
+	if not _tier_materials.has(key):
+		_tier_materials[key] = _material(c)
+	return _tier_materials[key]
+
+
 func _add_arena() -> void:
 	for side in 4:
 		for t in TIERS:
@@ -331,7 +353,7 @@ func _add_arena() -> void:
 				mesh.size = Vector3(depth, height, COURT_WIDTH + 40.0 + t * 6.0)
 				tier.position = Vector3((-16.0 - t * depth) if side == 2 else (COURT_LENGTH + 16.0 + t * depth), height * (t + 0.5), COURT_WIDTH / 2.0)
 			tier.mesh = mesh
-			tier.material_override = _material(Color("27324A") if t % 2 == 0 else Color("202A40"))
+			tier.material_override = _tier_material(side, t)
 			add_child(tier)
 
 
@@ -418,6 +440,7 @@ func _add_benches() -> void:
 		material.vertex_color_use_as_albedo = true
 		node.material_override = material
 		add_child(node)
+		_bench_nodes.append(node)
 	_bench_figures = seats * 2
 
 

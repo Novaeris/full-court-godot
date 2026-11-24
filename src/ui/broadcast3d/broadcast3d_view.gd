@@ -31,6 +31,10 @@ var _shot_kind: int = 0
 var _attacks_right: bool = true
 var _holder: int = 0
 var _actor: int = 0
+var _side_of: Dictionary = {}     # player id -> 0 home, 1 away
+var _seated: Dictionary = {}      # player id -> true while sitting on the bench
+var officials: Array[FcBroadcastCharacter] = []   # three referees
+var coaches: Array[FcBroadcastCharacter] = []     # one head coach on each sideline
 var _angle: Dictionary = {"angle": "main", "side": 1}   # the angle the camera is gliding to
 var _angle_from: Dictionary = {"angle": "main", "side": 1}
 var _angle_blend: float = 1.0
@@ -45,6 +49,8 @@ var _ball_goal: Vector3 = Vector3(47, 3, 25)
 var _wave: int = 0
 var _dragging: bool = false
 var _teleport: bool = true
+
+const BENCH_SEATS := 8
 
 
 ## Builds the view for a replay. `colors` are the home and away colours. Returns false when the 3D view cannot be built (the caller then keeps 2D).
@@ -65,6 +71,7 @@ func setup(replay_model: FcReplayModel, broadcast_timeline: FcBroadcastTimeline,
 	var away: Color = colors[1] if colors.size() == 2 else Color("F28A2E")
 	scene.build(home, away, str(_model.box.abbreviations[0]), arena_identity if not arena_identity.is_empty() else FcArenaIdentity.for_box(_model.box, home, away))   # the arena is dressed for the home team
 	_build_characters([home, away])
+	scene.set_bench_figures_visible(false)
 	_ball = FcBasketball.new()
 	scene.add_child(_ball)
 	var result := FcReconstructor.build(_timeline)
@@ -75,6 +82,30 @@ func setup(replay_model: FcReplayModel, broadcast_timeline: FcBroadcastTimeline,
 	built = true
 	set_process(false)
 	return true
+
+
+## The three referees and the two head coaches: characters like the players (the same skeleton and mesh builder) in a referee shirt and black trousers or a
+## suit, with no number. They are not in the game data and nothing here reads or writes it: they are scenery that follows the play.
+func _build_staff(colors: Array) -> void:
+	for k in 3:
+		var subject := {"key": "official:%d" % k, "name": "official", "jersey": 0, "position": "SG", "attire": "referee",
+			"physical": {"height_cm": 180 + k * 5, "weight_kg": 80 + k * 4},
+			"team": {"primary": "#26272B", "secondary": "#F2F2F2", "abbreviation": "", "name": ""}}
+		var c := FcBroadcastCharacter.new().setup(subject, float(k) * 0.3)
+		c.auto_advance = false
+		c.position = Vector3(30.0 + 17.0 * float(k), 0.0, 25.0)
+		scene.add_child(c)
+		officials.append(c)
+	for side in 2:
+		var subject := {"key": "coach:%d:%s" % [side, str(_model.box.abbreviations[side])], "name": "coach", "jersey": 0, "position": "SF", "attire": "suit",
+			"physical": {"height_cm": 188, "weight_kg": 92},
+			"team": {"primary": "#" + (colors[side] as Color).darkened(0.55).to_html(false), "secondary": "#F2F2F2", "abbreviation": "", "name": ""}}
+		var c := FcBroadcastCharacter.new().setup(subject, float(side) * 0.5)
+		c.auto_advance = false
+		c.position = Vector3(FcCourtLayout.COURT_LENGTH * (0.29 if side == 0 else 0.71) + (3.2 if side == 0 else -3.2), 0.0, -1.6)
+		c.set_state("coach", 0.0)
+		scene.add_child(c)
+		coaches.append(c)
 
 
 func _build_characters(colors: Array) -> void:
@@ -92,7 +123,9 @@ func _build_characters(colors: Array) -> void:
 		c.auto_advance = false   # the view advances them, and only while it is showing
 		scene.add_child(c)
 		characters[p.player_id] = c
+		_side_of[p.player_id] = side
 		i += 1
+	_build_staff(colors)
 
 
 ## Shows event `index`: who is on court, where they walk to, who holds the ball, the scoreboard. `animate` false jumps everyone there at once.
@@ -115,12 +148,23 @@ func show_event(index: int, animate: bool = true) -> void:
 	_actor = int(entry["a"])
 	var on_court: Dictionary = kf["players"]
 	var offense: int = state["offense_side"]
+	var bench_slot := [0, 0]
 	for pid in characters:
 		var c: FcBroadcastCharacter = characters[pid]
 		var here := on_court.has(pid)
-		c.visible = here
 		if not here:
+			# off the court a player sits on his team bench (the first eight; a longer bench is out of the picture)
+			var team: int = _side_of[pid]
+			var slot: int = bench_slot[team]
+			bench_slot[team] = slot + 1
+			c.visible = slot < BENCH_SEATS
+			_seated[pid] = true
+			_targets.erase(pid)
+			c.position = _bench_position(team, slot)
+			c.rotation_degrees.y = 0.0
 			continue
+		c.visible = true
+		_seated.erase(pid)
 		_targets[pid] = on_court[pid]
 		var side := 0 if (state["on_court"][0] as Array).has(pid) else 1
 		var role := "other"
@@ -167,6 +211,12 @@ func _mark_contester(shooter: int, on_court: Dictionary) -> void:
 		_roles[best] = "contester"
 
 
+## Where a bench player sits: team 0 on the left bench and team 1 on the right, in a row behind the far sideline.
+func _bench_position(team: int, slot: int) -> Vector3:
+	var cx := FcCourtLayout.COURT_LENGTH * (0.29 if team == 0 else 0.71)
+	return Vector3(cx + (float(slot) - float(BENCH_SEATS - 1) / 2.0) * 1.35, 0.0, -7.1)
+
+
 ## The crowd reacts to the sounds of an event (the same cues the audio uses): cheers stand the next section up and make the crowd jump (a big one
 ## starts a stadium wave), a groan slumps it, an "oh" is a short gasp.
 func react(cues: Array) -> void:
@@ -211,6 +261,7 @@ func _process(delta: float) -> void:
 	rig.advance(delta)
 	var cam := rig.camera()
 	scene.set_camera(_blended_pose(cam, delta))
+	_advance_scenery(delta)
 	var hoop := FcCourtLayout.basket(_attacks_right)
 	for pid in _targets:
 		var c: FcBroadcastCharacter = characters[pid]
@@ -239,6 +290,39 @@ func _process(delta: float) -> void:
 		else:
 			c.rotation_degrees.y = lerp_angle(deg_to_rad(c.rotation_degrees.y), deg_to_rad(FcBroadcast3DRules.facing_yaw(here, hoop)), minf(1.0, delta * 10.0)) * 180.0 / PI
 	_move_ball(delta)
+
+
+## Bench players sit, coaches stand with their arms folded, and the referees follow the ball: lead at the baseline of the attacked basket on the far side
+## of the lane, trail behind the play on the sideline, centre on the opposite sideline.
+func _advance_scenery(delta: float) -> void:
+	for pid in _seated:
+		var c: FcBroadcastCharacter = characters[pid]
+		c.set_state("sit")
+		c.playback = 1.0
+		c.advance(delta)
+	for c in coaches:
+		c.advance(delta)
+	var dir := 1.0 if _attacks_right else -1.0
+	var ball := Vector2(_ball.position.x, _ball.position.z)
+	var end_x := FcCourtLayout.COURT_LENGTH if _attacks_right else 0.0
+	var lead_side := 1.0 if ball.y < 25.0 else -1.0
+	var targets := [Vector2(end_x - dir * 2.5, 25.0 + lead_side * 11.0),
+		Vector2(clampf(ball.x - dir * 12.0, 5.0, 89.0), -1.5 if ball.y < 25.0 else 51.5),
+		Vector2(clampf(ball.x + dir * 6.0, 5.0, 89.0), 51.5 if ball.y < 25.0 else -1.5)]
+	for k in officials.size():
+		var c := officials[k]
+		var here := Vector2(c.position.x, c.position.z)
+		var distance := here.distance_to(targets[k])
+		var speed := minf(FcBroadcast3DRules.travel_speed_for(distance) * 0.6, 11.0)
+		var moving := distance > 1.0
+		var state := FcBroadcast3DRules.motion_for("other", speed) if moving else "idle"
+		c.set_state(state)
+		c.playback = FcBroadcast3DRules.playback_for(state, speed, c.height_feet) if moving else 1.0
+		c.advance(delta)
+		if moving:
+			var next := here.move_toward(targets[k], minf(distance, speed * delta))
+			c.position = Vector3(next.x, 0.0, next.y)
+		c.rotation_degrees.y = lerp_angle(deg_to_rad(c.rotation_degrees.y), deg_to_rad(FcBroadcast3DRules.facing_yaw(here, ball)), minf(1.0, delta * 6.0)) * 180.0 / PI
 
 
 func _move_ball(delta: float) -> void:
@@ -356,7 +440,7 @@ func floor_point(pixel: Vector2) -> Vector2:
 func on_court_ids() -> Array:
 	var out: Array = []
 	for pid in characters:
-		if (characters[pid] as FcBroadcastCharacter).visible:
+		if (characters[pid] as FcBroadcastCharacter).visible and not _seated.has(pid):
 			out.append(pid)
 	out.sort()
 	return out

@@ -45,8 +45,11 @@ func setup(subject: Dictionary, phase_offset: float = 0.0) -> FcBroadcastCharact
 	var visual := FcPlayerVisual.resolve(subject)
 	identity = visual["identity"]
 	uniform = visual["uniform"]
+	uniform["attire"] = str(subject.get("attire", "playing"))   # "playing", "referee" or "suit" (a coach): see FcBodyBuilder
 	jersey_number = int(uniform["number"])
 	archetype = FcBodyArchetype.make(visual)
+	if str(uniform["attire"]) != "playing":
+		archetype["shoe"] = 1   # an official or a coach wears dark shoes
 	height_feet = float(archetype["height_feet"])
 	width_scale = float(archetype["width_scale"])
 	_phase_offset = phase_offset
@@ -63,7 +66,8 @@ func _build() -> void:
 	_bone = built["bones"]
 	_hand_bone = int(_bone["r_hand"])
 	_pelvis_bone = int(_bone["pelvis"])
-	_attach_numbers()
+	if str(uniform["attire"]) == "playing":
+		_attach_numbers()   # only players wear a number
 	_apply_pose(FcBroadcastPose.pose_for("idle", _phase_offset))
 
 

@@ -15,7 +15,7 @@ extends RefCounted
 const STATES := [
 	"idle", "walk", "run", "sprint", "stop", "turn", "jump", "land", "fall", "celebrate",
 	"dribble", "dribble_run", "crossover", "hesitation", "drive", "post", "shoot", "three", "layup", "dunk",
-	"defend", "shuffle", "contest", "steal", "block", "rebound", "recover",
+	"defend", "shuffle", "contest", "steal", "block", "rebound", "recover", "sit", "coach",
 ]
 const JOINTS := [
 	"pelvis", "torso", "neck", "head", "l_shoulder", "r_shoulder", "l_elbow", "r_elbow", "l_hand", "r_hand",
@@ -25,7 +25,7 @@ const JOINTS := [
 const CYCLE := {
 	"idle": 3.0, "walk": 1.1, "run": 0.7, "sprint": 0.52, "stop": 0.8, "turn": 0.9, "jump": 1.0, "land": 0.9, "fall": 1.6, "celebrate": 1.3,
 	"dribble": 0.8, "dribble_run": 0.7, "crossover": 0.9, "hesitation": 1.1, "drive": 0.6, "post": 1.4, "shoot": 1.3, "three": 1.4, "layup": 1.1, "dunk": 1.2,
-	"defend": 1.0, "shuffle": 0.6, "contest": 1.0, "steal": 0.9, "block": 1.0, "rebound": 1.2, "recover": 0.7,
+	"defend": 1.0, "shuffle": 0.6, "contest": 1.0, "steal": 0.9, "block": 1.0, "rebound": 1.2, "recover": 0.7, "sit": 4.0, "coach": 3.0,
 }
 ## States where both hands are on the ball for part of the loop (the character solves arm IK to the ball anchor in these).
 const TWO_HAND := ["shoot", "three", "dunk", "rebound", "post"]
@@ -390,6 +390,25 @@ static func pose_for(state: String, phase: float) -> Dictionary:
 				_arm(j, side, -0.9 * float(pair[1]), 0.15, 1.4)
 			root.y = -0.03 + 0.04 * absf(c)
 			_flat_feet(j, 0.7)
+		"sit":   # seated on the bench, hands on the knees, glancing about; the ground contact lowers the hips onto the seat height
+			j["torso"] = Vector3(0.1 + 0.02 * s, 0.0, 0.0)
+			j["head"] = Vector3(-0.1, 0.35 * sin(th * 1.0 + 0.5) * 0.6, 0.0)
+			j["neck"] = Vector3(0.0, 0.2 * sin(th + 0.5), 0.0)
+			_arm(j, "l", 0.35, 0.1, 1.05)
+			_arm(j, "r", 0.35, 0.1, 1.05)
+			_leg(j, "l", 1.5, 1.55, 0.06)
+			_leg(j, "r", 1.5, 1.55, 0.06)
+			root.y = -0.2
+			_flat_feet(j, 1.0)
+		"coach":   # standing on the sideline with the arms folded, watching the play
+			j["torso"] = Vector3(0.05, 0.0, 0.0)
+			j["head"] = Vector3(-0.05, 0.3 * sin(th), 0.0)
+			_arm(j, "l", 0.6, -0.15, 2.3)
+			_arm(j, "r", 0.55, -0.15, 2.3)
+			_leg(j, "l", 0.12, 0.18, 0.12)
+			_leg(j, "r", 0.1, 0.18, 0.12)
+			root.y = -0.015
+			_flat_feet(j, 1.0)
 		_:
 			pass
 	out["root"] = root

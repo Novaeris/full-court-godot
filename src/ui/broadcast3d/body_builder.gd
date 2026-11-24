@@ -28,6 +28,8 @@ var _surfaces: Dictionary = {} # surface name -> FcMeshSurface
 var _skin: Color
 var _hair: Color
 var _primary: Color
+var _short_color: Color   # the colour of shorts, or of the trousers of an official or a coach
+var _attire: String = "playing"   # "playing" (the tank top, shorts and socks), "referee" or "suit" (a shirt or jacket with sleeves and long trousers)
 var _secondary: Color
 var _head: Dictionary = {}     # head frame: centre, rx, ry, rz, chin
 
@@ -59,10 +61,14 @@ func build(body: Dictionary, visual_identity: Dictionary, visual_uniform: Dictio
 	_skin = identity["skin_color"]
 	_hair = identity["hair_color"]
 	_primary = uniform["primary"]
+	_attire = str(uniform.get("attire", "playing"))
+	_short_color = _primary if _attire == "playing" else _primary.darkened(0.3)
 	_secondary = uniform["secondary"]
 	_layout_skeleton()
 	_build_body()
 	_build_uniform()
+	if _attire != "playing":
+		_build_long_garments()
 	_build_head()
 	var skeleton := _make_skeleton()
 	var mesh := ArrayMesh.new()
@@ -493,7 +499,7 @@ func _build_uniform() -> void:
 		var rx := (float(a["hip_rx"]) + 0.012 + float(d[1])) * h
 		var rz := (float(a["hip_rz"]) + 0.012 + float(d[1])) * h
 		var band: bool = d[2]
-		var ring := _ring_y(Vector3(0.0, y, 0.0), rx, rz, trim if band else _primary, _bw("pelvis"), 2.5)
+		var ring := _ring_y(Vector3(0.0, y, 0.0), rx, rz, trim if band else _short_color, _bw("pelvis"), 2.5)
 		block.append(ring)
 	_loft(ss, block, 16, true, false)
 	for side in [1, -1]:
@@ -512,14 +518,17 @@ func _build_uniform() -> void:
 				if is_hem:
 					return trim
 				if side * sn > 0.9 or (absf(sn) > 0.95):   # the side stripe, on the outside of the leg
-					return trim.lerp(_primary, 0.1)
-				return _primary
-			var ring := _ring_y(Vector3(hip.x, y, 0.0), r, r * 1.04, _primary, _bw2("pelvis", p + "hip", _sm(py - 0.08 * h, hip.y, y) * 0.9 + (0.1 if k > 1 else 0.0)), 2.3)
+					return trim.lerp(_short_color, 0.1)
+				return _short_color
+			var ring := _ring_y(Vector3(hip.x, y, 0.0), r, r * 1.04, _short_color, _bw2("pelvis", p + "hip", _sm(py - 0.08 * h, hip.y, y) * 0.9 + (0.1 if k > 1 else 0.0)), 2.3)
 			ring["paint"] = paint
 			legs.append(ring)
 		_loft(ss, legs, 12, false, true)
 		# --- socks (secondary colour, to the calf) and shoes
 		var sks: FcMeshSurface = _surfaces["socks"]
+		if _attire != "playing":
+			_build_shoe(p, _rest[p + "foot"])
+			continue
 		var knee_pos: Vector3 = _rest[p + "knee"]
 		var ankle: Vector3 = _rest[p + "foot"]
 		var rc := float(a["calf_r"]) * h
@@ -532,6 +541,49 @@ func _build_uniform() -> void:
 			sock.append(_ring_y(c + Vector3(0.0, 0.0, -0.1 * rc * sin(t * PI)), rc * (float(prof) + 0.06) , rc * (float(prof) + 0.06) * 1.1, col, _bw2(p + "knee", p + "foot", _sm(0.82, 1.0, t) * 0.5) if t > 0.8 else _bw(p + "knee")))
 		_loft(sks, sock, 10, false, false)
 		_build_shoe(p, ankle)
+
+
+## Long sleeves and long trousers for an official (a short-sleeved shirt) or a coach (a jacket): tubes round the arms and legs, a little wider than the
+## skin, weighted to the same bones, drawn in the jersey and shorts surfaces.
+func _build_long_garments() -> void:
+	var h := _h
+	var js: FcMeshSurface = _surfaces["jersey"]
+	var ss: FcMeshSurface = _surfaces["shorts"]
+	var long_sleeves := _attire == "suit"
+	for side in [1, -1]:
+		var p := "l_" if side > 0 else "r_"
+		var sh: Vector3 = _rest[p + "shoulder"]
+		var el: Vector3 = _rest[p + "elbow"]
+		var wr: Vector3 = _rest[p + "hand"]
+		var ra := float(archetype["arm_r"]) * h * 1.28 + 0.006 * h
+		var rf := float(archetype["forearm_r"]) * h * 1.2 + 0.006 * h
+		var rings: Array = []
+		for t in [-0.045, 0.0, 0.2, 0.55, 0.9, 1.0]:
+			var bw: Array = _bw2("torso", p + "shoulder", 0.4 + t * 4.0) if t < 0.15 else (_bw2(p + "shoulder", p + "elbow", 0.35 + (t - 0.9) * 6.0) if t > 0.9 else _bw(p + "shoulder"))
+			if t < 0.0:
+				bw = [[_index["torso"], 0.55], [_index[p + "shoulder"], 0.45]]
+			var r := ra * (1.0 if t > 0.0 else 0.92)
+			rings.append(_ring_y(sh.lerp(el, t), r, r * 0.95, _primary, bw))
+		if long_sleeves:
+			for t in [0.12, 0.45, 0.85]:
+				var r := rf * lerpf(1.0, 0.74, t)
+				rings.append(_ring_y(el.lerp(wr, t), r, r * 0.92, _primary, _bw(p + "elbow")))
+		_loft(js, rings, 10, false, false)
+		var hip: Vector3 = _rest[p + "hip"]
+		var kn: Vector3 = _rest[p + "knee"]
+		var an: Vector3 = _rest[p + "foot"]
+		var rt := float(archetype["thigh_r"]) * h * 1.16 + 0.006 * h
+		var rc := float(archetype["calf_r"]) * h * 1.16 + 0.006 * h
+		var legs: Array = []
+		for entry in [[-0.05, 1.04], [0.35, 0.9], [0.72, 0.74], [1.0, 0.68]]:
+			var t: float = entry[0]
+			var bw: Array = _bw2("pelvis", p + "hip", 0.8) if t < 0.0 else (_bw2(p + "hip", p + "knee", 0.4) if t > 0.9 else _bw(p + "hip"))
+			legs.append(_ring_y(hip.lerp(kn, t), rt * float(entry[1]), rt * float(entry[1]) * 1.02, _short_color, bw))
+		for entry in [[0.06, 0.9, 0.55], [0.3, 1.0, 0.0], [0.65, 0.82, 0.0], [0.95, 0.66, 0.25]]:
+			var t: float = entry[0]
+			var bw: Array = _bw2(p + "hip", p + "knee", 0.65) if t < 0.1 else (_bw2(p + "knee", p + "foot", float(entry[2])) if t > 0.9 else _bw(p + "knee"))
+			legs.append(_ring_y(kn.lerp(an, t) + Vector3(0.0, 0.0, -0.1 * rc * sin(t * PI)), rc * float(entry[1]), rc * float(entry[1]) * 1.1, _short_color, bw))
+		_loft(ss, legs, 10, false, false)
 
 
 func _build_shoe(p: String, ankle: Vector3) -> void:
