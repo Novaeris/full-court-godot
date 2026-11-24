@@ -79,6 +79,12 @@ Each screen is laid out inside a REAL `SubViewport` of the window size, then the
 - **Orientation:** Android is locked to portrait; allow landscape?
 - **Shader risk on low-end Android GPUs:** the emulator's software GPU failed at 261 fragment uniform vectors. Confirm on real devices before choosing the minimum supported phone.
 
+## Broadcast pass 2 (2026-11-23, D-071)
+- **Verified by automated tests:** modes x HUD levels x 1080p, 1440p and ultrawide x three audio configurations (`test_live_broadcast_matrix`), the 2D fallback with every new feature, phone layouts in every mode, the Owner, Career-style and Dynasty-style entry points, and every number in the shows (recomputed from box scores and raw season results).
+- **Measured on the development machine only:** frame time and memory pass with a wide margin (`docs/validation/M5_ARENA_PERFORMANCE.md`).
+- **Open:** the 10-cycle leak criterion (growth of at most 10 MB) was not met in several runs (6 to 24 MB, no node or orphan leak); see the report. Never measured on weaker GPUs, integrated graphics, Mac, or any device.
+- **Not built:** a commentary voice (the interface exists, nothing implements it), Full Court Tonight for Career and Dynasty, true 3D close-ups (D-070).
+
 ## Known limits to carry forward
 - Player visuals are tiers 0 to 2 (monogram, card art, procedural figure); full-body poses and 3D are designed slots, not built (D5).
 - Engine messages such as "Lambda capture ... was freed" appear when a live test frees a pack reveal while a tween runs; they are not script errors.

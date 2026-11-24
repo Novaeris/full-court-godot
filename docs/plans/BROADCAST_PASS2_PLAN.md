@@ -71,6 +71,7 @@ Per milestone: `godot_console --headless --path . --import --quit` (when adding 
 - Rule: a mode switch never changes `FcPlaybackState` (live-tested, including during an instant replay).
 
 ## Status
+- M8: built (validation matrix, 2D fallback and phone checks, performance re-measured, docs refreshed). **Programme complete**; open items: leak criterion (median 11 MB vs 10 MB), no voice sink, Full Court Tonight Owner-only, `replay_screen.gd` size.
 - M7: built (templates, game shows, Full Court Tonight, one panel). Career and Dynasty entry points for the weekly show are not built (Owner only).
 - M6: built (ambience, music, ducking, role-based commentary events, arbiter, sinks, booth, settings). No voice sink exists; the interface is tested with a test double.
 - M5: built (arena identity, loyalty crowd on a shader, LED boards, benches, lights, introductions). Open: leak check not a clean pass (see M5_ARENA_PERFORMANCE.md); re-measured in M8.

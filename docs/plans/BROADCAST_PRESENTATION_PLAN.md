@@ -2,11 +2,10 @@
 
 Direction (D-069): a premium, television-style broadcast of every watched game in Owner, Career and Dynasty: automatic, manual and hybrid cameras, professional graphics, replays and highlights, pregame, halftime and postgame production, crowd and arena audio. 3D is the aim **if** three feasibility prototypes pass limits written down before they are measured; a permanent 2D presentation is the fallback and the delivery path if 3D fails. Mobile stays 2D (D-030). The sibling plan for player numbers is [BASKETBALL_AUTHENTICITY_IMPLEMENTATION_PLAN.md](BASKETBALL_AUTHENTICITY_IMPLEMENTATION_PLAN.md). Progress is recorded in [../AUTONOMOUS_WORK_LOG.md](../AUTONOMOUS_WORK_LOG.md).
 
-## 1. What exists (verified in the repository)
-- **No 3D anywhere.** No `Node3D`, `Camera3D` or `MeshInstance3D` in `src/`, `creator_studio/`, `scenes/` or `assets/`; the only scenes are the two `main.tscn`; no model, animation or audio files. The only `SubViewport` bakes 2D portraits (`src/ui/player/portrait_bake.gd`).
-- **A 2D replay:** `FcReplayScreen` (play, pause, step, speed 1x/2x/4x, filters, period buttons, scrubber), `FcCourtView` (a `Control` drawing the floor, ten circles and the ball in `_draw()`, with a 0.45 s glide; illustrative), `FcCourtLayout` (pure maths in feet on a 94 x 50 court; positions are event-based and hash-based, not tracked), `FcReplayModel` (state at each event), `FcScoreBug` (a static label panel, no clock or fouls).
-- **The simulation is blocking and has no spatial model:** `FcGameSimulator.simulate()` returns a box score; a recorder writes `FcGameEventLog` rows `[type, clock_tenths, side, a, b, x]` (shots with kind, rebounds, turnovers, fouls, free throws, substitutions, injuries, periods). No positions, no pass events, no possession starts, no timeouts, shot clock or jump ball.
-- **Presentation audio is absent:** nothing in the replay, post-game or game-day screens calls `FcAudio.cue`; `FcAudio` and `FcAudioSynth` serve UI sounds.
+## 1. What exists (updated 2026-11-23; the text written at B0 said there was no 3D, a static score bug and no audio presentation, all of which has since been built)
+- **A reduced 3D viewer and a 2D fallback** (D-070): `FcBroadcast3DView` / `FcCourtScene` (stands, instanced crowd, benches, LED boards, hoops, code-built characters), `FcCourtView` (2D), `FcCourtLayout` (feet, 94 x 50), `FcReplayModel`, `FcBroadcastTimeline`, `FcReconstructor` (labelled reconstruction), `FcReplayScreen` as the one screen for Owner, Career and Dynasty.
+- **Broadcast pass 2 (M1 to M8) built on top of it**: presentation modes and HUD, provenance and the identity kit, camera direction v2, replay v2 (importance, references, bookmarks, reel), arena identity, audio mixing and commentary, template-driven production and Full Court Tonight. See [BROADCAST_PASS2_PLAN.md](BROADCAST_PASS2_PLAN.md) and D-071.
+- **Still true**: the simulation has no spatial model and records no positions, passes, possession starts, timeouts or shot clock; everything between events is reconstructed and labelled so.
 
 ## 2. Architecture: eight layers, each pure where it can be
 | # | Layer | Owns | Exists |
