@@ -1,0 +1,30 @@
+{
+	"version": 1,
+	"note": "The player asset registry read by FcPlayerAssetLibrary. Body files hold a complete player; part files hold swappable head, hair and accessory meshes on the same skeleton. Names are produced by tools/blender/build_player_m1.py.",
+	"library_model": "library",
+	"bodies": {
+		"lean": "res://assets/players/fc_player_lean.glb",
+		"athletic": "res://assets/players/fc_player_athletic.glb",
+		"heavy": "res://assets/players/fc_player_heavy.glb"
+	},
+	"body_bulk_thresholds": {"lean": 0.30, "athletic": 0.56},
+	"parts": {
+		"head": "res://assets/players/parts/fc_parts_head.glb",
+		"hair": "res://assets/players/parts/fc_parts_hair.glb"
+	},
+	"face_count": 6,
+	"jaw_count": 3,
+	"hair": {
+		"bald": "", "short": "hair_short", "fade": "hair_fade", "afro": "hair_afro", "braids": "hair_braids",
+		"locs": "hair_locs", "curly": "hair_curly", "long": "hair_long"
+	},
+	"facial_hair": {
+		"none": "", "stubble": "facial_stubble_{jaw}", "goatee": "facial_goatee_{jaw}", "beard": "facial_beard_{jaw}"
+	},
+	"accessories": {"headband": "acc_headband"},
+	"face_width_percent": {"min": 80, "max": 92, "scale_min": 0.94, "scale_max": 1.06},
+	"tints": {
+		"lips": "#8E3B3B", "lips_mix": 0.42, "warm": "#C9703C", "cool": "#B58A78", "warmth_mix": 0.07,
+		"stubble_mix": 0.62, "brow_darken": 0.12, "fade_mix": 0.0
+	}
+}

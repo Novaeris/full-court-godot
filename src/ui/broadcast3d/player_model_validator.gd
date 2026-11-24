@@ -12,6 +12,15 @@ extends RefCounted
 
 const STANDARD_PATH := "res://data/player_pipeline/rig_standard.json"
 const REQUIRED_SURFACES := ["skin", "features", "jersey", "shorts", "socks", "shoes", "sole"]
+## Approved optional surfaces and the material each must carry (the game recolours materials by name). A mesh whose name matches no prefix here and is not a
+## required surface is refused, so the vocabulary stays closed (M1, docs/development/PLAYER_VISUAL_SPEC.md).
+const MATERIAL_BY_PREFIX := {
+	"hair_": "hair", "facial_": "hair", "brow_": "hair", "skin_head_": "skin", "nose_": "skin", "nostrils_": "features", "eyes_": "features",
+	"lips_": "lips", "acc_": "accessory",
+}
+const OPTIONAL_SURFACES := ["trim"]
+## A swappable part file (assets/players/parts/*.glb) holds only head parts, hair, facial hair and accessories on the standard skeleton.
+const PART_MAX_TRIANGLES := 6000
 
 static var _standard: Dictionary = {}
 
@@ -35,7 +44,7 @@ static func validate_path(path: String) -> Array[String]:
 		out.append("%s cannot be loaded as a scene" % path)
 		return out
 	var root := packed.instantiate()
-	out.append_array(validate_scene(root))
+	out.append_array(validate_part_scene(root) if "/parts/" in path else validate_scene(root))
 	root.free()
 	return out
 
@@ -57,6 +66,61 @@ static func validate_scene(root: Node) -> Array[String]:
 		return out   # the rest of the checks read bones by name
 	out.append_array(_check_rest_pose(sk))
 	out.append_array(_check_meshes(root, sk, std))
+	return out
+
+
+## The material name a mesh must carry ("" when the mesh name is not an approved surface).
+static func material_for(mesh_name: String) -> String:
+	if mesh_name in REQUIRED_SURFACES or mesh_name in OPTIONAL_SURFACES:
+		return mesh_name
+	for prefix in MATERIAL_BY_PREFIX:
+		if mesh_name.begins_with(prefix):
+			return MATERIAL_BY_PREFIX[prefix]
+	return ""
+
+
+## Every problem with an instantiated PART file (empty = valid): the standard skeleton, then each mesh named from the approved vocabulary, skinned, weighted
+## and within the per-part triangle budget. A part file is not a player: it has no required surfaces and no height.
+static func validate_part_scene(root: Node) -> Array[String]:
+	var out: Array[String] = []
+	var std := standard()
+	var skeletons := root.find_children("*", "Skeleton3D", true, false)
+	if skeletons.size() != 1:
+		out.append("a part file must contain exactly one skeleton (it has %d)" % skeletons.size())
+		return out
+	var sk := skeletons[0] as Skeleton3D
+	out.append_array(_check_bones(sk, std))
+	if not out.is_empty():
+		return out
+	var count := 0
+	for node in sk.get_children():
+		if not (node is MeshInstance3D):
+			continue
+		count += 1
+		var m := node as MeshInstance3D
+		var name := str(m.name)
+		var wanted := material_for(name)
+		if wanted == "" or name in REQUIRED_SURFACES:
+			out.append("part mesh '%s' is not an approved part name (hair_, facial_, brow_, skin_head_, nose_, nostrils_, eyes_, lips_, acc_)" % name)
+			continue
+		if m.mesh == null or m.mesh.get_surface_count() == 0:
+			out.append("part %s has no geometry" % name)
+			continue
+		if m.skin == null:
+			out.append("part %s is not skinned to the skeleton" % name)
+		var material := m.mesh.surface_get_material(0)
+		if material == null or material.resource_name != wanted:
+			out.append("part %s must have a material named '%s'" % [name, wanted])
+		var triangles := 0
+		for surface in m.mesh.get_surface_count():
+			var arrays := m.mesh.surface_get_arrays(surface)
+			var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+			triangles += indices.size() / 3
+			out.append_array(_check_weights(name, arrays, m))
+		if triangles > PART_MAX_TRIANGLES:
+			out.append("part %s has %d triangles (over the part budget of %d)" % [name, triangles, PART_MAX_TRIANGLES])
+	if count == 0:
+		out.append("the part file has no meshes")
 	return out
 
 
@@ -138,6 +202,8 @@ static func _check_meshes(root: Node, sk: Skeleton3D, std: Dictionary) -> Array[
 	for name in meshes:
 		if str(name).begins_with("hair_"):
 			has_hair = true
+		if material_for(str(name)) == "":
+			out.append("mesh '%s' is not an approved surface name" % name)
 	if not has_hair:
 		out.append("at least one hair mesh named hair_<style> is needed (hair_short, hair_afro, ...)")
 	for name in meshes:

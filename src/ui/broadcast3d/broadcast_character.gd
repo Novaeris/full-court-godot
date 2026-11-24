@@ -31,6 +31,13 @@ var model_path: String = ""
 ## True when the body is an imported model (Blender, GLB) driven through the retarget layer below.
 var imported: bool = false
 var model_problems: Array[String] = []   # why a requested model was refused (the generated body is then used)
+## With model = FcPlayerAssetLibrary.library_model(): the names of the pieces chosen for this player, and any part that could not be attached.
+var asset_spec: Dictionary = {}
+var _surname: String = ""
+var part_problems: Array[String] = []
+var _finger_bones: Dictionary = {}   # extension bone name -> index (empty for a model without fingers)
+var _finger_q: Dictionary = {}       # bone name -> the rotation it holds now (fingers ease toward their pose)
+var _finger_rate: float = 1.0
 
 var _bone: Dictionary = {}       # joint name -> bone index
 var _hs: float = 6.5             # the body height in SKELETON units (feet for the generated body, metres for an imported one)
@@ -58,6 +65,7 @@ func setup(subject: Dictionary, phase_offset: float = 0.0) -> FcBroadcastCharact
 	uniform = visual["uniform"]
 	uniform["attire"] = str(subject.get("attire", "playing"))   # "playing", "referee" or "suit" (a coach): see FcBodyBuilder
 	jersey_number = int(uniform["number"])
+	_surname = FcJerseyGraphics.surname_of(str(subject.get("name", "")))
 	archetype = FcBodyArchetype.make(visual)
 	if str(uniform["attire"]) != "playing":
 		archetype["shoe"] = 1   # an official or a coach wears dark shoes
@@ -95,10 +103,15 @@ func _build() -> void:
 ## (G^-1 * q * G) * R where q is the pose rotation and G the global rest rotation of its parent: the world-aligned rotation, conjugated into the parent
 ## frame and applied on top of the rest of the bone. For a rig whose rest rotations are all identity this is exactly the generated body behaviour.
 func _build_imported() -> bool:
-	model_problems = FcPlayerModelValidator.validate_path(model_path)
+	var path := model_path
+	var library_mode := model_path == FcPlayerAssetLibrary.library_model()
+	if library_mode:
+		asset_spec = FcPlayerAssetLibrary.spec(identity, archetype)
+		path = str(asset_spec["body_path"])
+	model_problems = FcPlayerAssetLibrary.validated(path)
 	if not model_problems.is_empty():
 		return false
-	var root := (load(model_path) as PackedScene).instantiate() as Node3D
+	var root := (load(path) as PackedScene).instantiate() as Node3D
 	var found := root.find_children("*", "Skeleton3D", true, false)
 	skeleton = found[0] as Skeleton3D
 	var armature := root.find_child("Armature", true, false)
@@ -127,40 +140,96 @@ func _build_imported() -> bool:
 		_rest_rot[i] = local_rot
 		_parent_rest[i] = (global_rot[parent] as Quaternion) if parent >= 0 else Quaternion.IDENTITY
 		_rest_global[skeleton.get_bone_name(i)] = global_pos[i]
-	_dress_imported()
-	if str(uniform["attire"]) == "playing":
-		_attach_numbers()
+		if skeleton.get_bone_name(i).begins_with("x_"):
+			_finger_bones[skeleton.get_bone_name(i)] = i
+	if library_mode:
+		part_problems = FcPlayerAssetLibrary.attach_parts(skeleton, asset_spec)
+		_scale_head(float(asset_spec["width_scale"]))
+	_dress_imported(library_mode)
+	if str(uniform["attire"]) == "playing" and not (library_mode and FcJerseyGraphics.available()):
+		_attach_numbers()   # a library jersey carries its number as a texture; Label3D numbers are the fallback (no renderer, or a plain model)
 	_apply_pose(FcBroadcastPose.pose_for("idle", _phase_offset))
 	return true
 
 
-## Recolours the model by material name (the standard says which surface is which) and shows the hair mesh for the hair style of the player.
-func _dress_imported() -> void:
-	var colors := {"skin": identity["skin_color"], "jersey": uniform["primary"], "shorts": uniform["primary"], "socks": Color.WHITE, "sole": Color.WHITE, "hair": identity["hair_color"]}
+## Dresses the imported model from the identity: recolours every surface by its name (skin and face parts, hair, facial hair, brow, lips, jersey, shorts,
+## socks, shoes, trim, headband) with materials SHARED between players of the same colours, shows the hair of the style (or the default hair of a plain
+## model), and hides the model default eyes and hair when the library attached its own. The eyes and nostrils keep their own material (vertex colours).
+func _dress_imported(library_mode: bool = false) -> void:
+	var tints: Dictionary = FcPlayerAssetLibrary.data().get("tints", {})
+	var skin: Color = identity["skin_color"]
+	var hair: Color = identity["hair_color"]
+	var primary: Color = uniform["primary"]
+	var secondary: Color = uniform["secondary"]
+	var shoe: Color
 	match int(archetype["shoe"]):
-		0: colors["shoes"] = Color.WHITE
-		1: colors["shoes"] = Color.BLACK.lightened(0.1)
-		2: colors["shoes"] = uniform["secondary"]
-		_: colors["shoes"] = (uniform["primary"] as Color).lightened(0.25)
+		0: shoe = Color.WHITE
+		1: shoe = Color.BLACK.lightened(0.1)
+		2: shoe = secondary
+		_: shoe = primary.lightened(0.25)
+	var shorts := primary
+	var socks := Color.WHITE
 	if str(uniform["attire"]) != "playing":
-		colors["shorts"] = (uniform["primary"] as Color).darkened(0.3)
-		colors["socks"] = colors["shorts"]
+		shorts = primary.darkened(0.3)
+		socks = shorts
+	var colors := {
+		"skin": [skin, 0.55], "jersey": [primary, 0.8], "shorts": [shorts, 0.8], "socks": [socks, 0.85], "shoes": [shoe, 0.5], "sole": [Color.WHITE, 0.6],
+		"trim": [secondary, 0.7], "accessory": [secondary, 0.8], "hair": [hair, 0.8],
+		"lips": [skin.lerp(Color.html(str(tints.get("lips", "#8E3B3B"))), float(tints.get("lips_mix", 0.42))), 0.5],
+		"stubble": [hair.lerp(skin, float(tints.get("stubble_mix", 0.62))), 0.9],
+		"brow": [hair.darkened(float(tints.get("brow_darken", 0.12))) if str(identity["hair"]) != "bald" else skin.darkened(0.55), 0.8],
+	}
 	var style := str(identity["hair"])
-	var hair_mesh := "" if style == "bald" else ("hair_afro" if style == "afro" else "hair_short")
+	var default_hair := "" if style == "bald" else ("hair_afro" if style == "afro" else "hair_short")
 	for node in skeleton.get_children():
 		if not (node is MeshInstance3D):
 			continue
 		var mesh := node as MeshInstance3D
-		var key := "hair" if str(mesh.name).begins_with("hair_") else str(mesh.name)
-		if str(mesh.name).begins_with("hair_"):
-			mesh.visible = str(mesh.name) == hair_mesh
-		if colors.has(key):
-			var material := StandardMaterial3D.new()
-			material.albedo_color = colors[key]
-			material.roughness = 0.8 if key in ["jersey", "shorts", "socks", "hair"] else 0.6
-			mesh.material_override = material
-		if body_mesh == null and str(mesh.name) == "skin":
+		var mesh_name := str(mesh.name)
+		if library_mode:
+			if mesh_name == "features" or mesh_name == "hair_short":
+				mesh.visible = false   # the library attached its own eyes and hair
+				continue
+		elif mesh_name.begins_with("hair_"):
+			mesh.visible = mesh_name == default_hair
+		var kind := ""
+		if mesh_name == "skin" or mesh_name.begins_with("skin_head_") or mesh_name.begins_with("nose_"):
+			kind = "skin"
+		elif mesh_name == "facial_stubble" or mesh_name.begins_with("facial_stubble_"):
+			kind = "stubble"
+		elif mesh_name.begins_with("hair_") or mesh_name.begins_with("facial_"):
+			kind = "hair"
+		elif mesh_name.begins_with("brow_"):
+			kind = "brow"
+		elif mesh_name.begins_with("lips_"):
+			kind = "lips"
+		elif mesh_name.begins_with("acc_"):
+			kind = "accessory"
+		elif colors.has(mesh_name):
+			kind = mesh_name
+		elif mesh_name == "features" or mesh_name.begins_with("eyes_") or mesh_name.begins_with("nostrils_"):
+			var own := mesh.mesh.surface_get_material(0) as BaseMaterial3D if mesh.mesh != null else null
+			if own != null:
+				own.vertex_color_use_as_albedo = true   # the eyes are painted with vertex colours (sclera, iris, pupil)
+		if library_mode and FcJerseyGraphics.available() and (kind == "jersey" or kind == "shorts"):
+			if kind == "jersey":
+				var number := jersey_number if str(uniform["attire"]) == "playing" else 0
+				mesh.material_override = FcJerseyGraphics.jersey_material(self, primary, number, _surname, str(uniform["abbreviation"]), secondary, primary.darkened(0.55))
+			else:
+				mesh.material_override = FcJerseyGraphics.cloth_material(shorts)
+		elif kind != "":
+			var spec_colour: Array = colors[kind]
+			mesh.material_override = FcPlayerAssetLibrary.shared_material(kind, spec_colour[0], float(spec_colour[1]))
+		if body_mesh == null and mesh_name == "skin":
 			body_mesh = mesh
+
+
+## Widens or narrows the head by the face width of the identity: the head bone is scaled across the body, in the bone own axes.
+func _scale_head(width: float) -> void:
+	var idx: int = _bone["head"]
+	var global_rest: Quaternion = (_parent_rest[idx] as Quaternion) * (_rest_rot[idx] as Quaternion)
+	var across := global_rest.inverse() * Vector3.RIGHT
+	skeleton.set_bone_pose_scale(idx, Vector3(lerpf(1.0, width, absf(across.x)), lerpf(1.0, width, absf(across.y)), lerpf(1.0, width, absf(across.z))))
 
 
 ## The global rest position of a bone in skeleton units (feet for the generated body, metres for an imported one).
@@ -232,6 +301,7 @@ func _current_pose() -> Dictionary:
 ## to the speed the body really travels (feet do not slide).
 func advance(delta: float) -> void:
 	_time += delta * playback
+	_finger_rate = clampf(delta * 14.0, 0.0, 1.0)
 	if _blend < 1.0:
 		_blend = minf(1.0, _blend + delta / _blend_seconds)
 	_apply_pose(_current_pose())
@@ -241,6 +311,7 @@ func advance(delta: float) -> void:
 func pose_at(new_state: String, phase: float) -> void:
 	state = new_state
 	_blend = 1.0
+	_finger_rate = 1.0
 	_time = (phase - _phase_offset) * float(FcBroadcastPose.CYCLE[new_state])
 	_apply_pose(FcBroadcastPose.pose_for(new_state, phase))
 
@@ -267,6 +338,23 @@ func _apply_pose(pose: Dictionary) -> void:
 	var grip := float(pose["grip"])
 	if grip > 0.01:
 		_apply_grip(pose, grip, pelvis_y - rest.y)
+	if not _finger_bones.is_empty():
+		_apply_fingers(grip)
+
+
+## The fingers hold the hand pose of the state, closing on the ball as the grip rises (FcHandPoses); they ease toward it so a change of state does not pop.
+func _apply_fingers(grip: float) -> void:
+	for side in ["l", "r"]:
+		var targets := FcHandPoses.finger_rotations(state, side, grip)
+		for bone_name in targets:
+			var idx: int = _finger_bones.get(bone_name, -1)
+			if idx < 0:
+				continue
+			var q := _local_rotation(idx, targets[bone_name])
+			var now: Quaternion = _finger_q.get(bone_name, q)
+			now = now.slerp(q, _finger_rate)
+			_finger_q[bone_name] = now
+			skeleton.set_bone_pose_rotation(idx, now)
 
 
 ## Both arms reach for the ball anchor of the pose (two-bone IK per arm) and blend from the canned arm pose by `grip`.

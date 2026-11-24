@@ -15,6 +15,7 @@ on:
       - "tools/bake_clip_library.gd"
       - "src/ui/broadcast3d/**"
       - "tests/unit/test_player_pipeline.gd"
+      - "tests/unit/test_player_m1.gd"
       - ".github/workflows/pipeline.yml"
   pull_request:
     paths:
@@ -79,6 +80,11 @@ jobs:
           ~/blender/blender -b --python tools/blender/build_player.py -- --out "$PWD/assets/players/fc_player_proto.glb" | tee blender.log
           grep -q "FC_BUILD_OK" blender.log
 
+      - name: Build the M1 production players and part files in Blender (three body types, heads, hair, clothing, fingers)
+        run: |
+          ~/blender/blender -b --python tools/blender/build_player_m1.py -- --out-dir "$PWD/assets/players" | tee blender_m1.log
+          test "$(grep -c FC_BUILD_OK blender_m1.log)" -eq 5
+
       - name: Link Creator Studio (the junctions do not exist in a fresh checkout)
         run: |
           rm -rf creator_studio/game_src creator_studio/data creator_studio/assets
@@ -104,4 +110,6 @@ jobs:
         run: ~/godot/godot --headless --path . --script res://tools/validate_project.gd
 
       - name: Pipeline tests (rig standard, validator, retarget, imported player equals the generated body)
-        run: ~/godot/godot --headless --path . --script res://tests/run_tests.gd -- --filter=player_pipeline
+        run: |
+          ~/godot/godot --headless --path . --script res://tests/run_tests.gd -- --filter=player_pipeline
+          ~/godot/godot --headless --path . --script res://tests/run_tests.gd -- --filter=player_m1
