@@ -1,0 +1,23 @@
+{
+	"floor_light": "C98B4E",
+	"floor_dark": "A8703A",
+	"floor_seam": "6B4220",
+	"floor_border": "8E5B2C",
+	"line": "F6F2EA",
+	"rim": "F26B1D",
+	"rim_bracket": "9AA3B2",
+	"net": "F2F2F2",
+	"glass": "BFD8E8",
+	"board_frame": "E8ECF2",
+	"board_square": "E24B3B",
+	"stanchion": "2A303C",
+	"pad": "1B1F28",
+	"table": "1D2230",
+	"table_top": "D8DCE6",
+	"official": "1A1A1A",
+	"official_shirt": "F2F2F2",
+	"coach_suit": "20283A",
+	"seat_a": "27324A",
+	"seat_b": "202A40",
+	"concrete": "151B2B"
+}

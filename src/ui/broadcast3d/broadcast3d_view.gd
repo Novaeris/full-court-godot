@@ -30,6 +30,7 @@ var _entry_type: int = 0
 var _shot_kind: int = 0
 var _attacks_right: bool = true
 var _holder: int = 0
+var _actor: int = 0
 var _angle: Dictionary = {"angle": "main", "side": 1}   # the angle the camera is gliding to
 var _angle_from: Dictionary = {"angle": "main", "side": 1}
 var _angle_blend: float = 1.0
@@ -89,7 +90,7 @@ func _build_characters(colors: Array) -> void:
 			"team": {"primary": "#" + primary.to_html(false), "secondary": "#F4F7FF" if primary.get_luminance() < 0.5 else "#1B1B1B", "abbreviation": _model.box.abbreviations[side], "name": _model.box.team_names[side]}}
 		var c := FcBroadcastCharacter.new().setup(subject, float(i) * 0.137)
 		c.visible = false
-		c.set_process(false)   # the view advances them, and only while it is showing
+		c.auto_advance = false   # the view advances them, and only while it is showing
 		scene.add_child(c)
 		characters[p.player_id] = c
 		i += 1
@@ -112,6 +113,7 @@ func show_event(index: int, animate: bool = true) -> void:
 	_shot_kind = int(entry["x"]) if _entry_type in [FcGameEventLog.EV_SHOT_MADE, FcGameEventLog.EV_SHOT_MISSED, FcGameEventLog.EV_SHOT_BLOCKED] else 0
 	_attacks_right = bool(state["attacks_right"])
 	_holder = int(kf["holder"])
+	_actor = int(entry["a"])
 	var on_court: Dictionary = kf["players"]
 	var offense: int = state["offense_side"]
 	for pid in characters:
@@ -125,6 +127,8 @@ func show_event(index: int, animate: bool = true) -> void:
 		var role := "other"
 		if int(entry["a"]) == pid:
 			role = "actor"
+		elif int(entry["b"]) == pid and _entry_type in [FcGameEventLog.EV_SHOT_BLOCKED, FcGameEventLog.EV_TURNOVER, FcGameEventLog.EV_SHOT_MADE]:
+			role = "partner"
 		elif pid == _holder:
 			role = "ball"
 		elif side != offense:
@@ -134,12 +138,30 @@ func show_event(index: int, animate: bool = true) -> void:
 			var at: Vector2 = on_court[pid]
 			c.position = Vector3(at.x, 0.0, at.y)
 	_teleport = false
+	_mark_contester(int(entry["a"]), on_court)
 	var ball: Vector3 = kf["ball"]
 	_ball_goal = Vector3(ball.x, ball.z, ball.y)
 	if not animate:
 		_ball.position = _ball_goal
 	scene.set_scoreboard("%s %d   %s   %s %d" % [_model.box.abbreviations[0], int(state["home"]), _model.status_at(index), _model.box.abbreviations[1], int(state["away"])])
 	set_process(is_visible_in_tree())
+
+
+## On a shot, the defender nearest the shooter contests it (a hand up); everyone else keeps the plain defensive stance.
+func _mark_contester(shooter: int, on_court: Dictionary) -> void:
+	if not (_entry_type in [FcGameEventLog.EV_SHOT_MADE, FcGameEventLog.EV_SHOT_MISSED, FcGameEventLog.EV_SHOT_BLOCKED]) or not on_court.has(shooter):
+		return
+	var best := -1
+	var best_distance := 1.0e9
+	for pid in _roles:
+		if _roles[pid] != "defender" or not on_court.has(pid):
+			continue
+		var d := (on_court[pid] as Vector2).distance_to(on_court[shooter])
+		if d < best_distance:
+			best_distance = d
+			best = pid
+	if best != -1 and best_distance < 9.0:
+		_roles[best] = "contester"
 
 
 ## The crowd reacts to the sounds of an event (the same cues the audio uses): cheers stand the next section up and make the crowd jump (a big one
@@ -195,23 +217,38 @@ func _process(delta: float) -> void:
 		var here := Vector2(c.position.x, c.position.z)
 		var distance := here.distance_to(target)
 		var moving := distance > 0.6
-		var state := FcBroadcast3DRules.state_for(_entry_type, _shot_kind, str(_roles.get(pid, "other")), moving)
+		var role := str(_roles.get(pid, "other"))
+		var action := FcBroadcast3DRules.action_for(_entry_type, _shot_kind, role, pid)
+		var speed := FcBroadcast3DRules.travel_speed_for(distance)
+		var state := action
+		if state == "":
+			state = FcBroadcast3DRules.motion_for(role, speed) if moving else FcBroadcast3DRules.state_for(_entry_type, _shot_kind, role, false)
 		c.set_state(state)
+		c.playback = FcBroadcast3DRules.playback_for(state, speed, c.height_feet) if moving and action == "" else 1.0
 		c.advance(delta)
 		if moving:
-			var step := minf(distance, FcBroadcast3DRules.travel_speed(state, c.height_feet) * delta)
+			var step := minf(distance, speed * delta)
 			var next := here.move_toward(target, step)
 			c.position = Vector3(next.x, 0.0, next.y)
-			c.rotation_degrees.y = FcBroadcast3DRules.facing_yaw(here, target)
+			# defenders keep facing the play while they slide; everyone else faces where they are going
+			var look := FcBroadcast3DRules.facing_yaw(here, hoop) if role in ["defender", "contester"] else FcBroadcast3DRules.facing_yaw(here, target)
+			c.rotation_degrees.y = lerp_angle(deg_to_rad(c.rotation_degrees.y), deg_to_rad(look), minf(1.0, delta * 10.0)) * 180.0 / PI
 		else:
-			c.rotation_degrees.y = FcBroadcast3DRules.facing_yaw(here, hoop)
+			c.rotation_degrees.y = lerp_angle(deg_to_rad(c.rotation_degrees.y), deg_to_rad(FcBroadcast3DRules.facing_yaw(here, hoop)), minf(1.0, delta * 10.0)) * 180.0 / PI
 	_move_ball(delta)
 
 
 func _move_ball(delta: float) -> void:
+	# a player in a two-handed action (a shot, a rebound, a dunk) has the ball in both hands for the part of the loop the pose says so
+	if _actor != 0 and characters.has(_actor) and (characters[_actor] as FcBroadcastCharacter).visible:
+		var held := (characters[_actor] as FcBroadcastCharacter).ball_anchor()
+		if bool(held["active"]):
+			_ball.position = held["position"]
+			return
 	if _holder != 0 and characters.has(_holder) and (characters[_holder] as FcBroadcastCharacter).visible:
-		var hand := (characters[_holder] as FcBroadcastCharacter).hand_position()
-		_ball.position = hand
+		var holder := characters[_holder] as FcBroadcastCharacter
+		var anchor := holder.ball_anchor()
+		_ball.position = anchor["position"] if bool(anchor["active"]) else holder.hand_position()
 		return
 	_ball.position = _ball.position.move_toward(_ball_goal, FcReconstructor.BALL_SPEED_LIMIT * delta)
 

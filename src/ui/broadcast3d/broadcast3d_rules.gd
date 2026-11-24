@@ -78,3 +78,57 @@ static func state_for(entry_type: int, shot_kind: int, role: String, moving: boo
 ## How fast a character is allowed to travel towards its target (feet per second): never above the reconstruction's own limit.
 static func travel_speed(state: String, height_feet: float) -> float:
 	return minf(FcBroadcastPose.ground_speed("run", height_feet) * (1.4 if state == "run" else 1.0), FcReconstructor.PLAYER_SPEED_LIMIT)
+
+
+## The one-off ACTION a player performs at an event (3D overhaul M2), or "" when the event gives them none. Roles: "actor" (the player in the event's
+## `a` column), "partner" (the `b` column: the blocker of a block, the thief of a steal, the passer of a basket), "contester" (the defender nearest the
+## shooter), "ball", "defender", "other". `variant` is a steady number (the actor's id) that chooses between equal actions, so a rim shot is a layup for
+## some players and a dunk for others, the same every time. Presentation only: the event already happened, this only chooses how to draw it.
+static func action_for(entry_type: int, shot_kind: int, role: String, variant: int) -> String:
+	match entry_type:
+		FcGameEventLog.EV_SHOT_MADE, FcGameEventLog.EV_SHOT_MISSED, FcGameEventLog.EV_SHOT_BLOCKED:
+			if role == "actor":
+				if shot_kind == FcGameEventLog.SHOT_RIM:
+					return "dunk" if entry_type == FcGameEventLog.EV_SHOT_MADE and variant % 4 == 0 else "layup"
+				return "three" if shot_kind == FcGameEventLog.SHOT_THREE else "shoot"
+			if role == "partner":
+				return "block" if entry_type == FcGameEventLog.EV_SHOT_BLOCKED else "celebrate"
+			if role == "contester":
+				return "contest"
+		FcGameEventLog.EV_FREE_THROW:
+			if role == "actor":
+				return "shoot"
+		FcGameEventLog.EV_REBOUND:
+			if role == "actor":
+				return "rebound"
+		FcGameEventLog.EV_TURNOVER:
+			if role == "actor":
+				return "stop"
+			if role == "partner":
+				return "steal"
+	return ""
+
+
+## How fast a character travels (feet per second) to cover `distance` in about half a second, within the reconstruction's own limit.
+static func travel_speed_for(distance: float) -> float:
+	return clampf(distance * 2.4, 3.0, FcReconstructor.PLAYER_SPEED_LIMIT * 0.9)
+
+
+## The movement state for a player of `role` travelling at `speed` feet per second: a walk, a run or a sprint for anyone, a dribble, a drive for the
+## ball handler, a shuffle or a recovery sprint for a defender.
+static func motion_for(role: String, speed: float) -> String:
+	if role == "ball":
+		return "dribble" if speed < 4.0 else ("drive" if speed > 14.0 else "dribble_run")
+	if role == "defender" or role == "contester":
+		return "shuffle" if speed < 9.0 else "recover"
+	if speed < 5.5:
+		return "walk"
+	return "run" if speed < 13.5 else "sprint"
+
+
+## The animation playback factor that makes a stride match the speed travelled (so the feet do not slide), kept within a believable range.
+static func playback_for(state: String, speed: float, height_feet: float) -> float:
+	var natural := FcBroadcastPose.ground_speed(state, height_feet)
+	if natural <= 0.0:
+		return 1.0
+	return clampf(speed / natural, 0.55, 1.6)

@@ -9,6 +9,8 @@ extends Node3D
 const DEFAULT_HEIGHT_CM := 198.0
 const DEFAULT_WEIGHT_KG := 95.0
 const BLEND_SECONDS := 0.2
+## The radius of the ball in feet (a size 7 ball is 9.4 inches across).
+const BALL_RADIUS := 0.39
 
 var identity: Dictionary = {}
 var uniform: Dictionary = {}
@@ -17,6 +19,8 @@ var height_feet: float = 6.5
 var width_scale: float = 1.0
 var jersey_number: int = 0
 var state: String = "idle"
+## Animation clock speed: 1 is the authored speed; a stride is slowed or sped so the feet match the ground speed.
+var playback: float = 1.0
 
 var skeleton: Skeleton3D
 var body_mesh: MeshInstance3D
@@ -26,6 +30,8 @@ var _bone: Dictionary = {}       # joint name -> bone index
 var _from_pose: Dictionary = FcBroadcastPose.pose_for("idle", 0.0)
 var _blend: float = 1.0
 var _blend_seconds: float = BLEND_SECONDS
+var _grip: float = 0.0
+var _anchor_model: Vector3 = Vector3.ZERO
 var _time: float = 0.0
 var _phase_offset: float = 0.0
 var _hand_bone: int = -1
@@ -113,12 +119,21 @@ func _current_pose() -> Dictionary:
 	return FcBroadcastPose.blend(_from_pose, target, _blend) if _blend < 1.0 else target
 
 
-## One step of time: moves the cross-fade and applies the pose to the bones.
+## One step of time: moves the cross-fade and applies the pose to the bones. `playback` scales the animation clock so a stride can be matched
+## to the speed the body really travels (feet do not slide).
 func advance(delta: float) -> void:
-	_time += delta
+	_time += delta * playback
 	if _blend < 1.0:
 		_blend = minf(1.0, _blend + delta / _blend_seconds)
 	_apply_pose(_current_pose())
+
+
+## Shows `new_state` at `phase` at once, with no blend (for pictures and tests).
+func pose_at(new_state: String, phase: float) -> void:
+	state = new_state
+	_blend = 1.0
+	_time = (phase - _phase_offset) * float(FcBroadcastPose.CYCLE[new_state])
+	_apply_pose(FcBroadcastPose.pose_for(new_state, phase))
 
 
 func _apply_pose(pose: Dictionary) -> void:
@@ -129,11 +144,71 @@ func _apply_pose(pose: Dictionary) -> void:
 		skeleton.set_bone_pose_rotation(idx, Basis.from_euler(pose["joints"][name]).get_rotation_quaternion())
 	var root: Vector3 = pose["root"]
 	var rest: Vector3 = builder.rest_origin("pelvis")
-	skeleton.set_bone_pose_position(_pelvis_bone, Vector3(root.x * height_feet, rest.y + root.y * height_feet, 0.0))
+	var pelvis_y := rest.y + root.y * height_feet
+	skeleton.set_bone_pose_position(_pelvis_bone, Vector3(root.x * height_feet, pelvis_y, 0.0))
+	# ground contact: unless airborne, the lower foot's sole rests on the floor whatever the pose does to the legs (no floating, no sinking)
+	var air := float(pose["air"])
+	if air < 0.999:
+		var globals := _forward_kinematics()
+		var lowest := minf((globals[int(_bone["l_foot"])] as Transform3D).origin.y, (globals[int(_bone["r_foot"])] as Transform3D).origin.y)
+		var ankle: float = (builder.rest_origin("l_foot") as Vector3).y
+		pelvis_y += (ankle - lowest) * (1.0 - air)
+		skeleton.set_bone_pose_position(_pelvis_bone, Vector3(root.x * height_feet, pelvis_y, 0.0))
+	_grip = 0.0
+	var grip := float(pose["grip"])
+	if grip > 0.01:
+		_apply_grip(pose, grip, pelvis_y - rest.y)
+
+
+## Both arms reach for the ball anchor of the pose (two-bone IK per arm) and blend from the canned arm pose by `grip`.
+func _apply_grip(pose: Dictionary, grip: float, shift: float) -> void:
+	var anchor: Vector3 = (pose["ball"] as Vector3) * height_feet + Vector3(0.0, shift, 0.0)
+	_grip = grip
+	_anchor_model = anchor
+	var torso_idx: int = _bone["torso"]
+	var to_local := (_forward_kinematics()[torso_idx] as Transform3D).affine_inverse()
+	for side in ["l", "r"]:
+		var sign := 1.0 if side == "l" else -1.0
+		var sh: int = _bone[side + "_shoulder"]
+		var el: int = _bone[side + "_elbow"]
+		var hd: int = _bone[side + "_hand"]
+		var upper: float = skeleton.get_bone_rest(el).origin.length()
+		var lower: float = skeleton.get_bone_rest(hd).origin.length()
+		var start: Vector3 = skeleton.get_bone_rest(sh).origin
+		var wrist := to_local * (anchor + Vector3(sign * BALL_RADIUS * 1.05, -0.12, -0.02))
+		var solved := FcLimbIK.solve(start, upper, lower, wrist, Vector3(sign * 0.5, -0.7, -0.35))
+		var posed_sh := Basis.from_euler(pose["joints"][side + "_shoulder"]).get_rotation_quaternion()
+		var posed_el := Basis.from_euler(pose["joints"][side + "_elbow"]).get_rotation_quaternion()
+		skeleton.set_bone_pose_rotation(sh, posed_sh.slerp((solved["basis"] as Basis).get_rotation_quaternion(), grip))
+		skeleton.set_bone_pose_rotation(el, posed_el.slerp(Quaternion(Vector3.RIGHT, -float(solved["bend"])), grip))
+
+
+## The model-space transform of every bone from the current local poses. Skeleton3D only refreshes its own global poses on its own schedule, so
+## ground contact and IK, which need the answer NOW, compute it here (16 bones, trivial).
+func _forward_kinematics() -> Array:
+	var out: Array = []
+	for i in skeleton.get_bone_count():
+		var local := skeleton.get_bone_pose(i)
+		var parent := skeleton.get_bone_parent(i)
+		out.append(local if parent < 0 else (out[parent] as Transform3D) * local)
+	return out
+
+
+## The ball anchor of the current pose in the world, and how strongly both hands hold it: {"active": bool, "position": Vector3, "grip": float}.
+func ball_anchor() -> Dictionary:
+	if _grip <= 0.05 or skeleton == null or not skeleton.is_inside_tree():
+		return {"active": false, "position": Vector3.ZERO, "grip": 0.0}
+	return {"active": true, "position": skeleton.global_transform * _anchor_model, "grip": _grip}
+
+
+## Godot switches `_process` on again when a node enters the tree whatever set_process(false) said before, so "someone else advances me" is a flag:
+## the broadcast view steps its characters itself (once, with the speed it chooses) and turns this off.
+var auto_advance: bool = true
 
 
 func _process(delta: float) -> void:
-	advance(delta)
+	if auto_advance:
+		advance(delta)
 
 
 func current_pose() -> Dictionary:
@@ -144,7 +219,7 @@ func current_pose() -> Dictionary:
 func hand_position() -> Vector3:
 	if skeleton == null or not skeleton.is_inside_tree():
 		return global_position
-	var bone := skeleton.get_bone_global_pose(_hand_bone)
+	var bone: Transform3D = _forward_kinematics()[_hand_bone]
 	var palm := bone * Vector3(0.0, -0.03 * height_feet, 0.0)
 	return skeleton.global_transform * palm
 

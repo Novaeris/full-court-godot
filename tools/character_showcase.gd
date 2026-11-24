@@ -12,6 +12,8 @@ var _frame := 0
 var _step := 0
 var _models: Array = []
 var _wait := 0
+var _pose_sheet := false
+var _ball: MeshInstance3D
 
 ## The five archetypes: position, height cm, weight kg, a key (which fixes face, hair and skin), and the options forced on top.
 const ARCHETYPES := [
@@ -30,6 +32,7 @@ func _initialize() -> void:
 			continue
 		match kv[0]:
 			"out": _out = kv[1]
+			"poses": _pose_sheet = kv[1] == "1"
 			"size": _size = Vector2i(int(kv[1].get_slice("x", 0)), int(kv[1].get_slice("x", 1)))
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 	root.size = _size
@@ -48,7 +51,7 @@ func _initialize() -> void:
 			"physical": {"height_cm": a["h"], "weight_kg": a["w"]},
 			"team": {"primary": "#2F6FED", "secondary": "#F4F7FF", "abbreviation": "HOU", "name": "Houston"}}
 		var c := FcBroadcastCharacter.new().setup(subject, 0.0)
-		c.set_process(false)
+		c.auto_advance = false
 		_scene.add_child(c)
 		c.position = centre + Vector3((float(i) - 2.0) * 3.6, 0.0, 0.0)
 		c.rotation_degrees.y = 0.0
@@ -57,6 +60,9 @@ func _initialize() -> void:
 		_models.append(c)
 		i += 1
 	_scene.set_process(false)
+	if _pose_sheet:
+		_setup_pose_sheet()
+		return
 	# shots: [file, camera position, target]
 	var mid := centre + Vector3(0.0, 3.4, 0.0)
 	_steps = [
@@ -78,6 +84,11 @@ func _process(_delta: float) -> bool:
 		return true
 	var s: Array = _steps[_step]
 	if _wait == 0:
+		if _pose_sheet:
+			for c in _models:
+				var on: bool = int(c.get_meta("sheet")) == _step
+				c.visible = on
+				(c.get_meta("label") as Label3D).visible = on
 		_scene.camera.look_at_from_position(s[1], s[2], Vector3.UP)
 		_scene.camera.fov = float(s[3]) if s.size() > 3 else 38.0
 	_wait += 1
@@ -89,3 +100,40 @@ func _process(_delta: float) -> bool:
 		_step += 1
 		_wait = 0
 	return false
+
+
+## A contact sheet of every animation state, side view, one character each in rows, at a phase that shows the shape of the move.
+func _setup_pose_sheet() -> void:
+	for c in _models:
+		c.queue_free()
+	_models.clear()
+	var states: Array = FcBroadcastPose.STATES
+	var phases := {"shoot": 0.52, "three": 0.54, "layup": 0.55, "dunk": 0.5, "jump": 0.45, "contest": 0.35, "block": 0.4, "rebound": 0.4, "celebrate": 0.25, "crossover": 0.25, "hesitation": 0.3, "stop": 0.1, "land": 0.08, "turn": 0.5, "fall": 0.4, "steal": 0.3}
+	var per_row := 6
+	var i := 0
+	var subject := {"key": "pose:sheet", "name": "pose", "jersey": 23, "position": "SF", "appearance": {"skin": "tone_3", "hair": "short", "facial_hair": "none"}, "physical": {"height_cm": 201, "weight_kg": 98}, "team": {"primary": "#2F6FED", "secondary": "#F4F7FF", "abbreviation": "HOU", "name": "Houston"}}
+	_steps = []
+	for state in states:
+		var c := FcBroadcastCharacter.new().setup(subject, 0.0)
+		c.auto_advance = false
+		_scene.add_child(c)
+		var sheet := i / per_row
+		var col := i % per_row
+		c.position = Vector3(47.0 + (float(col) - 2.5) * 5.4 + 0.0, 0.0, 25.0)
+		c.rotation_degrees.y = 90.0
+		c.set_meta("sheet", sheet)
+		c.pose_at(state, float(phases.get(state, 0.25)))
+		_models.append(c)
+		var label := Label3D.new()
+		label.text = state
+		label.pixel_size = 0.012
+		label.font_size = 64
+		label.no_depth_test = true
+		label.position = c.position + Vector3(0.0, 8.4, 0.0)
+		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		label.set_meta("sheet", sheet)
+		c.set_meta("label", label)
+		_scene.add_child(label)
+		i += 1
+	for sheet in (states.size() + per_row - 1) / per_row:
+		_steps.append(["pose_sheet_%d" % sheet, Vector3(47.0, 5.0, 25.0 + 26.0), Vector3(47.0, 3.8, 25.0), 62.0])
