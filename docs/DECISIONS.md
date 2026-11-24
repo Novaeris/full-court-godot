@@ -407,3 +407,9 @@ These were recorded in `PROGRESS_LOG.md` (2026-11-21) and are not repeated here:
 - **QA:** `tools/validate_project.gd` (also in CI), a CI workflow that rebuilds the Blender player and clips on a clean machine, an audio data validator, a 3D budget guard.
 - **Costs and consents:** nothing was spent and no account, key or licence beyond free open-source software was accepted. Anything paid or account-based stays a founder decision (listed in AI_DEVELOPMENT_TOOLKIT.md).
 - **Evidence:** `docs/development/`, `docs/validation/player_pipeline/`.
+
+## D-074 Production Phase M1: professional player visuals (Claude, 2026-11-24)
+- **Goal:** replace the mannequin look of the 3D players with a Blender-built, customisable, production-quality character, without touching identity data, saves or the animation system.
+- **Kept:** `FcPlayerVisual.resolve()` as the only identity source, rig standard v1, GLB, `FcPlayerModelValidator`, the generated body as fallback and default. **Added:** `docs/development/PLAYER_VISUAL_SPEC.md` (art direction and rubric), `FcPlayerAssetLibrary` (registry and cache), `tools/blender/fc_character/` (reusable) and `tools/blender/basketball/` (specific), optional `x_` finger bones, shader-driven numbers and wordmarks, `FcPlayerRender` for portraits.
+- **Promotion rule:** the new model stays opt-in until the founder approves the art direction; milestone M1.8 stops before changing the default.
+- **Evidence:** `docs/validation/player_m1/`.
