@@ -26,4 +26,4 @@ Not adopted in this milestone (no Blender on this machine, and a hand-made GLB c
 - Unit suite: 1,656 passed, 1 failed on the first full run; the one failure was the style lint (literal colours in the new builder). Fixed by moving the fixed colours to `data/ui/character_palette.json`; the lint, the 6 new `test_body_archetype` tests, and all 87 `broadcast` unit tests pass after the fix. The full suite was NOT re-run in one piece after that last fix.
 - Live: `test_live_broadcast3d` 6 passed.
 - Benchmark `perf_benchmark mode=replay3d run=standard seconds=30` (the M8 procedure, but 30 s): avg 3.21 ms, p95 4.10 ms, p99 4.65 ms, worst 11.57 ms, 0 frames over 16.6 ms; working set 306 MB; video memory 57 MB; nodes 558; draw calls 587 to 501 (M8: about 850 to 900, because each body is now one skinned mesh instead of about 25 parts). Limits: p95 16.6 ms, p99 33.3 ms.
-- Triangles per character: roughly 4,000 to 6,000 (checked to stay between 3,000 and 20,000 by a unit test).
+- Triangles per character: not recorded exactly; a unit test only checks each body stays between 3,000 and 20,000.
