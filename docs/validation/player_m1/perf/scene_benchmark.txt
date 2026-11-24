@@ -1,0 +1,22 @@
+== scene benchmark model=
+arena only, no crowd                           | avg   0.93 ms | p95   1.25 | p99   1.51 | worst   1.70 | >16.6 ms:   0 | draw calls   243 | video  48 MB | working set   52 MB | build    14 ms
+1 player, no crowd                             | avg   1.05 ms | p95   1.35 | p99   1.42 | worst   1.44 | >16.6 ms:   0 | draw calls   263 | video  49 MB | working set   54 MB | build    15 ms
+10 players, no crowd                           | avg   2.24 ms | p95   2.54 | p99   2.69 | worst   2.78 | >16.6 ms:   0 | draw calls   515 | video  51 MB | working set   58 MB | build    89 ms
+31 characters, no crowd                        | avg   3.12 ms | p95   5.84 | p99   6.39 | worst   6.79 | >16.6 ms:   0 | draw calls  1103 | video  56 MB | working set   67 MB | build   269 ms
+arena + crowd 6000, no people                  | avg   0.98 ms | p95   1.25 | p99   1.32 | worst   1.35 | >16.6 ms:   0 | draw calls   240 | video  49 MB | working set   56 MB | build    13 ms
+10 players + crowd 6000                        | avg   2.33 ms | p95   2.65 | p99   2.90 | worst   3.03 | >16.6 ms:   0 | draw calls   520 | video  52 MB | working set   60 MB | build   100 ms
+FULL: 31 characters + crowd 6000, 1080p        | avg   3.24 ms | p95   5.94 | p99   6.99 | worst   7.30 | >16.6 ms:   0 | draw calls  1108 | video  56 MB | working set   70 MB | build   281 ms
+stress: 31 characters + crowd 12000, 1080p     | avg   3.23 ms | p95   5.92 | p99   6.58 | worst   6.96 | >16.6 ms:   0 | draw calls  1108 | video  57 MB | working set   70 MB | build   280 ms
+FULL at 1280x720                               | avg   2.82 ms | p95   5.01 | p99   6.22 | worst   6.62 | >16.6 ms:   0 | draw calls  1108 | video  37 MB | working set   70 MB | build   276 ms
+FULL at 2560x1440                              | avg   3.74 ms | p95   6.72 | p99   7.38 | worst   7.47 | >16.6 ms:   0 | draw calls  1108 | video  83 MB | working set   70 MB | build   276 ms
+== scene benchmark model=library
+arena only, no crowd                           | avg   0.89 ms | p95   1.21 | p99   1.35 | worst   1.40 | >16.6 ms:   0 | draw calls   243 | video  48 MB | working set   52 MB | build    14 ms
+1 player, no crowd                             | avg   1.16 ms | p95   1.47 | p99   1.55 | worst   1.69 | >16.6 ms:   0 | draw calls   280 | video  51 MB | working set   53 MB | build    21 ms
+10 players, no crowd                           | avg   3.41 ms | p95   3.94 | p99   4.26 | worst   4.49 | >16.6 ms:   0 | draw calls   679 | video  74 MB | working set   65 MB | build    63 ms
+31 characters, no crowd                        | avg   5.22 ms | p95  10.27 | p99  10.75 | worst  10.87 | >16.6 ms:   0 | draw calls  1615 | video  95 MB | working set   69 MB | build   120 ms
+arena + crowd 6000, no people                  | avg   1.02 ms | p95   1.31 | p99   1.44 | worst   1.66 | >16.6 ms:   0 | draw calls   240 | video  87 MB | working set   66 MB | build    17 ms
+10 players + crowd 6000                        | avg   3.51 ms | p95   4.14 | p99   4.40 | worst   4.89 | >16.6 ms:   0 | draw calls   684 | video  90 MB | working set   68 MB | build    38 ms
+FULL: 31 characters + crowd 6000, 1080p        | avg   5.29 ms | p95  10.31 | p99  10.80 | worst  11.14 | >16.6 ms:   0 | draw calls  1620 | video  96 MB | working set   72 MB | build    71 ms
+stress: 31 characters + crowd 12000, 1080p     | avg   5.34 ms | p95  10.12 | p99  10.82 | worst  11.16 | >16.6 ms:   0 | draw calls  1620 | video  96 MB | working set   73 MB | build    72 ms
+FULL at 1280x720                               | avg   5.30 ms | p95   9.89 | p99  10.37 | worst  12.22 | >16.6 ms:   0 | draw calls  1620 | video  77 MB | working set   72 MB | build    73 ms
+FULL at 2560x1440                              | avg   5.87 ms | p95  11.62 | p99  12.06 | worst  12.21 | >16.6 ms:   0 | draw calls  1620 | video 122 MB | working set   72 MB | build    68 ms

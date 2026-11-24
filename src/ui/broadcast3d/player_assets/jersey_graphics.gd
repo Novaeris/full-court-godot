@@ -7,12 +7,12 @@ extends RefCounted
 ## exists (headless runs) or the texture cannot be made.
 
 const SHADER_PATH := "res://src/ui/broadcast3d/jersey_cloth.gdshader"
-const SIZE := Vector2i(1024, 640)
-## Where things sit in the 1024 x 640 layout: [centre y in pixels, font size in pixels]. The jersey is about 0.62 m tall over 640 px, so ten pixels are a centimetre.
-const FRONT_NUMBER := [352, 130]
-const FRONT_WORDMARK := [250, 52]
-const BACK_NUMBER := [275, 250]
-const BACK_SURNAME := [96, 66]
+const SIZE := Vector2i(512, 320)
+## Where things sit in the 512 x 320 layout (half of 1024 x 640, kept small: one texture per player): [centre y in pixels, font size in pixels]. The jersey is about 0.62 m tall over 320 px, so five pixels are a centimetre.
+const FRONT_NUMBER := [176, 66]
+const FRONT_WORDMARK := [125, 26]
+const BACK_NUMBER := [138, 125]
+const BACK_SURNAME := [48, 33]
 
 static var _textures: Dictionary = {}    # key -> ImageTexture
 static var _cloths: Dictionary = {}      # colour -> ShaderMaterial for plain cloth (shorts)
@@ -94,9 +94,9 @@ static func _finish(host: Node, viewport: SubViewport, tex: ImageTexture) -> voi
 static func _layout(number: int, surname: String, wordmark: String, ink: Color, outline: Color) -> Control:
 	var root := Control.new()
 	root.size = Vector2(SIZE)
-	_text(root, str(number), 512.0, FRONT_NUMBER, ink, outline)
+	_text(root, str(number), float(SIZE.x) * 0.5, FRONT_NUMBER, ink, outline)
 	if wordmark != "":
-		_text(root, wordmark.to_upper(), 512.0, FRONT_WORDMARK, ink, outline)
+		_text(root, wordmark.to_upper(), float(SIZE.x) * 0.5, FRONT_WORDMARK, ink, outline)
 	# the back centre is the texture seam: draw each half at either edge
 	for cx in [0.0, float(SIZE.x)]:
 		_text(root, str(number), cx, BACK_NUMBER, ink, outline)
@@ -112,11 +112,11 @@ static func _text(root: Control, text: String, cx: float, spec: Array, ink: Colo
 	look.font_size = int(spec[1])
 	look.font_color = ink
 	look.outline_color = outline
-	look.outline_size = maxi(int(float(spec[1]) * 0.07), 2)
+	look.outline_size = maxi(int(float(spec[1]) * 0.07), 1)
 	label.label_settings = look
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	var w := 520.0
+	var w := float(SIZE.x) * 0.5
 	var h := float(spec[1]) * 1.4
 	label.size = Vector2(w, h)
 	label.position = Vector2(cx - w * 0.5, float(spec[0]) - h * 0.5)

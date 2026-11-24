@@ -38,6 +38,7 @@ func _initialize() -> void:
 			"shot": _shot = kv[1]
 			"view": _view = kv[1]
 			"event": _event = int(kv[1])
+			"model": FcBroadcast3DView.player_model = kv[1]   # "library" benchmarks the M1 players, empty the generated body
 			"shadows": _shadows = kv[1] != "0"
 			"board": _board = kv[1] != "0"
 	DisplayServer.window_set_size(Vector2i(1920, 1080))

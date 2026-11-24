@@ -19,9 +19,28 @@ const LIGHT := Color(1, 1, 1)
 
 
 static func draw(ci: CanvasItem, rect: Rect2, visual: Dictionary, full_body: bool = false) -> void:
+	if FcPlayerRender.enabled and int(visual.get("tier", FcPlayerVisual.TIER_PROCEDURAL)) == FcPlayerVisual.TIER_PROCEDURAL and _draw_rendered(ci, rect, visual, full_body):
+		return
 	if int(visual.get("tier", FcPlayerVisual.TIER_PROCEDURAL)) == FcPlayerVisual.TIER_PROCEDURAL and _draw_baked(ci, rect, visual, "full" if full_body else "bust"):
 		return
 	draw_live(ci, rect, visual, full_body)
+
+
+## The head-and-shoulders picture rendered from the 3D player (FcPlayerRender), when it exists; false when it does not (the 2D figure is drawn instead, and
+## the item redraws itself once the picture has been made).
+static func _draw_rendered(ci: CanvasItem, rect: Rect2, visual: Dictionary, full_body: bool = false) -> bool:
+	var tex := FcPlayerRender.texture_for(visual, "full" if full_body else "bust")
+	if tex == null:
+		var host := FcPlayerRender.shared()
+		if host != null:
+			host.rendered.connect(func(_key: String) -> void:
+				if is_instance_valid(ci):
+					ci.queue_redraw(), CONNECT_ONE_SHOT)
+		return false
+	var fit := minf(rect.size.x / tex.get_width(), rect.size.y / tex.get_height())
+	var drawn := Vector2(tex.get_width(), tex.get_height()) * fit
+	ci.draw_texture_rect(tex, Rect2(rect.position + Vector2((rect.size.x - drawn.x) * 0.5, rect.size.y - drawn.y), drawn), false)
+	return true
 
 
 ## Draws the figure now, never through the texture cache (the cache itself uses this to make its pictures; also the fallback).

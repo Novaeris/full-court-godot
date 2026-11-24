@@ -57,7 +57,7 @@ def build_jersey(ctx):
         s_, c_ = math.sin(th), math.cos(th)
         X = abs(s_) * pit_x
         arm_cut = (z_shoulder - z_pit) * smoothstep(arm_x, arm_x + 0.060, X)
-        neck_depth = (0.150 if c_ > 0 else 0.055) * (H / 1.98)
+        neck_depth = (0.108 if c_ > 0 else 0.050) * (H / 1.98)
         neck_cut = neck_depth * math.sqrt(max(0.0, 1.0 - (X / neck_w) ** 2)) if X < neck_w else 0.0
         top = z_shoulder - max(arm_cut, neck_cut)
         for i in range(rows + 1):
@@ -99,7 +99,7 @@ def build_shorts(ctx):
             t = k / 6
             z = (py - 0.025 * H) * (1 - t) + hem * t
             flare = 1.0 + 0.06 * t * t + 0.04 * math.sin(t * math.pi * 3) * (1 - t) * 0.5   # slight folds, a flared hem
-            r = d["thigh_r"] * H * 0.84 * (0.88 + 0.14 * ctx.body["thigh"]) * (1.10 + 0.08 * t) * flare + 0.008 * H
+            r = d["thigh_r"] * H * 0.84 * (0.88 + 0.14 * ctx.body["thigh"]) * (1.10 + 0.08 * t) * flare * (0.80 + 0.20 * smoothstep(0.0, 0.4, t)) + 0.008 * H
             m = smoothstep(py - 0.08 * H, hip.z, z) * 0.9 + (0.1 if k > 1 else 0.0)
             legs.append((Vector((hip.x, 0, z)), r, r * 1.04, [("pelvis", 1 - m), (p + "_hip", m)]))
         shorts.loft(legs, 16, False, False)
@@ -115,14 +115,14 @@ def build_shorts(ctx):
         sx = 1 if p == "l" else -1
         hip, knee = ctx.rest[p + "_hip"], ctx.rest[p + "_knee"]
         pts = []
-        for k in range(2, 7):
+        for k in range(4, 7):
             t = k / 6
             z = py + 0.040 * H + (hip.z + (knee.z - hip.z) * 0.62 - (py + 0.040 * H)) * t
-            r = d["thigh_r"] * H * 0.84 * (0.88 + 0.14 * ctx.body["thigh"]) * (1.16 + 0.12 * t) + 0.013 * H
+            r = d["thigh_r"] * H * 0.84 * (0.88 + 0.14 * ctx.body["thigh"]) * (1.10 + 0.08 * t) * (1.0 + 0.06 * t * t) * (0.80 + 0.20 * smoothstep(0.0, 0.4, t)) + 0.011 * H
             x = hip.x + sx * r * 0.98 if t > 0.25 else sx * ((d["hip_rx"] * mass + 0.020 + 0.012 * t) * H)
             pts.append(Vector((x, 0.0, z)))
-        w = [("pelvis", 1.0)] * 1 + [(p + "_hip", 1.0)] * 4
-        tube(trim, pts, [(0.0050 * H, 0.0070 * H)] * 5, [[w_] for w_ in w], 6, True, True, up=Vector((0, 1, 0)))
+        w = [(p + "_hip", 1.0)] * 3
+        tube(trim, pts, [(0.0050 * H, 0.0070 * H)] * 3, [[w_] for w_ in w], 6, True, True, up=Vector((0, 1, 0)))
     return shorts, trim
 
 

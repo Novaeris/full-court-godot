@@ -1,0 +1,16 @@
+== model=
+benchmark game: seed 1, 521 events, overtimes 2, home PHI away STL
+machine: AMD Ryzen 7 8700F 8-Core Processor | NVIDIA GeForce RTX 4060 | renderer gl_compatibility | window (1920, 1061) | vsync off
+memory | M0 (league and game generated, no replay screen) | process working set 192 MB | engine static 46 MB | nodes 1 (orphans 0) | video 21 MB (texture 15, buffer 6) | draw calls 0, primitives 0
+memory | M2D-style snapshot (replay screen settled) | process working set 335 MB | engine static 97 MB | nodes 668 (orphans 0) | video 61 MB (texture 39, buffer 21) | draw calls 1070, primitives 751528
+memory | memory at the end of the run | process working set 337 MB | engine static 97 MB | nodes 668 (orphans 0) | video 61 MB (texture 39, buffer 21) | draw calls 1226, primitives 752778
+frame time | replay3d/standard for 25 s | 9315 frames | avg 2.68 ms (373 fps) | p50 2.56 | p95 3.50 | p99 4.29 | worst 11.88 ms | over 16.6 ms: 0 (0.00%) | over 33.3 ms: 0 (0.00%)
+== model=library
+benchmark game: seed 1, 521 events, overtimes 2, home PHI away STL
+machine: AMD Ryzen 7 8700F 8-Core Processor | NVIDIA GeForce RTX 4060 | renderer gl_compatibility | window (1920, 1061) | vsync off
+memory | M0 (league and game generated, no replay screen) | process working set 194 MB | engine static 46 MB | nodes 1 (orphans 0) | video 21 MB (texture 15, buffer 6) | draw calls 0, primitives 0
+memory | M2D-style snapshot (replay screen settled) | process working set 441 MB | engine static 102 MB | nodes 1111 (orphans 0) | video 175 MB (texture 154, buffer 20) | draw calls 1106, primitives 658718
+memory | memory at the end of the run | process working set 441 MB | engine static 102 MB | nodes 1111 (orphans 0) | video 174 MB (texture 154, buffer 20) | draw calls 1469, primitives 755740
+frame time | replay3d/standard for 25 s | 5532 frames | avg 4.52 ms (221 fps) | p50 4.17 | p95 8.66 | p99 9.31 | worst 17.48 ms | over 16.6 ms: 3 (0.05%) | over 33.3 ms: 0 (0.00%)
+memory | M2D-style snapshot (replay screen settled) | process working set 372 MB | engine static 98 MB | nodes 1111 (orphans 0) | video 97 MB (texture 75, buffer 22) | draw calls 1106, primitives 658718
+frame time | replay3d/standard for 25 s | 5460 frames | avg 4.58 ms (218 fps) | p50 4.24 | p95 8.77 | p99 9.37 | worst 13.59 ms | over 16.6 ms: 0 (0.00%) | over 33.3 ms: 0 (0.00%)

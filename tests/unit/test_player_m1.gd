@@ -134,3 +134,20 @@ func test_the_jersey_graphics_key_and_surname() -> void:
 	assert_eq(FcJerseyGraphics.surname_of("Jordan Rivers"), "RIVERS")
 	assert_eq(FcJerseyGraphics.surname_of(""), "")
 	assert_true(FcJerseyGraphics.key_for(7, "A", "HOU", Color.WHITE, Color.BLACK) != FcJerseyGraphics.key_for(8, "A", "HOU", Color.WHITE, Color.BLACK))
+
+
+func test_the_portrait_render_key_follows_the_look_and_the_subject_round_trips() -> void:
+	var visual := FcPlayerVisual.resolve(SUBJECT)
+	var again := FcPlayerVisual.resolve(SUBJECT)
+	assert_eq(FcPlayerRender.key_for(visual), FcPlayerRender.key_for(again), "the same player is the same picture")
+	assert_true(FcPlayerRender.key_for(visual) != FcPlayerRender.key_for(visual, "full"), "a full-body picture is a different picture")
+	var traded := SUBJECT.duplicate(true)
+	traded["team"] = {"primary": "#C8352B", "secondary": "#FFFFFF", "abbreviation": "DAL", "name": "Dallas"}
+	assert_true(FcPlayerRender.key_for(visual) != FcPlayerRender.key_for(FcPlayerVisual.resolve(traded)), "new colours are a new picture")
+	var subject := FcPlayerRender.subject_from_visual(visual)
+	var back := FcPlayerVisual.resolve(subject)
+	assert_eq(back["identity"]["skin"], visual["identity"]["skin"])
+	assert_eq(back["identity"]["hair"], visual["identity"]["hair"])
+	assert_eq(back["identity"]["face"], visual["identity"]["face"])
+	assert_eq(JSON.stringify(back["identity"]["proportions"]), JSON.stringify(visual["identity"]["proportions"]), "the face is the same face")
+	assert_true(FcPlayerRender.texture_for(visual) == null, "off by default: the 2D figure is drawn")

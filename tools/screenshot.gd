@@ -79,6 +79,7 @@ func _initialize() -> void:
 			"view": _view = kv[1]
 			"scroll": _scroll = int(kv[1])   # scrolls an open profile dialog down by this many pixels
 			"model": FcBroadcast3DView.player_model = kv[1]   # a GLB player (res://assets/players/x.glb) for the 3D replay instead of the generated body
+			"render3d": FcPlayerRender.enabled = kv[1] == "1"   # portraits rendered from the 3D library player (M1.6); the picture is taken later so they can finish
 			"hd": FcPlayerFigure.hd_enabled = kv[1] == "1"   # the high-fidelity portrait prototype (docs/PLAYER_VISUAL_PROPOSAL.md)
 	if not _stretch:
 		root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
@@ -338,7 +339,7 @@ func _process(_delta: float) -> bool:
 		var found := _app.find_children("*", "ScrollContainer", true, false).filter(func(n: Node) -> bool: return n.get_child_count() > 0 and n.get_child(0) is FcPlayerProfile)
 		if not found.is_empty():
 			(found[0] as ScrollContainer).scroll_vertical = _scroll
-	if _frames == (40 if _demo != "" or _intro >= 0 or _shot != "" else 10):   # overlays get time to finish their animation
+	if _frames == (80 if FcPlayerRender.enabled else (40 if _demo != "" or _intro >= 0 or _shot != "" else 10)):   # overlays get time to finish their animation
 		var image := root.get_texture().get_image()
 		image.save_png(_out)
 		print("saved ", _out, " ", image.get_size())

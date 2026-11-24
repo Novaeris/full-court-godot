@@ -32,9 +32,13 @@ var _times: PackedFloat64Array = PackedFloat64Array()
 var _last_usec := 0
 var _build_ms := 0.0
 var _clock := 0.0
+var _model := ""
 
 
 func _initialize() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("model="):
+			_model = arg.get_slice("=", 1)   # model=library benchmarks the M1 players
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	print("machine: %s | %s | renderer %s" % [OS.get_processor_name(), RenderingServer.get_video_adapter_name(), str(ProjectSettings.get_setting("rendering/renderer/rendering_method"))])
@@ -64,7 +68,7 @@ func _next_case() -> void:
 	_scene.set_bench_figures_visible(false)
 	for i in int(c["people"]):
 		var side := i % 2
-		var subject := {"key": "bench:%d" % i, "name": "p%d" % i, "jersey": i, "position": ["PG", "SG", "SF", "PF", "C"][i % 5],
+		var subject := {"key": "bench:%d" % i, "name": "p%d" % i, "jersey": i, "position": ["PG", "SG", "SF", "PF", "C"][i % 5], "model": _model,
 			"physical": {"height_cm": 185 + (i * 7) % 30, "weight_kg": 80 + (i * 5) % 40}, "team": {"primary": "#" + (home if side == 0 else away).to_html(false), "secondary": "#F4F7FF", "abbreviation": "HOU", "name": "Houston"}}
 		var p := FcBroadcastCharacter.new().setup(subject, float(i) * 0.137)
 		p.auto_advance = false

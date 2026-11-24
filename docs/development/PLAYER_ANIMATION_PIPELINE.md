@@ -45,3 +45,7 @@ A clip is named after the state it plays (or `x_something`); it animates only th
 
 ## 8. Limits (honest)
 Clips are baked from the procedural poses, so they are exactly as good as those poses: an animator has not yet improved any of them. Fingers are not animated. The sampler plays loops only. Nothing was tested with a real motion-capture file.
+
+## Hands and fingers (M1)
+Library players carry 20 optional `x_` finger bones (`x_<l|r>_<thumb|index|middle|ring|pinky>_<1|2>`). The 34 body states do not animate them: `FcHandPoses` (data in `data/player_pipeline/hand_poses.json`) picks a hand pose for the state (relaxed, open, ball grip, shooting, dribbling, catching), blends it toward the ball grip by the pose grip value, and returns one rotation per finger bone in the same world-aligned frame as the pose library, which the character passes through `FcRigRetarget`. Fingers ease toward their pose so a state change does not pop. A model without finger bones ignores all of this, and the generated body is unchanged. Baked clips (Blender Actions) still contain only the 16 standard bones.
+
