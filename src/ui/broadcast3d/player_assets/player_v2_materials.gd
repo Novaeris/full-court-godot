@@ -35,6 +35,7 @@ static func eyes(iris: String) -> Material:
 		m.albedo_texture = _texture("iris_%s.png" % iris)
 		m.roughness = 0.12
 		m.metallic_specular = 0.7
+		m.disable_receive_shadows = true   # tiny, deep-set: the shadow map would bury them in black under the brow
 		m.resource_name = "eyes"
 		_cache[key] = m
 	return _cache[key]
@@ -47,8 +48,10 @@ static func card(kind: String, file: String, color: Color) -> Material:
 		var m := StandardMaterial3D.new()
 		m.albedo_texture = _texture(file)
 		m.albedo_color = color
-		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
-		m.alpha_scissor_threshold = 0.35
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR   # the card colour is white; the hair colour tints it
+		m.alpha_scissor_threshold = 0.5
+		m.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+		m.disable_receive_shadows = true
 		m.cull_mode = BaseMaterial3D.CULL_DISABLED
 		m.roughness = 0.85
 		m.resource_name = kind

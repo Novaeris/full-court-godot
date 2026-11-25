@@ -66,6 +66,24 @@ def snapshot(obj, name):
     return new
 
 
+def drop_cornea(eyes):
+    """The MakeHuman eye has a clear cornea shell in front of the eyeball, mapped onto the black corner of the eye texture (meant to be transparent).
+    The game eye shader gives the eyeball its gloss, so the shell is removed: faces whose texture coordinates all lie in that corner."""
+    import bmesh
+    bm = bmesh.new()
+    bm.from_mesh(eyes.data)
+    uv = bm.loops.layers.uv.active
+    doomed = []
+    if uv is not None:
+        for f in bm.faces:
+            if all(l[uv].uv.x > 0.80 and l[uv].uv.y < 0.20 for l in f.loops):
+                doomed.append(f)
+    bmesh.ops.delete(bm, geom=doomed, context="FACES")
+    bm.to_mesh(eyes.data)
+    bm.free()
+    print("FC_V2 eyes: removed %d cornea faces" % len(doomed))
+
+
 def export(path, arm, objects):
     bpy.ops.object.select_all(action="DESELECT")
     arm.select_set(True)
@@ -185,6 +203,19 @@ def main():
     for key, a in assets.items():
         finals[key] = snapshot(a, key)
     height = max(v.z for v in coords(base)) - min(v.z for v in coords(base))
+    # body macros (mass, muscle) must not change the face: athletes do not get a fat face with weight. Head weight per skin vertex masks them.
+    head_gi = finals["skin"].vertex_groups["head"].index if "head" in finals["skin"].vertex_groups else -1
+    neck_gi = finals["skin"].vertex_groups["neck_01"].index if "neck_01" in finals["skin"].vertex_groups else -1
+    head_mask = []
+    for v in finals["skin"].data.vertices:
+        w = 0.0
+        for g in v.groups:
+            if g.group == head_gi:
+                w += g.weight
+            elif g.group == neck_gi:
+                w += 0.5 * g.weight
+        head_mask.append(min(1.0, w))
+    base_coords = {fname: [v.co.copy() for v in ob.data.vertices] for fname, ob in finals.items()}
     print("FC_V2 base height %.3f m, skin %d verts" % (height, len(finals["skin"].data.vertices)))
     for name, kind, spec in chosen:
         if kind == "macro":
@@ -198,7 +229,11 @@ def main():
         for fname, src in sources.items():
             c = coords(src)
             k = finals[fname].shape_key_add(name=name, from_mix=False)
+            base_c = base_coords[fname]
             for i, p in enumerate(c):
+                if kind == "macro":
+                    keep = 0.0 if fname != "skin" else 1.0 - head_mask[i]
+                    p = base_c[i] + (p - base_c[i]) * keep
                 k.data[i].co = p
         if kind == "macro":
             mh.set_macros(base, base_macros)
@@ -207,6 +242,7 @@ def main():
                 key.value = 0.0
     mh.refit(base, list(assets.values()))
     arm = RC.build_standard_armature(rig, height)
+    drop_cornea(finals["eyes"])
     for fname, obj in finals.items():
         RC.rename_groups(obj)
         if fname != "skin":

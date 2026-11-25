@@ -61,7 +61,7 @@ static func weights(identity: Dictionary, archetype: Dictionary, key: String) ->
 	var props: Dictionary = identity.get("proportions", {})
 	var face_index := clampi(int(str(identity.get("face", "face_1")).trim_prefix("face_")) - 1, 0, 5)
 	var shape: String = HEAD_SHAPES[(face_index + FcPlayerVisual.fnv1a(key + "|v2shape")) % HEAD_SHAPES.size()]
-	out[shape] = 0.45 + 0.45 * unit(key, "shape")
+	out[shape] = 0.3 + 0.4 * unit(key, "shape")
 	match int(props.get("jaw", 0)):
 		0: _add(out, "fcf_head_round", 0.25)
 		1: _add(out, "fcf_jaw_wide", 0.5 + 0.4 * unit(key, "jaw")); _add(out, "fcf_head_square", 0.25)
@@ -82,7 +82,7 @@ static func weights(identity: Dictionary, archetype: Dictionary, key: String) ->
 	elif eye < 100:
 		_add(out, "fcf_eyes_small", 0.5)
 	var fw := float(props.get("face_w", 86))
-	_add(out, "fcf_head_wide" if fw > 86 else "fcf_head_narrow", absf(fw - 86.0) / 6.0 * 0.7)
+	_add(out, "fcf_head_wide" if fw > 86 else "fcf_head_narrow", absf(fw - 86.0) / 6.0 * 0.45)
 	# the key spreads secondary morphs and a little asymmetry
 	for m in SECONDARY:
 		if unit(key, m) < 0.38:

@@ -48,15 +48,25 @@ def small(src, dst, size):
     Image.open(src).convert("RGBA").resize((size, size), Image.LANCZOS).save(os.path.join(OUT, dst), optimize=True)
 
 
+def card(src, dst, size):
+    """A hair card for tinting: colour pure white, coverage in the alpha (the game multiplies by the hair colour)."""
+    im = Image.open(src).convert("RGBA").resize((size, size), Image.LANCZOS)
+    alpha = im.getchannel("A")
+    white = Image.new("RGBA", im.size, (255, 255, 255, 255))
+    white.putalpha(alpha)
+    white.save(os.path.join(OUT, dst), optimize=True)
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
-    skin()
+    if not os.path.exists(os.path.join(OUT, "skin_detail.png")):
+        skin()
     for name in ("brown", "brownlight", "green", "grey", "blue", "deepblue"):
         small(os.path.join(DATA, "eyes", "materials", name + "_eye.png"), "iris_%s.png" % name, 512)
     for b in ("eyebrow001", "eyebrow006", "eyebrow009", "eyebrow011"):
-        small(os.path.join(DATA, "eyebrows", b, b + ".png"), "brow_%s.png" % b[-3:], 512)
+        card(os.path.join(DATA, "eyebrows", b, b + ".png"), "brow_%s.png" % b[-3:], 512)
     lash = [f for f in os.listdir(os.path.join(DATA, "eyelashes", "eyelashes01")) if f.endswith(".png")][0]
-    small(os.path.join(DATA, "eyelashes", "eyelashes01", lash), "lashes.png", 512)
+    card(os.path.join(DATA, "eyelashes", "eyelashes01", lash), "lashes.png", 512)
     print("textures written to", OUT)
 
 

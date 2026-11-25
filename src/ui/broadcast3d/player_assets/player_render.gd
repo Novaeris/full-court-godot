@@ -16,11 +16,13 @@ extends Node
 
 signal rendered(key: String)
 
-const MODEL_VERSION := 1
+const MODEL_VERSION := 2
 const SIZE := 256
 
 static var enabled: bool = FcPlayerAssetLibrary.promoted()
 static var max_textures: int = 192
+## The model portraits are made from: the V2 players (D-075).
+static var model: String = "v2"
 static var _shared: FcPlayerRender = null
 static var _cache: Dictionary = {}      # key -> ImageTexture
 static var _order: Array[String] = []
@@ -39,7 +41,7 @@ static func subject_from_visual(visual: Dictionary) -> Dictionary:
 	var identity: Dictionary = visual["identity"]
 	var uniform: Dictionary = visual["uniform"]
 	var out := {
-		"key": str(visual["key"]), "name": "", "jersey": int(uniform.get("number", 0)), "model": FcPlayerAssetLibrary.library_model(),
+		"key": str(visual["key"]), "name": "", "jersey": int(uniform.get("number", 0)), "model": model,
 		"appearance": {"skin": identity["skin"], "hair": identity["hair"], "face": identity["face"], "facial_hair": identity["facial_hair"]},
 		"team": {"primary": "#" + (uniform["primary"] as Color).to_html(false), "secondary": "#" + (uniform["secondary"] as Color).to_html(false),
 			"abbreviation": str(uniform.get("abbreviation", "")), "name": str(uniform.get("abbreviation", ""))},
