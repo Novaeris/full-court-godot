@@ -17,7 +17,7 @@ NAMES = dict(STANDARD)
 NAMES.update(EXTRA)
 
 
-def pose_arms_down(rig, outward: float = 0.10):
+def pose_arms_down(rig, outward: float = 0.02):
     """Poses the MakeHuman A-pose into the standard rest: each upper arm hangs straight down (a little away from the body) and the forearm is in line."""
     bpy.context.view_layer.objects.active = rig
     bpy.ops.object.mode_set(mode="POSE")

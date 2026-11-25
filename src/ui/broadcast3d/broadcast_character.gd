@@ -158,7 +158,7 @@ func _build_imported() -> bool:
 		_dress_v2()
 	else:
 		_dress_imported(library_mode)
-	if str(uniform["attire"]) == "playing" and not (library_mode and FcJerseyGraphics.available()):
+	if str(uniform["attire"]) == "playing" and not ((library_mode or v2) and FcJerseyGraphics.available()):
 		_attach_numbers()   # a library jersey carries its number as a texture; Label3D numbers are the fallback (no renderer, or a plain model)
 	_apply_pose(FcBroadcastPose.pose_for("idle", _phase_offset))
 	return true
@@ -241,6 +241,14 @@ func _dress_imported(library_mode: bool = false) -> void:
 func _dress_v2() -> void:
 	morph_weights = FcPlayerMorphs.weights(identity, archetype, _key)
 	var hair: Color = identity["hair_color"]
+	var primary: Color = uniform["primary"]
+	var secondary: Color = uniform["secondary"]
+	var shorts := primary
+	var socks := Color.WHITE
+	if str(uniform["attire"]) != "playing":
+		shorts = primary.darkened(0.3)
+		socks = shorts
+	var shoe: Color = [Color.WHITE, Color.BLACK.lightened(0.1), secondary, primary.lightened(0.25)][clampi(int(archetype["shoe"]), 0, 3)]
 	var brow := FcPlayerMorphs.brow(identity, _key)
 	for node in skeleton.get_children():
 		if not (node is MeshInstance3D):
@@ -266,6 +274,19 @@ func _dress_v2() -> void:
 		elif base.begins_with("brow_"):
 			mi.visible = base == brow
 			mi.material_override = FcPlayerV2Materials.card("brows", base + ".png", hair.lightened(0.15))
+		elif base == "jersey":
+			var number := jersey_number if str(uniform["attire"]) == "playing" else 0
+			if FcJerseyGraphics.available():
+				mi.material_override = FcJerseyGraphics.jersey_material(self, primary, number, _surname, str(uniform["abbreviation"]), secondary, primary.darkened(0.55))
+			else:
+				mi.material_override = FcJerseyGraphics.cloth_material(primary)
+		elif base == "shorts":
+			mi.material_override = FcJerseyGraphics.cloth_material(shorts)
+		elif base == "socks":
+			mi.material_override = FcJerseyGraphics.cloth_material(socks)
+		elif base in ["trim", "shoes", "sole"] or base.begins_with("equip_"):
+			var c: Color = {"trim": secondary, "shoes": shoe, "sole": Color.WHITE}.get(base, secondary if base != "equip_laces" else Color.WHITE)
+			mi.material_override = FcPlayerAssetLibrary.shared_material(base.get_slice("_", 0), c, 0.55 if base == "shoes" else 0.75)
 
 
 ## Widens or narrows the head by the face width of the identity: the head bone is scaled across the body, in the bone own axes.

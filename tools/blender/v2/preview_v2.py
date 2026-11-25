@@ -72,6 +72,13 @@ def main():
     colour("eyes", (0.9, 0.9, 0.9), 0.2)
     colour("brows", (0.05, 0.04, 0.03), 0.8)
     colour("lashes", (0.05, 0.04, 0.03), 0.8)
+    colour("jersey", (0.1, 0.25, 0.8), 0.8)
+    colour("shorts", (0.1, 0.25, 0.8), 0.8)
+    colour("socks", (0.92, 0.92, 0.92), 0.9)
+    colour("trim", (0.95, 0.95, 0.95), 0.8)
+    colour("shoes", (0.08, 0.08, 0.1), 0.5)
+    colour("sole", (0.95, 0.95, 0.95), 0.7)
+    colour("equipment", (0.95, 0.95, 0.95), 0.6)
     for o in bpy.data.objects:
         if o.name.startswith("brow_") and o.name != "brow_001":
             o.hide_render = True

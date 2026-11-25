@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.join(HERE, ".."))
 import mh  # noqa: E402
 import morphs as MO  # noqa: E402
 import rig_convert as RC  # noqa: E402
+import garments as G  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 BROWS = ["eyebrow001", "eyebrow006", "eyebrow009", "eyebrow011"]
@@ -25,13 +26,15 @@ BROWS = ["eyebrow001", "eyebrow006", "eyebrow009", "eyebrow011"]
 
 def args():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-    out = {"out": os.path.join(ROOT, "assets", "players", "v2", "fc_v2_body.glb"), "keep": None, "quick": False}
+    out = {"out": os.path.join(ROOT, "assets", "players", "v2", "fc_v2_body.glb"), "keep": None, "quick": False, "no_garments": False}
     i = 0
     while i < len(argv):
         if argv[i] == "--out":
             out["out"] = os.path.abspath(argv[i + 1]); i += 2
         elif argv[i] == "--keep-blend":
             out["keep"] = os.path.abspath(argv[i + 1]); i += 2
+        elif argv[i] == "--no-garments":
+            out["no_garments"] = True; i += 1
         elif argv[i] == "--quick":
             out["quick"] = True; i += 1
         else:
@@ -60,6 +63,57 @@ def snapshot(obj, name):
     if me.shape_keys is None:
         new.shape_key_add(name="Basis", from_mix=False)
     return new
+
+
+def clean_weights(finals, arm):
+    """Only bone groups ship: MakeHuman helper groups are removed, then every vertex has a bone weight, at most four, normalised."""
+    bones = set(b.name for b in arm.data.bones)
+    for obj in finals.values():
+        for g in list(obj.vertex_groups):
+            if g.name not in bones:
+                obj.vertex_groups.remove(g)
+        G.fill_unweighted(obj)
+        bpy.ops.object.select_all(action="DESELECT")
+        bpy.context.view_layer.objects.active = obj
+        obj.select_set(True)
+        bpy.ops.object.vertex_group_limit_total(limit=4)
+        bpy.ops.object.vertex_group_normalize_all(lock_active=False)
+
+
+def build_garments(skin, arm):
+    """M5: jersey, shorts, socks and their trim, made from the body and following every body morph (see garments.py)."""
+    L = G.landmarks(arm)
+    body_keys = [k.name for k in skin.data.shape_keys.key_blocks[1:] if k.name.startswith("fcb_")]
+    made = {}
+    pieces = {"jersey": G.jersey(skin, L), "shorts": G.shorts(skin, L), "socks": G.socks(skin, L)}
+    z0 = 0.997 * float(arm["fc_height_m"]) / 1.98
+    loops = G.border_loops(pieces["jersey"]) + [lp for lp in G.border_loops(pieces["shorts"]) if sum(c.z for c, _ in lp) / len(lp) < L["pelvis"].z]
+    loops += [lp for lp in G.border_loops(pieces["socks"]) if sum(c.z for c, _ in lp) / len(lp) > L["l_foot"].z + 0.08]
+    trim = G.trim("trim", loops, 0.006)
+    for name, obj in pieces.items():
+        G.finish(obj, thickness=0.004 if name != "socks" else 0.0)
+        if name in ("jersey", "shorts"):
+            G.cylinder_uv(obj, z0, 0.62 * float(arm["fc_height_m"]) / 1.98)
+        made[name] = obj
+    made["trim"] = trim
+    upper, sole, laces = G.shoes(skin, L)
+    made["shoes"], made["sole"], made["equip_laces"] = upper, sole, laces
+    laces.name = laces.data.name = "equip_laces"
+    for name, obj in made.items():
+        G.transfer_weights(obj, skin)
+        if name in ("jersey", "shorts", "socks", "trim"):
+            G.drop_groups(obj, keep_shoulders=name in ("jersey", "trim"))
+        G.fill_unweighted(obj)
+        G.box_uv(obj)
+        G.bind_morphs(obj, skin, body_keys)
+        obj.parent = arm
+        mod = obj.modifiers.new("Armature", "ARMATURE")
+        mod.object = arm
+        mat_name = "equipment" if name.startswith("equip_") else name
+        mat = bpy.data.materials.get(mat_name) or bpy.data.materials.new(mat_name)
+        obj.data.materials.clear()
+        obj.data.materials.append(mat)
+    return made
 
 
 def main():
@@ -127,9 +181,12 @@ def main():
         obj.data.materials.append(mat)
     for ob in [base, rig] + list(assets.values()):
         bpy.data.objects.remove(ob, do_unlink=True)
+    if not o["no_garments"]:
+        finals.update(build_garments(finals["skin"], arm))
     for ob in list(bpy.data.objects):
         if ob.type == "MESH" and ob.name not in finals:
             bpy.data.objects.remove(ob, do_unlink=True)
+    clean_weights(finals, arm)
     os.makedirs(os.path.dirname(o["out"]), exist_ok=True)
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.export_scene.gltf(filepath=o["out"], export_format="GLB", export_apply=False, export_yup=True, export_skins=True, export_animations=False,
