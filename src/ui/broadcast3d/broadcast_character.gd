@@ -34,6 +34,11 @@ var model_problems: Array[String] = []   # why a requested model was refused (th
 ## With model = FcPlayerAssetLibrary.library_model(): the names of the pieces chosen for this player, and any part that could not be attached.
 var asset_spec: Dictionary = {}
 var _surname: String = ""
+## True for a V2 player (MakeHuman base, D-075): morphs baked once from the identity, V2 materials.
+var v2: bool = false
+## The morph weights this V2 player was baked with (FcPlayerMorphs.weights).
+var morph_weights: Dictionary = {}
+var _key: String = ""
 var part_problems: Array[String] = []
 var _finger_bones: Dictionary = {}   # extension bone name -> index (empty for a model without fingers)
 var _finger_q: Dictionary = {}       # bone name -> the rotation it holds now (fingers ease toward their pose)
@@ -65,6 +70,7 @@ func setup(subject: Dictionary, phase_offset: float = 0.0) -> FcBroadcastCharact
 	uniform = visual["uniform"]
 	uniform["attire"] = str(subject.get("attire", "playing"))   # "playing", "referee" or "suit" (a coach): see FcBodyBuilder
 	jersey_number = int(uniform["number"])
+	_key = str(visual["key"])
 	_surname = FcJerseyGraphics.surname_of(str(subject.get("name", "")))
 	archetype = FcBodyArchetype.make(visual)
 	if str(uniform["attire"]) != "playing":
@@ -105,6 +111,9 @@ func _build() -> void:
 func _build_imported() -> bool:
 	var path := model_path
 	var library_mode := model_path == FcPlayerAssetLibrary.library_model()
+	v2 = model_path == str(FcPlayerMorphs.data().get("library_model", "v2"))
+	if v2:
+		path = str(FcPlayerMorphs.data().get("model", ""))
 	if library_mode:
 		asset_spec = FcPlayerAssetLibrary.spec(identity, archetype)
 		path = str(asset_spec["body_path"])
@@ -118,7 +127,7 @@ func _build_imported() -> bool:
 	var extras: Dictionary = armature.get_meta("extras", {}) if armature != null and armature.has_meta("extras") else {}
 	var model_height := float(extras.get("fc_height_m", FcPlayerModelValidator.standard()["height_m"]))
 	var bulk := float(archetype["bulk"])
-	var across := 0.9 + 0.28 * bulk   # a heavier player is a little wider; the standard model is at bulk 0.36, so about 1.0 there
+	var across := 1.0 if v2 else 0.9 + 0.28 * bulk   # a heavier player is a little wider (V2 bodies get their mass from morphs instead)
 	_hs = model_height
 	var scale := height_feet / model_height
 	_k = 1.0 / scale
@@ -145,7 +154,10 @@ func _build_imported() -> bool:
 	if library_mode:
 		part_problems = FcPlayerAssetLibrary.attach_parts(skeleton, asset_spec)
 		_scale_head(float(asset_spec["width_scale"]))
-	_dress_imported(library_mode)
+	if v2:
+		_dress_v2()
+	else:
+		_dress_imported(library_mode)
 	if str(uniform["attire"]) == "playing" and not (library_mode and FcJerseyGraphics.available()):
 		_attach_numbers()   # a library jersey carries its number as a texture; Label3D numbers are the fallback (no renderer, or a plain model)
 	_apply_pose(FcBroadcastPose.pose_for("idle", _phase_offset))
@@ -222,6 +234,38 @@ func _dress_imported(library_mode: bool = false) -> void:
 			mesh.material_override = FcPlayerAssetLibrary.shared_material(kind, spec_colour[0], float(spec_colour[1]))
 		if body_mesh == null and mesh_name == "skin":
 			body_mesh = mesh
+
+
+## Dresses a V2 player: sets every fcb_ and fcf_ morph from the identity (FcPlayerMorphs), bakes the mix ONCE into a plain skinned mesh (no per-frame
+## morph cost), then gives each surface its shared V2 material and shows the brow style of the identity.
+func _dress_v2() -> void:
+	morph_weights = FcPlayerMorphs.weights(identity, archetype, _key)
+	var hair: Color = identity["hair_color"]
+	var brow := FcPlayerMorphs.brow(identity, _key)
+	for node in skeleton.get_children():
+		if not (node is MeshInstance3D):
+			continue
+		var mi := node as MeshInstance3D
+		var mesh_name := str(mi.name)
+		if mi.mesh is ArrayMesh and (mi.mesh as ArrayMesh).get_blend_shape_count() > 0:
+			var am := mi.mesh as ArrayMesh
+			for b in am.get_blend_shape_count():
+				mi.set_blend_shape_value(b, float(morph_weights.get(str(am.get_blend_shape_name(b)), 0.0)))
+			var baked := mi.bake_mesh_from_current_blend_shape_mix()
+			if baked != null:
+				mi.mesh = baked
+		var base := mesh_name.get_slice("__", 0)
+		if base == "skin":
+			mi.material_override = FcPlayerV2Materials.skin(identity["skin_color"])
+			if body_mesh == null:
+				body_mesh = mi
+		elif base == "eyes":
+			mi.material_override = FcPlayerV2Materials.eyes(FcPlayerMorphs.eye_color(identity, _key))
+		elif base == "lashes":
+			mi.material_override = FcPlayerV2Materials.card("lashes", "lashes.png", hair.darkened(0.5))
+		elif base.begins_with("brow_"):
+			mi.visible = base == brow
+			mi.material_override = FcPlayerV2Materials.card("brows", base + ".png", hair.lightened(0.15))
 
 
 ## Widens or narrows the head by the face width of the identity: the head bone is scaled across the body, in the bone own axes.

@@ -1,0 +1,146 @@
+"""Full Court player V2 base character (D-075): MakeHuman CC0 base mesh made by MPFB, converted to the Full Court rig, with named body and face morphs.
+
+    blender -b --python tools/blender/v2/build_v2.py -- --out assets/players/v2/fc_v2_body.glb [--keep-blend dir] [--quick]
+
+Steps: create the base human -> game_engine rig -> eyes, brows, lashes -> pose the arms down (the standard rest) -> snapshot every mesh -> for each morph:
+apply it, refit the attached assets, capture every mesh as a shape key -> new armature with Full Court names -> export GLB (no images: the game owns
+the shaders and textures). --quick limits the morphs to a handful for fast iteration.
+"""
+import os
+import sys
+
+import bpy
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.join(HERE, ".."))
+
+import mh  # noqa: E402
+import morphs as MO  # noqa: E402
+import rig_convert as RC  # noqa: E402
+
+ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
+BROWS = ["eyebrow001", "eyebrow006", "eyebrow009", "eyebrow011"]
+
+
+def args():
+    argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    out = {"out": os.path.join(ROOT, "assets", "players", "v2", "fc_v2_body.glb"), "keep": None, "quick": False}
+    i = 0
+    while i < len(argv):
+        if argv[i] == "--out":
+            out["out"] = os.path.abspath(argv[i + 1]); i += 2
+        elif argv[i] == "--keep-blend":
+            out["keep"] = os.path.abspath(argv[i + 1]); i += 2
+        elif argv[i] == "--quick":
+            out["quick"] = True; i += 1
+        else:
+            i += 1
+    return out
+
+
+def coords(obj):
+    dg = bpy.context.evaluated_depsgraph_get()
+    ev = obj.evaluated_get(dg)
+    me = ev.to_mesh()
+    out = [v.co.copy() for v in me.vertices]
+    ev.to_mesh_clear()
+    return out
+
+
+def snapshot(obj, name):
+    """A plain mesh object holding the evaluated shape of `obj` (modifiers applied), with the same vertex group names."""
+    dg = bpy.context.evaluated_depsgraph_get()
+    me = bpy.data.meshes.new_from_object(obj.evaluated_get(dg), preserve_all_data_layers=True, depsgraph=dg)
+    me.name = name
+    new = bpy.data.objects.new(name, me)
+    bpy.context.collection.objects.link(new)
+    for g in obj.vertex_groups:
+        new.vertex_groups.new(name=g.name)
+    if me.shape_keys is None:
+        new.shape_key_add(name="Basis", from_mix=False)
+    return new
+
+
+def main():
+    o = args()
+    if not mh.available():
+        raise SystemExit("MPFB is not installed: run tools/blender/install_mpfb.ps1")
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    s = mh.services()
+    base = mh.create(MO.BASE_MACROS)
+    rig = s["human"].add_builtin_rig(base, "game_engine")
+    assets = {"eyes": mh.add_asset(base, mh.user_asset("eyes", "high-poly", "high-poly.mhclo"), "Eyes", "PROCEDURAL_EYES"),
+              "lashes": mh.add_asset(base, mh.user_asset("eyelashes", "eyelashes01", "eyelashes01.mhclo"), "Eyelashes")}
+    for b in BROWS:
+        assets["brow_" + b[-3:]] = mh.add_asset(base, mh.user_asset("eyebrows", b, b + ".mhclo"), "Eyebrows")
+    RC.pose_arms_down(rig)
+    # morph target shape keys (weight 0) on the basemesh
+    chosen = MO.ALL[:4] + MO.FACE[:4] if o["quick"] else MO.ALL
+    target_keys = {}
+    for name, kind, spec in chosen:
+        if kind == "targets":
+            target_keys[name] = [(mh.add_target_key(base, t, "%s__%d" % (name, i)), w) for i, (t, w) in enumerate(spec)]
+    macro_names = ["gender", "age", "muscle", "weight", "proportions", "height"]
+    base_macros = mh.get_macros(base, macro_names)
+    bpy.context.view_layer.update()
+    finals = {"skin": snapshot(base, "skin")}
+    for key, a in assets.items():
+        finals[key] = snapshot(a, key)
+    height = max(v.z for v in coords(base)) - min(v.z for v in coords(base))
+    print("FC_V2 base height %.3f m, skin %d verts" % (height, len(finals["skin"].data.vertices)))
+    for name, kind, spec in chosen:
+        if kind == "macro":
+            mh.set_macros(base, spec)
+        else:
+            for key, w in target_keys[name]:
+                key.value = w
+        mh.refit(base, list(assets.values()))
+        sources = {"skin": base}
+        sources.update(assets)
+        for fname, src in sources.items():
+            c = coords(src)
+            k = finals[fname].shape_key_add(name=name, from_mix=False)
+            for i, p in enumerate(c):
+                k.data[i].co = p
+        if kind == "macro":
+            mh.set_macros(base, base_macros)
+        else:
+            for key, w in target_keys[name]:
+                key.value = 0.0
+    mh.refit(base, list(assets.values()))
+    arm = RC.build_standard_armature(rig, height)
+    for fname, obj in finals.items():
+        RC.rename_groups(obj)
+        if fname != "skin":
+            for g in list(obj.vertex_groups):
+                obj.vertex_groups.remove(g)
+            g = obj.vertex_groups.new(name="head")
+            g.add(list(range(len(obj.data.vertices))), 1.0, "REPLACE")
+        obj.parent = arm
+        mod = obj.modifiers.new("Armature", "ARMATURE")
+        mod.object = arm
+        # plain materials named for the game (no images: the game owns the shaders and textures)
+        mat_name = {"skin": "skin", "eyes": "eyes", "lashes": "lashes"}.get(fname, "brows")
+        mat = bpy.data.materials.get(mat_name) or bpy.data.materials.new(mat_name)
+        obj.data.materials.clear()
+        obj.data.materials.append(mat)
+    for ob in [base, rig] + list(assets.values()):
+        bpy.data.objects.remove(ob, do_unlink=True)
+    for ob in list(bpy.data.objects):
+        if ob.type == "MESH" and ob.name not in finals:
+            bpy.data.objects.remove(ob, do_unlink=True)
+    os.makedirs(os.path.dirname(o["out"]), exist_ok=True)
+    bpy.ops.object.select_all(action="SELECT")
+    bpy.ops.export_scene.gltf(filepath=o["out"], export_format="GLB", export_apply=False, export_yup=True, export_skins=True, export_animations=False,
+                              export_extras=True, export_materials="EXPORT", export_morph=True, export_morph_normal=True, export_try_sparse_sk=True,
+                              use_selection=False, export_image_format="NONE")
+    if o["keep"]:
+        os.makedirs(o["keep"], exist_ok=True)
+        bpy.ops.wm.save_as_mainfile(filepath=os.path.join(o["keep"], "fc_v2_body.blend"))
+    tris = sum(len(p.vertices) - 2 for ob in finals.values() for p in ob.data.polygons)
+    print("FC_V2_OK %s height %.3f bones %d meshes %d triangles %d morphs %d" % (o["out"], height, len(arm.data.bones), len(finals), tris, len(chosen)))
+
+
+if __name__ == "__main__":
+    main()

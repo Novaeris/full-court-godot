@@ -104,7 +104,7 @@ func test_faces_are_individual_and_deterministic() -> void:
 func test_hand_poses_curl_toward_the_palm_and_close_on_the_ball() -> void:
 	var relaxed := FcHandPoses.finger_rotations("idle", "l", 0.0)
 	var gripped := FcHandPoses.finger_rotations("idle", "l", 1.0)
-	assert_eq(relaxed.size(), 10, "five digits, two bones, one hand")
+	assert_eq(relaxed.size(), 15, "five digits, three joints, one hand (a two-joint M1 hand ignores the third)")
 	var open_angle := (relaxed["x_l_index_1"] as Quaternion).get_angle()
 	var grip_angle := (gripped["x_l_index_1"] as Quaternion).get_angle()
 	assert_true(grip_angle > open_angle, "the grip closes the fingers more than the relaxed hand")

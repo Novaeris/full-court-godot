@@ -72,4 +72,5 @@ static func finger_rotations(state: String, side: String, grip: float) -> Dictio
 		var spread := Quaternion(Vector3.RIGHT, -float(d[2]))
 		out[bone_name(side, digit, 1)] = curl_a * spread
 		out[bone_name(side, digit, 2)] = Quaternion(Vector3.BACK, -sign * float(d[1]))
+		out[bone_name(side, digit, 3)] = Quaternion(Vector3.BACK, -sign * float(d[1]) * 0.8)   # V2 hands have a third joint
 	return out

@@ -21,6 +21,15 @@ const MATERIAL_BY_PREFIX := {
 const OPTIONAL_SURFACES := ["trim"]
 ## A swappable part file (assets/players/parts/*.glb) holds only head parts, hair, facial hair and accessories on the standard skeleton.
 const PART_MAX_TRIANGLES := 6000
+## Model standard 2 (V2 players, D-075): the same 16 standard bones, but a standard bone may hang under a chain of x_ bones that descends from its standard
+## parent (MakeHuman spine and clavicles), meshes may carry morph targets named fcb_ (body) or fcf_ (face), and the surfaces below are allowed. A level of
+## detail is the same surface name with a "__lod1" or "__lod2" suffix. Required: the body skin and the eyes.
+const V2_REQUIRED := ["skin", "eyes"]
+const V2_SURFACES := {
+	"skin": "skin", "eyes": "eyes", "lashes": "lashes", "brow_": "brows", "hair_": "hair", "facial_": "hair", "jersey": "jersey", "shorts": "shorts",
+	"socks": "socks", "shoes": "shoes", "sole": "sole", "trim": "trim", "equip_": "equipment", "acc_": "accessory",
+}
+const V2_MAX_TRIANGLES := {"": 60000, "__lod1": 20000, "__lod2": 8000}
 
 static var _standard: Dictionary = {}
 
@@ -44,7 +53,12 @@ static func validate_path(path: String) -> Array[String]:
 		out.append("%s cannot be loaded as a scene" % path)
 		return out
 	var root := packed.instantiate()
-	out.append_array(validate_part_scene(root) if "/parts/" in path else validate_scene(root))
+	if "/parts/" in path:
+		out.append_array(validate_part_scene(root))
+	elif model_version(root) >= 2:
+		out.append_array(validate_v2_scene(root))
+	else:
+		out.append_array(validate_scene(root))
 	root.free()
 	return out
 
@@ -124,7 +138,86 @@ static func validate_part_scene(root: Node) -> Array[String]:
 	return out
 
 
-static func _check_bones(sk: Skeleton3D, std: Dictionary) -> Array[String]:
+## The model standard a scene declares (armature extra fc_model_version; 1 when absent).
+static func model_version(root: Node) -> int:
+	var armature := root.find_child("Armature", true, false)
+	var extras: Dictionary = armature.get_meta("extras", {}) if armature != null and armature.has_meta("extras") else {}
+	return int(extras.get("fc_model_version", 1))
+
+
+## The material a V2 surface must carry, with any LOD suffix removed ("" when the name is not a V2 surface).
+static func v2_material_for(mesh_name: String) -> String:
+	var base := mesh_name.get_slice("__", 0)
+	for key in V2_SURFACES:
+		if base == key or (str(key).ends_with("_") and base.begins_with(key)):
+			return V2_SURFACES[key]
+	return ""
+
+
+## Every problem with a V2 model (empty = valid): the standard bones (with the x_ chain rule), the rest pose, the declared height, the V2 surfaces and
+## materials, morph target names, skinning, weights and the triangle budget of each level of detail.
+static func validate_v2_scene(root: Node) -> Array[String]:
+	var out: Array[String] = []
+	var std := standard()
+	var skeletons := root.find_children("*", "Skeleton3D", true, false)
+	if skeletons.size() != 1:
+		out.append("the model must contain exactly one skeleton (it has %d)" % skeletons.size())
+		return out
+	var sk := skeletons[0] as Skeleton3D
+	out.append_array(_check_bones(sk, std, true))
+	if not out.is_empty():
+		return out
+	out.append_array(_check_rest_pose(sk))
+	var triangles := {}
+	var names := {}
+	for node in sk.get_children():
+		if not (node is MeshInstance3D):
+			continue
+		var m := node as MeshInstance3D
+		var name := str(m.name)
+		names[name] = m
+		var wanted := v2_material_for(name)
+		if wanted == "":
+			out.append("mesh '%s' is not a V2 surface name" % name)
+			continue
+		if m.mesh == null or m.mesh.get_surface_count() == 0:
+			out.append("mesh %s has no geometry" % name)
+			continue
+		if m.skin == null:
+			out.append("mesh %s is not skinned to the skeleton" % name)
+		var material := m.mesh.surface_get_material(0)
+		if material == null or material.resource_name != wanted:
+			out.append("mesh %s must have a material named '%s'" % [name, wanted])
+		var lod := "__" + name.get_slice("__", 1) if "__" in name else ""
+		for sidx in m.mesh.get_surface_count():
+			var arrays := m.mesh.surface_get_arrays(sidx)
+			var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+			triangles[lod] = int(triangles.get(lod, 0)) + indices.size() / 3
+			out.append_array(_check_weights(name, arrays, m))
+		if m.mesh is ArrayMesh:
+			for b in (m.mesh as ArrayMesh).get_blend_shape_count():
+				var shape := str((m.mesh as ArrayMesh).get_blend_shape_name(b))
+				if not (shape.begins_with("fcb_") or shape.begins_with("fcf_")):
+					out.append("mesh %s has a morph target '%s' (V2 morphs are named fcb_ or fcf_)" % [name, shape])
+	for name in V2_REQUIRED:
+		if not names.has(name):
+			out.append("the V2 surface mesh '%s' is missing" % name)
+	for lod in triangles:
+		if int(triangles[lod]) > int(V2_MAX_TRIANGLES.get(lod, 60000)):
+			out.append("level of detail '%s' has %d triangles (budget %d)" % [lod, int(triangles[lod]), int(V2_MAX_TRIANGLES.get(lod, 60000))])
+	var armature := root.find_child("Armature", true, false)
+	var extras: Dictionary = armature.get_meta("extras", {}) if armature != null and armature.has_meta("extras") else {}
+	if names.has("skin"):
+		var height := (names["skin"] as MeshInstance3D).mesh.get_aabb().end.y
+		var declared := float(extras.get("fc_height_m", 0.0))
+		if declared <= 0.0 or absf(declared - height) > 0.06 * declared:
+			out.append("the declared height fc_height_m (%s) does not match the model (%.3f m)" % [str(extras.get("fc_height_m", "missing")), height])
+		if height < float(std["limits"]["min_height_m"]) or height > float(std["limits"]["max_height_m"]):
+			out.append("height %.3f m is outside the allowed range" % height)
+	return out
+
+
+static func _check_bones(sk: Skeleton3D, std: Dictionary, chain_allowed: bool = false) -> Array[String]:
 	var out: Array[String] = []
 	var wanted := {}
 	for bone in std["bones"]:
@@ -136,6 +229,12 @@ static func _check_bones(sk: Skeleton3D, std: Dictionary) -> Array[String]:
 			continue
 		var parent := sk.get_bone_parent(i)
 		var parent_name := sk.get_bone_name(parent) if parent >= 0 else ""
+		if chain_allowed:
+			# model standard 2: walk up through x_ bones to the first standard bone
+			var walk := parent
+			while walk >= 0 and sk.get_bone_name(walk).begins_with("x_"):
+				walk = sk.get_bone_parent(walk)
+			parent_name = sk.get_bone_name(walk) if walk >= 0 else ""
 		if parent_name != wanted[name]:
 			out.append("bone %s has the parent '%s' but the standard says '%s'" % [name, parent_name, wanted[name]])
 	for i in sk.get_bone_count():
