@@ -26,7 +26,7 @@ static var player_model: String = ""
 static func effective_model() -> String:
 	if player_model != "":
 		return player_model
-	return FcPlayerAssetLibrary.library_model() if FcPlayerAssetLibrary.promoted() else ""
+	return str(FcPlayerMorphs.data().get("library_model", "v2")) if FcPlayerAssetLibrary.promoted() else ""   # V2 is the candidate default (D-075)
 
 var rig: FcCameraRig = FcCameraRig.new()
 var scene: FcCourtScene
@@ -91,7 +91,7 @@ func setup(replay_model: FcReplayModel, broadcast_timeline: FcBroadcastTimeline,
 	var away: Color = colors[1] if colors.size() == 2 else Color("F28A2E")
 	scene.build(home, away, str(_model.box.abbreviations[0]), arena_identity if not arena_identity.is_empty() else FcArenaIdentity.for_box(_model.box, home, away))   # the arena is dressed for the home team
 	_team_colors = [home, away]
-	_build_characters([home, away])
+	_build_all_characters([home, away])
 	scene.set_bench_figures_visible(false)
 	_ball = FcBasketball.new()
 	scene.add_child(_ball)
@@ -107,6 +107,14 @@ func setup(replay_model: FcReplayModel, broadcast_timeline: FcBroadcastTimeline,
 
 ## The three referees and the two head coaches: characters like the players (the same skeleton and mesh builder) in a referee shirt and black trousers or a
 ## suit, with no number. They are not in the game data and nothing here reads or writes it: they are scenery that follows the play.
+## Builds every character with the V2 morph bake deferred, then bakes them all in parallel (FcPlayerLod.bake_characters).
+func _build_all_characters(colors: Array) -> void:
+	FcBroadcastCharacter.defer_v2_bake = true
+	_build_characters(colors)
+	FcBroadcastCharacter.defer_v2_bake = false
+	FcPlayerLod.bake_progressively(characters.values(), self)   # no freeze: baked a little each frame (officials and coaches have nothing to bake)
+
+
 func _build_staff(colors: Array) -> void:
 	for k in 3:
 		var subject := {"key": "official:%d" % k, "name": "official", "jersey": 0, "position": "SG", "attire": "referee",
@@ -137,7 +145,7 @@ func _build_characters(colors: Array) -> void:
 		var primary: Color = colors[side]
 		var body := FcBroadcast3DRules.body_for(p.player_id, p.position)
 		var subject := {"key": "player:%d" % p.player_id, "name": p.name, "jersey": int(numbers.get(p.player_id, 0)), "position": FcPosition.abbreviation(p.position),
-			"physical": {"height_cm": body[0], "weight_kg": body[1]}, "model": effective_model(),
+			"physical": {"height_cm": body[0], "weight_kg": body[1]}, "model": effective_model(), "kit": "home" if side == 0 else "away",
 			"team": {"primary": "#" + primary.to_html(false), "secondary": "#F4F7FF" if primary.get_luminance() < 0.5 else "#1B1B1B", "abbreviation": _model.box.abbreviations[side], "name": _model.box.team_names[side]}}
 		var c := FcBroadcastCharacter.new().setup(subject, float(i) * 0.137)
 		c.visible = false

@@ -66,6 +66,7 @@ func _next_case() -> void:
 	root.add_child(_scene)
 	_scene.build(home, away, "HOU", FcArenaIdentity.make({"home": {"abbr": "HOU", "name": "Houston Comets", "color": home}, "away": {"abbr": "DAL", "name": "Dallas", "color": away}}))
 	_scene.set_bench_figures_visible(false)
+	FcBroadcastCharacter.defer_v2_bake = true   # as the replay view does: build all, then bake the V2 morphs in parallel
 	for i in int(c["people"]):
 		var side := i % 2
 		var subject := {"key": "bench:%d" % i, "name": "p%d" % i, "jersey": i, "position": ["PG", "SG", "SF", "PF", "C"][i % 5], "model": _model,
@@ -76,6 +77,8 @@ func _next_case() -> void:
 		p.set_state(ANIMATIONS[i % ANIMATIONS.size()])
 		_scene.add_child(p)
 		_people.append(p)
+	FcBroadcastCharacter.defer_v2_bake = false
+	FcPlayerLod.bake_characters(_people)
 	_scene.set_camera(FcBroadcast3DRules.camera_pose(Vector2(47.0, 25.0), 1.0))
 	_build_ms = float(Time.get_ticks_usec() - started) / 1000.0
 	_frame = 0

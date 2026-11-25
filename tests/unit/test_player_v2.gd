@@ -112,3 +112,57 @@ func test_a_v2_player_wears_its_parts_with_the_hair_shader() -> void:
 	assert_true(afro.material_override is ShaderMaterial, "hair shader")
 	assert_eq((afro.mesh as ArrayMesh).get_blend_shape_count(), 0, "the hair was baked with the face")
 	c.free()
+
+
+func test_the_v2_spine_shares_the_bend_and_the_hands_still_reach_the_ball() -> void:
+	var c := FcBroadcastCharacter.new().setup(_subject("v2-grip", "SF", 201, 98), 0.0)
+	assert_eq(c._spine.size(), 2, "the V2 spine has two extra joints")
+	var radius := FcBroadcastCharacter.BALL_RADIUS * c._k
+	var checked := 0
+	for state in FcBroadcastPose.TWO_HAND:
+		for phase in [0.2, 0.4, 0.6]:
+			c.pose_at(state, phase)
+			if c._grip < 0.99:
+				continue
+			var fk := c._forward_kinematics()
+			for side in ["l", "r"]:
+				var wrist: Vector3 = (fk[c._bone[side + "_hand"]] as Transform3D).origin
+				var d := wrist.distance_to(c._anchor_model) / radius
+				assert_between(d, 0.6, 2.2, "%s %.1f %s: the hand is at the ball (%.2f radii)" % [state, phase, side, d])
+				checked += 1
+	assert_true(checked >= 20, "grips checked: %d" % checked)
+	c.free()
+
+
+func test_levels_of_detail_and_distance_ranges() -> void:
+	var c := FcBroadcastCharacter.new().setup(_subject("v2-lod", "C", 211, 112), 0.0)
+	var skin := c.skeleton.find_child("skin", false, false) as MeshInstance3D
+	assert_true(FcPlayerLod.level_count(skin.mesh) >= 3, "the body has at least three levels (%d)" % FcPlayerLod.level_count(skin.mesh))
+	var lashes := c.skeleton.find_child("lashes", false, false) as MeshInstance3D
+	assert_eq(lashes.visibility_range_end, FcPlayerLod.MEDIUM_FROM, "lashes stop drawing beyond the medium distance")
+	c.free()
+
+
+func test_a_deferred_build_bakes_later_and_matches() -> void:
+	FcBroadcastCharacter.defer_v2_bake = true
+	var c := FcBroadcastCharacter.new().setup(_subject("v2-defer", "PF", 206, 108), 0.0)
+	FcBroadcastCharacter.defer_v2_bake = false
+	assert_true(c.pending_bake.size() > 5, "meshes wait for the bake")
+	var skin := c.skeleton.find_child("skin", false, false) as MeshInstance3D
+	assert_true((skin.mesh as ArrayMesh).get_blend_shape_count() > 0, "until then the morphs show live")
+	assert_true(FcPlayerLod.bake_characters([c]) > 5, "baked")
+	assert_eq((skin.mesh as ArrayMesh).get_blend_shape_count(), 0, "baked into a plain mesh")
+	c.free()
+
+
+func test_home_away_and_alternate_kits() -> void:
+	var colours := {}
+	for kit in ["home", "away", "alternate"]:
+		var s := _subject("v2-kit", "SG", 193, 88)
+		s["kit"] = kit
+		var c := FcBroadcastCharacter.new().setup(s, 0.0)
+		var shorts := c.skeleton.find_child("shorts", false, false) as MeshInstance3D
+		colours[kit] = (shorts.material_override as ShaderMaterial).get_shader_parameter("base_color") if shorts.material_override is ShaderMaterial else (shorts.material_override as StandardMaterial3D).albedo_color
+		c.free()
+	assert_true(colours["home"] != colours["away"] and colours["home"] != colours["alternate"] and colours["away"] != colours["alternate"], "three different kits: %s" % str(colours))
+	assert_true((colours["away"] as Color).get_luminance() > 0.6, "the away kit is the light one")

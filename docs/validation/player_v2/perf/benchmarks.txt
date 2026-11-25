@@ -1,0 +1,15 @@
+== replay benchmark model=v2 (progressive bake)
+machine: AMD Ryzen 7 8700F 8-Core Processor | NVIDIA GeForce RTX 4060 | renderer gl_compatibility | window (1920, 1080) | vsync off
+memory | M2D-style snapshot (replay screen settled) | process working set 561 MB | engine static 102 MB | nodes 1114 (orphans 0) | video 193 MB (texture 95, buffer 98) | draw calls 947, primitives 702768
+frame time | replay3d/standard for 25 s | 4170 frames | avg 6.00 ms (167 fps) | p50 5.63 | p95 8.72 | p99 10.10 | worst 17.13 ms | over 16.6 ms: 3 (0.07%) | over 33.3 ms: 0 (0.00%)
+== scene benchmark model=v2 (build = setup + synchronous bake)
+arena only, no crowd                           | avg   1.08 ms | p95   1.62 | p99   1.90 | worst   2.09 | >16.6 ms:   0 | draw calls   235 | video  49 MB | working set   52 MB | build    16 ms
+1 player, no crowd                             | avg   1.35 ms | p95   1.94 | p99   2.25 | worst   3.34 | >16.6 ms:   0 | draw calls   262 | video  77 MB | working set   53 MB | build   327 ms
+10 players, no crowd                           | avg   3.98 ms | p95   4.99 | p99   6.07 | worst  10.01 | >16.6 ms:   0 | draw calls   511 | video 122 MB | working set   66 MB | build  1288 ms
+31 characters, no crowd                        | avg   6.24 ms | p95   8.99 | p99   9.67 | worst  10.06 | >16.6 ms:   0 | draw calls  1093 | video 194 MB | working set   73 MB | build  3283 ms
+arena + crowd 6000, no people                  | avg   1.17 ms | p95   1.76 | p99   2.04 | worst   2.54 | >16.6 ms:   0 | draw calls   240 | video 157 MB | working set   67 MB | build    21 ms
+10 players + crowd 6000                        | avg   3.74 ms | p95   4.44 | p99   5.38 | worst   5.50 | >16.6 ms:   0 | draw calls   516 | video 170 MB | working set   70 MB | build   956 ms
+FULL: 31 characters + crowd 6000, 1080p        | avg   6.34 ms | p95   8.97 | p99   9.86 | worst  10.62 | >16.6 ms:   0 | draw calls  1098 | video 194 MB | working set   75 MB | build  1350 ms
+stress: 31 characters + crowd 12000, 1080p     | avg   6.70 ms | p95   9.48 | p99  11.02 | worst  12.80 | >16.6 ms:   0 | draw calls  1098 | video 194 MB | working set   76 MB | build  1722 ms
+FULL at 1280x720                               | avg   6.92 ms | p95  10.11 | p99  11.62 | worst  12.25 | >16.6 ms:   0 | draw calls  1098 | video 175 MB | working set   75 MB | build  2056 ms
+FULL at 2560x1440                              | avg   6.72 ms | p95  10.00 | p99  11.48 | worst  15.38 | >16.6 ms:   0 | draw calls  1098 | video 221 MB | working set   75 MB | build  1205 ms

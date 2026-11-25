@@ -38,10 +38,17 @@ var _surname: String = ""
 var v2: bool = false
 ## The morph weights this V2 player was baked with (FcPlayerMorphs.weights).
 var morph_weights: Dictionary = {}
+## V2 levels of detail (FcPlayerLod): automatic LOD chains on the big meshes and distance ranges on the small parts. Tests may switch it off.
+static var v2_lods: bool = true
+## When true, V2 morphs are not baked in setup(): the caller bakes many characters together with FcPlayerLod.bake_characters (parallel, much faster).
+static var defer_v2_bake: bool = false
+## Meshes waiting for that bake: [MeshInstance3D, cache key, mesh name].
+var pending_bake: Array = []
 ## The V2 part meshes this player wears (FcPlayerMorphs.parts).
 var v2_parts: Array[String] = []
 var _key: String = ""
 var part_problems: Array[String] = []
+var _spine: Array[int] = []           # V2: the x_spine_02 and x_spine_03 bones (empty for other bodies)
 var _finger_bones: Dictionary = {}   # extension bone name -> index (empty for a model without fingers)
 var _finger_q: Dictionary = {}       # bone name -> the rotation it holds now (fingers ease toward their pose)
 var _finger_rate: float = 1.0
@@ -70,7 +77,8 @@ func setup(subject: Dictionary, phase_offset: float = 0.0) -> FcBroadcastCharact
 	var visual := FcPlayerVisual.resolve(subject)
 	identity = visual["identity"]
 	uniform = visual["uniform"]
-	uniform["attire"] = str(subject.get("attire", "playing"))   # "playing", "referee" or "suit" (a coach): see FcBodyBuilder
+	uniform["attire"] = str(subject.get("attire", "playing"))
+	uniform["kit"] = str(subject.get("kit", "home"))   # V2 uniforms: "home" (team colour), "away" (light, team-colour trim), "alternate" (dark)   # "playing", "referee" or "suit" (a coach): see FcBodyBuilder
 	jersey_number = int(uniform["number"])
 	_key = str(visual["key"])
 	_surname = FcJerseyGraphics.surname_of(str(subject.get("name", "")))
@@ -153,6 +161,8 @@ func _build_imported() -> bool:
 		_rest_global[skeleton.get_bone_name(i)] = global_pos[i]
 		if skeleton.get_bone_name(i).begins_with("x_"):
 			_finger_bones[skeleton.get_bone_name(i)] = i
+	if skeleton.find_bone("x_spine_02") >= 0 and skeleton.find_bone("x_spine_03") >= 0:
+		_spine = [skeleton.find_bone("x_spine_02"), skeleton.find_bone("x_spine_03")]
 	if library_mode:
 		part_problems = FcPlayerAssetLibrary.attach_parts(skeleton, asset_spec)
 		_scale_head(float(asset_spec["width_scale"]))
@@ -245,6 +255,13 @@ func _dress_v2() -> void:
 	var hair: Color = identity["hair_color"]
 	var primary: Color = uniform["primary"]
 	var secondary: Color = uniform["secondary"]
+	match str(uniform.get("kit", "home")):
+		"away":   # the light kit: the jersey takes the light colour, trim and numbers the team colour
+			var team := primary
+			primary = secondary if secondary.get_luminance() > 0.6 else Color.WHITE.darkened(0.04)
+			secondary = team
+		"alternate":
+			primary = primary.darkened(0.45)
 	var shorts := primary
 	var socks := Color.WHITE
 	if str(uniform["attire"]) != "playing":
@@ -275,9 +292,16 @@ func _dress_v2() -> void:
 			var am := mi.mesh as ArrayMesh
 			for b in am.get_blend_shape_count():
 				mi.set_blend_shape_value(b, float(morph_weights.get(str(am.get_blend_shape_name(b)), 0.0)))
-			var baked := mi.bake_mesh_from_current_blend_shape_mix()
-			if baked != null:
-				mi.mesh = baked
+			var cache_key := "%s|%s|%d" % [_key, mesh_name, hash(morph_weights)]
+			if FcPlayerLod.has_cached(cache_key):
+				mi.mesh = FcPlayerLod.cached_mesh(cache_key)
+			elif defer_v2_bake:
+				pending_bake.append([mi, cache_key, mesh_name])   # FcPlayerLod.bake_characters bakes many players at once, in parallel
+			else:
+				var baked := mi.bake_mesh_from_current_blend_shape_mix()
+				if baked != null:
+					mi.mesh = FcPlayerLod.cached(cache_key, baked, mesh_name) if v2_lods else baked
+		FcPlayerLod.apply_ranges(mi, mesh_name)
 		var base := mesh_name.get_slice("__", 0)
 		if base == "skin":
 			mi.material_override = FcPlayerV2Materials.skin(identity["skin_color"])
@@ -404,7 +428,14 @@ func _apply_pose(pose: Dictionary) -> void:
 		var idx: int = _bone.get(name, -1)
 		if idx < 0:
 			continue
-		skeleton.set_bone_pose_rotation(idx, _local_rotation(idx, Basis.from_euler(pose["joints"][name]).get_rotation_quaternion()))
+		var q := Basis.from_euler(pose["joints"][name]).get_rotation_quaternion()
+		if name == "torso" and not _spine.is_empty():
+			# a V2 spine has three joints: the torso bend is shared (lower back 45%, mid 30%, upper 25%) so the back curves instead of folding at one point
+			skeleton.set_bone_pose_rotation(idx, _local_rotation(idx, Quaternion.IDENTITY.slerp(q, 0.45)))
+			skeleton.set_bone_pose_rotation(_spine[0], _local_rotation(_spine[0], Quaternion.IDENTITY.slerp(q, 0.30)))
+			skeleton.set_bone_pose_rotation(_spine[1], _local_rotation(_spine[1], Quaternion.IDENTITY.slerp(q, 0.25)))
+			continue
+		skeleton.set_bone_pose_rotation(idx, _local_rotation(idx, q))
 	var root: Vector3 = pose["root"]
 	var rest: Vector3 = _rest_pos("pelvis")
 	var pelvis_y := rest.y + root.y * _hs
@@ -445,7 +476,9 @@ func _apply_grip(pose: Dictionary, grip: float, shift: float) -> void:
 	var anchor: Vector3 = (pose["ball"] as Vector3) * _hs + Vector3(0.0, shift, 0.0)
 	_grip = grip
 	_anchor_model = anchor
-	var torso_idx: int = _bone["torso"]
+	# the arms hang from the upper spine on a V2 body (the torso bend is shared along the spine), from the torso otherwise
+	var torso_idx: int = _spine[1] if not _spine.is_empty() else int(_bone["torso"])
+	var frame_name := skeleton.get_bone_name(torso_idx)
 	var torso_global: Transform3D = _forward_kinematics()[torso_idx]
 	# the torso frame the pose maths use: its orientation without the rest rotation of an imported bone (the identity for the generated body)
 	var rest_torso := (_parent_rest[torso_idx] as Quaternion) * (_rest_rot[torso_idx] as Quaternion) if imported else Quaternion.IDENTITY
@@ -458,7 +491,7 @@ func _apply_grip(pose: Dictionary, grip: float, shift: float) -> void:
 		var shoulder_at: Vector3 = _rest_pos(side + "_shoulder")
 		var upper: float = shoulder_at.distance_to(_rest_pos(side + "_elbow"))
 		var lower: float = (_rest_pos(side + "_elbow") as Vector3).distance_to(_rest_pos(side + "_hand"))
-		var start: Vector3 = shoulder_at - (_rest_pos("torso") as Vector3)
+		var start: Vector3 = shoulder_at - (_rest_pos(frame_name) as Vector3)
 		var wrist := to_local * (anchor + Vector3(sign * BALL_RADIUS * 1.05, -0.12, -0.02) * _k)
 		var solved := FcLimbIK.solve(start, upper, lower, wrist, Vector3(sign * 0.5, -0.7, -0.35))
 		var posed_sh := _local_rotation(sh, Basis.from_euler(pose["joints"][side + "_shoulder"]).get_rotation_quaternion())
