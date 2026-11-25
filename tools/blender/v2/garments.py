@@ -543,6 +543,30 @@ def _bar(bm, a, mid, b, radius, segs=6):
                 pass
 
 
+def equipment(skin, L):
+    """M6 equipment as thin shells from the body: arm sleeves, knee sleeves and wristbands for each side. Returns {name: object}."""
+    out = {}
+    for side, sx in (("l", 1.0), ("r", -1.0)):
+        hand_z = L["l_hand"].z
+        sh_z = L["l_shoulder"].z
+
+        def arm_keep(c, n, arm_w, head_w, sx=sx, lo=hand_z + 0.05, hi=sh_z - 0.09):
+            return arm_w > 0.6 and lo < c.z < hi and c.x * sx > 0.0
+
+        def wrist_keep(c, n, arm_w, head_w, sx=sx, lo=hand_z + 0.012, hi=hand_z + 0.07):
+            return arm_w > 0.6 and lo < c.z < hi and c.x * sx > 0.0
+
+        def knee_keep(c, n, arm_w, head_w, sx=sx, lo=L["l_knee"].z - 0.09, hi=L["l_knee"].z + 0.10):
+            return arm_w < 0.2 and lo < c.z < hi and c.x * sx > 0.0
+
+        for name, keep, off in (("equip_armsleeve_" + side, arm_keep, 0.0022), ("equip_wristband_" + side, wrist_keep, 0.005),
+                                ("equip_kneesleeve_" + side, knee_keep, 0.003)):
+            obj = region(skin, keep, name)
+            inflate(obj, lambda co, off=off: off)
+            out[name] = obj
+    return out
+
+
 def sleeve(skin, L, name, z_low, z_high, side_x, offset=0.003):
     def keep(c, n, arm_w, head_w):
         return z_low < c.z < z_high and (side_x is None or c.x * side_x > 0.02)

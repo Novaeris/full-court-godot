@@ -19,6 +19,7 @@ import mh  # noqa: E402
 import morphs as MO  # noqa: E402
 import rig_convert as RC  # noqa: E402
 import garments as G  # noqa: E402
+import hair as HA  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 BROWS = ["eyebrow001", "eyebrow006", "eyebrow009", "eyebrow011"]
@@ -63,6 +64,48 @@ def snapshot(obj, name):
     if me.shape_keys is None:
         new.shape_key_add(name="Basis", from_mix=False)
     return new
+
+
+def export(path, arm, objects):
+    bpy.ops.object.select_all(action="DESELECT")
+    arm.select_set(True)
+    for ob in objects:
+        ob.select_set(True)
+    bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", export_apply=False, export_yup=True, export_skins=True, export_animations=False,
+                              export_extras=True, export_materials="EXPORT", export_morph=True, export_morph_normal=True, export_try_sparse_sk=True,
+                              use_selection=True, export_image_format="NONE", export_vertex_color="ACTIVE")
+
+
+def build_parts(skin, arm):
+    """M4 and M6: every hair style, facial hair style, the headband and the equipment, in a separate part file the game attaches per player."""
+    L = G.landmarks(arm)
+    face_keys = [k.name for k in skin.data.shape_keys.key_blocks[1:] if k.name.startswith("fcf_")]
+    scalp_keys = [k for k in face_keys if k.startswith(("fcf_head", "fcf_forehead", "fcf_brow_ridge", "fcf_ears"))]
+    jaw_keys = [k for k in face_keys if k.startswith(("fcf_head", "fcf_jaw", "fcf_chin", "fcf_cheek", "fcf_mouth", "fcf_lips", "fcf_nose", "fcf_asym_jaw", "fcf_asym_mouth"))]
+    body_keys = [k.name for k in skin.data.shape_keys.key_blocks[1:] if k.name.startswith("fcb_")]
+    made = {}
+    for style in HA.STYLES:
+        made["hair_" + style] = (HA.build_style(skin, style), scalp_keys, "hair")
+    for style in HA.FACIAL:
+        made["facial_" + style] = (HA.build_facial(skin, style), jaw_keys, "hair")
+    made["acc_headband"] = (HA.build_headband(skin), scalp_keys, "accessory")
+    for name, obj in G.equipment(skin, L).items():
+        made[name] = (obj, body_keys, "equipment")
+    out = {}
+    for name, (obj, keys, mat_name) in made.items():
+        obj.name = obj.data.name = name
+        G.transfer_weights(obj, skin)
+        G.fill_unweighted(obj)
+        G.box_uv(obj)
+        G.bind_morphs(obj, skin, keys)
+        obj.parent = arm
+        mod = obj.modifiers.new("Armature", "ARMATURE")
+        mod.object = arm
+        mat = bpy.data.materials.get(mat_name) or bpy.data.materials.new(mat_name)
+        obj.data.materials.clear()
+        obj.data.materials.append(mat)
+        out[name] = obj
+    return out
 
 
 def clean_weights(finals, arm):
@@ -181,17 +224,23 @@ def main():
         obj.data.materials.append(mat)
     for ob in [base, rig] + list(assets.values()):
         bpy.data.objects.remove(ob, do_unlink=True)
+    parts = {}
     if not o["no_garments"]:
         finals.update(build_garments(finals["skin"], arm))
+        if not o["quick"]:
+            parts = build_parts(finals["skin"], arm)
     for ob in list(bpy.data.objects):
-        if ob.type == "MESH" and ob.name not in finals:
+        if ob.type == "MESH" and ob.name not in finals and ob.name not in parts:
             bpy.data.objects.remove(ob, do_unlink=True)
     clean_weights(finals, arm)
+    clean_weights(parts, arm)
     os.makedirs(os.path.dirname(o["out"]), exist_ok=True)
-    bpy.ops.object.select_all(action="SELECT")
-    bpy.ops.export_scene.gltf(filepath=o["out"], export_format="GLB", export_apply=False, export_yup=True, export_skins=True, export_animations=False,
-                              export_extras=True, export_materials="EXPORT", export_morph=True, export_morph_normal=True, export_try_sparse_sk=True,
-                              use_selection=False, export_image_format="NONE")
+    export(o["out"], arm, finals.values())
+    if parts:
+        parts_out = os.path.join(os.path.dirname(o["out"]), "parts", "fc_v2_parts.glb")
+        os.makedirs(os.path.dirname(parts_out), exist_ok=True)
+        export(parts_out, arm, parts.values())
+        print("FC_V2_PARTS %s %d parts" % (parts_out, len(parts)))
     if o["keep"]:
         os.makedirs(o["keep"], exist_ok=True)
         bpy.ops.wm.save_as_mainfile(filepath=os.path.join(o["keep"], "fc_v2_body.blend"))

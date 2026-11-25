@@ -98,6 +98,28 @@ static func _add(out: Dictionary, name: String, amount: float) -> void:
 	out[name] = float(out.get(name, 0.0)) + amount
 
 
+## The V2 part meshes a player wears: hair style, facial hair, headband and equipment, chosen from the identity and the key (deterministic).
+static func parts(identity: Dictionary, key: String) -> Array[String]:
+	var out: Array[String] = []
+	var hair: Array = (data().get("hair", {}) as Dictionary).get(str(identity.get("hair", "short")), [])
+	if not hair.is_empty():
+		out.append(str(hair[FcPlayerVisual.fnv1a(key + "|v2hair") % hair.size()]))
+	var facial: Array = (data().get("facial_hair", {}) as Dictionary).get(str(identity.get("facial_hair", "none")), [])
+	if not facial.is_empty():
+		out.append(str(facial[FcPlayerVisual.fnv1a(key + "|v2facial") % facial.size()]))
+	if int((identity.get("proportions", {}) as Dictionary).get("accessory", 0)) == 1:
+		out.append("acc_headband")
+	var equip: Dictionary = data().get("equipment", {})
+	for piece in ["equip_armsleeve", "equip_kneesleeve", "equip_wristband"]:
+		if FcPlayerVisual.fnv1a(key + "|" + piece) % 100 < int(equip.get(piece, 0)):
+			if piece == "equip_armsleeve":
+				out.append(piece + ("_r" if FcPlayerVisual.fnv1a(key + "|sleeve_side") % 3 > 0 else "_l"))
+			else:
+				out.append(piece + "_l")
+				out.append(piece + "_r")
+	return out
+
+
 ## The iris texture name for an identity (eye colour is not stored: it follows the skin tone and the key).
 static func eye_color(identity: Dictionary, key: String) -> String:
 	var table: Dictionary = data().get("eye_colors_by_tone", {})

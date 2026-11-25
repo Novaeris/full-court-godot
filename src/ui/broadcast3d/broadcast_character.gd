@@ -38,6 +38,8 @@ var _surname: String = ""
 var v2: bool = false
 ## The morph weights this V2 player was baked with (FcPlayerMorphs.weights).
 var morph_weights: Dictionary = {}
+## The V2 part meshes this player wears (FcPlayerMorphs.parts).
+var v2_parts: Array[String] = []
 var _key: String = ""
 var part_problems: Array[String] = []
 var _finger_bones: Dictionary = {}   # extension bone name -> index (empty for a model without fingers)
@@ -249,6 +251,20 @@ func _dress_v2() -> void:
 		shorts = primary.darkened(0.3)
 		socks = shorts
 	var shoe: Color = [Color.WHITE, Color.BLACK.lightened(0.1), secondary, primary.lightened(0.25)][clampi(int(archetype["shoe"]), 0, 3)]
+	# the parts this player wears (hair, facial hair, headband, equipment) join the skeleton BEFORE the bake, so they get the same face and body
+	v2_parts = FcPlayerMorphs.parts(identity, _key)
+	var packed := FcPlayerAssetLibrary.scene(str(FcPlayerMorphs.data().get("parts", "")))
+	if packed != null and not v2_parts.is_empty():
+		var instance := packed.instantiate()
+		for part in v2_parts:
+			var src := instance.find_child(part, true, false) as MeshInstance3D
+			if src == null:
+				part_problems.append("V2 part %s is missing" % part)
+				continue
+			var copy := src.duplicate() as MeshInstance3D
+			skeleton.add_child(copy)
+			copy.skeleton = NodePath("..")
+		instance.free()
 	var brow := FcPlayerMorphs.brow(identity, _key)
 	for node in skeleton.get_children():
 		if not (node is MeshInstance3D):
@@ -274,6 +290,8 @@ func _dress_v2() -> void:
 		elif base.begins_with("brow_"):
 			mi.visible = base == brow
 			mi.material_override = FcPlayerV2Materials.card("brows", base + ".png", hair.lightened(0.15))
+		elif base.begins_with("hair_") or base.begins_with("facial_"):
+			mi.material_override = FcPlayerV2Materials.hair(hair if base.begins_with("hair_") else hair.darkened(0.05))
 		elif base == "jersey":
 			var number := jersey_number if str(uniform["attire"]) == "playing" else 0
 			if FcJerseyGraphics.available():
@@ -284,7 +302,7 @@ func _dress_v2() -> void:
 			mi.material_override = FcJerseyGraphics.cloth_material(shorts)
 		elif base == "socks":
 			mi.material_override = FcJerseyGraphics.cloth_material(socks)
-		elif base in ["trim", "shoes", "sole"] or base.begins_with("equip_"):
+		elif base in ["trim", "shoes", "sole"] or base.begins_with("equip_") or base.begins_with("acc_"):
 			var c: Color = {"trim": secondary, "shoes": shoe, "sole": Color.WHITE}.get(base, secondary if base != "equip_laces" else Color.WHITE)
 			mi.material_override = FcPlayerAssetLibrary.shared_material(base.get_slice("_", 0), c, 0.55 if base == "shoes" else 0.75)
 

@@ -110,4 +110,5 @@ def main():
         shot(scene, cam, cam_data, os.path.join(out, "body_%s.png" % name), (3.5, -4.2, H / 2), (math.pi / 2, 0, 0.7), H * 1.08, (420, 600))
 
 
-main()
+if __name__ == "__main__":
+    main()

@@ -4,22 +4,150 @@
 	"model": "res://assets/players/v2/fc_v2_body.glb",
 	"library_model": "v2",
 	"types": {
-		"lean_guard":        {"fcb_muscle_down": 0.25, "fcb_mass_down": 0.45, "fcb_shoulders_down": 0.35, "fcb_waist_down": 0.3},
-		"athletic_guard":    {"fcb_arms_muscle": 0.45, "fcb_legs_muscle": 0.55, "fcb_vshape": 0.35, "fcb_mass_down": 0.15},
-		"standard_wing":     {"fcb_vshape": 0.25, "fcb_legs_muscle": 0.3},
-		"muscular_wing":     {"fcb_muscle_up": 0.55, "fcb_chest": 0.5, "fcb_arms_muscle": 0.6, "fcb_vshape": 0.55, "fcb_back": 0.3},
-		"athletic_forward":  {"fcb_muscle_up": 0.35, "fcb_shoulders_up": 0.4, "fcb_back": 0.5, "fcb_legs_muscle": 0.45, "fcb_chest": 0.3},
-		"strong_forward":    {"fcb_muscle_up": 0.7, "fcb_mass_up": 0.3, "fcb_shoulders_up": 0.6, "fcb_chest": 0.6, "fcb_neck_thick": 0.5, "fcb_back": 0.5},
-		"traditional_center": {"fcb_shoulders_up": 0.5, "fcb_mass_up": 0.2, "fcb_back": 0.4, "fcb_neck_thick": 0.3},
-		"heavy_center":      {"fcb_mass_up": 0.8, "fcb_waist_up": 0.6, "fcb_neck_thick": 0.6, "fcb_muscle_up": 0.2, "fcb_shoulders_up": 0.3}
+		"lean_guard": {
+			"fcb_muscle_down": 0.25,
+			"fcb_mass_down": 0.45,
+			"fcb_shoulders_down": 0.35,
+			"fcb_waist_down": 0.3
+		},
+		"athletic_guard": {
+			"fcb_arms_muscle": 0.45,
+			"fcb_legs_muscle": 0.55,
+			"fcb_vshape": 0.35,
+			"fcb_mass_down": 0.15
+		},
+		"standard_wing": {
+			"fcb_vshape": 0.25,
+			"fcb_legs_muscle": 0.3
+		},
+		"muscular_wing": {
+			"fcb_muscle_up": 0.55,
+			"fcb_chest": 0.5,
+			"fcb_arms_muscle": 0.6,
+			"fcb_vshape": 0.55,
+			"fcb_back": 0.3
+		},
+		"athletic_forward": {
+			"fcb_muscle_up": 0.35,
+			"fcb_shoulders_up": 0.4,
+			"fcb_back": 0.5,
+			"fcb_legs_muscle": 0.45,
+			"fcb_chest": 0.3
+		},
+		"strong_forward": {
+			"fcb_muscle_up": 0.7,
+			"fcb_mass_up": 0.3,
+			"fcb_shoulders_up": 0.6,
+			"fcb_chest": 0.6,
+			"fcb_neck_thick": 0.5,
+			"fcb_back": 0.5
+		},
+		"traditional_center": {
+			"fcb_shoulders_up": 0.5,
+			"fcb_mass_up": 0.2,
+			"fcb_back": 0.4,
+			"fcb_neck_thick": 0.3
+		},
+		"heavy_center": {
+			"fcb_mass_up": 0.8,
+			"fcb_waist_up": 0.6,
+			"fcb_neck_thick": 0.6,
+			"fcb_muscle_up": 0.2,
+			"fcb_shoulders_up": 0.3
+		}
 	},
 	"eye_colors_by_tone": {
-		"tone_1": ["blue", "grey", "green", "brownlight", "brown", "deepblue"],
-		"tone_2": ["brown", "brownlight", "green", "blue", "grey"],
-		"tone_3": ["brown", "brown", "brownlight", "green"],
-		"tone_4": ["brown", "brown", "brown", "brownlight"],
-		"tone_5": ["brown", "brown", "brown", "brownlight"],
-		"tone_6": ["brown", "brown", "brown"]
+		"tone_1": [
+			"blue",
+			"grey",
+			"green",
+			"brownlight",
+			"brown",
+			"deepblue"
+		],
+		"tone_2": [
+			"brown",
+			"brownlight",
+			"green",
+			"blue",
+			"grey"
+		],
+		"tone_3": [
+			"brown",
+			"brown",
+			"brownlight",
+			"green"
+		],
+		"tone_4": [
+			"brown",
+			"brown",
+			"brown",
+			"brownlight"
+		],
+		"tone_5": [
+			"brown",
+			"brown",
+			"brown",
+			"brownlight"
+		],
+		"tone_6": [
+			"brown",
+			"brown",
+			"brown"
+		]
 	},
-	"brows": ["brow_006", "brow_001", "brow_009", "brow_011"]
+	"brows": [
+		"brow_006",
+		"brow_001",
+		"brow_009",
+		"brow_011"
+	],
+	"parts": "res://assets/players/v2/parts/fc_v2_parts.glb",
+	"hair": {
+		"bald": [],
+		"short": [
+			"hair_taper",
+			"hair_buzz"
+		],
+		"fade": [
+			"hair_low_fade",
+			"hair_high_fade"
+		],
+		"afro": [
+			"hair_afro"
+		],
+		"braids": [
+			"hair_braids",
+			"hair_cornrows"
+		],
+		"locs": [
+			"hair_dreads"
+		],
+		"curly": [
+			"hair_short_curls"
+		],
+		"long": [
+			"hair_long"
+		]
+	},
+	"facial_hair": {
+		"none": [],
+		"stubble": [
+			"facial_stubble"
+		],
+		"goatee": [
+			"facial_goatee",
+			"facial_mustache"
+		],
+		"beard": [
+			"facial_beard_short",
+			"facial_beard_full"
+		]
+	},
+	"equipment": {
+		"note": "Chance (out of 100, by the player key) that a player wears each piece.",
+		"equip_armsleeve": 22,
+		"equip_kneesleeve": 14,
+		"equip_wristband": 26
+	}
 }

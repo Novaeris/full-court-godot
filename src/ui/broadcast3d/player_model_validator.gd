@@ -30,6 +30,7 @@ const V2_SURFACES := {
 	"socks": "socks", "shoes": "shoes", "sole": "sole", "trim": "trim", "equip_": "equipment", "acc_": "accessory",
 }
 const V2_MAX_TRIANGLES := {"": 60000, "__lod1": 20000, "__lod2": 8000}
+const V2_PART_MAX_TRIANGLES := 16000
 
 static var _standard: Dictionary = {}
 
@@ -53,7 +54,9 @@ static func validate_path(path: String) -> Array[String]:
 		out.append("%s cannot be loaded as a scene" % path)
 		return out
 	var root := packed.instantiate()
-	if "/parts/" in path:
+	if "/v2/parts/" in path:
+		out.append_array(validate_v2_scene(root, false))
+	elif "/parts/" in path:
 		out.append_array(validate_part_scene(root))
 	elif model_version(root) >= 2:
 		out.append_array(validate_v2_scene(root))
@@ -156,7 +159,7 @@ static func v2_material_for(mesh_name: String) -> String:
 
 ## Every problem with a V2 model (empty = valid): the standard bones (with the x_ chain rule), the rest pose, the declared height, the V2 surfaces and
 ## materials, morph target names, skinning, weights and the triangle budget of each level of detail.
-static func validate_v2_scene(root: Node) -> Array[String]:
+static func validate_v2_scene(root: Node, whole_player: bool = true) -> Array[String]:
 	var out: Array[String] = []
 	var std := standard()
 	var skeletons := root.find_children("*", "Skeleton3D", true, false)
@@ -188,7 +191,7 @@ static func validate_v2_scene(root: Node) -> Array[String]:
 		var material := m.mesh.surface_get_material(0)
 		if material == null or material.resource_name != wanted:
 			out.append("mesh %s must have a material named '%s'" % [name, wanted])
-		var lod := "__" + name.get_slice("__", 1) if "__" in name else ""
+		var lod := ("__" + name.get_slice("__", 1) if "__" in name else "") if whole_player else name   # a part file: each part has its own budget
 		for sidx in m.mesh.get_surface_count():
 			var arrays := m.mesh.surface_get_arrays(sidx)
 			var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
@@ -199,15 +202,19 @@ static func validate_v2_scene(root: Node) -> Array[String]:
 				var shape := str((m.mesh as ArrayMesh).get_blend_shape_name(b))
 				if not (shape.begins_with("fcb_") or shape.begins_with("fcf_")):
 					out.append("mesh %s has a morph target '%s' (V2 morphs are named fcb_ or fcf_)" % [name, shape])
-	for name in V2_REQUIRED:
+	for name in (V2_REQUIRED if whole_player else []):
 		if not names.has(name):
 			out.append("the V2 surface mesh '%s' is missing" % name)
 	for lod in triangles:
+		if not whole_player:
+			if int(triangles[lod]) > V2_PART_MAX_TRIANGLES:
+				out.append("part %s has %d triangles (budget %d)" % [lod, int(triangles[lod]), V2_PART_MAX_TRIANGLES])
+			continue
 		if int(triangles[lod]) > int(V2_MAX_TRIANGLES.get(lod, 60000)):
 			out.append("level of detail '%s' has %d triangles (budget %d)" % [lod, int(triangles[lod]), int(V2_MAX_TRIANGLES.get(lod, 60000))])
 	var armature := root.find_child("Armature", true, false)
 	var extras: Dictionary = armature.get_meta("extras", {}) if armature != null and armature.has_meta("extras") else {}
-	if names.has("skin"):
+	if whole_player and names.has("skin"):
 		var height := (names["skin"] as MeshInstance3D).mesh.get_aabb().end.y
 		var declared := float(extras.get("fc_height_m", 0.0))
 		if declared <= 0.0 or absf(declared - height) > 0.06 * declared:

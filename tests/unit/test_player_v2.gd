@@ -77,3 +77,38 @@ func test_a_v2_player_moves_through_every_state() -> void:
 		var foot: Vector3 = (fk[c._bone["l_foot"]] as Transform3D).origin
 		assert_true(head.y > foot.y, "%s: the head stays above the feet" % state)
 	c.free()
+
+
+func test_every_v2_part_the_data_can_choose_exists_and_passes() -> void:
+	var parts_path := str(FcPlayerMorphs.data()["parts"])
+	assert_eq(FcPlayerModelValidator.validate_path(parts_path).size(), 0, str(FcPlayerModelValidator.validate_path(parts_path)))
+	var instance := (load(parts_path) as PackedScene).instantiate()
+	var names := []
+	for list in (FcPlayerMorphs.data()["hair"] as Dictionary).values() + (FcPlayerMorphs.data()["facial_hair"] as Dictionary).values():
+		names.append_array(list)
+	names.append_array(["acc_headband", "equip_armsleeve_l", "equip_armsleeve_r", "equip_kneesleeve_l", "equip_kneesleeve_r", "equip_wristband_l", "equip_wristband_r"])
+	for n in names:
+		assert_true(instance.find_child(str(n), true, false) != null, "%s is in the part file" % n)
+	instance.free()
+
+
+func test_parts_follow_the_identity_and_the_key() -> void:
+	var visual := FcPlayerVisual.resolve({"key": "parts-a", "appearance": {"skin": "tone_5", "hair": "locs", "facial_hair": "beard"}})
+	var a := FcPlayerMorphs.parts(visual["identity"], "parts-a")
+	assert_eq(a, FcPlayerMorphs.parts(visual["identity"], "parts-a"), "deterministic")
+	assert_true(a.has("hair_dreads"), "locs are dreadlocks")
+	assert_true(a.has("facial_beard_short") or a.has("facial_beard_full"), "a beard")
+	var bald := FcPlayerVisual.resolve({"key": "parts-b", "appearance": {"skin": "tone_2", "hair": "bald", "facial_hair": "none"}})
+	for p in FcPlayerMorphs.parts(bald["identity"], "parts-b"):
+		assert_true(not str(p).begins_with("hair_") and not str(p).begins_with("facial_"), "bald and clean-shaven: %s" % p)
+
+
+func test_a_v2_player_wears_its_parts_with_the_hair_shader() -> void:
+	var s := _subject("v2-hair", "SG", 193, 88)
+	s["appearance"] = {"skin": "tone_3", "hair": "afro", "facial_hair": "goatee"}
+	var c := FcBroadcastCharacter.new().setup(s, 0.0)
+	var afro := c.skeleton.find_child("hair_afro", false, false) as MeshInstance3D
+	assert_true(afro != null, "the afro is attached: %s" % str(c.part_problems))
+	assert_true(afro.material_override is ShaderMaterial, "hair shader")
+	assert_eq((afro.mesh as ArrayMesh).get_blend_shape_count(), 0, "the hair was baked with the face")
+	c.free()
