@@ -51,7 +51,7 @@ class Context:
         if t < 0.82:
             return mix(waist, chest, smoothstep(0, 1, (t - 0.40) / 0.42))
         girdle = (chest[0] * 1.10, chest[1] * 0.80)   # the shoulder girdle: wider than the chest, flatter front to back
-        neck = (d["neck_r"] * 1.12 * (0.95 + 0.1 * b["mass"]), d["neck_r"] * 1.10)
+        neck = (d["neck_r"] * 1.26 * (0.95 + 0.1 * b["mass"]), d["neck_r"] * 1.22)
         if t < 0.90:
             return mix(chest, girdle, smoothstep(0, 1, (t - 0.82) / 0.08))
         if t > 1.0:

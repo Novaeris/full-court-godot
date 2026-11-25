@@ -151,3 +151,33 @@ func test_the_portrait_render_key_follows_the_look_and_the_subject_round_trips()
 	assert_eq(back["identity"]["face"], visual["identity"]["face"])
 	assert_eq(JSON.stringify(back["identity"]["proportions"]), JSON.stringify(visual["identity"]["proportions"]), "the face is the same face")
 	assert_true(FcPlayerRender.texture_for(visual) == null, "off by default: the 2D figure is drawn")
+
+
+func test_fingers_rest_on_the_ball_when_both_hands_hold_it() -> void:
+	var c := _character(SUBJECT)
+	var radius := FcBroadcastCharacter.BALL_RADIUS * c._k
+	var checked := 0
+	for state in FcBroadcastPose.TWO_HAND:
+		for phase in [0.2, 0.4, 0.6]:
+			c.pose_at(state, phase)
+			if c._grip < 0.99:
+				continue
+			var fk := c._forward_kinematics()
+			for side in ["l", "r"]:
+				for digit in ["index", "middle"]:
+					var joint: Vector3 = (fk[c._finger_bones["x_%s_%s_2" % [side, digit]]] as Transform3D).origin
+					var d := joint.distance_to(c._anchor_model) / radius
+					assert_between(d, 0.65, 1.3, "%s %.1f %s %s: the finger lies on the ball (%.2f radii from its centre)" % [state, phase, side, digit, d])
+					checked += 1
+	assert_true(checked >= 40, "enough grips were checked (%d)" % checked)
+	c.free()
+
+
+func test_the_library_players_are_not_the_default_until_promoted() -> void:
+	assert_true(not FcPlayerAssetLibrary.promoted(), "the founder has not promoted them yet (D-074)")
+	var saved := FcBroadcast3DView.player_model
+	FcBroadcast3DView.player_model = ""
+	assert_eq(FcBroadcast3DView.effective_model(), "", "the generated body stays the default")
+	FcBroadcast3DView.player_model = "library"
+	assert_eq(FcBroadcast3DView.effective_model(), "library", "an explicit choice still wins")
+	FcBroadcast3DView.player_model = saved

@@ -19,7 +19,7 @@ signal rendered(key: String)
 const MODEL_VERSION := 1
 const SIZE := 256
 
-static var enabled: bool = false
+static var enabled: bool = FcPlayerAssetLibrary.promoted()
 static var max_textures: int = 192
 static var _shared: FcPlayerRender = null
 static var _cache: Dictionary = {}      # key -> ImageTexture

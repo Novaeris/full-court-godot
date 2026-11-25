@@ -71,7 +71,7 @@ def build_skin(ctx, with_fingers: bool = True) -> Part:
         rings.append((Vector((0, 0, z)), rx * H, ry * H, ctx.torso_weights(z)))
     part.loft(rings, 24, True, False, squareness=2.3)
     # neck: from the trapezius up into the head
-    nr = ctx.dims["neck_r"] * H * (0.95 + 0.1 * ctx.body["mass"])
+    nr = ctx.dims["neck_r"] * H * 1.12 * (0.95 + 0.1 * ctx.body["mass"])   # an athlete neck: thick, so it reads short
     neck = []
     for zf in (0.845, 0.86, 0.885, 0.915):
         flare = 1.0 + 0.12 * max(0.0, (0.86 - zf) / 0.03)   # the trapezius widens the base of the neck

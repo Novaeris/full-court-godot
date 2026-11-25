@@ -77,7 +77,10 @@ def build_jersey(ctx):
             d = k * (rows + 1) + i + 1
             jersey.face(jersey.bm.verts[a], jersey.bm.verts[b], jersey.bm.verts[c2], jersey.bm.verts[d])
     trim = Part()
-    trim_along(trim, jersey, jersey.boundary_loops(), 0.0030 * H, 0.0042 * H)
+    jersey.bm.verts.ensure_lookup_table()
+    # trim the neckline and armholes only: the hem hangs over the shorts, where a border reads as a glitch
+    top_loops = [loop for loop in jersey.boundary_loops() if sum(jersey.bm.verts[i].co.z for i in loop) / len(loop) > z_hem + 0.05 * H]
+    trim_along(trim, jersey, top_loops, 0.0030 * H, 0.0042 * H)
     return jersey, trim
 
 
@@ -99,7 +102,7 @@ def build_shorts(ctx):
             t = k / 6
             z = (py - 0.025 * H) * (1 - t) + hem * t
             flare = 1.0 + 0.06 * t * t + 0.04 * math.sin(t * math.pi * 3) * (1 - t) * 0.5   # slight folds, a flared hem
-            r = d["thigh_r"] * H * 0.84 * (0.88 + 0.14 * ctx.body["thigh"]) * (1.10 + 0.08 * t) * flare * (0.80 + 0.20 * smoothstep(0.0, 0.4, t)) + 0.008 * H
+            r = d["thigh_r"] * H * 0.84 * (0.88 + 0.14 * ctx.body["thigh"]) * (1.10 + 0.08 * t) * flare * (0.90 + 0.10 * smoothstep(0.0, 0.4, t)) + 0.014 * H
             m = smoothstep(py - 0.08 * H, hip.z, z) * 0.9 + (0.1 if k > 1 else 0.0)
             legs.append((Vector((hip.x, 0, z)), r, r * 1.04, [("pelvis", 1 - m), (p + "_hip", m)]))
         shorts.loft(legs, 16, False, False)
@@ -118,7 +121,7 @@ def build_shorts(ctx):
         for k in range(4, 7):
             t = k / 6
             z = py + 0.040 * H + (hip.z + (knee.z - hip.z) * 0.62 - (py + 0.040 * H)) * t
-            r = d["thigh_r"] * H * 0.84 * (0.88 + 0.14 * ctx.body["thigh"]) * (1.10 + 0.08 * t) * (1.0 + 0.06 * t * t) * (0.80 + 0.20 * smoothstep(0.0, 0.4, t)) + 0.011 * H
+            r = d["thigh_r"] * H * 0.84 * (0.88 + 0.14 * ctx.body["thigh"]) * (1.10 + 0.08 * t) * (1.0 + 0.06 * t * t) * (0.90 + 0.10 * smoothstep(0.0, 0.4, t)) + 0.017 * H
             x = hip.x + sx * r * 0.98 if t > 0.25 else sx * ((d["hip_rx"] * mass + 0.020 + 0.012 * t) * H)
             pts.append(Vector((x, 0.0, z)))
         w = [(p + "_hip", 1.0)] * 3

@@ -20,6 +20,14 @@ static var force_failure: bool = false
 ## default until a model is judged good enough to ship). A model that fails validation is ignored player by player and the generated body is used.
 static var player_model: String = ""
 
+
+## The model the replay players wear: player_model when set, otherwise the library players once the founder has promoted them (asset_library.json
+## "promoted"), otherwise the generated body.
+static func effective_model() -> String:
+	if player_model != "":
+		return player_model
+	return FcPlayerAssetLibrary.library_model() if FcPlayerAssetLibrary.promoted() else ""
+
 var rig: FcCameraRig = FcCameraRig.new()
 var scene: FcCourtScene
 var built: bool = false
@@ -129,7 +137,7 @@ func _build_characters(colors: Array) -> void:
 		var primary: Color = colors[side]
 		var body := FcBroadcast3DRules.body_for(p.player_id, p.position)
 		var subject := {"key": "player:%d" % p.player_id, "name": p.name, "jersey": int(numbers.get(p.player_id, 0)), "position": FcPosition.abbreviation(p.position),
-			"physical": {"height_cm": body[0], "weight_kg": body[1]}, "model": player_model,
+			"physical": {"height_cm": body[0], "weight_kg": body[1]}, "model": effective_model(),
 			"team": {"primary": "#" + primary.to_html(false), "secondary": "#F4F7FF" if primary.get_luminance() < 0.5 else "#1B1B1B", "abbreviation": _model.box.abbreviations[side], "name": _model.box.team_names[side]}}
 		var c := FcBroadcastCharacter.new().setup(subject, float(i) * 0.137)
 		c.visible = false

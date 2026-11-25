@@ -1,4 +1,5 @@
 shader_type spatial;
+render_mode cull_disabled;   // open cloth (hem, armholes, leg openings): the inside shows the cloth, not the body behind it
 // Team cloth for jerseys and shorts (Production Phase M1). One shader, parameters per player: the cloth colour, a fine knit weave, and an optional
 // graphics texture laid out on the jersey UV (u around the body with the front at 0.5, v up from the hem) holding the number, surname and wordmark.
 // Nothing here changes a game; it only draws.

@@ -1,6 +1,6 @@
 # Player asset library and customisation architecture (Production Phase M1)
 
-Status: built 2026-11-24 (decision D-074). Opt-in: a replay wears the library players when `FcBroadcast3DView.player_model = FcPlayerAssetLibrary.library_model()` ("library") or a subject carries `"model": "library"`. The generated body remains the default look and the fallback.
+Status: built 2026-11-24 (decision D-074). Promotion is the `"promoted"` flag in `data/player_pipeline/asset_library.json` (false until the founder approves; it switches the replay default and the 3D portraits together). Opt-in until then: a replay wears the library players when `FcBroadcast3DView.player_model = FcPlayerAssetLibrary.library_model()` ("library") or a subject carries `"model": "library"`. The generated body remains the default look and the fallback.
 
 ## What it is
 `FcPlayerVisual.resolve()` is still the ONLY source of a player's identity (skin, hair, face, facial hair, build, face proportions, team colours, number). `FcPlayerAssetLibrary` (`src/ui/broadcast3d/player_assets/`) turns that identity into the names of the pieces that draw it, loads them once, caches them and attaches them. Nothing is saved; the same key gives the same player in Owner, Career, Dynasty, Broadcast and Creator Studio.

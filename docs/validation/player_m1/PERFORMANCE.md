@@ -12,6 +12,6 @@ Machine: AMD Ryzen 7 8700F, NVIDIA RTX 4060, gl_compatibility, vsync off, 1080p.
 | Draw calls, 31 characters | 1,103 | 1,615 |
 | Real replay screen (5v5, 25 s): avg / p95 / p99 | 2.68 / 3.50 / 4.29 ms | 4.58 / 8.77 / 9.37 ms |
 | Real replay screen: video memory / working set | 61 MB / 337 MB | 97 MB / 372 MB |
-| Triangles per player | about 5,500 | about 12,300 body and clothes plus about 1,500 head and hair |
+| Triangles per player | about 5,500 | about 11,800 body and clothes plus about 1,500 head and hair |
 
 Reading: the library players cost about 2 ms more per frame in a full arena (still 3x under the 16.6 ms frame, no frame over 16.6 ms) and about 36 MB more video memory (mostly one 512 x 320 graphics texture per jersey). Draw calls rise because each head part, hair and the clothes are separate meshes; merging parts per player at attach time is the first optimisation if a lower-end device needs it. Not measured: lower-end hardware, phones (Dynasty is the only mobile mode and does not use 3D).

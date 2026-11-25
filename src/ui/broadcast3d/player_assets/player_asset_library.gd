@@ -27,6 +27,12 @@ static func library_model() -> String:
 	return str(data().get("library_model", "library"))
 
 
+## True once the founder has approved the library players as the default look (D-074 promotion rule). Off until then: the generated body is the default,
+## and 3D-rendered portraits are off. One data flag switches both, so the promotion is a reviewed one-line change.
+static func promoted() -> bool:
+	return bool(data().get("promoted", false))
+
+
 ## "lean", "athletic" or "heavy" for the body archetype bulk (0 slight, 1 heavy).
 static func body_for(bulk: float) -> String:
 	var t: Dictionary = data().get("body_bulk_thresholds", {})
@@ -165,6 +171,8 @@ static func shared_material(kind: String, color: Color, roughness: float) -> Sta
 		m.albedo_color = color
 		m.roughness = roughness
 		m.resource_name = kind
+		if kind in ["jersey", "shorts", "socks", "trim"]:
+			m.cull_mode = BaseMaterial3D.CULL_DISABLED   # open cloth: its inside shows the cloth, not the body
 		_materials[key] = m
 	return _materials[key]
 

@@ -2,6 +2,8 @@
 	"version": 1,
 	"note": "The player asset registry read by FcPlayerAssetLibrary. Body files hold a complete player; part files hold swappable head, hair and accessory meshes on the same skeleton. Names are produced by tools/blender/build_player_m1.py.",
 	"library_model": "library",
+	"promoted": false,
+	"promoted_note": "Set to true only with the founder approval of the art direction (D-074): the replay then wears the library players by default and portraits are rendered from them.",
 	"bodies": {
 		"lean": "res://assets/players/fc_player_lean.glb",
 		"athletic": "res://assets/players/fc_player_athletic.glb",
