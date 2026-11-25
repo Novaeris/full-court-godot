@@ -16,6 +16,11 @@ void fragment() {
 	vec2 f = UV * weave_scale;
 	float weave = sin(f.x) * sin(f.y);
 	vec3 cloth = base_color.rgb * (1.0 + weave_amount * weave);
+	// stitched seams down the sides (u = 0.25 and 0.75) and a stitch row beside them
+	float side_seam = min(abs(UV.x - 0.25), abs(UV.x - 0.75));
+	float seam = 1.0 - smoothstep(0.0012, 0.0028, side_seam);
+	float stitch = (1.0 - smoothstep(0.0, 0.0012, abs(side_seam - 0.006))) * step(0.5, fract(UV.y * 140.0));
+	cloth *= 1.0 - 0.18 * seam - 0.10 * stitch;
 	ALBEDO = mix(cloth, g.rgb, g.a * graphics_strength);
 	ROUGHNESS = cloth_roughness;
 }

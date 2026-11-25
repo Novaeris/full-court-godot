@@ -38,6 +38,8 @@ var _surname: String = ""
 var v2: bool = false
 ## The morph weights this V2 player was baked with (FcPlayerMorphs.weights).
 var morph_weights: Dictionary = {}
+## V2: how much longer than the model the arms are (from the archetype wingspan: guards about 1.0, centres a few percent more). 1 elsewhere.
+var arm_scale: float = 1.0
 ## V2 levels of detail (FcPlayerLod): automatic LOD chains on the big meshes and distance ranges on the small parts. Tests may switch it off.
 static var v2_lods: bool = true
 ## When true, V2 morphs are not baked in setup(): the caller bakes many characters together with FcPlayerLod.bake_characters (parallel, much faster).
@@ -168,6 +170,7 @@ func _build_imported() -> bool:
 		_scale_head(float(asset_spec["width_scale"]))
 	if v2:
 		_dress_v2()
+		_scale_arms()
 	else:
 		_dress_imported(library_mode)
 	if str(uniform["attire"]) == "playing" and not ((library_mode or v2) and FcJerseyGraphics.available()):
@@ -331,6 +334,18 @@ func _dress_v2() -> void:
 			mi.material_override = FcPlayerAssetLibrary.shared_material(base.get_slice("_", 0), c, 0.55 if base == "shoes" else 0.75)
 
 
+## Wingspan changes the arms, not the whole body: the upper arm bones are lengthened along their own axis (the forearm and hand follow), by the
+## archetype wingspan relative to the reference build (1.03).
+func _scale_arms() -> void:
+	arm_scale = clampf(float(archetype.get("wingspan", 1.03)) / 1.03, 0.95, 1.06)
+	for side in ["l", "r"]:
+		var idx: int = _bone[side + "_shoulder"]
+		var child: int = _bone[side + "_elbow"]
+		var along := (skeleton.get_bone_rest(child).origin).normalized()   # the bone axis in its own frame
+		var s := Vector3(lerpf(1.0, arm_scale, absf(along.x)), lerpf(1.0, arm_scale, absf(along.y)), lerpf(1.0, arm_scale, absf(along.z)))
+		skeleton.set_bone_pose_scale(idx, s)
+
+
 ## Widens or narrows the head by the face width of the identity: the head bone is scaled across the body, in the bone own axes.
 func _scale_head(width: float) -> void:
 	var idx: int = _bone["head"]
@@ -489,8 +504,8 @@ func _apply_grip(pose: Dictionary, grip: float, shift: float) -> void:
 		var sh: int = _bone[side + "_shoulder"]
 		var el: int = _bone[side + "_elbow"]
 		var shoulder_at: Vector3 = _rest_pos(side + "_shoulder")
-		var upper: float = shoulder_at.distance_to(_rest_pos(side + "_elbow"))
-		var lower: float = (_rest_pos(side + "_elbow") as Vector3).distance_to(_rest_pos(side + "_hand"))
+		var upper: float = shoulder_at.distance_to(_rest_pos(side + "_elbow")) * arm_scale
+		var lower: float = (_rest_pos(side + "_elbow") as Vector3).distance_to(_rest_pos(side + "_hand")) * arm_scale
 		var start: Vector3 = shoulder_at - (_rest_pos(frame_name) as Vector3)
 		var wrist := to_local * (anchor + Vector3(sign * BALL_RADIUS * 1.05, -0.12, -0.02) * _k)
 		var solved := FcLimbIK.solve(start, upper, lower, wrist, Vector3(sign * 0.5, -0.7, -0.35))

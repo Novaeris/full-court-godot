@@ -91,3 +91,7 @@ Each entry: what it provides; how it connects to Claude Code; fit with this proj
 
 ## 6. Costs
 Spent: nothing. Needed: nothing. Optional: ElevenLabs from about 6 dollars a month, Meshy or Tripo from about 20 dollars a month, neither recommended now.
+
+## MPFB (MakeHuman for Blender), added 2026-11-24 (D-075)
+MPFB 2.0.18 (GPL-3, a build tool: nothing of it ships) and the CC0 `makehuman_system_assets` pack, installed into the portable Blender's user profile by `tools/blender/install_mpfb.ps1` with pinned SHA-256 checksums. Used headlessly by `tools/blender/v2/` to generate the V2 players ([PLAYER_V2.md](PLAYER_V2.md)). Only CC0 data is used; CC-BY packs are not.
+
