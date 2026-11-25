@@ -318,7 +318,7 @@ func _dress_v2() -> void:
 			mi.visible = base == brow
 			mi.material_override = FcPlayerV2Materials.card("brows", base + ".png", hair.lightened(0.15))
 		elif base.begins_with("hair_") or base.begins_with("facial_"):
-			mi.material_override = FcPlayerV2Materials.hair(hair if base.begins_with("hair_") else hair.darkened(0.05))
+			mi.material_override = FcPlayerV2Materials.hair(hair, false) if base.begins_with("hair_") else FcPlayerV2Materials.hair(hair.darkened(0.05), true)
 		elif base == "jersey":
 			var number := jersey_number if str(uniform["attire"]) == "playing" else 0
 			if FcJerseyGraphics.available():
@@ -331,7 +331,7 @@ func _dress_v2() -> void:
 			mi.material_override = FcJerseyGraphics.cloth_material(socks)
 		elif base in ["trim", "shoes", "sole"] or base.begins_with("equip_") or base.begins_with("acc_"):
 			var c: Color = {"trim": secondary, "shoes": shoe, "sole": Color.WHITE}.get(base, secondary if base != "equip_laces" else Color.WHITE)
-			mi.material_override = FcPlayerAssetLibrary.shared_material(base.get_slice("_", 0), c, 0.55 if base == "shoes" else 0.75)
+			mi.material_override = FcPlayerAssetLibrary.shared_material(base.get_slice("_", 0), c, 0.68 if base == "shoes" else 0.8)   # synthetic upper, matte rubber
 
 
 ## Wingspan changes the arms, not the whole body: the upper arm bones are lengthened along their own axis (the forearm and hand follow), by the

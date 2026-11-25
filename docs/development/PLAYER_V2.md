@@ -32,3 +32,14 @@ Body macros (mass, muscle) are masked out of the head so heavy players keep athl
 
 ## Measured (development machine; `docs/validation/player_v2/perf/benchmarks.txt`)
 Full arena, 31 characters + 6,000 crowd, 1080p: 6.3 ms average, p95 about 9 ms, no frame over 16.6 ms (generated body: 3.2 ms). Real replay screen: 6.0 ms average. Video memory about 195 MB. A player is about 47,000 triangles at the closest level (LOD chains reduce it with distance). Not measured: lower-end hardware.
+
+## V2.1 refinement (2026-11-25)
+The founder kept the V2 direction and asked for a reference player at a professional standard before the roster. Built:
+- **Standardized comparison scene** `tools/reference_scene.gd` (one reference player, studio lighting, nine views: front, side, back, face, upper body, hands, shoes, neutral and action pose); identical for every model version (`model=""` procedural, `library` M1, `v2`). Sheets in `docs/validation/player_v21/compare_*.png`.
+- **Jersey:** rounded scoop neckline, curved armholes with 6 cm straps, a fitted athletic drape (at most 4.5 cm off the body), bound to the spine and pelvis only (an arm raising no longer lifts the sides), small holes from the cut filled.
+- **Hems:** jersey, shorts, socks, sleeves and wristbands are cut by exact horizontal planes, so every hem and cuff is level and clean.
+- **Shoes:** rebuilt as a basketball shoe from measured foot slices: a rubber cupsole wider than the foot with toe spring, a padded upper rising to a high collar, a tongue, six laces, a heel tab; the bare foot inside is removed from the skin. Matte materials.
+- **Shorts:** straighter, less balloon-like legs.
+- **Facial hair and fades:** soft-edged mustache and goatee masks, thinner shells, a facial-hair shader that breaks the edges into strands; wider fade gradients.
+- **Skin:** calibrated detail map, roughness from the detail, filmic studio check.
+Everything is part of the generator, so every player of the roster gets it (`docs/validation/player_v21/roster/`).

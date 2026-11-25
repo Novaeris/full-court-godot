@@ -245,7 +245,7 @@ def build_style(skin, style):
         obj = scalp(skin, F, name)
         set_density(obj, F, lambda th, phi: 0.7 * G.smoothstep(hairline(th) - 0.05, hairline(th) + 0.06, phi), lambda th, phi, d: 0.0018)
     elif style in ("low_fade", "high_fade"):
-        lo, hi = (0.03, 0.30) if style == "low_fade" else (0.25, 0.62)
+        lo, hi = (0.03, 0.42) if style == "low_fade" else (0.20, 0.75)
         obj = scalp(skin, F, name)
         set_density(obj, F, lambda th, phi: G.smoothstep(hairline(th) + lo, hairline(th) + hi, phi) * 0.95 + 0.25 * G.smoothstep(hairline(th) - 0.04, hairline(th) + 0.05, phi) * (1 - G.smoothstep(hairline(th) + lo, hairline(th) + hi, phi)),
                     lambda th, phi, d: 0.0015 + 0.010 * d * G.smoothstep(0.35, 0.9, phi))
@@ -334,13 +334,14 @@ def build_facial(skin, style):
         cheek_side = abs(math.sin(th))
         if style == "stubble":
             return 0.45 * jaw * (1 - 0.6 * G.smoothstep(0.9, 1.0, cheek_side))
+        must = (G.smoothstep(0.036, 0.022, abs(co.x)) * G.smoothstep(mouth_z + 0.002, mouth_z + 0.010, co.z)
+                * G.smoothstep(nose.z - 0.006, nose.z - 0.016, co.z) * G.smoothstep(0.5, 0.7, math.cos(th)))
         if style == "mustache":
-            return 1.0 if (abs(co.x) < 0.032 and mouth_z + 0.006 < co.z < nose.z - 0.012 and math.cos(th) > 0.6) else 0.0
+            return 0.9 * must
         if style == "goatee":
-            chin = 1.0 if (abs(co.x) < 0.028 and co.z < mouth_z - 0.012 and math.cos(th) > 0.5) else 0.0
-            must = 1.0 if (abs(co.x) < 0.032 and mouth_z + 0.006 < co.z < nose.z - 0.012 and math.cos(th) > 0.6) else 0.0
-            ring = 1.0 if (mouth_d < 1.25 and math.cos(th) > 0.6) else 0.0
-            return max(chin, must, ring)
+            chin = G.smoothstep(0.034, 0.020, abs(co.x)) * G.smoothstep(mouth_z - 0.008, mouth_z - 0.020, co.z) * G.smoothstep(0.4, 0.6, math.cos(th))
+            ring = G.smoothstep(1.4, 1.1, mouth_d) * G.smoothstep(0.5, 0.7, math.cos(th))
+            return 0.9 * max(chin, must, ring)
         if style == "beard_short":
             return 0.92 * jaw
         return jaw   # beard_full
@@ -353,7 +354,7 @@ def build_facial(skin, style):
         th, phi, _ = angles(v.co, F)
         d = max(0.0, min(1.0, dens(th, phi, v.co)))
         d_v.append(d)
-        thick = {"stubble": 0.0008, "mustache": 0.004, "goatee": 0.006, "beard_short": 0.005, "beard_full": 0.016}[style]
+        thick = {"stubble": 0.0008, "mustache": 0.0025, "goatee": 0.0035, "beard_short": 0.004, "beard_full": 0.014}[style]
         v.co = v.co + v.normal * (0.0008 + thick * d)
     for poly in me.polygons:
         for li in poly.loop_indices:

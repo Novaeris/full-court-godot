@@ -59,12 +59,16 @@ static func card(kind: String, file: String, color: Color) -> Material:
 	return _cache[key]
 
 
-static func hair(color: Color) -> Material:
-	var key := "hair|" + color.to_html(false)
+static func hair(color: Color, facial: bool = false) -> Material:
+	var key := "hair|%s|%s" % [color.to_html(false), facial]
 	if not _cache.has(key):
 		var m := ShaderMaterial.new()
 		m.shader = load("res://src/ui/broadcast3d/player_hair.gdshader") as Shader
 		m.set_shader_parameter("hair_color", color)
+		if facial:
+			m.set_shader_parameter("coverage_scale", 0.72)
+			m.set_shader_parameter("coverage_bias", -0.18)
+			m.set_shader_parameter("strand_scale", 2200.0)
 		m.resource_name = "hair"
 		_cache[key] = m
 	return _cache[key]

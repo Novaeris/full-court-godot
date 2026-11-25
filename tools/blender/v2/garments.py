@@ -57,7 +57,7 @@ def relax_border(bm, iterations=10, amount=0.5):
             v.co = co
 
 
-def region(skin, keep_face, name):
+def region(skin, keep_face, name, cut_below=None, cut_above=None):
     """A new object holding the faces of `skin` (its Basis shape) for which keep_face(centroid, normal, arm_w, head_w, groups) is true."""
     bm = bmesh.new()
     bm.from_mesh(skin.data)
@@ -72,10 +72,14 @@ def region(skin, keep_face, name):
     bmesh.ops.delete(bm, geom=doomed, context="FACES")
     loose = [v for v in bm.verts if not v.link_faces]
     bmesh.ops.delete(bm, geom=loose, context="VERTS")
-    # close small interior holes (a stray unselected face would otherwise get a trim of its own)
-    border = [e for e in bm.edges if len(e.link_faces) == 1]
-    bmesh.ops.holes_fill(bm, edges=border, sides=40)
-    relax_border(bm)
+    # exact level hems: cut along a horizontal plane instead of along mesh faces
+    for z, keep_above in ((cut_below, True), (cut_above, False)):
+        if z is None:
+            continue
+        geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
+        bmesh.ops.bisect_plane(bm, geom=geom, plane_co=(0, 0, z), plane_no=(0, 0, 1), clear_inner=keep_above, clear_outer=not keep_above)
+    if cut_below is None and cut_above is None:
+        relax_border(bm)
     me = bpy.data.meshes.new(name)
     bm.to_mesh(me)
     bm.free()
@@ -85,6 +89,7 @@ def region(skin, keep_face, name):
     bpy.context.collection.objects.link(obj)
     for g in skin.vertex_groups:
         obj.vertex_groups.new(name=g.name)
+    fill_small_holes(obj)
     return obj
 
 
@@ -347,7 +352,7 @@ def drape(obj, group_fn, z_start, slack_fn, taper=0.12, bins=64, dz=0.01, smooth
     for idx, key, cx, cy, th, r, z in pts:
         ti = int((th + math.pi) / math.tau * bins) % bins
         zi = int(math.floor(z / dz))
-        R = min(max(profiles[key].get((ti, zi), r), r * 0.98), r + 0.07) + slack_fn(z)   # never further than 7 cm from the body
+        R = min(max(profiles[key].get((ti, zi), r), r * 0.98), r + 0.045) + slack_fn(z)   # never further than 4.5 cm from the body
         if folds is not None:
             R += folds(th, z)
         me.vertices[idx].co.x = cx + math.sin(th) * R
@@ -373,22 +378,30 @@ def jersey(skin, L):
     z_pit = L["l_shoulder"].z - 0.11
     sx = L["l_shoulder"].x
 
+    neck_half = 0.085      # half the neck opening at the top of the straps
+    strap_out = 0.150      # the outer edge of the 6 cm strap
+    arm_cx = sx + 0.02     # the armhole is an ellipse centred just outside the shoulder joint
+    arm_rx = arm_cx - strap_out
+    arm_cz = L["l_shoulder"].z - 0.03
+
     def keep(c, n, arm_w, head_w):
         if c.z < z_hem or arm_w > 0.25 or head_w > 0.2:
             return False
-        if c.z > z_pit and abs(c.x) > sx - 0.075:
-            return False   # armhole: the strap is narrower than the shoulder
-        front_scoop = L["neck"].z - 0.15 - 0.6 * max(0.0, abs(c.x) - 0.02)
-        if c.y < 0 and abs(c.x) < 0.10 and c.z > front_scoop:
-            return False   # scoop neckline in front
-        if c.y > 0 and abs(c.x) < 0.085 and c.z > L["neck"].z - 0.05:
-            return False
+        dx = abs(c.x) - arm_cx
+        dz = c.z - arm_cz
+        if (dx / arm_rx) ** 2 + (dz / 0.22) ** 2 < 1.0:
+            return False   # curved armhole, deep enough to free the shoulder
+        top = L["neck"].z + 0.03
+        if c.y < 0 and (c.x / neck_half) ** 2 + ((c.z - top) / 0.16) ** 2 < 1.0:
+            return False   # rounded scoop neckline in front
+        if c.y >= 0 and (c.x / (neck_half - 0.005)) ** 2 + ((c.z - top) / 0.075) ** 2 < 1.0:
+            return False   # shallower round neckline at the back
         return True
 
     obj = region(skin, keep, "jersey")
     centre_y = (L["torso"].y + L["neck"].y) * 0.5
-    z_chest = L["l_shoulder"].z - 0.22
-    drape(obj, lambda co: ("torso", 0.0, centre_y), z_chest, lambda z: 0.012 + 0.016 * smoothstep(z_chest, z_hem, z), taper=0.22,
+    z_chest = L["l_shoulder"].z - 0.26
+    drape(obj, lambda co: ("torso", 0.0, centre_y), z_chest, lambda z: 0.016 + 0.012 * smoothstep(z_chest, z_hem, z), taper=0.40,
           folds=lambda th, z: 0.005 * smoothstep(L["torso"].z + 0.05, z_hem, z) * math.sin(th * 9.0))
     smooth_mesh(obj, 3)
     return obj
@@ -399,9 +412,9 @@ def shorts(skin, L):
     z_hem = L["l_knee"].z + 0.07
 
     def keep(c, n, arm_w, head_w):
-        return z_hem < c.z < z_top and arm_w < 0.2
+        return z_hem - 0.03 < c.z < z_top + 0.03 and arm_w < 0.2
 
-    obj = region(skin, keep, "shorts")
+    obj = region(skin, keep, "shorts", cut_below=z_hem, cut_above=z_top)
     z_crotch = L["l_hip"].z - 0.07
     hip_x, hip_y = L["l_hip"].x, L["l_hip"].y
 
@@ -410,91 +423,107 @@ def shorts(skin, L):
             return ("pelvis", 0.0, L["pelvis"].y)
         return ("l", hip_x, hip_y) if co.x > 0 else ("r", -hip_x, hip_y)
 
-    drape(obj, group, L["pelvis"].z - 0.02, lambda z: 0.016 + 0.020 * smoothstep(z_crotch, z_hem, z), taper=-0.06,
-          folds=lambda th, z: 0.004 * smoothstep(z_crotch, z_hem, z) * math.sin(th * 6.0))
+    drape(obj, group, L["pelvis"].z - 0.02, lambda z: 0.014 + 0.012 * smoothstep(z_crotch, z_hem, z), taper=-0.02,
+          folds=lambda th, z: 0.003 * smoothstep(z_crotch, z_hem, z) * math.sin(th * 6.0))
     smooth_mesh(obj, 3)
     return obj
 
 
 def socks(skin, L):
     z_top = L["l_knee"].z - 0.23
-    z_low = L["l_foot"].z - 0.03
+    z_low = 0.07   # the sock ends inside the shoe
 
     def keep(c, n, arm_w, head_w):
-        return z_low < c.z < z_top and arm_w < 0.2
+        return z_low - 0.03 < c.z < z_top + 0.03 and arm_w < 0.2
 
-    obj = region(skin, keep, "socks")
-    # a level cuff: the open top edge lies on one height
-    bm = bmesh.new()
-    bm.from_mesh(obj.data)
-    for v in bm.verts:
-        if v.co.z > z_low + 0.10 and any(len(e.link_faces) == 1 for e in v.link_edges):
-            v.co.z = z_top - 0.01
-    bm.to_mesh(obj.data)
-    bm.free()
+    obj = region(skin, keep, "socks", cut_below=z_low, cut_above=z_top)
     inflate(obj, lambda co: 0.0035)
     return obj
 
 
+def _slice_loft(bm, stations, segs=20, n=0.6):
+    """Super-ellipse sections along Y: station = (y, x_centre, half_width, z_bottom, z_top). Closed at both ends."""
+    first = len(bm.verts)
+    for y, xc, hw, zb, zt in stations:
+        zc, hz = (zb + zt) * 0.5, max((zt - zb) * 0.5, 0.001)
+        for k in range(segs):
+            th = math.tau * k / segs
+            s, c = math.sin(th), math.cos(th)
+            bm.verts.new((xc + hw * math.copysign(abs(s) ** n, s), y, zc + hz * math.copysign(abs(c) ** n, c)))
+    bm.verts.ensure_lookup_table()
+    for i in range(len(stations) - 1):
+        for k in range(segs):
+            q = [first + i * segs + k, first + i * segs + (k + 1) % segs, first + (i + 1) * segs + (k + 1) % segs, first + (i + 1) * segs + k]
+            try:
+                bm.faces.new([bm.verts[j] for j in q])
+            except ValueError:
+                pass
+    for idx in (0, len(stations) - 1):
+        try:
+            bm.faces.new([bm.verts[first + idx * segs + k] for k in range(segs)])
+        except ValueError:
+            pass
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+
+
 def shoes(skin, L):
-    """Basketball shoes (M6): per foot, the convex hull of the foot (a smooth last with no toes), loosened, its bottom flattened onto the floor; a rubber
-    sole a little wider than the upper; a padded collar; a heel tab; laces across the instep placed on the upper by ray casts. Returns (upper, sole, laces)."""
-    from mathutils.bvhtree import BVHTree
+    """Basketball shoes (M6, V2.1): built along each foot from measured slices. A rubber cupsole (wider than the foot, rounded toe and heel, slight
+    toe spring), a padded upper that rises to a high collar behind the ankle, a tongue, laces across the instep and a heel tab.
+    Returns (upper, sole, laces). The bare foot inside is removed from the skin by hide_feet()."""
     uppers, soles, laces = bmesh.new(), bmesh.new(), bmesh.new()
-    z_top = L["l_foot"].z + 0.035
-    bm_skin = bmesh.new()
-    bm_skin.from_mesh(skin.data)
+    ankle_z = L["l_foot"].z
     for side in (1.0, -1.0):
-        pts = [v.co.copy() for v in bm_skin.verts if v.co.z < z_top and v.co.x * side > 0.03]
+        pts = [v.co for v in skin.data.vertices if v.co.z < ankle_z + 0.02 and v.co.x * side > 0.02]
         if len(pts) < 20:
             continue
-        hb = bmesh.new()
-        for p in pts:
-            hb.verts.new(p)
-        bmesh.ops.convex_hull(hb, input=hb.verts[:])
-        bmesh.ops.delete(hb, geom=[v for v in hb.verts if not v.link_faces], context="VERTS")
-        bmesh.ops.subdivide_edges(hb, edges=hb.edges[:], cuts=2, use_grid_fill=True)
-        bmesh.ops.triangulate(hb, faces=hb.faces[:])
-        for _ in range(6):
-            bmesh.ops.smooth_vert(hb, verts=hb.verts[:], factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
-        hb.normal_update()
-        centre = sum((v.co for v in hb.verts), Vector()) / len(hb.verts)
-        for v in hb.verts:
-            v.co = v.co + v.normal * 0.011
-            v.co.z = max(v.co.z, 0.012)   # the upper stops at the top of the sole
-        # sole: the lower part of the hull, a little wider, down to the floor
-        sb = hb.copy()
-        bmesh.ops.delete(sb, geom=[f for f in sb.faces if f.calc_center_median().z > 0.04], context="FACES")
-        bmesh.ops.delete(sb, geom=[v for v in sb.verts if not v.link_faces], context="VERTS")
-        for v in sb.verts:
-            d = v.co - centre
-            v.co.x = centre.x + d.x * 1.06
-            v.co.y = centre.y + d.y * 1.03
-            v.co.z = 0.0 if v.co.z < 0.02 else v.co.z + 0.003
-        _append(soles, sb)
-        _append(uppers, hb)
-        # laces: short bars across the instep, laid on the upper surface
-        tree = BVHTree.FromBMesh(hb)
-        ys = [v.co.y for v in hb.verts]
-        toe_y, heel_y = min(ys), max(ys)
-        foot_x = sum(v.co.x for v in hb.verts) / len(hb.verts)
-        for i in range(5):
-            y = heel_y + (toe_y - heel_y) * (0.32 + 0.09 * i)
-            hit = tree.ray_cast(Vector((foot_x, y, 0.4)), Vector((0, 0, -1)))
-            if hit[0] is None:
-                continue
-            top = hit[0]
-            a = Vector((foot_x - 0.022, y, top.z - 0.004))
-            b = Vector((foot_x + 0.022, y, top.z - 0.004))
-            _bar(laces, a, Vector((foot_x, y, top.z + 0.004)), b, 0.0028)
-        # heel tab and collar
-        heel = tree.ray_cast(Vector((foot_x, heel_y + 0.3, z_top - 0.01)), Vector((0, -1, 0)))
-        if heel[0] is not None:
-            h = heel[0]
-            _bar(laces, h + Vector((0, 0.004, -0.02)), h + Vector((0, 0.01, 0.0)), h + Vector((0, 0.006, 0.025)), 0.006)
-        hb.free()
-        sb.free()
-    bm_skin.free()
+        toe_y, heel_y = min(p.y for p in pts), max(p.y for p in pts)
+        length = heel_y - toe_y
+        cx = sum(p.x for p in pts) / len(pts)
+        # foot half-width per slice (measured), smoothed
+        n_sl = 14
+        widths = []
+        for i in range(n_sl + 1):
+            y = heel_y - length * i / n_sl
+            band = [p for p in pts if abs(p.y - y) < length / n_sl and p.z < 0.06]
+            w = (max(p.x for p in band) - min(p.x for p in band)) * 0.5 if band else 0.03
+            xc = (max(p.x for p in band) + min(p.x for p in band)) * 0.5 if band else cx
+            widths.append((w, xc))
+        sole_st, upper_st = [], []
+        for i in range(n_sl + 1):
+            t = i / n_sl                         # 0 heel .. 1 toe
+            y = heel_y + 0.012 - (length + 0.030) * t
+            w, xc = widths[i]
+            round_end = max(0.0, 1.0 - abs((t - 0.5) / 0.5) ** 5) ** 0.35   # a rounded heel and a round toe box, not a point
+            spring = 0.012 * smoothstep(0.8, 1.0, t)
+            w = max(w, 0.036)
+            hw_sole = (w + 0.016) * (0.45 + 0.55 * round_end)
+            sole_st.append((y, xc, hw_sole, spring, 0.034 + spring))
+            # upper height profile: high collar at the heel, the instep, the low toe box
+            top = 0.150 - 0.030 * smoothstep(0.05, 0.40, t) - 0.055 * smoothstep(0.50, 0.95, t)   # collar, tongue and instep, toe box
+            hw_up = (w + 0.011) * (0.42 + 0.58 * round_end)
+            upper_st.append((y, xc, hw_up, 0.026 + spring, top + spring))
+        tmp_s, tmp_u = bmesh.new(), bmesh.new()
+        _slice_loft(tmp_s, sole_st, 22, 0.45)
+        _slice_loft(tmp_u, upper_st, 22, 0.75)
+        for _ in range(2):
+            bmesh.ops.smooth_vert(tmp_u, verts=tmp_u.verts[:], factor=0.4, use_axis_x=True, use_axis_y=True, use_axis_z=True)
+        _append(soles, tmp_s)
+        _append(uppers, tmp_u)
+        tmp_s.free()
+        tmp_u.free()
+        # tongue: a padded strip up the front of the ankle
+        mid = upper_st[n_sl // 3]
+        _bar(laces, Vector((mid[1], mid[0] - 0.018, mid[4] - 0.012)), Vector((mid[1], mid[0] - 0.006, mid[4] + 0.018)),
+             Vector((mid[1], mid[0] + 0.008, mid[4] + 0.034)), 0.011)
+        # laces: six crossing bars on the instep, on the upper surface
+        for k in range(6):
+            i = int(n_sl * (0.34 + 0.07 * k))
+            y, xc, hw, zb, zt = upper_st[i]
+            z = zt + 0.002
+            _bar(laces, Vector((xc - hw * 0.45, y + 0.004, z - 0.006)), Vector((xc, y, z + 0.002)), Vector((xc + hw * 0.45, y - 0.004, z - 0.006)), 0.0024)
+        # heel tab
+        y, xc, hw, zb, zt = upper_st[0]
+        _bar(laces, Vector((xc, y + 0.006, zt - 0.03)), Vector((xc, y + 0.012, zt - 0.005)), Vector((xc, y + 0.010, zt + 0.012)), 0.006)
     out = []
     for name, b in (("shoes", uppers), ("sole", soles), ("laces", laces)):
         me = bpy.data.meshes.new(name)
@@ -506,6 +535,48 @@ def shoes(skin, L):
             p.use_smooth = True
         out.append(o)
     return out
+
+
+def hide_feet(skin, L):
+    """Removes the skin faces inside the shoes (every player wears shoes): no toes through the upper, fewer triangles."""
+    bm = bmesh.new()
+    bm.from_mesh(skin.data)
+    limit = 0.085   # below the lowest top line of the upper (the toe box)
+    doomed = [f for f in bm.faces if f.calc_center_median().z < limit and all(v.co.z < limit + 0.01 for v in f.verts)]
+    bmesh.ops.delete(bm, geom=doomed, context="FACES_ONLY")
+    bm.to_mesh(skin.data)
+    bm.free()
+    return len(doomed)
+
+
+def fill_small_holes(obj, max_perimeter=0.25):
+    """Closes the small holes a region cut leaves (a face whose arm or head weight crossed the threshold), never the openings of the garment."""
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    bm.edges.ensure_lookup_table()
+    boundary = [e for e in bm.edges if len(e.link_faces) == 1]
+    seen = set()
+    small = []
+    for e in boundary:
+        if e.index in seen:
+            continue
+        loop, stack = [], [e]
+        while stack:
+            cur = stack.pop()
+            if cur.index in seen:
+                continue
+            seen.add(cur.index)
+            loop.append(cur)
+            for v in cur.verts:
+                for nb in v.link_edges:
+                    if len(nb.link_faces) == 1 and nb.index not in seen:
+                        stack.append(nb)
+        if sum(x.calc_length() for x in loop) < max_perimeter:
+            small += loop
+    if small:
+        bmesh.ops.holes_fill(bm, edges=small, sides=0)
+    bm.to_mesh(obj.data)
+    bm.free()
 
 
 def _append(dst, src):
@@ -559,9 +630,13 @@ def equipment(skin, L):
         def knee_keep(c, n, arm_w, head_w, sx=sx, lo=L["l_knee"].z - 0.09, hi=L["l_knee"].z + 0.10):
             return arm_w < 0.2 and lo < c.z < hi and c.x * sx > 0.0
 
+        cuts = {"equip_armsleeve_": (hand_z + 0.05, sh_z - 0.09), "equip_wristband_": (hand_z + 0.012, hand_z + 0.07),
+                "equip_kneesleeve_": (L["l_knee"].z - 0.09, L["l_knee"].z + 0.10)}
         for name, keep, off in (("equip_armsleeve_" + side, arm_keep, 0.0022), ("equip_wristband_" + side, wrist_keep, 0.005),
                                 ("equip_kneesleeve_" + side, knee_keep, 0.003)):
-            obj = region(skin, keep, name)
+            lo, hi = cuts[name[:-1]]
+            loose = lambda c, n, a, h, k=keep, lo=lo, hi=hi: k(c.copy() if lo + 0.02 < c.z < hi - 0.02 else Vector((c.x, c.y, (lo + hi) * 0.5)), n, a, h)
+            obj = region(skin, loose, name, cut_below=lo, cut_above=hi)
             inflate(obj, lambda co, off=off: off)
             out[name] = obj
     return out

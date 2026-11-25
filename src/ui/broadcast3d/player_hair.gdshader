@@ -5,10 +5,11 @@ render_mode depth_prepass_alpha, cull_disabled;
 // stubble come from the same shader with different densities. Shared by every player with the same hair colour.
 
 uniform vec4 hair_color : source_color = vec4(0.06, 0.045, 0.035, 1.0);
-uniform float strand_scale = 900.0;
+uniform float strand_scale = 1400.0;
 uniform float clump_scale = 80.0;
 uniform float coverage_bias = 0.08;
 uniform float sheen = 0.35;
+uniform float coverage_scale = 1.15;   // facial hair uses less (it should read as hair on skin, not a solid patch)
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -26,12 +27,12 @@ void fragment() {
 	// strands: thin streaks along v, broken into clumps
 	float strands = noise(vec2(UV.x * strand_scale, UV.y * strand_scale * 0.08));
 	float clumps = noise(UV * clump_scale);
-	float coverage = clamp(density * 1.15 + coverage_bias - (1.0 - strands) * (1.0 - density) * 0.9, 0.0, 1.0);
-	vec3 base = hair_color.rgb * (0.75 + 0.5 * strands) * (0.85 + 0.3 * clumps);
+	float coverage = clamp(density * coverage_scale + coverage_bias - (1.0 - strands) * (1.0 - density) * 0.9, 0.0, 1.0);
+	vec3 base = hair_color.rgb * (0.6 + 0.7 * strands) * (0.8 + 0.4 * clumps);
 	ALBEDO = base;
 	ALPHA = coverage;
-	ROUGHNESS = 0.62 - 0.2 * strands;
-	SPECULAR = 0.35;
+	ROUGHNESS = 0.82 - 0.15 * strands;   // hair is matte; a sheen along the strands, never a helmet shine
+	SPECULAR = 0.18;
 	RIM = sheen * density;
 	RIM_TINT = 0.5;
 }

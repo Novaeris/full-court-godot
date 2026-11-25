@@ -150,7 +150,7 @@ def build_garments(skin, arm):
     z0 = 0.997 * float(arm["fc_height_m"]) / 1.98
     loops = G.border_loops(pieces["jersey"]) + [lp for lp in G.border_loops(pieces["shorts"]) if sum(c.z for c, _ in lp) / len(lp) < L["pelvis"].z]
     loops += [lp for lp in G.border_loops(pieces["socks"]) if sum(c.z for c, _ in lp) / len(lp) > L["l_foot"].z + 0.08]
-    trim = G.trim("trim", loops, 0.006)
+    trim = G.trim("trim", loops, 0.0045)
     for name, obj in pieces.items():
         G.finish(obj, thickness=0.004 if name != "socks" else 0.0)
         if name in ("jersey", "shorts"):
@@ -158,12 +158,13 @@ def build_garments(skin, arm):
         made[name] = obj
     made["trim"] = trim
     upper, sole, laces = G.shoes(skin, L)
+    print("FC_V2 shoes: hid %d foot faces" % G.hide_feet(skin, L))
     made["shoes"], made["sole"], made["equip_laces"] = upper, sole, laces
     laces.name = laces.data.name = "equip_laces"
     for name, obj in made.items():
         G.transfer_weights(obj, skin)
         if name in ("jersey", "shorts", "socks", "trim"):
-            G.drop_groups(obj, keep_shoulders=name in ("jersey", "trim"))
+            G.drop_groups(obj, keep_shoulders=False)   # cloth follows the spine and pelvis; an arm moving must not lift the jersey sides
         G.fill_unweighted(obj)
         G.box_uv(obj)
         G.bind_morphs(obj, skin, body_keys)
