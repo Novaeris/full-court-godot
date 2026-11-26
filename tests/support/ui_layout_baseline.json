@@ -4,6 +4,7 @@
 		"visual_identity_heights": "new_league 376 to 440 (the wizard pickers are FcDropdown now). owner_roster 273 to 550 and owner_schedule 277 to 431 (Phase F): the new tables have a real minimum height (several rows of 44 px) instead of collapsing; still under the 600 px Owner minimum window (D6).",
 	"phase3_heights": "career_home 196 to 221 and owner_overview/owner_roster 179 to 181: the new Broadcast and Franchise headers are a little taller. Heights are not a constraint (tabs scroll).",
 		"phase8": "Phase 8 added the m_* screens (Dynasty in the mobile layout, must fit 412 px) and shrank the desktop Dynasty screens too (labels wrap, columns flow). main_menu etc. unchanged.",
+		"franchise_experience_m3": "owner_overview 194 to 231 (D-077 M3): the franchise header (crest, name, season, record pills) replaces the letterhead; still far under the 600 px Owner minimum window.",
 		"remaining_widths": "owner (715) and Career creator (744) fit the 800 px minimum of D6; Dynasty hub 640 and lineup 740 are Phase 8 work toward a 412 px phone."
 	},
 	"career_creator": {
@@ -115,7 +116,7 @@
 		"w": 715
 	},
 	"owner_overview": {
-		"h": 194,
+		"h": 231,
 		"w": 715
 	},
 	"owner_roster": {

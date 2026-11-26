@@ -370,12 +370,12 @@ func test_each_mode_gets_its_own_presentation_skin() -> void:
 	assert_eq(app._skin["id"], FcModeSkin.NEUTRAL, "and the menu goes back to neutral")
 
 
-func test_the_owner_dashboard_uses_the_franchise_colours_and_a_letterhead() -> void:
+func test_the_owner_dashboard_uses_the_franchise_colours_and_a_team_header() -> void:
 	_make_app()
 	assert_true(app.on_create_league({"teams": 8, "conferences": 2, "divisions": 1, "free_agents": 10, "seed": "5", "name": "Shell League"}))
 	app.on_start_game(app._pending_state.world.teams.ids()[2])
 	assert_eq(app._skin["id"], FcModeSkin.FRANCHISE)
-	assert_eq(_find(app, FcLetterhead).size(), 1, "the team letterhead heads the dashboard")
+	assert_eq(_find(app, FcTeamHeader).size(), 1, "the franchise header (crest, name, season, record) heads the dashboard (D-077 M3)")
 	assert_true(FcUiContrast.ratio(app._skin["accent"], FcUiTokens.SURFACE_RAISED) >= 4.5, "whatever the team colour, the accent stays readable")
 	app.go_back()
 	assert_eq(app.host.modals.count(), 1, "Back from a game in progress asks first")

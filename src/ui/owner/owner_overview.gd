@@ -1,7 +1,7 @@
 class_name FcOwnerOverview
 extends RefCounted
-## The Owner Overview tab as a front-office dashboard. Every number and sentence the old tab had is kept; they are arranged as tiles:
-##   the record strip and the next game as two crests facing each other; the owner report (profit, revenue, value, cash, debt), the approval meter
+## The Owner Overview tab: the franchise headquarters (FcOwnerHq: featured matchup, standing, leaders, last game, ranks, headlines,
+## objectives, business) on top, then the owner report (profit, revenue, value, cash, debt), the approval meter
 ##   and a profit trend that is drawn only when there are at least two settled seasons; a standings snapshot and the latest news; the owner career
 ##   and job offers; the league rules. Built from a FcOwnerContext, read-only except for the "take the job" button (controller.transfer_to).
 
@@ -11,19 +11,7 @@ static func build(ctx: FcOwnerContext) -> Control:
 	box.add_theme_constant_override("separation", FcUiTokens.SPACE_4)
 	var controller := ctx.controller
 	var season := controller.season()
-	var record := controller.user_record()
-	var top := HBoxContainer.new()
-	top.add_theme_constant_override("separation", FcUiTokens.SPACE_4)
-	var kpis := FcKpiStrip.new()
-	kpis.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	kpis.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	kpis.set_items([{"label": "Record", "value": "%d-%d" % [record["wins"], record["losses"]], "delta": str(record["streak"])},
-		{"label": "League rank", "value": str(record["rank"])}, {"label": "Games left", "value": str(record["games_left"])}])
-	top.add_child(kpis)
-	var next := controller.next_user_game()
-	if next != null:
-		top.add_child(_next_game_card(ctx, next, season))
-	box.add_child(top)
+	box.add_child(FcOwnerHq.build(ctx))   # the headquarters: matchup, standing, spotlight, headlines, objectives, business (D-077 M3)
 	if season.status == FcSeason.Status.COMPLETE:
 		var champs := FcPanel.new("", FcPanel.Variant.RAISED)
 		champs.set_accent(FcUiTokens.GOLD)
@@ -42,29 +30,12 @@ static func build(ctx: FcOwnerContext) -> Control:
 	grid.add_theme_constant_override("h_separation", FcUiTokens.SPACE_4)
 	grid.add_theme_constant_override("v_separation", FcUiTokens.SPACE_4)
 	grid.add_child(_standings_snapshot(ctx))
-	var news: Array = ctx.world().news
-	if not news.is_empty():
-		grid.add_child(_news(news))
 	box.add_child(grid)
 	if controller.state.mode == FcGameState.MODE_OWNER:
 		box.add_child(_owner_career(ctx))
 	box.add_child(_league_rules(ctx))
 	return box
 
-
-static func _next_game_card(ctx: FcOwnerContext, next: FcScheduledGame, season: FcSeason) -> Control:
-	var home: bool = next.home_id == ctx.user_team_id()
-	var opponent: int = next.away_id if home else next.home_id
-	var panel := FcPanel.new("Next game", FcPanel.Variant.SURFACE)
-	panel.custom_minimum_size.x = 340
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", FcUiTokens.SPACE_3)
-	row.add_child(ctx.team_chip(ctx.user_team_id(), 36, ctx.controller.state.world.teams.get_by_id(ctx.user_team_id()).identity.nickname))
-	row.add_child(FcUiTables.label("vs" if home else "at", FcUiTokens.TYPE_BODY))
-	row.add_child(ctx.team_chip(opponent, 36, ctx.controller.state.world.teams.get_by_id(opponent).identity.nickname))
-	panel.add(row)
-	panel.add(FcUiTables.label("Next game: %s %s on %s" % ["vs" if home else "at", ctx.team_name(opponent), season.date_of_day(next.day).to_iso()], FcUiTokens.TYPE_SMALL))
-	return panel
 
 
 static func _owner_report(ctx: FcOwnerContext, report: Dictionary) -> Control:
@@ -118,16 +89,6 @@ static func _standings_snapshot(ctx: FcOwnerContext) -> Control:
 		break
 	return panel
 
-
-static func _news(news: Array) -> Control:
-	var panel := FcPanel.new("Latest news", FcPanel.Variant.SURFACE)
-	panel.custom_minimum_size.x = 380
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	for i in range(news.size() - 1, maxi(-1, news.size() - 7), -1):
-		var line := FcUiTables.label("%s  %s" % [news[i]["date"], news[i]["text"]], FcUiTokens.TYPE_SMALL + 1)
-		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		panel.add(line)
-	return panel
 
 
 static func _owner_career(ctx: FcOwnerContext) -> Control:

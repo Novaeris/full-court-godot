@@ -47,3 +47,11 @@ Each of the 13 Owner tabs is built from an `FcOwnerContext` in `src/ui/owner/` (
 
 ## Screen specs
 (Each screen adds its hero, main and rail spec here when it is built.)
+
+### Franchise HQ (Owner Overview, M3)
+- **Hero:** `FcTeamHeader`: crest, team name, "Franchise headquarters · mode", season, date and phase, with Record, Rank and Streak pills. Under it, the status line and the advance bar; the primary action is highlighted.
+- **Main:** the featured matchup (`FcMatchupBanner`, which opens the game) with the season series and injuries, beside Standing: KPIs, the last ten games as W/L badges, and the playoff position "if the season ended today" from `FcPlayoffBuilder`.
+- **Spotlight row:** team leaders with portraits, the last game with its player of the game from the stored result line, and league ranks for offence, defence and margin.
+- **Office row:** headline cards (`FcNewsCard`, the user's team items at normal importance, others brief), owner objectives with progress, and business (payroll meter against the tax line, cash, debt, last profit, coach, GM, chemistry).
+- **Below:** champions, distress warning, owner report, standings snapshot, owner career, league rules.
+- **Data:** `FcFranchiseSnapshot.build(controller)`, read-only.

@@ -36,3 +36,11 @@ Evidence for each milestone of [the programme](../roadmap/franchise-experience-o
 - Simulation unchanged: `tools/simulate_games.gd games=400 strict=1` gives identical output at M1 and M2, apart from timing. All 16 checks are in range.
 - Save size: `tools/play_seasons.ps1 seasons=50 teams=12 seed=7` gives a 6.1 MB save (5.2 MB before; the limit is 1.5x). Written in 0.9 s, loaded in 1.1 s.
 - Fixed during M2: two reputation tests and two version tests were updated. Objectives now count in the one place a season counts (`_record_owner_season`), so they can never be counted twice.
+
+### M3
+- Pictures: `franchise/m3/hq_1280x720.png` and `hq_1920x1080.png` (30 days into a season).
+- Reviewed by eye. Fixed before the commit:
+  - Wrapping labels inside a flow container collapsed into vertical text.
+  - A tie with the last playoff team read "0.0 games behind".
+  - A duplicate "Game day" button.
+- `test_franchise_hq` checks every snapshot number against the game's own records: the standings, the real playoff builder, the stored result line, stats leaders, payroll. It also checks that the featured matchup opens that game.

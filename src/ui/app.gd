@@ -1383,42 +1383,52 @@ func show_dashboard() -> void:
 	var team: FcTeam = controller.state.world.teams.get_by_id(controller.state.user_team_id)
 	var primary: String = team.branding.primary_color if team != null else ""
 	var box := _reset(_team_name(controller.state.user_team_id), {"id": "dashboard", "skin_props": FcModeSkin.franchise(primary), "back": _confirm_leave_to_menu,
-		"header": {"kind": "letterhead", "subtitle": "Season %d-%02d   %s" % [s.year, (s.year + 1) % 100, "Owner" if controller.state.mode == FcGameState.MODE_OWNER else "Spectator"],
-			"abbr": team.identity.abbreviation if team != null else "", "primary": primary, "secondary": team.branding.secondary_color if team != null else "",
-			"team": FcTeamLook.subject_for_team(controller.state.world, team) if team != null else {}}})
+		"header": {"kind": "none"}})
 	var phase := controller.phase()
-	var info := FcUiTables.label("%s    Season %d-%02d    %s    Mode: %s" % [
-		controller.state.current_date.to_iso(), s.year, (s.year + 1) % 100,
-		{"regular_season": "Regular season", "playoffs": "Playoffs", "season_complete": "Season complete", "offseason": "Offseason: free agency is open to you first", "draft": "The draft", "meeting": "The owners are meeting", "expansion": "Expansion draft: choose your protected players"}[phase],
-		"Owner" if controller.state.mode == FcGameState.MODE_OWNER else "Spectator"], 16)
+	var phase_text: String = {"regular_season": "Regular season", "playoffs": "Playoffs", "season_complete": "Season complete", "offseason": "Offseason: free agency is open to you first", "draft": "The draft", "meeting": "The owners are meeting", "expansion": "Expansion draft: choose your protected players"}[phase]
+	var mode_text := "Owner" if controller.state.mode == FcGameState.MODE_OWNER else "Spectator"
+	# the franchise hero: crest, name, the season and date, and the record at a glance (D-077 M3)
+	var record := controller.user_record()
+	var pills: Array = [{"label": "Record", "value": "%d-%d" % [record["wins"], record["losses"]]}, {"label": "Rank", "value": "#%d" % record["rank"]}]
+	if str(record["streak"]) != "-":
+		pills.append({"label": "Streak", "value": str(record["streak"])})
+	var hero := FcTeamHeader.new().setup({"look": FcTeamLook.resolve(FcTeamLook.subject_for_team(controller.state.world, team)) if team != null else {},
+		"name": _team_name(controller.state.user_team_id), "eyebrow": "Franchise headquarters  ·  %s" % mode_text,
+		"subtitle": "Season %d-%02d  ·  %s  ·  %s" % [s.year, (s.year + 1) % 100, controller.state.current_date.to_iso(), phase_text], "pills": pills})
+	hero.custom_minimum_size.y = 120
+	hero.name = "FranchiseHeader"
+	box.add_child(hero)
+	var info := FcUiTables.label("%s    Season %d-%02d    %s    Mode: %s" % [controller.state.current_date.to_iso(), s.year, (s.year + 1) % 100, phase_text, mode_text], FcUiTokens.TYPE_SMALL)
+	info.theme_type_variation = "MutedLabel"
 	box.add_child(info)
 	var actions := HFlowContainer.new()   # wraps onto a second line instead of forcing the window wider (Large text at 800 px, D6)
 	actions.add_theme_constant_override("h_separation", 6)
 	actions.add_theme_constant_override("v_separation", 6)
+	actions.name = "AdvanceBar"
 	match phase:
 		FcGameController.PHASE_REGULAR:
 			if controller.next_user_game() != null:
-				actions.add_child(FcUiTables.button("Game day", on_game_day))
+				actions.add_child(FcButton.make("Game day", FcButton.Variant.PRIMARY, on_game_day))
 			actions.add_child(FcUiTables.button("Next Day", func(): on_advance(1)))
 			actions.add_child(FcUiTables.button("Next Week", func(): on_advance(7)))
 			actions.add_child(FcUiTables.button("Next Month", func(): run_with_loading("Playing a month of games...", func(): on_advance(30))))
 			actions.add_child(FcUiTables.button("To End of Regular Season", func(): run_with_loading("Simulating the regular season...", on_sim_regular)))
 		FcGameController.PHASE_PLAYOFFS:
-			actions.add_child(FcUiTables.button("Next Playoff Day", func(): on_advance(1)))
+			actions.add_child(FcButton.make("Next Playoff Day", FcButton.Variant.PRIMARY, func(): on_advance(1)))
 			actions.add_child(FcUiTables.button("Play All Playoffs", func(): run_with_loading("Playing the playoffs...", on_sim_playoffs)))
 		FcGameController.PHASE_MEETING:
-			actions.add_child(FcUiTables.button("Close the meeting and count the votes", on_close_meeting))
+			actions.add_child(FcButton.make("Close the meeting and count the votes", FcButton.Variant.PRIMARY, on_close_meeting))
 		FcGameController.PHASE_EXPANSION:
-			actions.add_child(FcUiTables.button("Run the expansion draft", on_run_expansion))
+			actions.add_child(FcButton.make("Run the expansion draft", FcButton.Variant.PRIMARY, on_run_expansion))
 		FcGameController.PHASE_DRAFT:
-			actions.add_child(FcUiTables.button("Let the staff finish the draft", func(): run_with_loading("Running the draft...", on_draft_auto)))
+			actions.add_child(FcButton.make("Let the staff finish the draft", FcButton.Variant.PRIMARY, func(): run_with_loading("Running the draft...", on_draft_auto)))
 		FcGameController.PHASE_OFFSEASON:
-			actions.add_child(FcUiTables.button("Finish Offseason and Start Next Season", func(): run_with_loading("Starting the next season...", on_next_season)))
+			actions.add_child(FcButton.make("Finish Offseason and Start Next Season", FcButton.Variant.PRIMARY, func(): run_with_loading("Starting the next season...", on_next_season)))
 		_:
 			if controller.state.mode == FcGameState.MODE_OWNER:
-				actions.add_child(FcUiTables.button("Begin Offseason (draft, contracts, free agency)", on_next_season))
+				actions.add_child(FcButton.make("Begin Offseason (draft, contracts, free agency)", FcButton.Variant.PRIMARY, on_next_season))
 			else:
-				actions.add_child(FcUiTables.button("Start Next Season (offseason)", on_next_season))
+				actions.add_child(FcButton.make("Start Next Season (offseason)", FcButton.Variant.PRIMARY, on_next_season))
 	actions.add_child(FcUiTables.button("Save", on_save))
 	if controller.state.mode == FcGameState.MODE_OWNER:
 		actions.add_child(FcUiTables.button("Help", start_tutorial))
@@ -1572,6 +1582,7 @@ func _owner_ctx() -> FcOwnerContext:
 			func(player_id: int) -> void: FcPlayerProfile.open_modal(self, FcPlayerPresentation.from_player(controller.state.world, player_id, controller.state.current_season, controller.league_id)))
 		_owner_context.after_draft = _after_draft_action
 		_owner_context.open_tonight = func() -> void: FcTonight.open(self, controller)
+		_owner_context.open_game = func(_game_id: int) -> void: on_game_day()
 	return _owner_context
 
 

@@ -18,6 +18,8 @@ var open_profile: Callable
 var after_draft: Callable
 ## Callable(): opens the Full Court Tonight show.
 var open_tonight: Callable
+## Callable(game_id: int): opens a game (the game day preview today; the Game Center from M5 of D-077).
+var open_game: Callable
 ## What a tab remembers between rebuilds (selected trade partner, last sub-page). Lives as long as the context, i.e. one game.
 var memory: Dictionary = {"trade_partner": 0, "trade_page": -1, "meeting_item": 0, "finance_page": 0, "staff_page": 0}
 var _looks: Dictionary = {}
