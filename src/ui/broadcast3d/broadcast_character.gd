@@ -322,11 +322,11 @@ func _dress_v2() -> void:
 		elif base == "jersey":
 			var number := jersey_number if str(uniform["attire"]) == "playing" else 0
 			if FcJerseyGraphics.available():
-				mi.material_override = FcJerseyGraphics.jersey_material(self, primary, number, _surname, str(uniform["abbreviation"]), secondary, primary.darkened(0.55), _panel(primary, secondary, 0.028))
+				mi.material_override = FcJerseyGraphics.jersey_material(self, primary, number, _surname, str(uniform["abbreviation"]), secondary, primary.darkened(0.55), _panel(primary, secondary, 0.05))
 			else:
-				mi.material_override = FcJerseyGraphics.cloth_material(primary, _panel(primary, secondary, 0.028))
+				mi.material_override = FcJerseyGraphics.cloth_material(primary, _panel(primary, secondary, 0.05))
 		elif base == "shorts":
-			mi.material_override = FcJerseyGraphics.cloth_material(shorts, _panel(shorts, secondary, 0.04))
+			mi.material_override = FcJerseyGraphics.cloth_material(shorts, _panel(shorts, secondary, 0.045))
 		elif base == "socks":
 			mi.material_override = FcJerseyGraphics.cloth_material(socks)
 		elif base == "shoes":

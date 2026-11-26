@@ -5,7 +5,7 @@ extends SceneTree
 ##   model: "" (the generated procedural body), "library" (M1), "v2" (the V2 players)
 ## Views: front, side, back (full body), face, upper body, hands, shoes, neutral pose (three-quarter), action pose (jump shot, three-quarter).
 
-const VIEWS := ["front", "side", "back", "face", "upper", "hands", "shoes", "neutral", "action"]
+const VIEWS := ["front", "side", "back", "face", "upper", "hands", "shoes", "neutral", "action", "deform_arm", "deform_leg"]
 const SIZE := Vector2i(900, 1200)
 
 var _out := "user://reference"
@@ -77,6 +77,10 @@ func _frame(view: String) -> void:
 	match view:
 		"action":
 			_character.pose_at("shoot", 0.48)
+		"deform_arm":
+			_character.pose_at("contest", 0.1)
+		"deform_leg":
+			_character.pose_at("defend", 0.25)
 		_:
 			_character.pose_at("idle", 0.0)
 	var target := Vector3(0.0, h * 0.5, 0.0)
@@ -96,6 +100,12 @@ func _frame(view: String) -> void:
 		"shoes":
 			target = Vector3(0.0, h * 0.05, 0.0)
 			from = Vector3(h * 0.45, h * 0.16, h * 0.8)
+		"deform_arm":
+			target = Vector3(0.0, h * 0.85, 0.0)
+			from = Vector3(h * 0.75, h * 0.9, h * 1.05)
+		"deform_leg":
+			target = Vector3(0.0, h * 0.3, 0.0)
+			from = Vector3(h * 0.95, h * 0.35, h * 0.85)
 		"neutral", "action":
 			target = Vector3(0.0, h * (0.55 if view == "action" else 0.5), 0.0)
 			from = Vector3(h * 2.4, h * 0.6, h * 2.9)
