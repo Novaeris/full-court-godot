@@ -43,3 +43,6 @@ The founder kept the V2 direction and asked for a reference player at a professi
 - **Facial hair and fades:** soft-edged mustache and goatee masks, thinner shells, a facial-hair shader that breaks the edges into strands; wider fade gradients.
 - **Skin:** calibrated detail map, roughness from the detail, filmic studio check.
 Everything is part of the generator, so every player of the roster gets it (`docs/validation/player_v21/roster/`).
+
+## Master workflow (D-076, 2026-11-26)
+From now on the game files are exported from ONE master Blender file, `art_source/players/fc_master_player.blend`, not regenerated: `./tools/blender/run_blender.ps1 -b art_source/players/fc_master_player.blend --python tools/blender/master/export_master.py`. See `art_source/README.md`. Approval renders: `tools/blender/master/render_master.py` and `tools/reference_scene.gd`; pictures in `docs/validation/player_master/`.
