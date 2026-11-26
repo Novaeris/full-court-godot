@@ -9,6 +9,8 @@ extends Control
 const BASE_MARGIN := 16
 const BOTTOM_BAR_HEIGHT := 68
 const MAX_CONTENT_WIDTH := 1600
+## How far a screen slides when it is pushed or popped (a hint of direction, not a full page slide).
+const SLIDE_DISTANCE := 48.0
 
 var content: VBoxContainer
 var bottom_slot: VBoxContainer
@@ -94,7 +96,7 @@ func set_toast_inset(pixels: int) -> void:
 	toasts.offset_top = toasts.offset_bottom - 220
 
 
-## The mode skin's backdrop: "flat", "grid", "spotlight" or "arena" (the main menu), tinted by the skin's accent.
+## The mode skin's backdrop: "flat", "grid", "spotlight", "franchise" (Owner) or "arena" (the main menu), tinted by the skin's accent.
 func set_skin(skin: Dictionary) -> void:
 	_backdrop.style = str(skin.get("background", "flat"))
 	_backdrop.accent = skin.get("accent", FcUiTokens.PRIMARY)
@@ -105,9 +107,14 @@ func backdrop_style() -> String:
 	return _backdrop.style
 
 
-## Fades a freshly built screen in (instant when motion is reduced).
-func transition_in(screen: CanvasItem) -> void:
+## Brings a freshly built screen in: a fade for a screen of the same level ("replace"), plus a short slide from the right when going
+## deeper ("push") and from the left when going back ("pop"). Instant when motion is reduced (FcMotion).
+func transition_in(screen: CanvasItem, motion: String = "replace") -> void:
 	FcMotion.fade_in(screen, FcUiTokens.DUR_BASE)
+	if motion == "push" or motion == "pop":
+		var control := screen as Control
+		if control != null:
+			FcMotion.nudge_in(control, Vector2(SLIDE_DISTANCE if motion == "push" else -SLIDE_DISTANCE, 0))
 
 
 ## Draws the background.
@@ -131,6 +138,8 @@ class _Backdrop extends Control:
 					y += 48.0
 			"arena":
 				FcArenaArt.paint(self, Rect2(Vector2.ZERO, size), accent)
+			"franchise":
+				_paint_franchise()
 			"spotlight":
 				if _glow == null:
 					_glow = GradientTexture2D.new()
@@ -144,6 +153,18 @@ class _Backdrop extends Control:
 				g.set_color(1, Color(accent, 0.0))
 				_glow.gradient = g
 				draw_texture_rect(_glow, Rect2(Vector2.ZERO, size), false)
+
+	## The franchise backdrop (Owner screens, D-077): a deep team-colour wash from the top that fades into the night background and the
+	## faint arcs of a basketball court in the lower right. Layered and quiet, so content stays readable on top of it.
+	func _paint_franchise() -> void:
+		var top := Color(accent.darkened(0.3), 0.34)
+		var bottom := Color(top, 0.0)
+		var h := minf(size.y, 460.0)
+		draw_polygon(PackedVector2Array([Vector2.ZERO, Vector2(size.x, 0), Vector2(size.x, h), Vector2(0, h)]), PackedColorArray([top, top, bottom, bottom]))
+		var line := Color(FcUiTokens.BORDER, 0.22)
+		var center := Vector2(size.x * 0.94, size.y * 1.04)
+		for r in [size.y * 0.40, size.y * 0.62]:
+			draw_arc(center, r, PI, PI * 1.5, 64, line, 2.0, true)
 
 	func _notification(what: int) -> void:
 		if what == NOTIFICATION_RESIZED:

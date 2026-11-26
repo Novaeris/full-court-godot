@@ -63,6 +63,21 @@ static func slide_in(node: Control, from_offset: Vector2, seconds: float = FcUiT
 	return tw
 
 
+## Slides a control that lives in a container from an offset to its laid-out position (screen transitions). Waits one frame for the
+## container to place it; a later re-layout simply snaps it to the end position, so it can never leave a control out of place.
+static func nudge_in(node: Control, from_offset: Vector2, seconds: float = FcUiTokens.DUR_BASE) -> void:
+	if duration(seconds) <= 0.0 or not node.is_inside_tree():
+		return
+	var start := func() -> void:
+		if not is_instance_valid(node) or not node.is_inside_tree():
+			return
+		var target := node.position
+		node.position = target + from_offset
+		var tw := node.create_tween()
+		tw.tween_property(node, "position", target, duration(seconds)).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	start.call_deferred()
+
+
 ## The press feedback of a button: shrinks to 97% and springs back.
 static func press(node: Control) -> Tween:
 	node.pivot_offset = node.size / 2.0

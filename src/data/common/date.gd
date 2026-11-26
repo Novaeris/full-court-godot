@@ -84,6 +84,16 @@ static func from_day_number(day_number: int) -> FcDate:
 	return FcDate.new(y + (1 if m <= 2 else 0), m, d)
 
 
+## The day of the week, 0 = Monday to 6 = Sunday (1970-01-01, day number 0, was a Thursday).
+func weekday() -> int:
+	return posmod(to_day_number() + 3, 7)
+
+
+## The first day of this date's month.
+func month_start() -> FcDate:
+	return FcDate.new(year, month, 1)
+
+
 ## A new date `days` later (or earlier if negative).
 func add_days(days: int) -> FcDate:
 	return FcDate.from_day_number(to_day_number() + days)

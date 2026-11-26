@@ -14,6 +14,12 @@ var refresh: Callable
 var open_post_game: Callable
 ## Callable(player_id: int): opens the player profile dialog.
 var open_profile: Callable
+## Callable(): after a draft pick (the app moves to the Market tab when the draft ended).
+var after_draft: Callable
+## Callable(): opens the Full Court Tonight show.
+var open_tonight: Callable
+## What a tab remembers between rebuilds (selected trade partner, last sub-page). Lives as long as the context, i.e. one game.
+var memory: Dictionary = {"trade_partner": 0, "trade_page": -1, "meeting_item": 0, "finance_page": 0, "staff_page": 0}
 var _looks: Dictionary = {}
 
 
@@ -49,6 +55,18 @@ func team_look(team_id: int) -> Dictionary:
 ## A crest and name for a team, as a control (marks the user's team).
 func team_chip(team_id: int, crest_px: int = 24, text: String = "") -> FcTeamChip:
 	return FcTeamChip.new().setup(team_look(team_id), text if text != "" else team_name(team_id), crest_px, team_id == user_team_id(), false)
+
+
+## The display name of a player, or "-" when the id is unknown.
+func player_name(player_id: int) -> String:
+	var p: FcPlayer = world().players.get_by_id(player_id)
+	return p.identity.full_name() if p != null else "-"
+
+
+## Rebuilds the dashboard (after a change to the user's data), when a refresh callable was given.
+func refresh_now() -> void:
+	if refresh.is_valid():
+		refresh.call()
 
 
 ## A message, when a message callable was given.

@@ -55,6 +55,7 @@ func build() -> void:
 	_section_portraits()
 	_section_broadcast()
 	_section_franchise()
+	_section_season()
 	_section_motion()
 
 
@@ -545,6 +546,70 @@ func _section_franchise() -> void:
 	var kpi := FcKpiStrip.new()
 	kpi.set_items([{"label": "Cash", "value": "$42.1M", "delta": "-1.2M"}, {"label": "Payroll", "value": "$118M"}, {"label": "Record", "value": "31-12", "delta": "+3"}, {"label": "Attendance", "value": "96%"}])
 	s.add_child(kpi)
+
+
+## The Franchise Experience set (D-077): every value below is a SAMPLE made up for this page.
+func _section_season() -> void:
+	var s := _section("Season and franchise experience", "Team header, matchup banner, calendar, scoreboard, news, races, charts, shot chart, contract bar and sim progress. SAMPLE data.")
+	var home := FcTeamLook.resolve(FcTeamLook.subject("sample:harbor", "Harbor Kings", "HBK", "#1F3A5F", "#C8A951", "", "Kings"))
+	var away := FcTeamLook.resolve(FcTeamLook.subject("sample:canyon", "Canyon Hawks", "CNY", "#9A3B1E", "#F2D7A0", "", "Hawks"))
+	var header := FcTeamHeader.new().setup({"look": home, "name": "Harbor Kings", "eyebrow": "Franchise headquarters", "subtitle": "Season 2026-27  ·  2026-11-19  ·  Regular season",
+		"pills": [{"label": "Record", "value": "11-4"}, {"label": "Conference", "value": "2nd"}, {"label": "Streak", "value": "W3"}]})
+	header.custom_minimum_size = Vector2(0, 132)
+	s.add_child(header)
+	var row := _flow()
+	var banner := FcMatchupBanner.new().setup({"away": {"name": "Canyon Hawks", "record": "8-7", "look": away}, "home": {"name": "Harbor Kings", "record": "11-4", "look": home},
+		"center": "AT", "caption": "Thursday 2026-11-19"})
+	banner.custom_minimum_size = Vector2(460, 160)
+	row.add_child(_captioned("Matchup banner", banner))
+	var badges := VBoxContainer.new()
+	badges.add_child(FcResultBadge.new(FcResultBadge.Kind.WIN, "102-99"))
+	badges.add_child(FcResultBadge.new(FcResultBadge.Kind.LOSS, "95-101"))
+	badges.add_child(FcResultBadge.new(FcResultBadge.Kind.UPCOMING))
+	badges.add_child(FcResultBadge.new(FcResultBadge.Kind.LIVE))
+	row.add_child(_captioned("Result badges", badges))
+	var contract := FcContractBar.new().setup([{"season": 2025, "salary": 9_000_000}, {"season": 2026, "salary": 11_500_000}, {"season": 2027, "salary": 12_100_000},
+		{"season": 2028, "salary": 12_700_000, "option": "TO"}], 2026)
+	contract.custom_minimum_size = Vector2(280, 110)
+	row.add_child(_captioned("Contract bar", contract))
+	s.add_child(row)
+	var cal := FcCalendarGrid.new().setup(2026, 11, {
+		"2026-11-17": {"user": {"look": away, "home": true, "opponent": "CNY", "result": "W", "score": "108-101"}, "games": 6},
+		"2026-11-19": {"user": {"look": away, "home": false, "opponent": "CNY"}, "games": 7, "events": [{"text": "Player of the Week", "tone": "info"}]},
+		"2026-11-24": {"games": 9, "events": [{"text": "Trade window opens", "tone": "gold"}]}}, "2026-11-19", "2026-11-19")
+	cal.custom_minimum_size = Vector2(0, 560)
+	s.add_child(_captioned("Calendar grid (November 2026)", cal, true))
+	var strip := FcScoreboardStrip.new().set_games([
+		{"id": 1, "away": {"abbr": "CNY", "score": 101, "look": away}, "home": {"abbr": "HBK", "score": 108, "look": home}, "final": true, "user": true},
+		{"id": 2, "away": {"abbr": "HBK", "look": home}, "home": {"abbr": "CNY", "look": away}, "final": false, "note": "7:30 PM"}])
+	s.add_child(_captioned("Scoreboard strip", strip, true))
+	var news_row := _flow()
+	var lead := FcNewsCard.new().setup({"headline": "Kings win their fifth straight behind a 41-point night", "deck": "SAMPLE story for the gallery.", "kind": "Game recap", "date": "2026-11-19", "tier": FcNewsCard.TIER_LEAD, "team_look": home})
+	lead.custom_minimum_size = Vector2(520, 0)
+	news_row.add_child(lead)
+	var brief := FcNewsCard.new().setup({"headline": "Hawks sign a guard to cover an injury", "kind": "Transaction", "date": "2026-11-18", "tier": FcNewsCard.TIER_NORMAL, "team_look": away})
+	brief.custom_minimum_size = Vector2(360, 0)
+	news_row.add_child(brief)
+	s.add_child(news_row)
+	var charts := _flow()
+	var line := FcLineChart.new([{"name": "Revenue", "values": [182, 195, 214, 238]}, {"name": "Profit", "values": [4, -2, 11, 19]}], ["2023", "2024", "2025", "2026"],
+		func(v) -> String: return "$%dM" % roundi(float(v)))
+	line.custom_minimum_size = Vector2(420, 220)
+	charts.add_child(_captioned("Line chart", line))
+	var shots := FcHeatZones.new().set_data({FcShotZones.RIM: {"made": 31, "att": 48}, FcShotZones.PAINT: {"made": 9, "att": 22}, FcShotZones.MID_LEFT: {"made": 6, "att": 14},
+		FcShotZones.TOP3: {"made": 14, "att": 37}, FcShotZones.CORNER3_RIGHT: {"made": 9, "att": 19}, FcShotZones.WING3_LEFT: {"made": 7, "att": 23}},
+		{FcShotZones.RIM: 0.6, FcShotZones.PAINT: 0.42, FcShotZones.MID_LEFT: 0.41, FcShotZones.TOP3: 0.35, FcShotZones.CORNER3_RIGHT: 0.39, FcShotZones.WING3_LEFT: 0.36})
+	shots.custom_minimum_size = Vector2(320, 300)
+	charts.add_child(_captioned("Shot chart", shots))
+	var race := FcRaceTable.new().set_entries([{"id": 1, "name": "SAMPLE Guard", "detail": "HBK  ·  31.4 pts, 8.1 ast", "value": "18.2", "move": 1, "team_look": home},
+		{"id": 2, "name": "SAMPLE Forward", "detail": "CNY  ·  27.9 pts, 11.0 reb", "value": "16.9", "gap": "-1.3", "move": -1, "team_look": away}])
+	race.custom_minimum_size = Vector2(380, 0)
+	charts.add_child(_captioned("Race table", race))
+	var progress := FcSimProgress.new()
+	progress.start("Simulating to 2026-12-31", 30)
+	progress.advance(12, "2026-12-01", ["CNY 99 at HBK 104", "Kings win their sixth straight"])
+	charts.add_child(_captioned("Sim progress", progress))
+	s.add_child(charts)
 
 
 func _section_motion() -> void:

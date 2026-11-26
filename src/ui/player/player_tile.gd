@@ -5,8 +5,12 @@ extends Control
 ## visual as everywhere else, the name, position and team letters, and the rating in the rating-tier colour (data/ui/rating_tiers.json).
 ## Owner and Career never use rarity: rarity is a collectible idea, a rating tier is a performance idea (the two colour sets stay apart).
 ## It is a view of a presentation dictionary (FcPlayerPresentation); it changes nothing.
+## Optional view-model fields drawn when present (the roster card gallery, D-077): "number" (jersey, top right), "potential" (under the
+## rating), "injury" (a red OUT band over the figure) and "stat_line" (a short line of this season's numbers under the name).
 
 signal activated
+## Double-click or Enter: the screen should open the player (the profile).
+signal opened
 
 const SIZE_SMALL := Vector2(112, 160)
 const SIZE_MEDIUM := Vector2(150, 214)
@@ -49,9 +53,12 @@ func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		grab_focus()
 		activated.emit()
+		if event.double_click:
+			opened.emit()
 	elif event.is_action_pressed("ui_accept") and has_focus():
 		accept_event()
 		activated.emit()
+		opened.emit()
 
 
 func _draw() -> void:
@@ -103,6 +110,28 @@ func _draw() -> void:
 	var line := pos if team == "" else "%s  ·  %s" % [pos, team]
 	var small_fs := int(11 * s)
 	draw_string(body, Vector2(10 * s, art.end.y + 38 * s), _fit(line, body, small_fs, size.x - 20 * s), HORIZONTAL_ALIGNMENT_LEFT, -1, small_fs, FcUiTokens.TEXT_MUTED)
+	_draw_extras(s, art, display, body, small_fs, tier)
+
+
+## The optional fields of the card gallery: jersey number, potential, injury band and this season's line.
+func _draw_extras(s: float, art: Rect2, display: Font, body: Font, small_fs: int, tier: Color) -> void:
+	var number := str(vm.get("number", ""))
+	if number != "" and number != "0":
+		var num_fs := int(22 * s)
+		var w := display.get_string_size("#" + number, HORIZONTAL_ALIGNMENT_LEFT, -1, num_fs).x
+		draw_string(display, Vector2(art.end.x - w - 6 * s, art.position.y + 24 * s), "#" + number, HORIZONTAL_ALIGNMENT_LEFT, -1, num_fs, Color(FcUiTokens.TEXT, 0.85))
+	var potential := int(vm.get("potential", 0))
+	if potential > 0:
+		var pot_fs := int(10 * s)
+		draw_string(body, Vector2(10 * s, 10 * s + 42 * s), "POT %d" % potential, HORIZONTAL_ALIGNMENT_LEFT, -1, pot_fs, Color(FcRatingBadge.tier_color(potential), 0.95))
+	var injury := str(vm.get("injury", ""))
+	if injury != "":
+		var band := Rect2(Vector2(art.position.x, art.end.y - 20 * s), Vector2(art.size.x, 20 * s))
+		draw_rect(band, Color(FcUiTokens.DANGER, 0.85))
+		draw_string(body, band.position + Vector2(6 * s, 14 * s), _fit(injury.to_upper(), body, small_fs, band.size.x - 12 * s), HORIZONTAL_ALIGNMENT_LEFT, -1, small_fs, FcUiTokens.TEXT)
+	var stat_line := str(vm.get("stat_line", ""))
+	if stat_line != "" and size.y > art.end.y + 54 * s:
+		draw_string(body, Vector2(10 * s, art.end.y + 54 * s), _fit(stat_line, body, small_fs, size.x - 20 * s), HORIZONTAL_ALIGNMENT_LEFT, -1, small_fs, FcUiTokens.TEXT)
 
 
 ## `text` shortened with an ellipsis until it fits `width` pixels at font size `fs`.

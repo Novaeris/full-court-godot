@@ -182,7 +182,7 @@ After any simulation change, `tools/simulate_games.ps1` must also keep all 16 ch
 | Milestone | Status | Summary | Tests | Pictures | Known issues | Commit |
 |---|---|---|---|---|---|---|
 | M0 | Done | Audit, plan (decisions A-K), architecture and validation docs, D-077, stale doc lines fixed, before pictures rendered from a clean worktree of `37d86a9` (19 screens x 2 sizes, 30 days into a season) | docs only (no code) | `validation/franchise/before/` | – | see git log (M0 commit) |
-| M1 | Not started | | | | | |
+| M1 | Done | 12 kit components plus `FcShotZones`, navigator registry and back stack, push/pop slides, franchise backdrop, 8 inline Owner tabs moved to `src/ui/owner/` (app.gd 2,687 to about 1,770 lines; sized labels 68 to 30) | unit 1,756/0, live 241/0, validate 0 problems, Studio PASS | `validation/franchise/m1/` | gallery count tests updated (16 sections) | see git log (M1 commit) |
 | M2 | Not started | | | | | |
 | M3 | Not started | | | | | |
 | M4 | Not started | | | | | |

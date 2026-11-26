@@ -20,7 +20,7 @@ const SKINS := {
 	NEUTRAL: {"accent": FcUiTokens.PRIMARY, "background": "flat", "density": 1.0, "header": "plain", "motion": 1.0, "numerals": "body"},
 	BROADCAST: {"accent": FcUiTokens.INFO, "background": "grid", "density": 0.9, "header": "lower_third", "motion": 0.8, "numerals": "display"},
 	COLLECTIBLE: {"accent": FcUiTokens.PRIMARY, "background": "spotlight", "density": 1.1, "header": "banner", "motion": 1.0, "numerals": "display"},
-	FRANCHISE: {"accent": FcUiTokens.STEEL, "background": "flat", "density": 0.95, "header": "letterhead", "motion": 0.5, "numerals": "body"},
+	FRANCHISE: {"accent": FcUiTokens.STEEL, "background": "franchise", "density": 0.95, "header": "letterhead", "motion": 0.5, "numerals": "body"},
 }
 
 

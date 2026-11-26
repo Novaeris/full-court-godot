@@ -356,7 +356,7 @@ func test_each_mode_gets_its_own_presentation_skin() -> void:
 	assert_eq(app._skin["id"], FcModeSkin.BROADCAST, "Career uses the Broadcast skin (D7)")
 	app.show_new_league()
 	assert_eq(app._skin["id"], FcModeSkin.FRANCHISE, "Owner screens use the Franchise skin")
-	assert_eq(app.host.backdrop_style(), "flat")
+	assert_eq(app.host.backdrop_style(), "franchise", "Owner draws the team-colour wash (D-077)")
 	app.show_career_home()
 	assert_eq(app.host.backdrop_style(), "grid", "Broadcast draws the grid")
 	app.dynasty.catalog = FcDynastyFixture.catalog()

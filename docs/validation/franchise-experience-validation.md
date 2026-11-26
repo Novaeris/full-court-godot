@@ -23,3 +23,10 @@ Evidence for each milestone of [the programme](../roadmap/franchise-experience-o
 ## Milestone records
 ### M0
 - **Before pictures:** `franchise/before/`. 19 screens at 1280x720 and 1920x1080 (menu, the 13 Owner tabs, Owner game day, post-game, replay, Career hub, Dynasty hub).
+
+### M1
+- Pictures: `franchise/m1/gallery_season_1600x1900.png` (every new component), and Overview, Trades, Finances, Staff and Market at 1280x720, showing the extracted tabs unchanged under the new franchise backdrop.
+- Reviewed by eye. Two defects were found and fixed before the commit:
+  - The team header band drew white (a gradient texture built inside `_draw` is not ready on its first frame). It now uses vertex colours.
+  - The shot chart showed grid lines (overlapping translucent cells). It now uses pixel-aligned cells.
+- Tests: unit 1,756 passed, live 241 passed, `validate_project` 0 problems, Studio smoke PASS.
