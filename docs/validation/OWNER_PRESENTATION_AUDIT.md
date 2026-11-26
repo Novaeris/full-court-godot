@@ -19,7 +19,7 @@ confirmation dialogs, hover/focus/pressed/disabled/selected states, horizontal o
 
 | Area | State | Why it stays |
 |---|---|---|
-| Tables | Godot's themed `Tree` (a plain table with row selection), not `FcDataTable` | The buttons below each table (Extend contract, Release, Accept offer, Sign free agent, Box score) act on the selected row. Moving to `FcDataTable` means re-wiring every action; no player-visible gain. Readability is fine: header band, right-aligned numbers, 27 px rows. |
+| Tables | Superseded: Owner tables now use the kit `FcTable` (sortable, custom cells). The rest of this audit is historical; the current plan for these screens is docs/roadmap/franchise-experience-overhaul.md (D-077). | – |
 | Staff toggles | "[ ] Re-sign my players" style toggle buttons | Works, is keyboard reachable, shows state in text. A kit `FcToggle` would look better and is a candidate when the Staff tab is next touched. |
 | Text-heavy panels | Overview "League rules", Finances and Staff paragraphs are plain labels | They are information, not controls. A KPI strip already leads the Overview. More KPI strips (Finances, Roster) are a good next step, not a defect. |
 | Hierarchy | Heading (Barlow Condensed, accent colour) > body (Inter) > muted notes | Consistent on all 13 tabs. |
