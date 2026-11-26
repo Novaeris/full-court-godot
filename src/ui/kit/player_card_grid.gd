@@ -15,6 +15,7 @@ var tile_size: Vector2 = FcPlayerTile.SIZE_MEDIUM
 
 func _init() -> void:
 	horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED   # grows to show every card; the page around it scrolls (set AUTO for a fixed-height board)
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_flow.size_flags_horizontal = Control.SIZE_EXPAND_FILL

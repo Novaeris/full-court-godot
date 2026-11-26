@@ -228,7 +228,7 @@ func test_player_profile_text() -> void:
 	assert_true("Three-Point Shooting" in text and "Loyalty" in text)
 	assert_eq(app.player_profile_text(999999), "")
 	var roster_tab := app.build_tab("Roster")
-	assert_true(roster_tab.get_child_count() == 3, "the roster has its table, a hint line and the buttons row")
+	assert_true(roster_tab.get_child_count() == 5, "the roster has its view switch, table, card grid (D-077 M4), a hint line and the buttons row")
 	roster_tab.free()
 
 

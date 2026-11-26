@@ -44,3 +44,16 @@ Evidence for each milestone of [the programme](../roadmap/franchise-experience-o
   - A tie with the last playoff team read "0.0 games behind".
   - A duplicate "Game day" button.
 - `test_franchise_hq` checks every snapshot number against the game's own records: the standings, the real playoff builder, the stored result line, stats leaders, payroll. It also checks that the featured matchup opens that game.
+
+### M4
+- Pictures: `franchise/m4/` has the roster cards, and the player page Overview at 1280 and 1920, Shooting and Game Log.
+- Fixed by eye before the commit:
+  - The card grid scrolled inside the scrolling page and showed one row. It now grows to fit.
+  - Jersey numbers bunched in the 50s; the preference now uses FNV-1a with a realistic spread.
+  - Shooting labels were truncated.
+- `test_player_page` (6) checks:
+  - the game log equals games played, with real results;
+  - the three shot kinds add up to all field-goal attempts;
+  - no tabs are invented for a player without data;
+  - the full page opens from the roster and Back returns;
+  - the card view's actions use the selected card.

@@ -1375,6 +1375,32 @@ func _tutorial_panel() -> Control:
 ## The full screens reachable through the navigator's back stack (D-077). The Owner dashboard is the root of the Owner stack.
 func _register_routes() -> void:
 	navigator.register("dashboard", func(_args: Dictionary) -> void: show_dashboard())
+	navigator.register("player", func(args: Dictionary) -> void: show_player_page(int(args.get("id", 0))))
+
+
+## A player's full-page profile (D-077 M4): the dossier at full width, reached from the roster, the HQ and anywhere a player is named.
+## Back returns to the screen it was opened from (the navigator's stack). The quick-look dialog (FcPlayerProfile.open_modal) stays for
+## places where leaving the screen would lose the player's work (the draft board, a trade being built).
+func show_player_page(player_id: int) -> void:
+	var w := controller.state.world
+	var vm := FcPlayerPresentation.from_player(w, player_id, controller.state.current_season, controller.league_id)
+	if vm.is_empty():
+		_say("That player no longer exists.")
+		return
+	var team: FcTeam = w.teams.get_by_id(controller.state.user_team_id)
+	var box := _reset(str(vm["name"]), {"id": "player:%d" % player_id, "skin_props": FcModeSkin.franchise(team.branding.primary_color if team != null else ""),
+		"back": navigator.stack_back(), "header": {"kind": "none"}})
+	var bar := HBoxContainer.new()
+	bar.add_child(FcButton.make("Back", FcButton.Variant.GHOST, func() -> void: go_back(), "chevron-left"))
+	box.add_child(bar)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var profile := FcPlayerProfile.new().setup(vm, layout.is_mobile())
+	profile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	profile.name = "PlayerPage"
+	scroll.add_child(profile)
+	box.add_child(scroll)
 
 
 func show_dashboard() -> void:
@@ -1579,7 +1605,7 @@ func _owner_ctx() -> FcOwnerContext:
 	if _owner_context == null or _owner_context.controller != controller:
 		_owner_context = FcOwnerContext.new(controller, _say, show_dashboard,
 			func(entry: Dictionary) -> void: FcPostGame.open(self, FcPostGame.for_owner(controller, entry["box"], entry.get("events", {}))),
-			func(player_id: int) -> void: FcPlayerProfile.open_modal(self, FcPlayerPresentation.from_player(controller.state.world, player_id, controller.state.current_season, controller.league_id)))
+			func(player_id: int) -> void: navigator.open("player", {"id": player_id}))
 		_owner_context.after_draft = _after_draft_action
 		_owner_context.open_tonight = func() -> void: FcTonight.open(self, controller)
 		_owner_context.open_game = func(_game_id: int) -> void: on_game_day()

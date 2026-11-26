@@ -12,6 +12,9 @@ var league_pct: Dictionary = {}
 ## Optional recorded spots: [{"x": metres, "y": metres, "made": bool}].
 var spots: Array = []
 var empty_text: String = "No shots recorded yet"
+## Kind mode (D-077): the simulation decides only the KIND of a shot (at the rim, mid-range, three), not the spot, so a player's chart shades
+## the three kinds' areas and writes one percentage per kind. {"rim": [made, att], "mid": [...], "three": [...]}; empty = zone mode.
+var kinds: Dictionary = {}
 
 ## Each zone is sampled on this grid to fill its area (cheap: drawn only when the data or size changes).
 const CELL := 0.25
@@ -22,7 +25,36 @@ func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS
 
 
+## Kind mode: shades every zone of a kind with that kind's numbers (the zones of one kind share them; numbers are written once per kind).
+## `league` is {"rim": pct, "mid": pct, "three": pct}.
+func set_kinds(kind_counts: Dictionary, league: Dictionary = {}) -> FcHeatZones:
+	kinds = kind_counts
+	var z := {}
+	var lp := {}
+	for id in FcShotZones.ids():
+		var kind := kind_of_zone(id)
+		var k: Array = kind_counts.get(kind, [0, 0])
+		z[id] = {"made": int(k[0]), "att": int(k[1])}
+		if league.has(kind):
+			lp[id] = float(league[kind])
+	zones = z
+	league_pct = lp
+	spots = []
+	tooltip_text = summary()
+	queue_redraw()
+	return self
+
+
+## "rim", "mid" or "three" for a zone.
+static func kind_of_zone(zone_id: String) -> String:
+	match FcShotZones.shot_type_of(zone_id):
+		FcGameEventLog.SHOT_RIM: return "rim"
+		FcGameEventLog.SHOT_THREE: return "three"
+	return "mid"
+
+
 func set_data(zone_counts: Dictionary, league: Dictionary = {}, shot_spots: Array = []) -> FcHeatZones:
+	kinds = {}
 	zones = zone_counts
 	league_pct = league
 	spots = shot_spots
@@ -32,15 +64,30 @@ func set_data(zone_counts: Dictionary, league: Dictionary = {}, shot_spots: Arra
 
 
 func total_attempts() -> int:
+	if not kinds.is_empty():
+		var t := 0
+		for k in kinds.values():
+			t += int(k[1])
+		return t
 	var n := 0
 	for z in zones.values():
 		n += int(z.get("att", 0))
 	return n
 
 
-## "At the rim 24/40 (60%, league 58%); ..." for every zone with attempts.
+## "At the rim 24/40 (60%, league 58%); ..." for every zone (or, in kind mode, every kind) with attempts.
 func summary() -> String:
 	var parts: Array = []
+	if not kinds.is_empty():
+		for pair in [["rim", "At the rim", FcShotZones.RIM], ["mid", "Mid-range", FcShotZones.MID_CENTER], ["three", "Three-point", FcShotZones.TOP3]]:
+			var k: Array = kinds.get(pair[0], [0, 0])
+			if int(k[1]) <= 0:
+				continue
+			var t := "%s %d/%d (%d%%" % [pair[1], int(k[0]), int(k[1]), roundi(float(k[0]) * 100.0 / float(k[1]))]
+			if league_pct.has(pair[2]):
+				t += ", league %d%%" % roundi(float(league_pct[pair[2]]) * 100.0)
+			parts.append(t + ")")
+		return "; ".join(parts)
 	for id in FcShotZones.ids():
 		var z: Dictionary = zones.get(id, {})
 		var att := int(z.get("att", 0))
@@ -113,8 +160,9 @@ func _draw() -> void:
 			draw_circle(p, 3.2, FcUiTokens.SUCCESS)
 		else:
 			draw_arc(p, 3.2, 0.0, TAU, 12, FcUiTokens.DANGER, 1.4, true)
-	# numbers in each zone
-	for id in FcShotZones.ids():
+	# numbers in each zone (in kind mode once per kind, in the middle of its area)
+	var labelled: Array = FcShotZones.ids() if kinds.is_empty() else [FcShotZones.RIM, FcShotZones.MID_CENTER, FcShotZones.TOP3]
+	for id in labelled:
 		var z: Dictionary = zones.get(id, {})
 		var att := int(z.get("att", 0))
 		if att <= 0:

@@ -7,8 +7,8 @@ extends RefCounted
 ## What it answers: the season-by-season log of a team, its franchise records (titles, finals, best and worst years, droughts), its
 ## all-time leaders while wearing its colours, and its RETIRED NUMBERS.
 ##
-## Retired numbers: league players have no shirt numbers in the data model, so a number is a deterministic display choice (a hash of
-## the player id, moved to the next free number if the team already retired it). A player's number is retired by the ONE franchise he
+## Retired numbers: the number the player wore (stored since data version 5; older players get the deterministic preference from a hash
+## of the player id), moved to the next free number if the team already retired it. A player's number is retired by the ONE franchise he
 ## spent most seasons with, once he has retired, spent at least MIN_SEASONS there and reached NUMBER_SCORE on the Hall of Fame score
 ## (lower than induction, so great franchise players are honoured even when they miss the Hall). It happens the season after his last
 ## one with that team.
@@ -231,7 +231,8 @@ func retired_numbers_all(current_year: int) -> Dictionary:
 		honoured.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["ceremony"] < b["ceremony"] if a["ceremony"] != b["ceremony"] else a["player_id"] < b["player_id"])
 		var used := {}
 		for h in honoured:
-			var number := jersey_for(int(h["player_id"]))
+			var worn: FcPlayer = world.players.get_by_id(int(h["player_id"]))
+			var number := worn.jersey_number if worn != null and worn.jersey_number > 0 else jersey_for(int(h["player_id"]))   # the number he wore
 			while used.has(number):
 				number = number % 99 + 1
 			used[number] = true
@@ -240,6 +241,11 @@ func retired_numbers_all(current_year: int) -> Dictionary:
 	return by_team
 
 
-## A player's preferred number, 1 to 99: a steady choice from his id (league players have no stored shirt numbers).
+## A player's preferred number, 1 to 99: a steady choice from his id, spread like real rosters (three players in four wear 1 to 35, the rest
+## anything up to 99). A well-mixed hash (FNV-1a), so players with neighbouring ids do not bunch around the same numbers. Since data version 5
+## players also have a stored number (FcPlayer.jersey_number, FcRosterNumbers); this is the preference it starts from.
 static func jersey_for(player_id: int) -> int:
-	return absi(hash("jersey:%d" % player_id)) % 99 + 1
+	var h := 2166136261
+	for b in ("jersey:%d" % player_id).to_utf8_buffer():
+		h = ((h ^ b) * 16777619) & 0xFFFFFFFF
+	return (h >> 2) % 35 + 1 if h % 4 != 0 else (h >> 2) % 99 + 1

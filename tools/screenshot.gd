@@ -31,6 +31,7 @@ var _stretch := false
 var _text := 1
 var _skin := ""
 var _section := ""
+var _tab := ""   # owner_player: which profile tab to show
 var _touch := false
 var _reduce := false
 var _demo := ""
@@ -63,6 +64,7 @@ func _initialize() -> void:
 			"text": _text = int(kv[1])
 			"skin": _skin = kv[1]
 			"section": _section = kv[1]
+			"tab": _tab = kv[1]
 			"touch": _touch = kv[1] == "1"
 			"reduce": _reduce = kv[1] == "1"
 			"demo": _demo = kv[1]
@@ -201,6 +203,22 @@ func _build_screen() -> void:
 		var wanted := FcOwnerHistory.PAGE_NAMES.find(_section) if _section != "" else 0
 		if pages != null and wanted >= 0:
 			pages.open(wanted, true)
+		return
+	if _screen == "owner_roster_cards":   # the Roster tab in its card view (D-077 M4)
+		_app._owner_ctx().memory["roster_view"] = "cards"
+		_app.show_dashboard()
+		_app._tabs.current_tab = FcApp.TAB_NAMES.find("Roster")
+		return
+	if _screen == "owner_player":   # the full-page profile of the user team's most used player (D-077 M4); tab= picks a profile tab
+		var c := _app.controller
+		var best := 0
+		for pid in c.state.world.teams.get_by_id(c.state.user_team_id).roster.player_ids:
+			if best == 0 or c.season().stats.games_played(pid) > c.season().stats.games_played(best):
+				best = pid
+		_app.navigator.open("player", {"id": best})
+		var page := _app.find_child("PlayerPage", true, false) as FcPlayerProfile
+		if page != null and _tab != "":
+			page.show_tab(_tab)
 		return
 	if _screen == "owner_gameday":
 		var preview := FcGameDay.for_owner(_app.controller)

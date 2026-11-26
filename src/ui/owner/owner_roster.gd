@@ -3,6 +3,8 @@ extends RefCounted
 ## The Owner Roster tab: the user's players as a sortable table with each player's portrait, position, age, height, overall and potential as
 ## rating badges, salary, contract end with a bar of the contract used, per-game stats and health, and the actions that act on the selected
 ## player (extend the contract, release, open the profile). Every column and action of the old table is kept. Built from a FcOwnerContext.
+## A Table / Cards switch (D-077 M4) shows the same roster as player cards (number, rating, potential, this season's line, injury); the actions
+## act on the player selected in whichever view is showing, and the choice is remembered for the game.
 
 
 static func build(ctx: FcOwnerContext) -> Control:
@@ -46,10 +48,38 @@ static func build(ctx: FcOwnerContext) -> Control:
 	]
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", FcUiTokens.SPACE_2)
+	var view: String = str(ctx.memory.get("roster_view", "table"))
+	var switch := FcChoiceGroup.new()
+	switch.set_options([["table", "Table"], ["cards", "Cards"]], view)
+	switch.name = "RosterView"
+	switch.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	box.add_child(switch)
 	var table := FcTable.new(columns, rows, {"row_height": 44, "max_rows": 12, "empty_title": "No players", "empty_text": "The roster is empty."})
 	table.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	table.custom_minimum_size.y = 44 * 8
 	box.add_child(table)
+	var cards: Array = []
+	for r in rows:
+		var p2: FcPlayer = world.players.get_by_id(int(r["id"]))
+		var vm := {"subject": FcPlayerPresentation.subject_for_player(world, int(r["id"])), "name": r["name"], "position": r["pos"], "overall": r["overall"],
+			"potential": r["pot"], "number": str(p2.jersey_number), "team": {"abbreviation": team.identity.abbreviation},
+			"stat_line": "%.1f pts  %.1f reb  %.1f ast" % [r["ppg"], r["rpg"], r["apg"]] if stats.games_played(int(r["id"])) > 0 else "No games yet",
+			"injury": ("Out %d: %s" % [p2.games_out, p2.injury]) if p2.games_out > 0 else ""}
+		cards.append({"id": int(r["id"]), "vm": vm})
+	var grid := FcPlayerCardGrid.new().set_cards(cards, Vector2(150, 236))
+	grid.custom_minimum_size.y = 260
+	grid.name = "RosterCards"
+	box.add_child(grid)
+	table.visible = view == "table"
+	grid.visible = view == "cards"
+	switch.selected.connect(func(id: String) -> void:
+		ctx.memory["roster_view"] = id
+		table.visible = id == "table"
+		grid.visible = id == "cards")
+	var selected_id := func() -> Variant:
+		if grid.visible:
+			return grid.selected_id if grid.selected_id > 0 else null
+		return table.selected_id
 	var hint := FcUiTables.label("Select a player, then extend his contract (only in the last year of the deal), release him, or open his profile.", FcUiTokens.TYPE_SMALL)
 	hint.theme_type_variation = "MutedLabel"
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -69,37 +99,41 @@ static func build(ctx: FcOwnerContext) -> Control:
 	ext_years.tooltip_text = "Length of the new contract in years. Players want long deals when young and short ones when older."
 	ext_years.min_value = 1
 	ext_years.max_value = 5
-	table.row_selected.connect(func(id) -> void:
+	var fill_offer := func(id) -> void:
 		if expiring.has(id):
 			ext_salary.value = expiring[id]["ask"] / 1e6
-			ext_years.value = expiring[id]["years"])
+			ext_years.value = expiring[id]["years"]
+	table.row_selected.connect(fill_offer)
+	grid.player_selected.connect(fill_offer)
 	actions.add_child(FcUiTables.label("Extension $M"))
 	actions.add_child(ext_salary)
 	actions.add_child(FcUiTables.label("years"))
 	actions.add_child(ext_years)
 	actions.add_child(FcButton.make("Extend contract of selected player", FcButton.Variant.SECONDARY, func() -> void:
-		if table.selected_id == null:
+		if selected_id.call() == null:
 			ctx.tell("Select a player first.")
 			return
-		var r := ctx.controller.extend_contract(int(table.selected_id), roundi(ext_salary.value * 1e6), int(ext_years.value))
+		var r := ctx.controller.extend_contract(int(selected_id.call()), roundi(ext_salary.value * 1e6), int(ext_years.value))
 		if r["ok"]:
 			ctx.refresh.call()
 		ctx.tell(r["reason"])))
 	actions.add_child(FcButton.make("Release selected player (pay half his salary)", FcButton.Variant.DESTRUCTIVE, func() -> void:
-		if table.selected_id == null:
+		if selected_id.call() == null:
 			ctx.tell("Select a player first.")
 			return
-		var r := ctx.controller.release_player(int(table.selected_id))
+		var r := ctx.controller.release_player(int(selected_id.call()))
 		if r["released"]:
 			ctx.refresh.call()
 		ctx.tell(r["reason"])))
 	var open_profile := func() -> void:
-		if table.selected_id == null:
+		if selected_id.call() == null:
 			ctx.tell("Select a player first.")
 			return
-		ctx.open_profile.call(int(table.selected_id))
+		ctx.open_profile.call(int(selected_id.call()))
 	actions.add_child(FcButton.make("Player profile of selected player", FcButton.Variant.SECONDARY, open_profile))
 	table.row_activated.connect(func(_id) -> void: open_profile.call())
+	grid.player_activated.connect(func(_id: int) -> void: open_profile.call())
 	box.add_child(actions)
 	box.set_meta("table", table)
+	box.set_meta("cards", grid)
 	return box

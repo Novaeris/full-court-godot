@@ -153,8 +153,11 @@ static func from_player(world: FcWorld, player_id: int, current_year: int, leagu
 	if active != null and active.end_season() > 0:
 		contract = {"salary": active.salary_for(current_year), "through": active.end_season(), "years_left": maxi(0, active.end_season() - current_year + 1),
 			"total": active.total_value(), "cornerstone": active.is_cornerstone, "no_trade": active.no_trade}
+	var season: FcSeason = world.season_of(league_id, current_year) if league_id > 0 else null
 	return {
-		"mode": mode, "subject": subject_for_player(world, player_id, "career_player" if mode == "career" else "owner_player"), "name": p.identity.full_name(), "jersey": 0,
+		"rating_history": world.rating_history.get(player_id, []).duplicate(true), "game_log": game_log_rows(world, season, player_id),
+		"shooting": shooting_profile(season, player_id), "tendencies": _tendencies(world.definitions, p), "contract_years": FcContractBar.years_of(active), "season_year": current_year,
+		"mode": mode, "subject": subject_for_player(world, player_id, "career_player" if mode == "career" else "owner_player"), "name": p.identity.full_name(), "jersey": p.jersey_number,
 		"position": FcPosition.abbreviation(p.primary_position), "secondary": FcPosition.abbreviation(p.secondary_position) if p.secondary_position != 0 else "",
 		"archetype": "", "playstyle": FcPlaystyle.summary(composites), "team": branding_team if not branding_team.is_empty() else {"name": "Free agent"},
 		"physical": {"height_cm": p.physical.height_cm, "weight_kg": p.physical.weight_kg, "wingspan_cm": p.physical.wingspan_cm, "hand": HAND_NAMES[clampi(p.physical.handedness, 0, 2)]},
@@ -268,4 +271,67 @@ static func _attributes(defs: FcDefinitionSet, values: Dictionary) -> Array:
 	for key in defs.attributes.keys():
 		var def := defs.attributes.get_def(key)
 		out.append({"key": key, "name": def.display_name, "category": def.category, "value": int(values.get(key, 0))})
+	return out
+
+
+## The player's game log for a season (D-077 M4), newest first: {"columns": [...], "rows": [[date, opponent, result, min, pts, reb, ast, stl, blk,
+## fg, 3p, ft, +/-], ...]}. Built from the season's stored game logs (the watched team's players and the Career player); empty otherwise.
+static func game_log_rows(world: FcWorld, season: FcSeason, player_id: int) -> Dictionary:
+	var out := {"columns": ["Date", "Opponent", "Result", "MIN", "PTS", "REB", "AST", "STL", "BLK", "FG", "3P", "FT", "+/-"], "rows": []}
+	if season == null or not season.game_logs.has(player_id):
+		return out
+	var rows: Array = []
+	for r in season.game_logs[player_id]:
+		var opp: FcTeam = world.teams.get_by_id(int(r[2]))
+		var game := season.game_by_id(int(r[0]))
+		var result := ""
+		if game != null and game.played:
+			var team_score := game.home_score if int(r[3]) == 1 else game.away_score
+			var opp_score := game.away_score if int(r[3]) == 1 else game.home_score
+			result = "%s %d-%d" % ["W" if team_score > opp_score else "L", team_score, opp_score]
+		rows.append([season.date_of_day(int(r[1])).to_iso(), ("vs " if int(r[3]) == 1 else "@ ") + (opp.identity.abbreviation if opp != null else "?"), result,
+			"%d" % roundi(int(r[5]) / 60.0), int(r[6]), int(r[7]), int(r[8]), int(r[9]), int(r[10]), "%d-%d" % [int(r[11]), int(r[12])], "%d-%d" % [int(r[13]), int(r[14])],
+			"%d-%d" % [int(r[15]), int(r[16])], "%+d" % int(r[19])])
+	rows.reverse()
+	out["rows"] = rows
+	return out
+
+
+## Shooting by the three shot kinds the simulation decides (at the rim, mid-range, three), this season, with the league's percentages for
+## comparison: {"rim": [made, att], "mid": [made, att], "three": [made, att], "league": {"rim": pct, "mid": pct, "three": pct}}. {} when the
+## player has not shot this season.
+static func shooting_profile(season: FcSeason, player_id: int) -> Dictionary:
+	if season == null or not season.stats.lines.has(player_id):
+		return {}
+	var l: Dictionary = season.stats.lines[player_id]
+	if int(l.get("fga", 0)) <= 0:
+		return {}
+	var mine := _kinds(l)
+	var totals := {"rim": [0, 0], "mid": [0, 0], "three": [0, 0]}
+	for pid in season.stats.lines:
+		var k := _kinds(season.stats.lines[pid])
+		for key in totals:
+			totals[key][0] += k[key][0]
+			totals[key][1] += k[key][1]
+	var league := {}
+	for key in totals:
+		if int(totals[key][1]) > 0:
+			league[key] = float(totals[key][0]) / float(totals[key][1])
+	mine["league"] = league
+	return mine
+
+
+static func _kinds(l: Dictionary) -> Dictionary:
+	var rim_m := int(l.get("rim_m", 0))
+	var rim_a := int(l.get("rim_a", 0))
+	var two_m := int(l.get("fgm", 0)) - int(l.get("tpm", 0))
+	var two_a := int(l.get("fga", 0)) - int(l.get("tpa", 0))
+	return {"rim": [rim_m, rim_a], "mid": [maxi(0, two_m - rim_m), maxi(0, two_a - rim_a)], "three": [int(l.get("tpm", 0)), int(l.get("tpa", 0))]}
+
+
+static func _tendencies(defs: FcDefinitionSet, p: FcPlayer) -> Array:
+	var out: Array = []
+	for key in defs.tendencies.keys():
+		var def := defs.tendencies.get_def(key)
+		out.append({"key": key, "name": def.display_name, "description": def.description, "value": p.tendencies.get_value(key)})
 	return out

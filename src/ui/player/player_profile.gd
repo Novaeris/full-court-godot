@@ -39,6 +39,12 @@ func tab_ids() -> Array:
 		out.append("stats")
 	if not (vm["history"]["rows"] as Array).is_empty():
 		out.append("history")
+	if not (vm.get("game_log", {}).get("rows", []) as Array).is_empty():
+		out.append("game_log")
+	if not (vm.get("shooting", {}) as Dictionary).is_empty():
+		out.append("shooting")
+	if not (vm.get("tendencies", []) as Array).is_empty():
+		out.append("tendencies")
 	if not (vm.get("achievements", []) as Array).is_empty():
 		out.append("achievements")
 	if not (vm["awards"] as Array).is_empty():
@@ -61,6 +67,15 @@ func show_tab(id: String) -> void:
 			_body.add_child(FcDataTable.build(vm["stats"]["columns"], vm["stats"]["rows"]))
 		"history":
 			_body.add_child(FcDataTable.build(vm["history"]["columns"], vm["history"]["rows"]))
+		"game_log":
+			_body.add_child(FcDataTable.build(vm["game_log"]["columns"], vm["game_log"]["rows"]))
+		"shooting":
+			_shooting()
+		"tendencies":
+			for t in vm["tendencies"]:
+				var row := _bar_row(str(t["name"]), int(t["value"]))
+				row.tooltip_text = str(t["description"])
+				_body.add_child(row)
 		"achievements":
 			_achievements_tab()
 		"awards":
@@ -234,6 +249,7 @@ func _development_panel() -> FcPanel:
 			panel.add(FcStatLine.make("Skill points", str(progression["skill_points"])))
 		"outlook":
 			panel.add(FcDevelopmentTrack.new().setup(int(progression["age"]), int(progression["peak_age"]), int(progression["overall"]), int(progression["potential"])))
+			_rating_history(panel)
 			var gap := int(progression["potential"]) - int(progression["overall"])
 			panel.add(FcStatLine.make("Overall / potential", "%d / %d" % [progression["overall"], progression["potential"]]))
 			panel.add(FcStatLine.make("Room to grow", "%d" % maxi(0, gap)))
@@ -438,7 +454,64 @@ func _contract_panel() -> FcPanel:
 		flags.add_child(FcStatusChip.make("No-trade clause", FcStatusChip.Tone.WARNING))
 	if flags.get_child_count() > 0:
 		panel.add(flags)
+	var years: Array = vm.get("contract_years", [])
+	if not years.is_empty():
+		var bar := FcContractBar.new().setup(years, int(vm.get("season_year", 0)))
+		bar.custom_minimum_size = Vector2(260, 100)
+		panel.add(bar)
 	return panel
+
+
+## Overall and potential at the end of each season played (only real end-of-season ratings; a chart needs two seasons).
+func _rating_history(panel: FcPanel) -> void:
+	var rows: Array = vm.get("rating_history", [])
+	if rows.size() < 2:
+		return
+	var labels: Array = []
+	var overall: Array = []
+	var potential: Array = []
+	for r in rows:
+		labels.append("%d-%02d" % [int(r[0]), (int(r[0]) + 1) % 100])
+		overall.append(int(r[1]))
+		potential.append(int(r[2]))
+	var chart := FcLineChart.new([{"name": "Overall", "values": overall, "color": FcUiTokens.PRIMARY}, {"name": "Potential", "values": potential, "color": FcUiTokens.INFO}], labels)
+	chart.fill_first = false
+	chart.custom_minimum_size = Vector2(260, 170)
+	chart.name = "RatingHistory"
+	panel.add(chart)
+
+
+## The Shooting tab: the season's shots by kind on a half court, against the league (D-077: the simulation decides the kind, not the spot).
+func _shooting() -> void:
+	var s: Dictionary = vm["shooting"]
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", FcUiTokens.SPACE_4)
+	var chart := FcHeatZones.new().set_kinds({"rim": s["rim"], "mid": s["mid"], "three": s["three"]}, s.get("league", {}))
+	chart.custom_minimum_size = Vector2(340, 320)
+	chart.name = "ShotChart"
+	row.add_child(chart)
+	var numbers := VBoxContainer.new()
+	numbers.custom_minimum_size.x = 260
+	for pair in [["rim", "At the rim"], ["mid", "Mid-range"], ["three", "Three-point"]]:
+		var k: Array = s[pair[0]]
+		var pct := float(k[0]) / float(maxi(1, int(k[1])))
+		var league := float(s.get("league", {}).get(pair[0], 0.0))
+		var name := Label.new()
+		name.text = str(pair[1])
+		name.theme_type_variation = "HeadingLabel"
+		numbers.add_child(name)
+		var value := Label.new()
+		value.text = "%d of %d   %d%%   (league %d%%)" % [int(k[0]), int(k[1]), roundi(pct * 100.0), roundi(league * 100.0)]
+		value.theme_type_variation = "NumericLabel"
+		value.add_theme_color_override("font_color", FcUiTokens.SUCCESS if pct >= league else FcUiTokens.TEXT)
+		numbers.add_child(value)
+	var note := Label.new()
+	note.text = "Shots are grouped by kind. The game simulates whether a shot is at the rim, from mid-range or from three, not the exact spot."
+	note.theme_type_variation = "CaptionLabel"
+	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	numbers.add_child(note)
+	row.add_child(numbers)
+	_body.add_child(row)
 
 
 ## The latest season in one line of numbers (the Stats tab has them all).
