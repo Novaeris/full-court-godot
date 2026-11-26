@@ -41,24 +41,35 @@ static func surname_of(full_name: String) -> String:
 
 
 ## A material for one jersey: the cloth colour and the graphics texture (which fills in a frame later when the drawing finishes).
-static func jersey_material(host: Node, base: Color, number: int, surname: String, wordmark: String, ink: Color, outline: Color) -> ShaderMaterial:
+static func jersey_material(host: Node, base: Color, number: int, surname: String, wordmark: String, ink: Color, outline: Color, panel: Dictionary = {}) -> ShaderMaterial:
 	var m := ShaderMaterial.new()
 	m.shader = shader()
 	m.set_shader_parameter("base_color", base)
+	_set_panel(m, panel)
 	if number > 0 and available():
 		m.set_shader_parameter("graphics", graphics_texture(host, number, surname, wordmark, ink, outline))
 	return m
 
 
 ## Plain cloth (shorts): shared by every player wearing the same colour.
-static func cloth_material(base: Color) -> ShaderMaterial:
-	var key := base.to_html(false)
+static func cloth_material(base: Color, panel: Dictionary = {}) -> ShaderMaterial:
+	var key := base.to_html(false) + JSON.stringify(panel)
 	if not _cloths.has(key):
 		var m := ShaderMaterial.new()
 		m.shader = shader()
 		m.set_shader_parameter("base_color", base)
+		_set_panel(m, panel)
 		_cloths[key] = m
 	return _cloths[key]
+
+
+## Side panels: {"color": Color, "piping": Color, "width": float (texture units; 0.035 is about 8 cm)}. Empty = no panel.
+static func _set_panel(m: ShaderMaterial, panel: Dictionary) -> void:
+	if panel.is_empty():
+		return
+	m.set_shader_parameter("panel_color", panel["color"])
+	m.set_shader_parameter("piping_color", panel["piping"])
+	m.set_shader_parameter("panel_width", float(panel.get("width", 0.035)))
 
 
 ## The texture for a graphic: from the cache when it exists, otherwise a blank texture that is filled in once the viewport has drawn it.

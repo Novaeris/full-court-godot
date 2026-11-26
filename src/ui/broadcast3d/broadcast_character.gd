@@ -322,11 +322,11 @@ func _dress_v2() -> void:
 		elif base == "jersey":
 			var number := jersey_number if str(uniform["attire"]) == "playing" else 0
 			if FcJerseyGraphics.available():
-				mi.material_override = FcJerseyGraphics.jersey_material(self, primary, number, _surname, str(uniform["abbreviation"]), secondary, primary.darkened(0.55))
+				mi.material_override = FcJerseyGraphics.jersey_material(self, primary, number, _surname, str(uniform["abbreviation"]), secondary, primary.darkened(0.55), _panel(primary, secondary, 0.028))
 			else:
-				mi.material_override = FcJerseyGraphics.cloth_material(primary)
+				mi.material_override = FcJerseyGraphics.cloth_material(primary, _panel(primary, secondary, 0.028))
 		elif base == "shorts":
-			mi.material_override = FcJerseyGraphics.cloth_material(shorts)
+			mi.material_override = FcJerseyGraphics.cloth_material(shorts, _panel(shorts, secondary, 0.04))
 		elif base == "socks":
 			mi.material_override = FcJerseyGraphics.cloth_material(socks)
 		elif base in ["trim", "shoes", "sole"] or base.begins_with("equip_") or base.begins_with("acc_"):
@@ -344,6 +344,11 @@ func _scale_arms() -> void:
 		var along := (skeleton.get_bone_rest(child).origin).normalized()   # the bone axis in its own frame
 		var s := Vector3(lerpf(1.0, arm_scale, absf(along.x)), lerpf(1.0, arm_scale, absf(along.y)), lerpf(1.0, arm_scale, absf(along.z)))
 		skeleton.set_bone_pose_scale(idx, s)
+
+
+## The side panel of a V2 uniform piece: a darker band of the cloth colour edged by piping in the trim colour.
+func _panel(cloth: Color, trim: Color, width: float) -> Dictionary:
+	return {"color": cloth.darkened(0.32), "piping": trim, "width": width}
 
 
 ## Widens or narrows the head by the face width of the identity: the head bone is scaled across the body, in the bone own axes.
