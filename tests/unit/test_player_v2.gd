@@ -166,3 +166,12 @@ func test_home_away_and_alternate_kits() -> void:
 		c.free()
 	assert_true(colours["home"] != colours["away"] and colours["home"] != colours["alternate"] and colours["away"] != colours["alternate"], "three different kits: %s" % str(colours))
 	assert_true((colours["away"] as Color).get_luminance() > 0.6, "the away kit is the light one")
+
+
+func test_the_game_files_come_from_the_master() -> void:
+	var root := (load(BODY) as PackedScene).instantiate()
+	var armature := root.find_child("Armature", true, false)
+	var extras: Dictionary = armature.get_meta("extras", {}) if armature != null and armature.has_meta("extras") else {}
+	assert_true(str(extras.get("fc_master", "")).contains("master player"), "exported from the master Blender file (D-076)")
+	assert_true((extras.get("fc_master_passes", []) as Array).size() >= 1, "the modeling passes are recorded: %s" % str(extras.get("fc_master_passes", [])))
+	root.free()

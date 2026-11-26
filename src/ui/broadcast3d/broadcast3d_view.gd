@@ -112,7 +112,9 @@ func _build_all_characters(colors: Array) -> void:
 	FcBroadcastCharacter.defer_v2_bake = true
 	_build_characters(colors)
 	FcBroadcastCharacter.defer_v2_bake = false
-	FcPlayerLod.bake_progressively(characters.values(), self)   # no freeze: baked a little each frame (officials and coaches have nothing to bake)
+	# baked while the screen opens (about 35 ms a new player, the engine morph bake cannot run on a worker thread); a player seen before comes from
+	# the cache at once. Baking during play instead would make visible hitches (measured 127 ms worst frame).
+	FcPlayerLod.bake_characters(characters.values())
 
 
 func _build_staff(colors: Array) -> void:

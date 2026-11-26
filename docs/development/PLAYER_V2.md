@@ -46,3 +46,6 @@ Everything is part of the generator, so every player of the roster gets it (`doc
 
 ## Master workflow (D-076, 2026-11-26)
 From now on the game files are exported from ONE master Blender file, `art_source/players/fc_master_player.blend`, not regenerated: `./tools/blender/run_blender.ps1 -b art_source/players/fc_master_player.blend --python tools/blender/master/export_master.py`. See `art_source/README.md`. Approval renders: `tools/blender/master/render_master.py` and `tools/reference_scene.gd`; pictures in `docs/validation/player_master/`.
+
+Master passes (scripts in `tools/blender/master/`, all back up the master first and keep every morph): `pass_bake_shape.py` (bake a mix of morphs into the base), `pass_uniform.py` (jersey and shorts hang, bridge hollows), `pass_uniform_fit.py` (jersey top binding, panel distance field), `pass_uv_smooth.py`, `pass_shoes.py` (accent zones), `pass_hair.py` (density softening). One command for the whole cycle: `./tools/blender/master/export_and_check.ps1`.
+

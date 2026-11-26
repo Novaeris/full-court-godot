@@ -22,6 +22,7 @@ static func _chained(mesh_name: String) -> bool:
 	return false
 
 
+static var _lod_indices: Dictionary = {}   # "mesh name|vertex count" -> per surface {distance: indices}, shared by every player
 static var _cache: Dictionary = {}   # "player key|mesh|weights" -> mesh with LODs (a player seen again is not rebuilt)
 static var _order: Array[String] = []
 const CACHE_LIMIT := 400
@@ -103,14 +104,28 @@ static func clear_cache() -> void:
 static func with_lods(mesh: ArrayMesh, mesh_name: String) -> Mesh:
 	if not _chained(mesh_name) or mesh.get_surface_count() == 0:
 		return mesh
-	var im := ImporterMesh.new()
+	# every player's mesh of one name has the SAME topology (only the morph mix differs), so the LOD index lists are computed once and reused: a
+	# player then costs one array copy instead of a mesh simplification (about 55 ms for the skin)
+	var key := "%s|%d" % [mesh_name, mesh.surface_get_array_len(0)]
+	if not _lod_indices.has(key):
+		var im := ImporterMesh.new()
+		for sidx in mesh.get_surface_count():
+			im.add_surface(mesh.surface_get_primitive_type(sidx), mesh.surface_get_arrays(sidx), [], {}, mesh.surface_get_material(sidx), mesh.surface_get_name(sidx), mesh.surface_get_format(sidx))
+		im.generate_lods(25.0, 60.0, [])
+		var per_surface: Array = []
+		for sidx in im.get_surface_count():
+			var lods := {}
+			for l in im.get_surface_lod_count(sidx):
+				lods[im.get_surface_lod_size(sidx, l)] = im.get_surface_lod_indices(sidx, l)
+			per_surface.append(lods)
+		_lod_indices[key] = per_surface
+	var per: Array = _lod_indices[key]
+	var out := ArrayMesh.new()
 	for sidx in mesh.get_surface_count():
-		im.add_surface(mesh.surface_get_primitive_type(sidx), mesh.surface_get_arrays(sidx), [], {}, mesh.surface_get_material(sidx), mesh.surface_get_name(sidx), mesh.surface_get_format(sidx))
-	im.generate_lods(25.0, 60.0, [])
-	var out := im.get_mesh()
-	if out == null or out.get_surface_count() != mesh.get_surface_count():
-		return mesh
-	out.set_meta("fc_lod_levels", 1 + im.get_surface_lod_count(0))
+		var lods: Dictionary = per[sidx] if sidx < per.size() else {}
+		out.add_surface_from_arrays(mesh.surface_get_primitive_type(sidx), mesh.surface_get_arrays(sidx), [], lods, mesh.surface_get_format(sidx))
+		out.surface_set_material(sidx, mesh.surface_get_material(sidx))
+	out.set_meta("fc_lod_levels", 1 + (per[0] as Dictionary).size() if per.size() > 0 else 1)
 	return out
 
 
