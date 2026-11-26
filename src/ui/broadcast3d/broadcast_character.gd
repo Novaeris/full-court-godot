@@ -329,7 +329,11 @@ func _dress_v2() -> void:
 			mi.material_override = FcJerseyGraphics.cloth_material(shorts, _panel(shorts, secondary, 0.04))
 		elif base == "socks":
 			mi.material_override = FcJerseyGraphics.cloth_material(socks)
-		elif base in ["trim", "shoes", "sole"] or base.begins_with("equip_") or base.begins_with("acc_"):
+		elif base == "shoes":
+			# the shoe colour of the player, with the other team colour (or white on a dark shoe) as the accent
+			var accent: Color = primary if shoe.get_luminance() > 0.5 and absf(shoe.get_luminance() - primary.get_luminance()) > 0.15 else (secondary if shoe != secondary else Color.WHITE)
+			mi.material_override = FcPlayerV2Materials.shoe(shoe, accent)
+		elif base in ["trim", "sole"] or base.begins_with("equip_") or base.begins_with("acc_"):
 			var c: Color = {"trim": secondary, "shoes": shoe, "sole": Color.WHITE}.get(base, secondary if base != "equip_laces" else Color.WHITE)
 			mi.material_override = FcPlayerAssetLibrary.shared_material(base.get_slice("_", 0), c, 0.68 if base == "shoes" else 0.8)   # synthetic upper, matte rubber
 

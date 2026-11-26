@@ -74,5 +74,18 @@ static func hair(color: Color, facial: bool = false) -> Material:
 	return _cache[key]
 
 
+## Two-tone basketball shoe: the base colour on the knit, the accent on the zones painted in the master (player_shoe.gdshader).
+static func shoe(base: Color, accent: Color) -> Material:
+	var key := "shoe|%s|%s" % [base.to_html(false), accent.to_html(false)]
+	if not _cache.has(key):
+		var m := ShaderMaterial.new()
+		m.shader = load("res://src/ui/broadcast3d/player_shoe.gdshader") as Shader
+		m.set_shader_parameter("base_color", base)
+		m.set_shader_parameter("accent_color", accent)
+		m.resource_name = "shoes"
+		_cache[key] = m
+	return _cache[key]
+
+
 static func clear_cache() -> void:
 	_cache.clear()
