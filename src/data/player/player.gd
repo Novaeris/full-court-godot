@@ -25,6 +25,8 @@ var primary_position: int = FcPosition.Id.SF
 var secondary_position: int = FcPosition.Id.NONE
 ## Games the player will still miss because of injury (0 = healthy) and what it is.
 var games_out: int = 0
+## The number on the shirt, 1-99, unique within the team (FcRosterNumbers; 0 = none yet, e.g. a save made before numbers were stored).
+var jersey_number: int = 0
 var injury: String = ""
 
 var identity := FcPersonIdentity.new()
@@ -84,7 +86,7 @@ func to_dict() -> Dictionary:
 		"retired_season": retired_season,
 		"primary_position": primary_position,
 		"secondary_position": secondary_position,
-		"games_out": games_out, "injury": injury,
+		"games_out": games_out, "injury": injury, "jersey_number": jersey_number,
 		"identity": identity.to_dict(),
 		"physical": physical.to_dict(),
 		"development": development.to_dict(),
@@ -101,6 +103,7 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet) -> FcPlayer:
 	p.primary_position = int(data.get("primary_position", FcPosition.Id.SF))
 	p.secondary_position = int(data.get("secondary_position", FcPosition.Id.NONE))
 	p.games_out = int(data.get("games_out", 0))
+	p.jersey_number = int(data.get("jersey_number", 0))
 	p.injury = str(data.get("injury", ""))
 	p.identity = FcPersonIdentity.from_dict(data.get("identity", {}))
 	p.physical = FcPlayerPhysical.from_dict(data.get("physical", {}))

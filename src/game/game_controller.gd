@@ -47,7 +47,77 @@ static func resume(game_state: FcGameState) -> FcGameController:
 	if c.season() == null:
 		c._start_season(game_state.current_season)
 	c._update_date()
+	c.renumber()   # a new league, or a save made before numbers were stored (D-077 C7)
+	c._ensure_objectives()
 	return c
+
+
+## Makes every rostered player's jersey number valid (unique per team, no retired numbers; FcRosterNumbers). Called after anything that
+## changes rosters. A Career player keeps the number chosen in the creator.
+func renumber() -> int:
+	var pinned := {}
+	for profile in state.career_profiles:
+		if profile.player_id > 0 and profile.jersey_number > 0:
+			pinned[profile.player_id] = profile.jersey_number
+	return FcRosterNumbers.ensure_all(state.world, state.current_season, pinned)
+
+
+## The owner's objectives for the current season (Owner Mode), set once when the season starts (D-077 C3). Empty in other modes.
+func objectives() -> Array:
+	return state.owner_objectives.get(state.current_season, [])
+
+
+func _ensure_objectives() -> void:
+	if state.mode != FcGameState.MODE_OWNER or state.owner_objectives.has(state.current_season):
+		return
+	var s := season()
+	if s == null or s.status == FcSeason.Status.COMPLETE:
+		return
+	var w := state.world
+	var rules := w.rules_of_league(league_id)
+	var games := 0
+	for g in s.games:
+		if g.series == 0 and g.involves(state.user_team_id):
+			games += 1
+	var payroll_rank := 1
+	var mine := w.payroll_of_team(state.user_team_id, state.current_season)
+	var teams := 0
+	for t in w.teams.all():
+		if w.leagues.get_by_id(league_id).contains_team(t.id):
+			teams += 1
+			if w.payroll_of_team(t.id, state.current_season) > mine:
+				payroll_rank += 1
+	var finance := FcFinanceEngine.new(w)
+	var last := finance.record_of(state.user_team_id, state.current_season - 1)
+	var expected := games * clampf(0.62 - 0.012 * (payroll_rank - 1) * 30.0 / maxf(1.0, teams), 0.30, 0.65)
+	state.owner_objectives[state.current_season] = FcOwnerObjectives.generate({"games": games, "expected_wins": expected,
+		"last_wins": last.wins if last != null else -1, "last_profit": last.profit() if last != null else 0, "has_books": last != null,
+		"playoff_teams": rules.playoffs.team_count if rules != null else 8, "teams": teams})
+
+
+## Judges the season's objectives once it is over (books settled) and returns them judged; [] when there were none or they were judged
+## already. Called only from _record_owner_season, the one place a season counts for the owner.
+func _judge_objectives(finished: FcSeason) -> Array:
+	var list: Array = state.owner_objectives.get(finished.year, [])
+	if list.is_empty() or str(list[0].get("status", "")) != FcOwnerObjectives.STATUS_OPEN:
+		return []
+	var w := state.world
+	var standings := engine.standings_of(finished)
+	var round_reached := 0
+	if finished.playoffs != null:
+		round_reached = finished.playoffs.rounds_reached(state.user_team_id)
+	var rec := FcFinanceEngine.new(w).record_of(state.user_team_id, finished.year)
+	var young := 0.0
+	var half := maxi(1, standings.games_played(state.user_team_id) / 2)
+	for pid in finished.stats.lines:
+		var l: Dictionary = finished.stats.lines[pid]
+		var p: FcPlayer = w.players.get_by_id(int(pid))
+		if p != null and int(l["team"]) == state.user_team_id and int(l["gp"]) >= half and p.age_on(FcDate.new(finished.year, 7, 1)) <= 23:
+			young = maxf(young, finished.stats.per_game(int(pid), "minutes"))
+	var judged := FcOwnerObjectives.evaluate(list, {"wins": int(standings.records.get(state.user_team_id, {"w": 0})["w"]), "playoff_round": round_reached,
+		"profit": rec.profit() if rec != null else null, "young_minutes": young})
+	state.owner_objectives[finished.year] = judged
+	return judged
 
 
 ## Career Mode: the team being followed changes (the career player was signed or moved).
@@ -61,6 +131,7 @@ func _prepare_engine() -> void:
 	engine = FcSeasonEngine.for_league(state.world, league_id)
 	engine.human_teams = [state.user_team_id] as Array[int] if state.mode == FcGameState.MODE_OWNER else ([] as Array[int])
 	engine.watched_teams = [state.user_team_id] as Array[int]
+	engine.logged_players = [career_player_id] as Array[int] if career_player_id > 0 else ([] as Array[int])
 
 
 func _start_season(year: int) -> FcSeason:
@@ -151,6 +222,8 @@ func start_next_season() -> Dictionary:
 	_prepare_engine()
 	_start_season(state.current_season)
 	_update_date()
+	renumber()
+	_ensure_objectives()
 	return report
 
 
@@ -331,6 +404,7 @@ func propose_trade(ai_team_id: int, give_ids: Array, get_ids: Array, preview: bo
 	if state.offseason_stage == 2:
 		return {"accepted": false, "reason": "Finish the draft first."}
 	var desk := FcTradeDesk.new(state.world)
+	desk.today = state.current_date
 	var result := desk.propose(league_id, contract_year(), state.user_team_id, ai_team_id, give_ids, get_ids, is_contending(ai_team_id), not preview, give_picks, get_picks, first_tradable_pick_year(), gm_negotiation(), ai_wariness(ai_team_id))
 	if result["accepted"] and not preview:
 		_relation(ai_team_id)["wary"] = mini(6, ai_wariness(ai_team_id) + 2)   # that club remembers the deal
@@ -448,7 +522,9 @@ func _record_owner_season() -> void:
 		return
 	var title := 1 if season().champion_id == state.user_team_id else 0
 	history.append([year, state.user_team_id, report["approval"], report["wins"], title])
-	state.owner_career["reputation"] = clampi(roundi(0.7 * owner_reputation() + 0.3 * report["approval"]) + 5 * title, 0, 100)
+	# the season counts once: approval, a title and the season's objectives (D-077 C3) move the reputation together
+	var judged := _judge_objectives(season())
+	state.owner_career["reputation"] = clampi(roundi(0.7 * owner_reputation() + 0.3 * report["approval"]) + 5 * title + FcOwnerObjectives.reputation_delta(judged), 0, 100)
 
 
 ## Franchises ranked by value, as a fraction: 0 = the least valuable team, 1 = the most.
@@ -1369,7 +1445,8 @@ func sign_free_agent(player_id: int, salary_offered: int = -1, years_offered: in
 	w.contracts.add(c)
 	if use_mle:
 		business().mid_level_used_season = year
-	w.add_news(today, "signing", "%s sign %s" % [w.team_display_name(team.id), p.identity.full_name()], team.id)
+	w.add_transaction(today, "signing", "%s sign %s" % [w.team_display_name(team.id), p.identity.full_name()], team.id, [p.id])
+	renumber()
 	return {"signed": true, "reason": "Signed %s for %s a year over %d years." % [p.identity.full_name(), "$%.2fM" % (offer / 1e6), c.length()]}
 
 
@@ -1396,7 +1473,7 @@ func release_player(player_id: int) -> Dictionary:
 	b.cash -= paid
 	b.debt += cost - paid
 	var name := w.player_name(player_id)
-	w.add_news(state.current_date, "signing", "%s release %s" % [w.team_display_name(team.id), name], team.id)
+	w.add_transaction(state.current_date, "release", "%s release %s" % [w.team_display_name(team.id), name], team.id, [player_id])
 	return {"released": true, "reason": "Released %s. Buyout cost: $%.1fM." % [name, cost / 1e6]}
 
 

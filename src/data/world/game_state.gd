@@ -74,6 +74,16 @@ var owner_career: Dictionary = {"reputation": 40, "history": [], "transfer_year"
 const START_REPUTATION := 40
 ## The draft while it is under way (stage 2), see FcOffseason.prepare_draft. Empty otherwise.
 var draft_state: Dictionary = {}
+## Owner objectives by season (D-077 C3): {year: [objective dictionaries]} (FcOwnerObjectives). Set once when a season starts, judged once at its end.
+var owner_objectives: Dictionary = {}
+## How the season clock runs (D-077 H): speed and pause rules. Missing keys take DEFAULT_SIM_PREFS.
+var sim_prefs: Dictionary = {}
+const DEFAULT_SIM_PREFS := {"speed": "normal", "pause_user_games": true, "pause_playoff_games": true, "pause_injuries": true, "pause_trade_offers": true,
+	"pause_contract_offers": true, "pause_transactions": false, "pause_deadline": true, "pause_draft": true, "pause_all_star": true,
+	"pause_season_transitions": true, "auto_sim_other_games": true, "autosave_days": 7}
+## The ledger of processed things (D-077 B): {key: ISO date processed}. Keys: "event:<season>:<kind>", "report:<season>:<day>",
+## "award:<season>:<period>:<n>" ... A key present means "done; never do it again".
+var ledger: Dictionary = {}
 
 
 func _init(game_world: FcWorld, random: FcRng) -> void:
@@ -138,9 +148,36 @@ func to_dict() -> Dictionary:
 		"ai_relations": ai_relations.duplicate(true),
 		"owner_career": owner_career.duplicate(true),
 		"draft_state": draft_state.duplicate(true),
+		"owner_objectives": _objectives_for_json(),
+		"sim_prefs": sim_prefs.duplicate(),
+		"ledger": ledger.duplicate(),
 		"rng": rng.get_state(),
 		"world": world.to_dict(),
 	}
+
+
+func _objectives_for_json() -> Dictionary:
+	var out := {}
+	for year in owner_objectives:
+		out[str(year)] = (owner_objectives[year] as Array).duplicate(true)
+	return out
+
+
+## A sim preference, with its default when it was never set.
+func sim_pref(key: String) -> Variant:
+	return sim_prefs.get(key, DEFAULT_SIM_PREFS.get(key))
+
+
+func ledger_has(key: String) -> bool:
+	return ledger.has(key)
+
+
+## Marks a key as processed (the first date wins). Returns false when it was already there (the caller must not process it again).
+func ledger_mark(key: String, iso: String) -> bool:
+	if ledger.has(key):
+		return false
+	ledger[key] = iso
+	return true
 
 
 static func _restructuring_rows(raw) -> Array:
@@ -267,6 +304,25 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 			s.agreed_terms[int(key)] = [int(raw_terms[key][0]), int(raw_terms[key][1])]
 	for pid in data.get("agreed_extensions", []):
 		s.agreed_extensions.append(int(pid))
+	var raw_objectives = data.get("owner_objectives", {})   # data version 5: missing = none
+	if raw_objectives is Dictionary:
+		for key in raw_objectives:
+			var rows: Array = []
+			for o in raw_objectives[key]:
+				if o is Dictionary:
+					rows.append({"kind": str(o.get("kind", "")), "text": str(o.get("text", "")), "target": int(o.get("target", 0)), "actual": int(o.get("actual", 0)),
+						"met": bool(o.get("met", false)), "status": str(o.get("status", FcOwnerObjectives.STATUS_OPEN))})
+			s.owner_objectives[int(key)] = rows
+	var raw_prefs = data.get("sim_prefs", {})
+	if raw_prefs is Dictionary:
+		for key in raw_prefs:
+			if DEFAULT_SIM_PREFS.has(key):
+				var default_value = DEFAULT_SIM_PREFS[key]
+				s.sim_prefs[str(key)] = int(raw_prefs[key]) if default_value is int else (bool(raw_prefs[key]) if default_value is bool else str(raw_prefs[key]))
+	var raw_ledger = data.get("ledger", {})
+	if raw_ledger is Dictionary:
+		for key in raw_ledger:
+			s.ledger[str(key)] = str(raw_ledger[key])
 	var d := FcDate.from_iso(str(data.get("current_date", "")))
 	s.current_date = d if d != null else FcDate.new(0, 0, 0)
 	return s

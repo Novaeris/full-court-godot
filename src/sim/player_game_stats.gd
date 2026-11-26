@@ -23,6 +23,9 @@ var blk: int = 0
 var tov: int = 0
 var pf: int = 0
 var plus_minus: int = 0
+## Field goals at the rim made and attempted (the RIM shot kind; mid-range = two-point attempts minus these).
+var rim_m: int = 0
+var rim_a: int = 0
 
 
 func rebounds() -> int:
@@ -39,6 +42,7 @@ func to_dict() -> Dictionary:
 		"started": started, "seconds": seconds, "points": points, "fgm": fgm, "fga": fga,
 		"tpm": tpm, "tpa": tpa, "ftm": ftm, "fta": fta, "oreb": oreb, "dreb": dreb,
 		"ast": ast, "stl": stl, "blk": blk, "tov": tov, "pf": pf, "plus_minus": plus_minus,
+		"rim_m": rim_m, "rim_a": rim_a,
 	}
 
 
@@ -49,6 +53,6 @@ static func from_dict(d: Dictionary) -> FcPlayerGameStats:
 	s.name = str(d.get("name", ""))
 	s.position = int(d.get("position", 0))
 	s.started = bool(d.get("started", false))
-	for key in ["seconds", "points", "fgm", "fga", "tpm", "tpa", "ftm", "fta", "oreb", "dreb", "ast", "stl", "blk", "tov", "pf", "plus_minus"]:
+	for key in ["seconds", "points", "fgm", "fga", "tpm", "tpa", "ftm", "fta", "oreb", "dreb", "ast", "stl", "blk", "tov", "pf", "plus_minus", "rim_m", "rim_a"]:
 		s.set(key, int(d.get(key, 0)))
 	return s

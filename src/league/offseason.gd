@@ -278,8 +278,9 @@ func _sign(team: FcTeam, player: FcPlayer, salary: int, years: int, first_season
 		first_season, years, salary, rules.cap, today)
 	world.contracts.add(c)
 	team.roster.add(player.id)
-	if salary >= rules.cap.max_player_salary * 0.55:
-		world.add_news(today, "signing", "%s sign %s for %s a year over %d years" % [world.team_display_name(team.id), player.identity.full_name(), "$%.1fM" % (salary / 1e6), years], team.id)
+	# every signing is a transaction; only the big ones are news
+	world.add_transaction(today, "signing", "%s sign %s for %s a year over %d years" % [world.team_display_name(team.id), player.identity.full_name(), "$%.1fM" % (salary / 1e6), years],
+		team.id, [player.id], 0, "signing" if salary >= rules.cap.max_player_salary * 0.55 else "")
 
 
 # --- 4. the draft ----------------------------------------------------------------------------
@@ -692,7 +693,7 @@ func staff_rollover(league_id: int, finished_year: int, new_year: int, rng: FcRn
 ## Staff changes are reported as news for teams a human owns (the AI teams' changes are not).
 func _staff_news(date: FcDate, team_id: int, text: String) -> void:
 	if human_team_ids.has(team_id):
-		world.add_news(date, "staff", text, team_id)
+		world.add_transaction(date, "staff", text, team_id, [], 0, "staff")
 
 
 func _names_taken_staff() -> Dictionary:

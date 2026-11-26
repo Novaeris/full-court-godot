@@ -22,6 +22,8 @@ const MARGIN := 2.0
 ## Picks are only added when they help: this much of an uneven split is accepted instead.
 const PICK_RELUCTANCE := 3.0
 
+## The date written on the trades this object makes (null = the offseason default, 2 July). The season clock sets it for in-season trades.
+var trade_date: FcDate = null
 var world: FcWorld
 var market: FcPlayerMarket
 
@@ -213,5 +215,8 @@ func _try_trade(rules: FcLeagueRules, seller_id: int, buyer_id: int, new_year: i
 	if chosen_pick != null:
 		world.set_pick_owner(chosen_pick[0], chosen_pick[1], chosen_pick[2], seller_id)
 		back.append("a %d %s-round pick" % [chosen_pick[0], "first" if chosen_pick[1] == 1 else "second"])
-	world.add_news(FcDate.new(new_year, 7, 2), "signing", "%s trade %s to %s for %s" % [world.team_display_name(seller_id), veteran.identity.full_name(), world.team_display_name(buyer_id), " and ".join(back)], buyer_id)
+	var moved: Array = [veteran.id]
+	if chosen_young != null:
+		moved.append(chosen_young.id)
+	world.add_transaction(trade_date if trade_date != null else FcDate.new(new_year, 7, 2), "trade", "%s trade %s to %s for %s" % [world.team_display_name(seller_id), veteran.identity.full_name(), world.team_display_name(buyer_id), " and ".join(back)], buyer_id, moved, seller_id)
 	return true

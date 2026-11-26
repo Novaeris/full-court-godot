@@ -30,3 +30,9 @@ Evidence for each milestone of [the programme](../roadmap/franchise-experience-o
   - The team header band drew white (a gradient texture built inside `_draw` is not ready on its first frame). It now uses vertex colours.
   - The shot chart showed grid lines (overlapping translucent cells). It now uses pixel-aligned cells.
 - Tests: unit 1,756 passed, live 241 passed, `validate_project` 0 problems, Studio smoke PASS.
+
+### M2
+- `test_franchise_data` (15 tests) covers ids, lines, day logs, the integrity check (including tampering), game logs, columns, transactions, ratings, numbers, objectives, preferences, the ledger, availability, and migration of the real v4 fixture with an exact save round trip.
+- Simulation unchanged: `tools/simulate_games.gd games=400 strict=1` gives identical output at M1 and M2, apart from timing. All 16 checks are in range.
+- Save size: `tools/play_seasons.ps1 seasons=50 teams=12 seed=7` gives a 6.1 MB save (5.2 MB before; the limit is 1.5x). Written in 0.9 s, loaded in 1.1 s.
+- Fixed during M2: two reputation tests and two version tests were updated. Objectives now count in the one place a season counts (`_record_owner_season`), so they can never be counted twice.

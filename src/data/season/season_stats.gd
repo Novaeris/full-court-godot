@@ -6,6 +6,9 @@ extends RefCounted
 
 const KEYS := ["gp", "seconds", "points", "fgm", "fga", "tpm", "tpa", "ftm", "fta",
 	"oreb", "dreb", "ast", "stl", "blk", "tov", "pf"]
+## Columns kept for the season only (not copied into career rows): games started and shots at the rim made and attempted (D-077: the
+## shot chart shows the three shot kinds the simulation decides: at the rim, mid-range, three).
+const EXTRA_KEYS := ["gs", "rim_m", "rim_a"]
 
 ## player id -> Dictionary with KEYS plus "team" (team id of his latest game) and "name"
 var lines: Dictionary = {}
@@ -17,7 +20,7 @@ func add_box_score(box: FcBoxScore) -> void:
 			continue
 		if not lines.has(p.player_id):
 			var blank := {"team": p.team_id, "name": p.name}
-			for k in KEYS:
+			for k in KEYS + EXTRA_KEYS:
 				blank[k] = 0
 			lines[p.player_id] = blank
 		var l: Dictionary = lines[p.player_id]
@@ -27,6 +30,9 @@ func add_box_score(box: FcBoxScore) -> void:
 		l["points"] += p.points
 		for k in ["fgm", "fga", "tpm", "tpa", "ftm", "fta", "oreb", "dreb", "ast", "stl", "blk", "tov", "pf"]:
 			l[k] += int(p.get(k))
+		l["gs"] += 1 if p.started else 0
+		l["rim_m"] += p.rim_m
+		l["rim_a"] += p.rim_a
 
 
 func games_played(player_id: int) -> int:
@@ -75,6 +81,8 @@ func to_dict() -> Dictionary:
 		var row: Array = [l["team"], l["name"]]
 		for k in KEYS:
 			row.append(l[k])
+		for k in EXTRA_KEYS:
+			row.append(int(l.get(k, 0)))
 		out[str(pid)] = row
 	return out
 
@@ -86,5 +94,7 @@ static func from_dict(d: Dictionary) -> FcSeasonStats:
 		var l := {"team": int(row[0]), "name": str(row[1])}
 		for i in KEYS.size():
 			l[KEYS[i]] = int(row[2 + i])
+		for i in EXTRA_KEYS.size():   # seasons saved before these columns existed read as zero
+			l[EXTRA_KEYS[i]] = int(row[2 + KEYS.size() + i]) if row.size() > 2 + KEYS.size() + i else 0
 		s.lines[int(pid)] = l
 	return s

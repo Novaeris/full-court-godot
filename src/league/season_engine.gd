@@ -23,6 +23,11 @@ var watched_teams: Array[int] = []
 var composite_bonuses: Dictionary = {}
 ## Career Mode: {player id: {"role_bonus", "minutes_pref", "usage_pref"}} for the career player (empty elsewhere).
 var role_inputs: Dictionary = {}
+## Players whose game logs are kept even when their team is not watched (the Career player).
+var logged_players: Array[int] = []
+# What the day being played has done (reset by play_day / play_playoff_day): the day log entry is built from these.
+var _day_injuries: Array = []
+var _day_returns: Array = []
 
 
 func _init(world: FcWorld, era: String = "") -> void:
@@ -49,6 +54,8 @@ func start_season(league_id: int, year: int, start_date: FcDate, rng: FcRng) -> 
 	season.year = year
 	season.start_date = start_date
 	season.games = FcScheduleBuilder.build(league, rules.season, rng.fork("calendar"))
+	for g in season.games:
+		g.id = _world.ids.next_id(FcScheduledGame.KIND)
 	_world.seasons.add(season)
 	return season
 
@@ -67,12 +74,28 @@ func play_day(season: FcSeason, rng: FcRng) -> int:
 	if season.status != FcSeason.Status.REGULAR or season.regular_season_complete():
 		return 0
 	var played := 0
+	_day_injuries = []
+	_day_returns = []
+	var ids: Array = []
 	for g in season.games_on_day(season.next_day):
 		if not g.played:
 			_play_game(season, g, rng, false)
 			played += 1
+			ids.append(g.id)
+	_log_day(season, season.next_day, ids, true)
 	season.next_day += 1
 	return played
+
+
+## The day log entry of a processed day (D-077 B): the games played, new injuries, returns and (regular season) the standings checksum.
+func _log_day(season: FcSeason, day: int, game_ids: Array, with_checksum: bool) -> void:
+	var entry: Dictionary = season.day_log.get(day, {"g": [], "i": [], "r": [], "e": [], "t": []})
+	entry["g"].append_array(game_ids)
+	entry["i"].append_array(_day_injuries)
+	entry["r"].append_array(_day_returns)
+	if with_checksum:
+		entry["c"] = FcSimIntegrity.standings_checksum(standings_of(season))
+	season.day_log[day] = entry
 
 
 func play_days(season: FcSeason, days: int, rng: FcRng) -> int:
@@ -108,11 +131,16 @@ func play_playoff_day(season: FcSeason, rng: FcRng) -> int:
 	var day := season.total_days() + PLAYOFF_GAP_DAYS + po.day
 	var played := 0
 	var any_finished := false
+	_day_injuries = []
+	_day_returns = []
+	var ids: Array = []
 	for s in po.ready_series():
 		var home := s.next_home_team()
 		var away := s.team_b if home == s.team_a else s.team_a
 		var g := FcScheduledGame.new(day, home, away)
 		g.series = s.number
+		g.id = _world.ids.next_id(FcScheduledGame.KIND)
+		ids.append(g.id)
 		_play_game(season, g, rng, true)
 		season.games.append(g)
 		if s.record_game(g.winner_id()):
@@ -120,6 +148,7 @@ func play_playoff_day(season: FcSeason, rng: FcRng) -> int:
 		played += 1
 	if any_finished:
 		FcPlayoffBuilder.advance(po)
+	_log_day(season, day, ids, false)
 	po.day += 1
 	if po.is_complete():
 		finish_season(season)
@@ -153,6 +182,7 @@ func finish_season(season: FcSeason) -> void:
 	season.awards = compute_awards(season, standings)
 	season.status = FcSeason.Status.COMPLETE
 	_world.record_career(season)
+	_record_ratings(season.year)
 	var end_day := season.total_days() + PLAYOFF_GAP_DAYS + (season.playoffs.day if season.playoffs != null else 0)
 	var end_date := season.date_of_day(end_day)
 	_world.add_news(end_date, "champion", "%s are the %d-%02d champions, beating %s" % [_world.team_display_name(season.champion_id), season.year, (season.year + 1) % 100, _world.team_display_name(season.runner_up_id)], season.champion_id)
@@ -162,6 +192,13 @@ func finish_season(season: FcSeason) -> void:
 		_world.add_news(end_date, "award", "%s wins the scoring title with %.1f points a game" % [_world.player_name(season.awards["scoring_champion"]), season.stats.per_game(season.awards["scoring_champion"], "points")])
 	if _world.businesses.count() > 0:
 		FcFinanceEngine.new(_world).settle(season.league_id, season, human_teams)
+
+
+## Every active player's overall and potential at the end of the season (the profile's rating history).
+func _record_ratings(year: int) -> void:
+	for p in _world.players.all():
+		if p.status == FcPlayer.Status.ACTIVE:
+			_world.record_rating(p.id, year, roundi(_ratings.overall(p)), p.development.potential)
 
 
 # --- awards ------------------------------------------------------------------------
@@ -234,6 +271,7 @@ func _apply_injuries(box: FcBoxScore, year: int = 0) -> void:
 			var clinic_factor := 1.0 - 0.06 * (clinic.medical_level if clinic != null else 0)
 			p.games_out = maxi(1, roundi(row[1] * (1.15 - rehab / 333.0) * clinic_factor))
 		_world.record_injury(p.id, year, str(row[2]), p.games_out, row[1] >= 60)
+		_day_injuries.append([p.id, p.games_out, str(row[2]), owner_team.id if owner_team != null else 0])
 		if row[1] >= 60:
 			for key in ["speed", "agility", "vertical", "stamina"]:
 				p.attributes.set_clamped(key, p.attributes.get_value(key) - severe_loss(p.id, key))
@@ -249,6 +287,7 @@ func _apply_injuries(box: FcBoxScore, year: int = 0) -> void:
 				if q.games_out == 0:
 					q.injury = ""
 					_teams.erase(team.id)
+					_day_returns.append([pid, team.id])
 
 
 ## A small, deterministic permanent loss (1-3 points) for a severe injury.
@@ -261,12 +300,20 @@ static func severe_loss(player_id: int, key: String) -> int:
 func _record_news_and_box(season: FcSeason, g: FcScheduledGame, box: FcBoxScore, log: FcGameEventLog = null) -> void:
 	var date := season.date_of_day(g.day)
 	var watched := watched_teams.has(g.home_id) or watched_teams.has(g.away_id)
-	if watched:
+	if watched or season.followed.has(g.id):
 		var entry := {"day": g.day, "series": g.series, "box": box.to_dict(),
-			"events": log.to_dict() if log != null else {"rows": []}}
-		season.recent_boxes.append(entry)
-		if season.recent_boxes.size() > FcSeason.RECENT_BOX_LIMIT:
-			season.recent_boxes.pop_front()
+			"events": log.to_dict() if log != null else {"rows": []}, "game_id": g.id}
+		var ring: Array = season.recent_boxes if watched else season.followed_boxes
+		ring.append(entry)
+		if ring.size() > FcSeason.RECENT_BOX_LIMIT:
+			ring.pop_front()
+	for p in box.players:
+		if p.seconds > 0 and (watched_teams.has(p.team_id) or logged_players.has(p.player_id)):
+			if not season.game_logs.has(p.player_id):
+				season.game_logs[p.player_id] = []
+			var home := 1 if p.team_id == g.home_id else 0
+			(season.game_logs[p.player_id] as Array).append([g.id, g.day, g.away_id if home == 1 else g.home_id, home, 1 if p.started else 0, p.seconds, p.points,
+				p.rebounds(), p.ast, p.stl, p.blk, p.fgm, p.fga, p.tpm, p.tpa, p.ftm, p.fta, p.tov, p.pf, p.plus_minus])
 	for p in box.players:
 		if p.points >= 50:
 			_world.add_news(date, "milestone", "%s scored %d points for %s (%s)" % [p.name, p.points, _world.team_display_name(p.team_id), box.summary()], p.team_id)
@@ -292,7 +339,7 @@ func _team(team_id: int) -> FcGameTeam:
 
 func _play_game(season: FcSeason, g: FcScheduledGame, rng: FcRng, playoff: bool) -> void:
 	# only games a watched team plays are written down play by play (the rest would cost time and save size for nobody)
-	var log: FcGameEventLog = FcGameEventLog.new() if watched_teams.has(g.home_id) or watched_teams.has(g.away_id) else null
+	var log: FcGameEventLog = FcGameEventLog.new() if watched_teams.has(g.home_id) or watched_teams.has(g.away_id) or season.followed.has(g.id) else null
 	_sim.recorder = log
 	var box := _sim.simulate(_team(g.home_id), _team(g.away_id), rng)
 	_sim.recorder = null
@@ -300,6 +347,7 @@ func _play_game(season: FcSeason, g: FcScheduledGame, rng: FcRng, playoff: bool)
 	g.home_score = box.scores[0]
 	g.away_score = box.scores[1]
 	g.overtimes = box.overtimes
+	g.line = FcScheduledGame.line_from_box(box)
 	_apply_injuries(box, season.year)
 	_record_news_and_box(season, g, box, log)
 	if playoff:

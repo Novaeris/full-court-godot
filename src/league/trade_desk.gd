@@ -19,6 +19,8 @@ const PICK_YEARS := 3
 
 var world: FcWorld
 var trades: FcTrades
+## The day a completed trade is dated (the controller sets it to the current date; null = 3 July of the trade's year, as before).
+var today: FcDate = null
 
 
 func _init(game_world: FcWorld) -> void:
@@ -91,7 +93,9 @@ func propose(league_id: int, year: int, user_team_id: int, ai_team_id: int, give
 			world.set_pick_owner(pick[0], pick[1], pick[2], ai_team_id)
 		for pick in get_picks:
 			world.set_pick_owner(pick[0], pick[1], pick[2], user_team_id)
-		world.add_news(FcDate.new(year, 7, 3), "signing", "%s and %s completed a trade" % [world.team_display_name(user_team_id), world.team_display_name(ai_team_id)], user_team_id)
+		var moved: Array = give_ids.duplicate()
+		moved.append_array(get_ids)
+		world.add_transaction(today if today != null else FcDate.new(year, 7, 3), "trade", "%s and %s completed a trade" % [world.team_display_name(user_team_id), world.team_display_name(ai_team_id)], user_team_id, moved, ai_team_id)
 	return {"accepted": true, "reason": "Deal accepted."}
 
 

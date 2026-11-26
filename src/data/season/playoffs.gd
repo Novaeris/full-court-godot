@@ -82,3 +82,15 @@ static func from_dict(d: Dictionary) -> FcPlayoffs:
 	p.rounds = int(d.get("rounds", 0))
 	p.day = int(d.get("day", 0))
 	return p
+
+
+## The furthest round a team played in (0 = did not qualify; 1 = played the first round; the final is `rounds`). A team that won the final
+## is given rounds + 1, so "reached round two" means at least 2.
+func rounds_reached(team_id: int) -> int:
+	var best := 0
+	for s in series:
+		if s.team_a == team_id or s.team_b == team_id:
+			best = maxi(best, s.round)
+	if best > 0 and champion_id() == team_id:
+		best = rounds + 1
+	return best

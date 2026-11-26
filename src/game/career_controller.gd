@@ -170,7 +170,7 @@ func join_team(team_id: int) -> Dictionary:
 	game()
 	_game.career_player_id = profile().player_id
 	_roll_event()
-	state.world.add_news(state.current_date, "signing", "%s signed with %s." % [player().identity.full_name(), state.world.team_display_name(team_id)], team_id)
+	state.world.add_transaction(state.current_date, "signing", "%s signed with %s." % [player().identity.full_name(), state.world.team_display_name(team_id)], team_id, [player().id])
 	FcCareerTimeline.add(profile(), year, "team", "Signed a %d-year rookie contract with %s (pick %d of %d)" % [rules.cap.rookie_contract_years, state.world.team_display_name(team_id), int(outlook["pick"]), int(outlook["picks"])])
 	return {"ok": true, "reason": "You signed with %s on a %d-year rookie contract (pick %d)." % [state.world.team_display_name(team_id), rules.cap.rookie_contract_years, int(outlook["pick"])]}
 

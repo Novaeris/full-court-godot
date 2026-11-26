@@ -26,7 +26,8 @@ func test_reputation_starts_in_the_middle_and_is_recorded_each_season() -> void:
 	assert_eq(g.owner_history().size(), 1)
 	var row: Array = g.owner_history()[0]
 	assert_eq([row[0], row[1]], [2026, g.state.user_team_id])
-	var expected := clampi(roundi(0.7 * FcGameState.START_REPUTATION + 0.3 * row[2]) + 5 * row[4], 0, 100)
+	var objectives_delta := FcOwnerObjectives.reputation_delta(g.state.owner_objectives.get(2026, []))   # D-077: the season's objectives count too
+	var expected := clampi(roundi(0.7 * FcGameState.START_REPUTATION + 0.3 * row[2]) + 5 * row[4] + objectives_delta, 0, 100)
 	assert_eq(g.owner_reputation(), expected)
 	g.draft_auto_rest()
 	g.start_next_season()

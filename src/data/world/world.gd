@@ -53,6 +53,15 @@ const INJURY_HISTORY_LIMIT := 12
 var pick_owners: Dictionary = {}
 const CAREER_COLUMNS := ["year", "team", "gp", "seconds", "points", "fgm", "fga", "tpm", "tpa", "ftm", "fta", "oreb", "dreb", "ast", "stl", "blk", "tov", "pf"]
 const NEWS_LIMIT := 300
+## Structured transactions (D-077 E): every signing, release, trade and staff move, newest last, with a stable id from `ids` (kind "txn").
+## [{"id", "date" (ISO), "kind" ("signing" | "release" | "trade" | "staff" | "draft" | "retirement"), "text", "team", "other" (team id or 0),
+##   "players": [ids]}]. Kept to the last TRANSACTION_LIMIT.
+var transactions: Array = []
+const TRANSACTION_LIMIT := 3000
+const KIND_TRANSACTION := "txn"
+## Each player's overall and potential at the end of every season he played (D-077: the profile's rating history): {player id: [[year,
+## overall, potential], ...]}.
+var rating_history: Dictionary = {}
 var finances: FcRepository = FcMemoryRepository.new()
 
 
@@ -125,11 +134,46 @@ func prune_picks(year: int) -> void:
 			pick_owners.erase(key)
 
 
-## Adds a news item (kinds: "injury", "milestone", "champion", "award", "signing", "retirement", "draft", "staff").
-func add_news(date: FcDate, kind: String, text: String, team_id: int = 0) -> void:
-	news.append({"date": date.to_iso(), "kind": kind, "text": text, "team": team_id})
+## Adds a news item (kinds: "injury", "milestone", "champion", "award", "signing", "retirement", "draft", "staff"). `txn` links it to the
+## transaction it reports (0 = none).
+func add_news(date: FcDate, kind: String, text: String, team_id: int = 0, txn: int = 0) -> void:
+	var item := {"date": date.to_iso(), "kind": kind, "text": text, "team": team_id}
+	if txn > 0:
+		item["txn"] = txn
+	news.append(item)
 	if news.size() > NEWS_LIMIT:
 		news = news.slice(news.size() - NEWS_LIMIT)
+
+
+## Records a transaction and its news item (the news keeps its old kind, `news_kind`, so the news feed reads as before). Returns the
+## transaction id.
+func add_transaction(date: FcDate, kind: String, text: String, team_id: int, player_ids: Array = [], other_team_id: int = 0, news_kind: String = "signing") -> int:
+	var id := ids.next_id(KIND_TRANSACTION)
+	var players_copy: Array = []
+	for pid in player_ids:
+		players_copy.append(int(pid))
+	transactions.append({"id": id, "date": date.to_iso(), "kind": kind, "text": text, "team": team_id, "other": other_team_id, "players": players_copy})
+	if transactions.size() > TRANSACTION_LIMIT:
+		transactions = transactions.slice(transactions.size() - TRANSACTION_LIMIT)
+	if news_kind != "":
+		add_news(date, news_kind, text, team_id, id)
+	return id
+
+
+## Transactions dated `iso` (a day of the calendar), oldest first.
+func transactions_on(iso: String) -> Array:
+	return transactions.filter(func(t: Dictionary) -> bool: return str(t["date"]) == iso)
+
+
+## Records a player's end-of-season overall and potential (replacing an existing row for the same year).
+func record_rating(player_id: int, year: int, overall: int, potential: int) -> void:
+	if not rating_history.has(player_id):
+		rating_history[player_id] = []
+	var rows: Array = rating_history[player_id]
+	for i in range(rows.size() - 1, -1, -1):
+		if int(rows[i][0]) == year:
+			rows.remove_at(i)
+	rows.append([year, overall, potential])
 
 
 ## Remembers an injury in the player's history (the oldest rows drop off past the limit).
@@ -420,7 +464,16 @@ func to_dict() -> Dictionary:
 		"injury_history": _injury_history_dict(),
 		"pick_owners": pick_owners.duplicate(),
 		"finances": _dicts_of(finances),
+		"transactions": transactions.duplicate(true),
+		"rating_history": _rating_history_dict(),
 	}
+
+
+func _rating_history_dict() -> Dictionary:
+	var out := {}
+	for pid in rating_history:
+		out[str(pid)] = (rating_history[pid] as Array).duplicate(true)
+	return out
 
 
 ## Rebuilds a world from a snapshot. Entities that cannot be added (duplicate
@@ -470,7 +523,23 @@ static func from_dict(data: Dictionary, defs: FcDefinitionSet, errors: Array[Str
 				rows.append({"year": int(row.get("year", 0)), "injury": str(row.get("injury", "")), "games": int(row.get("games", 0)), "severe": bool(row.get("severe", false))})
 			w.injury_history[int(key)] = rows
 	for item in data.get("news", []):
-		w.news.append({"date": str(item["date"]), "kind": str(item["kind"]), "text": str(item["text"]), "team": int(item["team"])})
+		var restored := {"date": str(item["date"]), "kind": str(item["kind"]), "text": str(item["text"]), "team": int(item["team"])}
+		if item.has("txn"):
+			restored["txn"] = int(item["txn"])
+		w.news.append(restored)
+	for t in data.get("transactions", []):   # added in data version 5: missing = none
+		var players: Array = []
+		for pid in t.get("players", []):
+			players.append(int(pid))
+		w.transactions.append({"id": int(t.get("id", 0)), "date": str(t.get("date", "")), "kind": str(t.get("kind", "")), "text": str(t.get("text", "")),
+			"team": int(t.get("team", 0)), "other": int(t.get("other", 0)), "players": players})
+	var raw_ratings = data.get("rating_history", {})
+	if raw_ratings is Dictionary:
+		for key in raw_ratings:
+			var rows: Array = []
+			for row in raw_ratings[key]:
+				rows.append([int(row[0]), int(row[1]), int(row[2])])
+			w.rating_history[int(key)] = rows
 	for d in data.get("businesses", []):
 		_report(w.businesses.add(FcTeamBusiness.from_dict(d)), "team business", errors)
 	for d in data.get("finances", []):

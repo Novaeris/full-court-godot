@@ -224,6 +224,8 @@ func _action(o: int, d: int, check_turnover: bool) -> int:
 		var p_block: float = base_block * pow(maxf(_avg(d, "block"), 5.0) / 50.0, 1.4) * (1.15 - shooter.ratings["finishing"] / 200.0)
 		if _rng.chance(clampf(p_block, 0.0, 0.4)):
 			shooter.stats.fga += 1
+			if kind == RIM:
+				shooter.stats.rim_a += 1
 			var blocker := _pick_weighted(_court[d], _weights(d, "block", 3.0, true))
 			blocker.stats.blk += 1
 			_log(FcGameEventLog.EV_SHOT_BLOCKED, o, shooter.id, blocker.id, kind)
@@ -251,6 +253,8 @@ func _action(o: int, d: int, check_turnover: bool) -> int:
 	shooter.stats.fga += 1
 	if kind == THREE:
 		shooter.stats.tpa += 1
+	elif kind == RIM:
+		shooter.stats.rim_a += 1
 	if made:
 		_record_field_goal(shooter, kind, passer, o, false)
 		return END
@@ -263,7 +267,11 @@ func _record_field_goal(shooter: FcSimPlayer, kind: int, passer: FcSimPlayer, o:
 		shooter.stats.fga += 1
 		if kind == THREE:
 			shooter.stats.tpa += 1
+		elif kind == RIM:
+			shooter.stats.rim_a += 1
 	shooter.stats.fgm += 1
+	if kind == RIM:
+		shooter.stats.rim_m += 1
 	var pts := 3 if kind == THREE else 2
 	if kind == THREE:
 		shooter.stats.tpm += 1

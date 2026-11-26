@@ -36,6 +36,17 @@ var playoffs: FcPlayoffs = null
 var draft: Array = []
 ## Box scores (as dictionaries, with the game day) of the most recent games of the teams the owner watches.
 var recent_boxes: Array = []
+## One entry per processed day (D-077 B, kept while the season is held in detail): {"g": [game ids played], "i": [[player id, games out,
+## injury, team id], ...] (new injuries), "r": [[player id, team id], ...] (players back from injury), "c": standings checksum after the day,
+## "e": [calendar event keys processed], "t": [transaction ids]}. Keyed by day number. The daily report and the audit read it.
+var day_log: Dictionary = {}
+## Games of other teams the user follows (ids, at most FcGameAvailability.FOLLOW_LIMIT): they are recorded like the user's own games.
+var followed: Array[int] = []
+## Box scores (with play-by-play) of followed games, newest last, at most RECENT_BOX_LIMIT: [{"game_id", "day", "series", "box", "events"}].
+var followed_boxes: Array = []
+## Game logs of the watched team's players and the Career player, this season: {player id: [[game id, day, opponent id, home 1/0, started 1/0,
+## seconds, points, rebounds, assists, steals, blocks, fgm, fga, tpm, tpa, ftm, fta, turnovers, fouls, plus/minus], ...]}.
+var game_logs: Dictionary = {}
 const RECENT_BOX_LIMIT := 20
 
 
@@ -61,6 +72,10 @@ var archived: bool = false
 func archive() -> void:
 	if status != Status.COMPLETE:
 		return
+	day_log = {}
+	followed = []
+	followed_boxes = []
+	game_logs = {}
 	games = []
 	stats = FcSeasonStats.new()
 	playoff_stats = FcSeasonStats.new()
@@ -149,8 +164,33 @@ func to_dict() -> Dictionary:
 		"final_standings": final_standings.duplicate(true), "awards": awards.duplicate(true),
 		"playoffs": playoffs.to_dict() if playoffs != null else {},
 		"draft": draft.duplicate(true), "recent_boxes": recent_boxes.duplicate(true),
-		"archived": archived,
+		"archived": archived, "day_log": _day_log_for_json(), "followed": followed.duplicate(),
+		"followed_boxes": followed_boxes.duplicate(true), "game_logs": _game_logs_for_json(),
 	}
+
+
+func _day_log_for_json() -> Dictionary:
+	var out := {}
+	for day in day_log:
+		out[str(day)] = (day_log[day] as Dictionary).duplicate(true)
+	return out
+
+
+func _game_logs_for_json() -> Dictionary:
+	var out := {}
+	for pid in game_logs:
+		out[str(pid)] = (game_logs[pid] as Array).duplicate(true)
+	return out
+
+
+## The game with this id, or null.
+func game_by_id(game_id: int) -> FcScheduledGame:
+	if game_id <= 0:
+		return null
+	for g in games:
+		if g.id == game_id:
+			return g
+	return null
 
 
 static func from_dict(d: Dictionary) -> FcSeason:
@@ -167,6 +207,25 @@ static func from_dict(d: Dictionary) -> FcSeason:
 	s.playoff_stats = FcSeasonStats.from_dict(d.get("playoff_stats", {}))
 	s.champion_id = int(d.get("champion_id", 0))
 	s.archived = bool(d.get("archived", false))
+	var raw_days = d.get("day_log", {})
+	if raw_days is Dictionary:
+		for key in raw_days:
+			s.day_log[int(key)] = _clean_day(raw_days[key])
+	for gid in d.get("followed", []):
+		s.followed.append(int(gid))
+	for entry in d.get("followed_boxes", []):
+		if entry is Dictionary:
+			s.followed_boxes.append(_clean_box_entry(entry))
+	var raw_logs = d.get("game_logs", {})
+	if raw_logs is Dictionary:
+		for key in raw_logs:
+			var rows: Array = []
+			for row in raw_logs[key]:
+				var r: Array = []
+				for v in row:
+					r.append(int(v))
+				rows.append(r)
+			s.game_logs[int(key)] = rows
 	s.runner_up_id = int(d.get("runner_up_id", 0))
 	for row in d.get("final_standings", []):
 		s.final_standings.append([int(row[0]), int(row[1]), int(row[2])])
@@ -182,12 +241,40 @@ static func from_dict(d: Dictionary) -> FcSeason:
 		else:
 			s.awards[str(key)] = int(value)
 	for entry in d.get("recent_boxes", []):
-		# normalize through FcBoxScore so integers stay integers after a JSON round trip
-		s.recent_boxes.append({"day": int(entry["day"]), "series": int(entry["series"]), "box": FcBoxScore.from_dict(entry["box"]).to_dict(),
-			"events": FcGameEventLog.from_dict(entry.get("events", {})).to_dict()})   # the play-by-play (empty for older saves)
+		s.recent_boxes.append(_clean_box_entry(entry))
 	for row in d.get("draft", []):
 		s.draft.append([int(row[0]), int(row[1]), int(row[2]), int(row[3]), int(row[4]) if row.size() > 4 else int(row[2])])
 	var po: Dictionary = d.get("playoffs", {})
 	if not po.is_empty():
 		s.playoffs = FcPlayoffs.from_dict(po)
 	return s
+
+
+## JSON turns integers into floats; put a day log entry's numbers back.
+static func _clean_day(raw) -> Dictionary:
+	var out := {"g": [], "i": [], "r": [], "e": [], "t": []}
+	if not (raw is Dictionary):
+		return out
+	for gid in raw.get("g", []):
+		out["g"].append(int(gid))
+	for row in raw.get("i", []):
+		out["i"].append([int(row[0]), int(row[1]), str(row[2]), int(row[3]) if row.size() > 3 else 0])
+	for row in raw.get("r", []):
+		out["r"].append([int(row[0]), int(row[1]) if row.size() > 1 else 0])
+	for key in raw.get("e", []):
+		out["e"].append(str(key))
+	for tid in raw.get("t", []):
+		out["t"].append(int(tid))
+	if raw.has("c"):
+		out["c"] = int(raw["c"])
+	return out
+
+
+## A stored box-score entry normalized through FcBoxScore and FcGameEventLog, so integers stay integers after a JSON round trip. The game id
+## (data version 5) is kept; older entries have none until the migration links them.
+static func _clean_box_entry(entry: Dictionary) -> Dictionary:
+	var out := {"day": int(entry["day"]), "series": int(entry["series"]), "box": FcBoxScore.from_dict(entry["box"]).to_dict(),
+		"events": FcGameEventLog.from_dict(entry.get("events", {})).to_dict()}   # the play-by-play (empty for older saves)
+	if int(entry.get("game_id", 0)) > 0:
+		out["game_id"] = int(entry["game_id"])
+	return out
