@@ -89,8 +89,10 @@ static func weights(identity: Dictionary, archetype: Dictionary, key: String) ->
 			_add(out, m, 0.15 + 0.5 * unit(key, m + "|w"))
 	for m in ASYMMETRY:
 		_add(out, m, 0.35 * unit(key, m))
+	var amplitude := float(data().get("face_amplitude", 1.0))
 	for m in out.keys():
-		out[m] = clampf(float(out[m]), 0.0, 1.0)
+		var w := float(out[m]) * (amplitude if str(m).begins_with("fcf_") else 1.0)
+		out[m] = clampf(w, 0.0, 1.0)
 	return out
 
 

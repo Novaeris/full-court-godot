@@ -149,5 +149,7 @@
 		"equip_armsleeve": 22,
 		"equip_kneesleeve": 14,
 		"equip_wristband": 26
-	}
+	},
+	"face_amplitude": 0.5,
+	"face_amplitude_note": "Scales every per-player face morph (fcf_). The master face is the baseline; players differ around it without caricature (D-076)."
 }
