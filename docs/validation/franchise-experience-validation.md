@@ -57,3 +57,11 @@ Evidence for each milestone of [the programme](../roadmap/franchise-experience-o
   - no tabs are invented for a player without data;
   - the full page opens from the roster and Back returns;
   - the card view's actions use the selected card.
+
+### M5
+- Pictures: `franchise/m5/` (the Game Center before and after a game at 1920x1080, the schedule at 1280x720).
+- `test_game_center` (6) checks the following:
+  - The actions match the availability rules: the user's next game, another team's game (follow, then a replay), and an unrecorded game (result line only, no summary is invented).
+  - Playing through a game advances only up to its day, and integrity stays clean.
+  - Routes come from the schedule and the Game day button.
+- The live test `test_live_game_day` now follows Game day into the Game Center, then "Play and watch".

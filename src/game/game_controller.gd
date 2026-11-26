@@ -323,6 +323,31 @@ func next_user_game() -> FcScheduledGame:
 	return null
 
 
+## Marks another teams' upcoming game to be recorded like the user's own (box score and play-by-play; D-077 D). Returns false when the
+## game cannot be followed (played, the user's own, unknown, or the follow limit reached).
+func follow_game(game_id: int) -> bool:
+	var s := season()
+	var g := s.game_by_id(game_id)
+	if g == null or not FcGameAvailability.capabilities(s, g, state.user_team_id, next_user_game())["follow"]:
+		return false
+	s.followed.append(game_id)
+	return true
+
+
+## Plays day by day (the one advancement path) until the given game of the current season has been played. Returns the stored box-score
+## entry of that game when one was kept, otherwise {} (also {} when the game is unknown or already played).
+func play_through_game(game_id: int) -> Dictionary:
+	var s := season()
+	var g := s.game_by_id(game_id)
+	if g == null or g.played:
+		return {}
+	var guard := 400
+	while not g.played and guard > 0 and (phase() == PHASE_REGULAR or phase() == PHASE_PLAYOFFS):
+		advance_day()
+		guard -= 1
+	return FcGameAvailability.stored_box(s, g) if g.played else {}
+
+
 ## How many days to play so that the user's next regular-season game is played too (0 when there is none).
 func days_to_next_user_game() -> int:
 	var g := next_user_game()

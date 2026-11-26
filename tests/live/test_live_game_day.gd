@@ -49,20 +49,18 @@ func test_the_owner_previews_plays_and_watches() -> void:
 	var played_before := app.controller.season().games_played_count()
 	open_button.pressed.emit()
 	await frames(2)
+	assert_eq(app.navigator.current_id, "game:%d" % game.id, "Game day opens the Game Center of the next game (D-077 M5)")
 	var screen := app.find_child("GameDayScreen", true, false) as FcGameDayScreen
-	assert_true(screen != null, "the preview opened")
+	assert_true(screen != null, "the preview is in the Game Center")
 	assert_true(screen.find_child("Home", true, false) != null and screen.find_child("Away", true, false) != null)
 	assert_eq(app.controller.season().games_played_count(), played_before, "looking does not play anything")
-	var play := app.find_child("PlayGameButton", true, false) as Button
+	var play := _find_button(app, "Play and watch the broadcast")
 	assert_true(play != null)
 	play.pressed.emit()
 	await frames(3)
-	assert_true(game.played, "Play this game played the game")
+	assert_true(game.played, "Play and watch played the game")
 	assert_true(app.controller.season().games_played_count() > played_before)
-	var watch := _find_button(app, "Watch replay")
-	assert_true(watch != null, "its summary opened with a Watch replay button")
-	watch.pressed.emit()
-	await frames(3)
+	assert_true(app.find_child("Summary", true, false) != null, "the Game Center now shows the summary")
 	var replay := app.find_child("ReplayScreen", true, false) as FcReplayScreen
 	assert_true(replay != null and replay.model.box.scores[0] == game.home_score and replay.model.box.scores[1] == game.away_score, "and the replay is that game")
 

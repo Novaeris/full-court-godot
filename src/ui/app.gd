@@ -1376,6 +1376,45 @@ func _tutorial_panel() -> Control:
 func _register_routes() -> void:
 	navigator.register("dashboard", func(_args: Dictionary) -> void: show_dashboard())
 	navigator.register("player", func(args: Dictionary) -> void: show_player_page(int(args.get("id", 0))))
+	navigator.register("game", func(args: Dictionary) -> void: show_game_center(int(args.get("id", 0))))
+
+
+## The Game Center of one game (D-077 M5): preview before, summary after, and the actions the stored data allows (FcGameAvailability).
+func show_game_center(game_id: int) -> void:
+	var w := controller.state.world
+	var team: FcTeam = w.teams.get_by_id(controller.state.user_team_id)
+	var game := controller.season().game_by_id(game_id)
+	var title := "Game Center" if game == null else "%s at %s" % [_team_name(game.away_id), _team_name(game.home_id)]
+	var box := _reset(title, {"id": "game:%d" % game_id, "skin_props": FcModeSkin.franchise(team.branding.primary_color if team != null else ""),
+		"back": navigator.stack_back(), "header": {"kind": "none"}})
+	var bar := HBoxContainer.new()
+	bar.add_child(FcButton.make("Back", FcButton.Variant.GHOST, func() -> void: go_back(), "chevron-left"))
+	box.add_child(bar)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var center := FcGameCenter.build(_owner_ctx(), game_id, {
+		"play": func(id: int, watch: bool) -> void: _play_from_game_center(id, watch),
+		"follow": func(id: int) -> void:
+			_say("Following: this game will be recorded (box score, play-by-play and replay)." if controller.follow_game(id) else "That game cannot be followed.")
+			show_game_center(id),
+		"replay": func(entry: Dictionary) -> void:
+			if not entry.is_empty():
+				FcReplay.open(self, FcReplay.for_owner(controller, entry)),
+	})
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.name = "GameCenter"
+	scroll.add_child(center)
+	box.add_child(scroll)
+
+
+## Plays up to and including a game from its Game Center, then shows its summary there (and the broadcast when asked).
+func _play_from_game_center(game_id: int, watch: bool) -> void:
+	var entry := controller.play_through_game(game_id)
+	controller.autosave(saves)
+	show_game_center(game_id)
+	if watch and not entry.is_empty():
+		FcReplay.open(self, FcReplay.for_owner(controller, entry))
 
 
 ## A player's full-page profile (D-077 M4): the dossier at full width, reached from the roster, the HQ and anywhere a player is named.
@@ -1434,7 +1473,7 @@ func show_dashboard() -> void:
 	match phase:
 		FcGameController.PHASE_REGULAR:
 			if controller.next_user_game() != null:
-				actions.add_child(FcButton.make("Game day", FcButton.Variant.PRIMARY, on_game_day))
+				actions.add_child(FcButton.make("Game day", FcButton.Variant.PRIMARY, func() -> void: navigator.open("game", {"id": controller.next_user_game().id})))
 			actions.add_child(FcUiTables.button("Next Day", func(): on_advance(1)))
 			actions.add_child(FcUiTables.button("Next Week", func(): on_advance(7)))
 			actions.add_child(FcUiTables.button("Next Month", func(): run_with_loading("Playing a month of games...", func(): on_advance(30))))
@@ -1494,7 +1533,9 @@ func play_owner_game_day() -> void:
 	show_dashboard()
 	for entry in controller.season().recent_boxes:
 		if int(entry["day"]) == day and int(entry["series"]) == 0:
-			FcPostGame.open(self, FcPostGame.for_owner(controller, entry["box"], entry.get("events", {})))
+			var built := FcPostGame.for_owner(controller, entry["box"], entry.get("events", {}))
+			built["replay"] = FcReplay.for_owner(controller, entry)
+			FcPostGame.open(self, built)
 
 
 func on_sim_regular() -> void:
@@ -1604,11 +1645,14 @@ func _team_name(team_id: int) -> String:
 func _owner_ctx() -> FcOwnerContext:
 	if _owner_context == null or _owner_context.controller != controller:
 		_owner_context = FcOwnerContext.new(controller, _say, show_dashboard,
-			func(entry: Dictionary) -> void: FcPostGame.open(self, FcPostGame.for_owner(controller, entry["box"], entry.get("events", {}))),
+			func(entry: Dictionary) -> void:
+				var built := FcPostGame.for_owner(controller, entry["box"], entry.get("events", {}))
+				built["replay"] = FcReplay.for_owner(controller, entry)   # the Owner replay with crests and title context (the post-game path used to drop them)
+				FcPostGame.open(self, built),
 			func(player_id: int) -> void: navigator.open("player", {"id": player_id}))
 		_owner_context.after_draft = _after_draft_action
 		_owner_context.open_tonight = func() -> void: FcTonight.open(self, controller)
-		_owner_context.open_game = func(_game_id: int) -> void: on_game_day()
+		_owner_context.open_game = func(game_id: int) -> void: navigator.open("game", {"id": game_id})
 	return _owner_context
 
 

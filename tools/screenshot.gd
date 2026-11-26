@@ -220,6 +220,16 @@ func _build_screen() -> void:
 		if page != null and _tab != "":
 			page.show_tab(_tab)
 		return
+	if _screen == "owner_game_center":   # the Game Center of the next user game (D-077 M5); tab=played shows the last played user game instead
+		var c := _app.controller
+		var target := c.next_user_game()
+		if _tab == "played":
+			for g in c.season().games:
+				if g.played and g.involves(c.state.user_team_id):
+					target = g
+		if target != null:
+			_app.navigator.open("game", {"id": target.id})
+		return
 	if _screen == "owner_gameday":
 		var preview := FcGameDay.for_owner(_app.controller)
 		if not preview.is_empty():
